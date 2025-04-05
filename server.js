@@ -1,132 +1,81 @@
+// server.js (Render-Ready with Express + WebSocket + Supabase)
+
 const express = require('express');
-const cors = require('cors');
-const axios = require('axios');
 const http = require('http');
-const setupWebSocket = require('./websocket');
+const cors = require('cors');
+const setupWebSocket = require('./websocket'); // your websocket logic from earlier
+const bodyParser = require('body-parser');
 require('dotenv').config();
 
-// ✅ ENV Check
-console.log("🔍 Checking .env values:");
-console.log("🔑 BASE:", process.env.AIRTABLE_BASE_ID);
-console.log("📁 TABLE:", process.env.AIRTABLE_TABLE_ID);
-console.log("🔒 TOKEN:", process.env.AIRTABLE_API_TOKEN?.slice(0, 6) + "...");
-
 const app = express();
-app.use(express.json());
-
-const allowedOrigins = [
-  'https://www.cultureschool.org',
-  'http://localhost:5055',
-  'http://localhost:3000',
-  'http://127.0.0.1:3000'
-];
-
-app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      console.warn(`⛔ CORS blocked: ${origin}`);
-      callback(new Error('⛔ Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-}));
-
-app.options('*', cors());
-
-// ✅ Airtable Save Profile Route
-app.post("/api/save-to-airtable", async (req, res) => {
-  const { email, username, profilePic, inviteCode, invitedBy, circleID, mediaUploads } = req.body;
-
-  if (!email || !username) {
-    return res.status(400).json({ success: false, error: "Missing email or username." });
-  }
-
-  try {
-    const airtableRes = await axios.post(
-      `https://api.airtable.com/v0/${process.env.AIRTABLE_BASE_ID}/${encodeURIComponent(process.env.AIRTABLE_TABLE_ID)}`,
-      {
-        fields: {
-          email,
-          username,
-          profilePic,
-          inviteCode,
-          invitedBy,
-          circleID,
-          mediaUploads: mediaUploads || []
-        }
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.AIRTABLE_API_TOKEN}`,
-          "Content-Type": "application/json"
-        }
-      }
-    );
-
-    res.status(200).json({ success: true, data: airtableRes.data });
-  } catch (error) {
-    console.error("❌ Airtable save error:", error.response?.data || error.message);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// ✅ TEMP MESSAGE FETCH ROUTE
-let inMemoryMessages = {
-  "Admin-Circle-2025": []
-};
-
-app.get("/api/get-circle-messages", (req, res) => {
-  const groupId = req.query.group_id;
-
-  if (!groupId) {
-    return res.status(400).json({ success: false, error: "Missing group_id" });
-  }
-
-  const messages = inMemoryMessages[groupId] || [];
-  res.status(200).json({ success: true, messages });
-});
-
-// ✅ TEMP MESSAGE UPDATE ROUTE
-app.post("/api/update-circle-message", (req, res) => {
-  const { group_id, new_message } = req.body;
-
-  if (!group_id || !new_message) {
-    return res.status(400).json({ success: false, error: "Missing group_id or message" });
-  }
-
-  if (!inMemoryMessages[group_id]) {
-    inMemoryMessages[group_id] = [];
-  }
-
-  inMemoryMessages[group_id].push(new_message);
-  res.status(200).json({ success: true, message: "Message added" });
-});
-
-// ✅ Get Tribe Members for a Circle
-app.get("/api/get-circle-tribe", async (req, res) => {
-  const groupId = req.query.group_id;
-  if (!groupId) {
-    return res.status(400).json({ success: false, error: "Missing group_id" });
-  }
-
-  try {
-    const fakeMembers = [
-      { name: "Todd", avatar: "https://via.placeholder.com/60?text=T" },
-      { name: "Stacey", avatar: "https://via.placeholder.com/60?text=S" }
-    ];
-
-    res.status(200).json({ success: true, tribe_members: fakeMembers });
-  } catch (err) {
-    console.error("❌ Failed to get tribe members:", err);
-    res.status(500).json({ success: false, error: "Server error" });
-  }
-});
-
 const server = http.createServer(app);
-setupWebSocket(server);
+setupWebSocket(server); // ✅ Attach WebSocket
+app.get("/", (req, res) => {
+  res.send("✅ CultureSchool backend is running!");
+});
+app.use(cors());
+app.use(bodyParser.json());
 
-server.listen(5055, () => {
-  console.log("🚀 Server running on http://localhost:5055");
+// ✅ Supabase Client
+const { createClient } = require('@supabase/supabase-js');
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+// ✅ Save Data to Supabase
+app.post('/api/save-to-supabase', async (req, res) => {
+  try {
+    const data = req.body;
+
+    const { data: existing, error: fetchErr } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', data.email)
+      .eq('invite_code', data.invite_code)
+      .single();
+
+    if (fetchErr && fetchErr.code !== 'PGRST116') throw fetchErr;
+
+    let response;
+    if (existing) {
+      response = await supabase
+        .from('users')
+        .update({ ...data })
+        .eq('email', data.email)
+        .eq('invite_code', data.invite_code);
+    } else {
+      response = await supabase.from('users').insert([data]);
+    }
+
+    res.json({ success: true, message: 'Saved to Supabase', response });
+  } catch (err) {
+    console.error('❌ Supabase Save Error:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ✅ Purge All Circle Messages by Group
+app.post('/api/delete-all-circle-messages', async (req, res) => {
+  try {
+    const { group_id } = req.body;
+    if (!group_id) return res.status(400).json({ success: false, message: 'Missing group_id' });
+
+    const { data, error } = await supabase
+      .from('users')
+      .delete()
+      .eq('invite_code', group_id);
+
+    if (error) throw error;
+
+    res.json({ success: true, data });
+  } catch (err) {
+    console.error('❌ Purge Error:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+const PORT = process.env.PORT || 5055;
+server.listen(PORT, () => {
+  console.log(`🚀 Server & WebSocket live on port ${PORT}`);
 });
