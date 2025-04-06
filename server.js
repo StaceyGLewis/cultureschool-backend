@@ -13,6 +13,7 @@ setupWebSocket(server); // ✅ Attach WebSocket
 app.get("/", (req, res) => {
   res.send("✅ CultureSchool backend is running!");
 });
+
 app.use(cors());
 app.use(bodyParser.json());
 
@@ -74,6 +75,7 @@ app.post('/api/delete-all-circle-messages', async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+
 
 const PORT = process.env.PORT || 5055;
 server.listen(PORT, () => {
