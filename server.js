@@ -75,6 +75,22 @@ app.post('/api/delete-all-circle-messages', async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+// Get frame settings from Supabase
+app.get("/api/get-frame-settings", async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("settings")
+      .select("value")
+      .eq("key", "profile_frames")
+      .single();
+
+    if (error) return res.status(500).json({ success: false, error });
+
+    return res.json({ success: true, value: data.value });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 
 const PORT = process.env.PORT || 5055;
