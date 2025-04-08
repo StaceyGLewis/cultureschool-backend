@@ -91,6 +91,41 @@ app.get("/api/get-frame-settings", async (req, res) => {
     return res.status(500).json({ success: false, error: err.message });
   }
 });
+// ✅ GET Circle Data by Group ID
+app.get('/api/get-circle-from-supabase', async (req, res) => {
+  const group_id = req.query.group_id;
+
+  if (!group_id) {
+    return res.status(400).json({ success: false, message: 'Missing group_id' });
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('invite_code', group_id);
+
+    if (error) throw error;
+
+    if (!data || data.length === 0) {
+      return res.json({ success: true, tribe_members: [], messages: [], pins: [] });
+    }
+
+    // We'll just return the *first match* for now
+    const userData = data[0];
+    const {
+      tribe_members = [],
+      messages = [],
+      pins = [],
+      images = [],
+    } = userData;
+
+    return res.json({ success: true, tribe_members, messages, pins, images });
+  } catch (err) {
+    console.error('❌ Supabase fetch error:', err);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 
 const PORT = process.env.PORT || 5055;
