@@ -1,38 +1,100 @@
-.App {
-  text-align: center;
+/* App.css – for Moodboard Display */
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: #fefefe;
+  color: #222;
+  margin: 0;
+  padding: 0;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+.gallery-container {
+  max-width: 1080px;
+  margin: 60px auto;
+  padding: 0 20px;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+.gallery-header {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  gap: 24px;
+  margin-bottom: 40px;
 }
 
-.App-link {
-  color: #61dafb;
+.gallery-header img {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #5fa36f;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.gallery-header .info h1 {
+  margin: 0;
+  font-size: 26px;
+  color: #333;
+}
+
+.gallery-header .info p {
+  margin-top: 6px;
+  font-size: 16px;
+  color: #777;
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+.card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
+}
+
+.card img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  display: block;
+}
+
+.card-content {
+  padding: 12px 16px;
+  display: none; /* Hidden by default to make visuals first */
+}
+
+.card:hover .card-content {
+  display: block; /* Only shows on hover */
+}
+
+.card-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #111;
+}
+
+.card-desc {
+  font-size: 14px;
+  color: #555;
+}
+
+.reaction-bar {
+  display: none; /* Hidden until expansion or lightbox logic */
+}
+
+.error {
+  color: red;
+  padding: 16px;
+  text-align: center;
 }
