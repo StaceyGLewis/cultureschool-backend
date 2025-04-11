@@ -16,8 +16,8 @@ const supabase = createClient(
 );
 
 app.use(cors());
-app.use(bodyParser.json({ limit: '10mb' }));
-app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
+app.use(bodyParser.json({ limit: '25mb' }));
+app.use(bodyParser.urlencoded({ extended: true, limit: '25mb' }));
 
 app.get("/", (req, res) => {
   res.send("✅ CultureSchool backend is running!");
@@ -101,9 +101,9 @@ app.get('/api/get-media-items', async (req, res) => {
     let query = supabase
       .from('media_uploads')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(100);
 
-    // Only filter if NOT public
     if (email && publicWall !== "true") {
       query = query.eq('email', email);
     }
@@ -130,7 +130,6 @@ app.post("/api/delete-media-item", async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
-
 
 // 🔄 Get Frame Settings
 app.get("/api/get-frame-settings", async (req, res) => {
