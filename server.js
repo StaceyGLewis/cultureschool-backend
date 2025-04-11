@@ -238,6 +238,34 @@ app.get("/api/test-connection", async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+app.get('/api/supabase-keys', (req, res) => {
+  res.json({
+    url: process.env.SUPABASE_PROJECT_URL,
+    anonKey: process.env.SUPABASE_ANON_KEY
+  });
+});
+app.post("/api/save-inspiration", async (req, res) => {
+  const { email, url, title, mood, reactions } = req.body;
+
+  if (!email || !url) {
+    return res.status(400).json({ success: false, error: "Missing email or url" });
+  }
+
+  const { data, error } = await supabase.from("media_uploads").upsert([
+    {
+      email,
+      url,
+      title,
+      mood,
+      reactions,
+      created_at: new Date().toISOString(),
+    },
+  ]);
+
+  if (error) return res.status(500).json({ success: false, error });
+  res.json({ success: true, data });
+});
+
 
 const PORT = process.env.PORT || 5055;
 server.listen(PORT, () => {
