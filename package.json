@@ -1,8 +1,10 @@
 {
   "name": "cultureschool-backend",
   "version": "1.0.0",
-  "main": "index.js",
+  "type": "module",
+  "main": "inspirationCollectorBackend.js",
   "scripts": {
+    "start": "node inspirationCollectorBackend.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

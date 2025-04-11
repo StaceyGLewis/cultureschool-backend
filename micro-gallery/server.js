@@ -1,6 +1,6 @@
 // inspirationCollectorBackend.js (Node.js + Supabase)
 
-// Load environment variables from .env file
+// Load environment variables from .env filenpm 
 import dotenv from 'dotenv';
 dotenv.config();
 

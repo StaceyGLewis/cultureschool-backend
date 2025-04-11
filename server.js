@@ -25,15 +25,19 @@ const supabase = createClient(
 );
 
 // ✅ Save Data to Supabase
+// ✅ Save Data to Supabase (email-only logic)
 app.post('/api/save-to-supabase', async (req, res) => {
   try {
     const data = req.body;
+
+    if (!data.email) {
+      return res.status(400).json({ success: false, message: 'Missing email' });
+    }
 
     const { data: existing, error: fetchErr } = await supabase
       .from('users')
       .select('*')
       .eq('email', data.email)
-      .eq('invite_code', data.invite_code)
       .single();
 
     if (fetchErr && fetchErr.code !== 'PGRST116') throw fetchErr;
@@ -42,19 +46,42 @@ app.post('/api/save-to-supabase', async (req, res) => {
     if (existing) {
       response = await supabase
         .from('users')
-        .update({ ...data })
-        .eq('email', data.email)
-        .eq('invite_code', data.invite_code);
+        .update(data)
+        .eq('email', data.email);
     } else {
       response = await supabase.from('users').insert([data]);
     }
 
-    res.json({ success: true, message: 'Saved to Supabase', response });
+    res.json({ success: true, message: '✅ Saved to Supabase', response });
   } catch (err) {
     console.error('❌ Supabase Save Error:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
+// ✅ Get User by Email
+app.get('/api/get-user', async (req, res) => {
+  const { email } = req.query;
+
+  if (!email) {
+    return res.status(400).json({ success: false, message: 'Missing email in query' });
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', email)
+      .single();
+
+    if (error) throw error;
+
+    res.json({ success: true, data });
+  } catch (err) {
+    console.error('❌ Error fetching user:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 
 // ✅ Purge All Circle Messages by Group
 app.post('/api/delete-all-circle-messages', async (req, res) => {
@@ -127,6 +154,90 @@ app.get('/api/get-circle-from-supabase', async (req, res) => {
   }
 });
 
+// ✅ Save a pinned item
+app.post('/api/pin-item', async (req, res) => {
+  const { email, title, imageUrl, sourceUrl, description, tags, mood, boardId } = req.body;
+
+  const { data, error } = await supabase
+    .from('pins')
+    .insert([{
+      email,
+      title,
+      image_url: imageUrl,
+      source_url: sourceUrl,
+      description,
+      tags,
+      mood,
+      board_id: boardId,
+      created_at: new Date().toISOString()
+    }]);
+
+  if (error) return res.status(500).json({ success: false, error });
+  res.json({ success: true, data });
+});
+
+// ✅ Save a pinned item
+app.post('/api/pin-item', async (req, res) => {
+  const { email, title, imageUrl, sourceUrl, description, tags, mood, boardId } = req.body;
+
+  const { data, error } = await supabase
+    .from('pins')
+    .insert([{
+      email,
+      title,
+      image_url: imageUrl,
+      source_url: sourceUrl,
+      description,
+      tags,
+      mood,
+      board_id: boardId,
+      created_at: new Date().toISOString()
+    }]);
+
+  if (error) return res.status(500).json({ success: false, error });
+  res.json({ success: true, data });
+});
+
+// ✅ Get all pins (optionally filtered)
+app.get('/api/get-pins', async (req, res) => {
+  console.log("🔎 Incoming GET /api/get-pins request:", req.query);
+  const { email, boardId } = req.query;
+  let query = supabase.from('pins').select('*').order('created_at', { ascending: false });
+
+  if (email) query = query.eq('email', email);
+  if (boardId) query = query.eq('board_id', boardId);
+
+  const { data, error } = await query;
+  if (error) return res.status(500).json({ success: false, error });
+  res.json({ success: true, data });
+});
+
+app.post("/api/save-media-item", async (req, res) => {
+  const { email, url, reactions, caption, mood } = req.body;
+
+  const { data, error } = await supabase.from("media_uploads").insert([
+    {
+      email,
+      url,
+      reactions,
+      caption,
+      mood,
+      created_at: new Date().toISOString(),
+    },
+  ]);
+
+  if (error) return res.status(500).json({ success: false, error });
+  res.json({ success: true, data });
+});
+app.get("/api/test-connection", async (req, res) => {
+  try {
+    const { data, error } = await supabase.from("users").select("email").limit(1);
+    if (error) throw error;
+    res.json({ success: true, message: "Supabase connected", data });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 const PORT = process.env.PORT || 5055;
 server.listen(PORT, () => {
