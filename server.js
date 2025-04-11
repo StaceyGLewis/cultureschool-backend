@@ -117,6 +117,19 @@ app.get('/api/get-media-items', async (req, res) => {
   }
 });
 
+app.post("/api/delete-media-item", async (req, res) => {
+  const { url } = req.body;
+  if (!url) return res.status(400).json({ success: false, message: "Missing URL" });
+
+  try {
+    const { error } = await supabase.from("media_uploads").delete().eq("url", url);
+    if (error) throw error;
+    res.json({ success: true, message: "✅ Deleted" });
+  } catch (err) {
+    console.error("❌ Delete error:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 
 // 🔄 Get Frame Settings
