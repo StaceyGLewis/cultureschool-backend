@@ -19,7 +19,6 @@ app.use(cors());
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
 
-
 app.get("/", (req, res) => {
   res.send("✅ CultureSchool backend is running!");
 });
@@ -72,11 +71,12 @@ app.get('/api/get-user', async (req, res) => {
 // ✅ Save or update media uploads
 app.post("/api/save-media-item", async (req, res) => {
   try {
-    const { email, url, reactions, caption, mood } = req.body;
+    const { email, url, reactions, caption, mood, username } = req.body;
 
     const { data, error } = await supabase.from("media_uploads").upsert([
       {
         email,
+        username,
         url,
         reactions,
         caption,
@@ -87,25 +87,28 @@ app.post("/api/save-media-item", async (req, res) => {
 
     if (error) throw error;
     res.json({ success: true, data });
-
   } catch (err) {
     console.error("❌ Save media error:", err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
-// ✅ Get media uploads by email
+// ✅ Get media uploads by email (or all for public wall)
 app.get('/api/get-media-items', async (req, res) => {
-  const { email } = req.query;
-  if (!email) return res.status(400).json({ success: false, message: 'Missing email' });
+  const { email, publicWall } = req.query;
 
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('media_uploads')
       .select('*')
-      .eq('email', email)
       .order('created_at', { ascending: false });
 
+    // Only filter if NOT public
+    if (email && publicWall !== "true") {
+      query = query.eq('email', email);
+    }
+
+    const { data, error } = await query;
     if (error) throw error;
     res.json({ success: true, data });
   } catch (err) {
@@ -113,6 +116,8 @@ app.get('/api/get-media-items', async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+
+
 
 // 🔄 Get Frame Settings
 app.get("/api/get-frame-settings", async (req, res) => {
