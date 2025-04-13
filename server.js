@@ -185,6 +185,65 @@ app.post('/api/delete-all-circle-messages', async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+app.post("/api/save-moodboard", async (req, res) => {
+  const {
+    user_email,
+    title = "My Board",
+    description = "",
+    is_public = false,
+    cover_image = "",
+    tags = [],
+    theme = "default",
+  } = req.body;
+
+  const updated_at = new Date().toISOString();
+
+  try {
+    const { data, error } = await supabase
+      .from("user_moodboards")
+      .insert([
+        {
+          user_email,
+          title,
+          description,
+          is_public,
+          cover_image,
+          tags,
+          theme,
+          updated_at,
+        },
+      ]);
+
+    if (error) throw error;
+    res.json({ success: true, data });
+  } catch (err) {
+    console.error("❌ Failed to save moodboard:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+// 🧠 Get mood boards by user email
+app.get("/api/get-moodboards", async (req, res) => {
+  const { email } = req.query;
+
+  if (!email) {
+    return res.status(400).json({ success: false, message: "Missing email" });
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("user_moodboards")
+      .select("*")
+      .eq("user_email", email)
+      .order("updated_at", { ascending: false });
+
+    if (error) throw error;
+
+    res.json({ success: true, boards: data });
+  } catch (err) {
+    console.error("❌ Failed to fetch moodboards:", err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 // 🌐 WebSocket + Express listener
 const PORT = process.env.PORT || 5055;
