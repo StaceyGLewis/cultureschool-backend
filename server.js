@@ -289,6 +289,47 @@ app.post("/api/delete-moodboard", async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+app.get("/api/get-board-images", async (req, res) => {
+  const boardId = req.query.id;
+
+  if (!boardId) return res.status(400).json({ success: false, error: "Missing board ID" });
+
+  try {
+    const { data, error } = await supabase
+      .from("board_images")
+      .select("url, uploaded_at")
+      .eq("board_id", boardId)
+      .order("uploaded_at", { ascending: true });
+
+    if (error) throw error;
+
+    res.json({ success: true, images: data });
+  } catch (err) {
+    console.error("Fetch error:", err);
+    res.status(500).json({ success: false, error: "Could not fetch images" });
+  }
+});
+
+app.get("/api/get-board-images", async (req, res) => {
+  const boardId = req.query.id;
+
+  if (!boardId) return res.status(400).json({ success: false, error: "Missing board ID" });
+
+  try {
+    const { data, error } = await supabase
+      .from("board_images")
+      .select("url, uploaded_at")
+      .eq("board_id", boardId)
+      .order("uploaded_at", { ascending: true });
+
+    if (error) throw error;
+
+    res.json({ success: true, images: data });
+  } catch (err) {
+    console.error("Fetch error:", err);
+    res.status(500).json({ success: false, error: "Could not fetch images" });
+  }
+});
 
 // 🌐 WebSocket + Express listener
 const PORT = process.env.PORT || 5055;
