@@ -244,6 +244,51 @@ app.get("/api/get-moodboards", async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+app.post("/api/update-moodboard", async (req, res) => {
+  const { id, title, description, is_public, cover_image, tags, theme } = req.body;
+
+  if (!id) return res.status(400).json({ success: false, message: "Missing board ID" });
+
+  const updates = {
+    updated_at: new Date().toISOString()
+  };
+  if (title !== undefined) updates.title = title;
+  if (description !== undefined) updates.description = description;
+  if (is_public !== undefined) updates.is_public = is_public;
+  if (cover_image !== undefined) updates.cover_image = cover_image;
+  if (tags !== undefined) updates.tags = tags;
+  if (theme !== undefined) updates.theme = theme;
+
+  try {
+    const { error } = await supabase
+      .from("user_moodboards")
+      .update(updates)
+      .eq("id", id);
+
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (err) {
+    console.error("❌ Update board error:", err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+app.post("/api/delete-moodboard", async (req, res) => {
+  const { id } = req.body;
+  if (!id) return res.status(400).json({ success: false, message: "Missing board ID" });
+
+  try {
+    const { error } = await supabase
+      .from("user_moodboards")
+      .delete()
+      .eq("id", id);
+
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (err) {
+    console.error("❌ Delete board error:", err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 // 🌐 WebSocket + Express listener
 const PORT = process.env.PORT || 5055;
