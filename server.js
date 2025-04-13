@@ -289,24 +289,23 @@ app.post("/api/delete-moodboard", async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
-app.get("/api/get-board-images", async (req, res) => {
-  const boardId = req.query.id;
+app.post("/api/add-image-to-board", async (req, res) => {
+  const { boardId, url } = req.body;
 
-  if (!boardId) return res.status(400).json({ success: false, error: "Missing board ID" });
+  if (!boardId || !url) {
+    return res.status(400).json({ success: false, error: "Missing boardId or url" });
+  }
 
   try {
-    const { data, error } = await supabase
+    // Example: insert into Supabase or Airtable
+    const result = await supabase
       .from("board_images")
-      .select("url, uploaded_at")
-      .eq("board_id", boardId)
-      .order("uploaded_at", { ascending: true });
+      .insert([{ board_id: boardId, url }]);
 
-    if (error) throw error;
-
-    res.json({ success: true, images: data });
+    res.json({ success: true, imageId: result.data?.[0]?.id });
   } catch (err) {
-    console.error("Fetch error:", err);
-    res.status(500).json({ success: false, error: "Could not fetch images" });
+    console.error("Error saving board image", err);
+    res.status(500).json({ success: false, error: "Failed to save image" });
   }
 });
 
