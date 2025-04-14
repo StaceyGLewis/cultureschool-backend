@@ -283,7 +283,7 @@ app.post('/api/reorder-images', async (req, res) => {
       for (let i = 0; i < images.length; i++) {
         await supabase
           .from('board_images')
-          .update({ sort_order: i }) // ✅ Use correct column name
+          .update({ sort_order: i }) 
           .eq('id', images[i].id);
       }
   
@@ -342,7 +342,7 @@ app.get("/api/get-board-images", async (req, res) => {
       .from("board_images")
       .select("url, sort_order")
       .eq("board_id", boardId)
-      .order("sort_order", { ascending: true }) ✅
+      .order("sort_order", { ascending: true }) 
 
     if (error) throw error;
 
