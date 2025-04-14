@@ -272,6 +272,29 @@ app.post("/api/update-moodboard", async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+app.post('/api/reorder-images', async (req, res) => {
+  app.post('/api/reorder-images', async (req, res) => {
+    const { boardId, images } = req.body;
+    if (!boardId || !Array.isArray(images)) {
+      return res.status(400).json({ success: false, error: 'Invalid payload' });
+    }
+  
+    try {
+      for (let i = 0; i < images.length; i++) {
+        await supabase
+          .from('board_images')
+          .update({ sort_order: i }) // ✅ Use correct column name
+          .eq('id', images[i].id);
+      }
+  
+      res.json({ success: true });
+    } catch (err) {
+      console.error('❌ Reorder error:', err);
+      res.status(500).json({ success: false, error: 'Server error' });
+    }
+  });
+  
+
 app.post("/api/delete-moodboard", async (req, res) => {
   const { id } = req.body;
   if (!id) return res.status(400).json({ success: false, message: "Missing board ID" });
@@ -317,9 +340,9 @@ app.get("/api/get-board-images", async (req, res) => {
   try {
     const { data, error } = await supabase
       .from("board_images")
-      .select("url, uploaded_at")
+      .select("url, sort_order")
       .eq("board_id", boardId)
-      .order("uploaded_at", { ascending: true });
+      .order("sort_order", { ascending: true }) ✅
 
     if (error) throw error;
 
