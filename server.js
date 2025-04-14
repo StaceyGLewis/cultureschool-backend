@@ -23,7 +23,7 @@ app.get("/", (req, res) => {
   res.send("✅ CultureSchool backend is running!");
 });
 
-// 🧠 Save or Update user by email
+// Save or Update user by email
 app.post('/api/save-to-supabase', async (req, res) => {
   try {
     const data = req.body;
@@ -48,7 +48,7 @@ app.post('/api/save-to-supabase', async (req, res) => {
   }
 });
 
-// 🧠 Fetch user by email
+// Fetch user by email
 app.get('/api/get-user', async (req, res) => {
   const { email } = req.query;
   if (!email) return res.status(400).json({ success: false, message: 'Missing email' });
@@ -68,7 +68,7 @@ app.get('/api/get-user', async (req, res) => {
   }
 });
 
-// ✅ Save or update media uploads
+// Save or update media
 app.post("/api/save-media-item", async (req, res) => {
   try {
     const { email, url, reactions, caption, mood, username } = req.body;
@@ -93,7 +93,7 @@ app.post("/api/save-media-item", async (req, res) => {
   }
 });
 
-// ✅ Get media uploads by email (or all for public wall)
+// Get media
 app.get('/api/get-media-items', async (req, res) => {
   const { email, publicWall } = req.query;
 
@@ -131,7 +131,7 @@ app.post("/api/delete-media-item", async (req, res) => {
   }
 });
 
-// 🔄 Get Frame Settings
+// Frame Settings
 app.get("/api/get-frame-settings", async (req, res) => {
   try {
     const { data, error } = await supabase
@@ -147,7 +147,7 @@ app.get("/api/get-frame-settings", async (req, res) => {
   }
 });
 
-// ✅ Test Connection
+// Test
 app.get("/api/test-connection", async (req, res) => {
   try {
     const { data, error } = await supabase.from("users").select("email").limit(1);
@@ -158,7 +158,7 @@ app.get("/api/test-connection", async (req, res) => {
   }
 });
 
-// ✅ Get Supabase Keys (for debugging)
+// Debug Keys
 app.get('/api/supabase-keys', (req, res) => {
   res.json({
     url: process.env.SUPABASE_PROJECT_URL,
@@ -166,7 +166,7 @@ app.get('/api/supabase-keys', (req, res) => {
   });
 });
 
-// ✅ Clean Up Circle Messages
+// Clean Messages
 app.post('/api/delete-all-circle-messages', async (req, res) => {
   try {
     const { group_id } = req.body;
@@ -185,6 +185,8 @@ app.post('/api/delete-all-circle-messages', async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+
+// Save Moodboard
 app.post("/api/save-moodboard", async (req, res) => {
   const {
     user_email,
@@ -221,13 +223,11 @@ app.post("/api/save-moodboard", async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
-// 🧠 Get mood boards by user email
+
+// Get Moodboards
 app.get("/api/get-moodboards", async (req, res) => {
   const { email } = req.query;
-
-  if (!email) {
-    return res.status(400).json({ success: false, message: "Missing email" });
-  }
+  if (!email) return res.status(400).json({ success: false, message: "Missing email" });
 
   try {
     const { data, error } = await supabase
@@ -237,13 +237,14 @@ app.get("/api/get-moodboards", async (req, res) => {
       .order("updated_at", { ascending: false });
 
     if (error) throw error;
-
     res.json({ success: true, boards: data });
   } catch (err) {
-    console.error("❌ Failed to fetch moodboards:", err.message);
+    console.error("❌ Fetch moodboards error:", err.message);
     res.status(500).json({ success: false, error: err.message });
   }
 });
+
+// Update Moodboard
 app.post("/api/update-moodboard", async (req, res) => {
   const { id, title, description, is_public, cover_image, tags, theme } = req.body;
 
@@ -272,29 +273,30 @@ app.post("/api/update-moodboard", async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
-app.post('/api/reorder-images', async (req, res) => {
-  app.post('/api/reorder-images', async (req, res) => {
-    const { boardId, images } = req.body;
-    if (!boardId || !Array.isArray(images)) {
-      return res.status(400).json({ success: false, error: 'Invalid payload' });
-    }
-  
-    try {
-      for (let i = 0; i < images.length; i++) {
-        await supabase
-          .from('board_images')
-          .update({ sort_order: i }) 
-          .eq('id', images[i].id);
-      }
-  
-      res.json({ success: true });
-    } catch (err) {
-      console.error('❌ Reorder error:', err);
-      res.status(500).json({ success: false, error: 'Server error' });
-    }
-  });
-  
 
+// Reorder Images
+app.post('/api/reorder-images', async (req, res) => {
+  const { boardId, images } = req.body;
+  if (!boardId || !Array.isArray(images)) {
+    return res.status(400).json({ success: false, error: 'Invalid payload' });
+  }
+
+  try {
+    for (let i = 0; i < images.length; i++) {
+      await supabase
+        .from('board_images')
+        .update({ sort_order: i })
+        .eq('id', images[i].id);
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('❌ Reorder error:', err);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
+// Delete Moodboard
 app.post("/api/delete-moodboard", async (req, res) => {
   const { id } = req.body;
   if (!id) return res.status(400).json({ success: false, message: "Missing board ID" });
@@ -312,6 +314,8 @@ app.post("/api/delete-moodboard", async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+
+// Add Image to Moodboard
 app.post("/api/add-image-to-board", async (req, res) => {
   const { boardId, url } = req.body;
 
@@ -320,7 +324,6 @@ app.post("/api/add-image-to-board", async (req, res) => {
   }
 
   try {
-    // Example: insert into Supabase or Airtable
     const result = await supabase
       .from("board_images")
       .insert([{ board_id: boardId, url }]);
@@ -332,6 +335,7 @@ app.post("/api/add-image-to-board", async (req, res) => {
   }
 });
 
+// Get Images from Moodboard
 app.get("/api/get-board-images", async (req, res) => {
   const boardId = req.query.id;
 
@@ -340,9 +344,9 @@ app.get("/api/get-board-images", async (req, res) => {
   try {
     const { data, error } = await supabase
       .from("board_images")
-      .select("url, sort_order")
+      .select("url, sort_order, id")
       .eq("board_id", boardId)
-      .order("sort_order", { ascending: true }) 
+      .order("sort_order", { ascending: true });
 
     if (error) throw error;
 
@@ -353,7 +357,7 @@ app.get("/api/get-board-images", async (req, res) => {
   }
 });
 
-// 🌐 WebSocket + Express listener
+// WebSocket + Express listener
 const PORT = process.env.PORT || 5055;
 server.listen(PORT, () => {
   console.log(`🚀 Server & WebSocket live on port ${PORT}`);
