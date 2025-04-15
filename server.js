@@ -100,7 +100,7 @@ app.get("/api/get-media-items", async (req, res) => {
     const { data, error } = await supabase
       .from("media_uploads") // 👈 FIXED: match the table used in upsert
       .select("*")
-      .eq("publicWall", true)
+      .eq("publicwall", true)
       .order("created_at", { ascending: false }) // 👈 match your field name
       .limit(50);
 
