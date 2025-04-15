@@ -93,29 +93,26 @@ app.post("/api/save-media-item", async (req, res) => {
   }
 });
 
+
 // Get media
-app.get('/api/get-media-items', async (req, res) => {
-  const { email, publicWall } = req.query;
-
+app.get("/api/get-media-items", async (req, res) => {
   try {
-    let query = supabase
-      .from('media_uploads')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(100);
+    const { data, error } = await supabase
+      .from("media_uploads") // 👈 FIXED: match the table used in upsert
+      .select("*")
+      .eq("publicWall", true)
+      .order("created_at", { ascending: false }) // 👈 match your field name
+      .limit(50);
 
-    if (email && publicWall !== "true") {
-      query = query.eq('email', email);
-    }
-
-    const { data, error } = await query;
     if (error) throw error;
+
     res.json({ success: true, data });
   } catch (err) {
-    console.error('❌ Get media error:', err);
+    console.error("❌ Get media error:", err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
+
 
 app.post("/api/delete-media-item", async (req, res) => {
   const { url } = req.body;
