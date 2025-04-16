@@ -69,9 +69,9 @@ app.get('/api/get-user', async (req, res) => {
 });
 
 // Save or update media
-app.post("/api/save-media-item", async (req, res) => {
+aapp.post("/api/save-media-item", async (req, res) => {
   try {
-    const { email, url, reactions, caption, mood, username } = req.body;
+    const { email, url, reactions, caption, username, tags = [] } = req.body;
 
     const { data, error } = await supabase.from("media_uploads").upsert([
       {
@@ -80,7 +80,8 @@ app.post("/api/save-media-item", async (req, res) => {
         url,
         reactions,
         caption,
-        mood,
+        tags, // ✅ new field
+        publicwall: true, // ✅ ensures visibility
         created_at: new Date().toISOString(),
       },
     ]);
