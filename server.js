@@ -69,7 +69,7 @@ app.get('/api/get-user', async (req, res) => {
 });
 
 // Save or update media
-aapp.post("/api/save-media-item", async (req, res) => {
+app.post("/api/save-media-item", async (req, res) => {
   try {
     const { email, url, reactions, caption, username, tags = [] } = req.body;
 
