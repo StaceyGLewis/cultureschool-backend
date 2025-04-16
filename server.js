@@ -187,7 +187,7 @@ app.post('/api/delete-all-circle-messages', async (req, res) => {
 // Save Moodboard
 app.post("/api/save-moodboard", async (req, res) => {
   const {
-    user_email,
+    email,
     title = "My Board",
     description = "",
     is_public = false,
@@ -195,6 +195,7 @@ app.post("/api/save-moodboard", async (req, res) => {
     tags = [],
     theme = "default",
   } = req.body;
+  
 
   const updated_at = new Date().toISOString();
 
@@ -203,7 +204,7 @@ app.post("/api/save-moodboard", async (req, res) => {
       .from("user_moodboards")
       .insert([
         {
-          user_email,
+          user_email: email, // ✅ use alias to match DB column
           title,
           description,
           is_public,
@@ -213,6 +214,7 @@ app.post("/api/save-moodboard", async (req, res) => {
           updated_at,
         },
       ]);
+      
 
     if (error) throw error;
     res.json({ success: true, data });
