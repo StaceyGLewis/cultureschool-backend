@@ -185,9 +185,12 @@ app.post('/api/delete-all-circle-messages', async (req, res) => {
 });
 
 // Save Moodboard
+// Save Moodboard
 app.post("/api/save-moodboard", async (req, res) => {
   const {
-    email,
+    email,                         // required for sync
+    created_by = email,            // who made the board (same as email)
+    username = "Anonymous",        // display name on the board
     title = "My Board",
     description = "",
     is_public = false,
@@ -195,26 +198,28 @@ app.post("/api/save-moodboard", async (req, res) => {
     tags = [],
     theme = "default",
   } = req.body;
-  
 
-  const updated_at = new Date().toISOString();
+  const created_at = new Date().toISOString();
+  const updated_at = created_at;
 
   try {
     const { data, error } = await supabase
       .from("user_moodboards")
       .insert([
         {
-          user_email: email, // ✅ use alias to match DB column
+          user_email: email,
+          created_by,
+          username,
           title,
           description,
           is_public,
           cover_image,
           tags,
           theme,
+          created_at,
           updated_at,
         },
       ]);
-      
 
     if (error) throw error;
     res.json({ success: true, data });
