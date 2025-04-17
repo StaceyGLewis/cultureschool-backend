@@ -116,17 +116,20 @@ app.get("/api/get-media-items", async (req, res) => {
 
 
 app.post("/api/delete-media-item", async (req, res) => {
-  const { url } = req.body;
-  if (!url) return res.status(400).json({ success: false, message: "Missing URL" });
+  const { id } = req.body;
+  if (!id) return res.status(400).json({ success: false, error: "Missing ID" });
 
-  try {
-    const { error } = await supabase.from("media_uploads").delete().eq("url", url);
-    if (error) throw error;
-    res.json({ success: true, message: "✅ Deleted" });
-  } catch (err) {
-    console.error("❌ Delete error:", err);
-    res.status(500).json({ success: false, error: err.message });
+  const { data, error } = await supabase
+    .from("media_uploads") // 👈 use correct table
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    console.error("❌ Supabase delete error:", error);
+    return res.status(500).json({ success: false, error: error.message });
   }
+
+  res.json({ success: true, data });
 });
 
 // Frame Settings
