@@ -113,6 +113,36 @@ app.get("/api/get-media-items", async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+const axios = require("axios");
+const cheerio = require("cheerio");
+
+// RSS-style image preview parser
+app.post("/api/rss-preview", async (req, res) => {
+  const { url } = req.body;
+  if (!url) return res.status(400).json({ success: false, error: "Missing URL" });
+
+  try {
+    const { data } = await axios.get(url, {
+      headers: { 'User-Agent': 'CultureSchoolBot/1.0' }
+    });
+    const $ = cheerio.load(data);
+    const images = [];
+
+    $("img").each((i, el) => {
+      const src = $(el).attr("src");
+      if (src && src.startsWith("http")) {
+        images.push(src);
+      }
+    });
+
+    if (!images.length) return res.json({ success: false, images: [] });
+
+    res.json({ success: true, images: [...new Set(images)].slice(0, 12) }); // Max 12
+  } catch (err) {
+    console.error("❌ RSS Preview error:", err.message);
+    res.status(500).json({ success: false, error: "Feed parsing failed" });
+  }
+});
 
 
 app.post("/api/delete-media-item", async (req, res) => {
@@ -321,6 +351,29 @@ app.post('/api/reorder-images', async (req, res) => {
   } catch (err) {
     console.error('❌ Reorder error:', err);
     res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+// Delete Image from Moodboard
+app.post("/api/delete-board-image", async (req, res) => {
+  const { imageId, boardId } = req.body;
+
+  if (!imageId || !boardId) {
+    return res.status(400).json({ success: false, error: "Missing imageId or boardId" });
+  }
+
+  try {
+    const { error } = await supabase
+      .from("board_images")
+      .delete()
+      .eq("id", imageId)
+      .eq("board_id", boardId);
+
+    if (error) throw error;
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("❌ Delete board image error:", err.message);
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
