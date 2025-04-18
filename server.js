@@ -188,12 +188,11 @@ app.post('/api/delete-all-circle-messages', async (req, res) => {
 });
 
 // Save Moodboard
-// Save Moodboard
 app.post("/api/save-moodboard", async (req, res) => {
   const {
-    email,                         // required for sync
-    created_by = email,            // who made the board (same as email)
-    username = "Anonymous",        // display name on the board
+    email,
+    created_by = email,
+    username = "Anonymous",
     title = "My Board",
     description = "",
     is_public = false,
@@ -225,7 +224,8 @@ app.post("/api/save-moodboard", async (req, res) => {
       ]);
 
     if (error) throw error;
-    res.json({ success: true, data });
+
+    res.json({ success: true, board: data[0] }); // ✅ Return as 'board' for frontend match
   } catch (err) {
     console.error("❌ Failed to save moodboard:", err);
     res.status(500).json({ success: false, error: err.message });
@@ -251,6 +251,26 @@ app.get("/api/get-moodboards", async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+// Get Single Moodboard by ID
+app.get("/api/get-moodboard", async (req, res) => {
+  const { id } = req.query;
+  if (!id) return res.status(400).json({ success: false, message: "Missing board ID" });
+
+  try {
+    const { data, error } = await supabase
+      .from("user_moodboards")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (error) throw error;
+    res.json({ success: true, board: data });
+  } catch (err) {
+    console.error("❌ Fetch single moodboard error:", err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 
 // Update Moodboard
 app.post("/api/update-moodboard", async (req, res) => {
@@ -364,6 +384,7 @@ app.get("/api/get-board-images", async (req, res) => {
     res.status(500).json({ success: false, error: "Could not fetch images" });
   }
 });
+
 
 // WebSocket + Express listener
 const PORT = process.env.PORT || 5055;
