@@ -304,7 +304,7 @@ app.get("/api/get-moodboard", async (req, res) => {
 
 // Update Moodboard
 app.post("/api/update-moodboard", async (req, res) => {
-  const { id, title, description, is_public, cover_image, tags, theme } = req.body;
+  const { id, title, description, is_public, cover_image, tags, theme, link, preview_image } = req.body;
 
   if (!id) return res.status(400).json({ success: false, message: "Missing board ID" });
 
@@ -317,6 +317,9 @@ app.post("/api/update-moodboard", async (req, res) => {
   if (cover_image !== undefined) updates.cover_image = cover_image;
   if (tags !== undefined) updates.tags = tags;
   if (theme !== undefined) updates.theme = theme;
+  if (link !== undefined) updates.link = link; // ✅ Add this line
+  if (preview_image !== undefined) updates.preview_image = preview_image;
+
 
   try {
     const { error } = await supabase
