@@ -437,6 +437,42 @@ app.get("/api/get-board-images", async (req, res) => {
     res.status(500).json({ success: false, error: "Could not fetch images" });
   }
 });
+app.post("/api/save-theme", async (req, res) => {
+  const { email, profileTheme, modalTheme } = req.body;
+
+  if (!email) return res.status(400).json({ success: false, error: "Missing email" });
+
+  try {
+    const { data, error } = await supabase
+      .from("settings")
+      .upsert([{ email, profileTheme, modalTheme }], { onConflict: ["email"] });
+
+    if (error) throw error;
+
+    res.json({ success: true, data });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+app.get("/api/get-theme", async (req, res) => {
+  const { email } = req.query;
+
+  if (!email) return res.status(400).json({ error: "Missing email" });
+
+  try {
+    const { data, error } = await supabase
+      .from("settings")
+      .select("profileTheme, modalTheme")
+      .eq("email", email)
+      .single();
+
+    if (error) throw error;
+
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 
 // WebSocket + Express listener
