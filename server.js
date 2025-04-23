@@ -401,7 +401,12 @@ app.post("/api/delete-moodboard", async (req, res) => {
 
 // Add Image to Moodboard
 app.post("/api/add-image-to-board", async (req, res) => {
-  const { boardId, url } = req.body;
+  const { boardId, url, media_type = "image" } = req.body;
+
+  await supabase
+  .from("board_images")
+  .insert([{ board_id: boardId, url, media_type }]);
+  
 
   if (!boardId || !url) {
     return res.status(400).json({ success: false, error: "Missing boardId or url" });
