@@ -524,7 +524,7 @@ app.post("/api/save-cocoboard", async (req, res) => {
       return res.status(500).json({ success: false, message: error.message });
     }
 
-    res.json({ success: true, board: data });
+    return res.status(200).json({ success: true, board: data });
   } catch (err) {
     console.error("Unhandled error in save-cocoboard:", err);
     res.status(500).json({ success: false, message: "Internal server error." });
