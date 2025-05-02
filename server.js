@@ -531,24 +531,28 @@ app.post("/api/save-cocoboard", async (req, res) => {
   }
 });
 app.get("/api/get-cocoboard", async (req, res) => {
-  const { boardId } = req.query;
+  try {
+    const boardId = req.query.boardId;
+    if (!boardId) {
+      return res.status(400).json({ success: false, message: "Board ID is required." });
+    }
 
-  if (!boardId) {
-    return res.status(400).json({ success: false, message: "Missing board ID" });
+    const { data, error } = await supabase
+      .from("cocoboards")
+      .select("*, cocoboard_media(*)")
+      .eq("id", boardId)
+      .single();
+
+    if (error) {
+      console.error("❌ Error fetching board:", error.message);
+      return res.status(500).json({ success: false, message: error.message });
+    }
+
+    return res.status(200).json({ success: true, board: data });
+  } catch (err) {
+    console.error("❌ Unhandled error:", err);
+    return res.status(500).json({ success: false, message: "Internal server error." });
   }
-
-  const { data: board, error } = await supabase
-    .from("cocoboards")
-    .select("*, cocoboard_media(*)")
-    .eq("id", boardId)
-    .single();
-
-  if (error) {
-    console.error("Supabase fetch error:", error);
-    return res.status(500).json({ success: false, message: error.message });
-  }
-
-  return res.status(200).json({ success: true, board }); // ✅ Required!
 });
 
 
