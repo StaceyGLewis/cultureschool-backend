@@ -566,9 +566,7 @@ app.get("/api/get-cocoboard", async (req, res) => {
       media_type: item.media_type
     }));
 
-    return res.status(200).json({
-      success: true,
-      board: {
+    return res.status(200).json({ success: true, board: data });
         id: data.id,
         title: data.title,
         description: data.description,
