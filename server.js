@@ -530,30 +530,58 @@ app.post("/api/save-cocoboard", async (req, res) => {
     res.status(500).json({ success: false, message: "Internal server error." });
   }
 });
-app.get("/api/get-cocoboard", async (req, res) => {
+// ✅ BACKEND ROUTE — Express
+app.get("/api/get-moodboard", async (req, res) => {
+  const { id, slug } = req.query;
+
   try {
-    const boardId = req.query.boardId;
-    if (!boardId) {
-      return res.status(400).json({ success: false, message: "Board ID is required." });
+    let boardQuery;
+    if (id) {
+      boardQuery = supabase
+        .from("cocoboards")
+        .select("*, cocoboard_media(*)")
+        .eq("id", id)
+        .single();
+    } else if (slug) {
+      boardQuery = supabase
+        .from("cocoboards")
+        .select("*, cocoboard_media(*)")
+        .eq("title_slug", slug)
+        .single();
+    } else {
+      return res.status(400).json({ success: false, error: "Missing id or slug" });
     }
 
-    const { data, error } = await supabase
-      .from("cocoboards")
-      .select("*, cocoboard_media(*)")
-      .eq("id", boardId)
-      .single();
+    const { data, error } = await boardQuery;
 
-    if (error) {
-      console.error("❌ Error fetching board:", error.message);
-      return res.status(500).json({ success: false, message: error.message });
+    if (error || !data) {
+      return res.status(404).json({ success: false, error: "Board not found" });
     }
 
-    return res.status(200).json({ success: true, board: data });
+    // Transform media into an images array
+    const images = (data.cocoboard_media || []).map(item => ({
+      url: item.url,
+      caption: item.caption,
+      buy_link: item.buy_link,
+      media_type: item.media_type
+    }));
+
+    return res.status(200).json({
+      success: true,
+      board: {
+        id: data.id,
+        title: data.title,
+        description: data.description,
+        cover_image: data.cover_image,
+        images
+      }
+    });
   } catch (err) {
-    console.error("❌ Unhandled error:", err);
-    return res.status(500).json({ success: false, message: "Internal server error." });
+    console.error("❌ Backend error:", err);
+    return res.status(500).json({ success: false, error: err.message });
   }
 });
+
 
 
 // WebSocket + Express listener
