@@ -531,7 +531,7 @@ app.post("/api/save-cocoboard", async (req, res) => {
   }
 });
 // ✅ BACKEND ROUTE — Express
-app.get("/api/get-moodboard", async (req, res) => {
+app.get("/api/get-cocoboard", async (req, res) => {
   const { id, slug } = req.query;
 
   try {
