@@ -479,6 +479,87 @@ app.get("/api/get-theme", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+app.post("/api/save-cocoboard", async (req, res) => {
+  try {
+    const {
+      email,
+      title = "Untitled CoCo Board",
+      description = "",
+      created_by = email,
+      username = "Anonymous",
+      is_public = false,
+      cover_image = "",
+      tags = [],
+      theme = "default",
+    } = req.body;
+
+    const created_at = new Date().toISOString();
+
+    if (!email) {
+      return res.status(400).json({ success: false, message: "Email is required." });
+    }
+
+    const { data, error } = await supabase
+      .from("cocoboards")
+      .insert([
+        {
+          email,
+          title,
+          description,
+          created_by,
+          username,
+          is_public,
+          cover_image,
+          tags,
+          theme,
+          created_at,
+          updated_at: created_at,
+        }
+      ])
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Supabase insert error:", error);
+      return res.status(500).json({ success: false, message: error.message });
+    }
+
+    res.json({ success: true, board: data });
+  } catch (err) {
+    console.error("Unhandled error in save-cocoboard:", err);
+    res.status(500).json({ success: false, message: "Internal server error." });
+  }
+});
+app.get("/api/get-cocoboard", async (req, res) => {
+  const { id } = req.query;
+  if (!id) return res.status(400).json({ success: false, message: "Missing board ID." });
+
+  try {
+    const { data: board, error: boardError } = await supabase
+      .from("cocoboards")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (boardError) throw boardError;
+
+    const { data: media, error: mediaError } = await supabase
+      .from("cocoboard_media")
+      .select("*")
+      .eq("board_id", id);
+
+    if (mediaError) throw mediaError;
+
+    res.json({
+      success: true,
+      board,
+      media,
+    });
+  } catch (err) {
+    console.error("❌ Failed to fetch board:", err);
+    res.status(500).json({ success: false, message: "Failed to retrieve board." });
+  }
+});
 
 
 // WebSocket + Express listener
