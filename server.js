@@ -401,46 +401,25 @@ app.post("/api/delete-moodboard", async (req, res) => {
 
 // Add Image to Moodboard
 app.post("/api/add-image-to-board", async (req, res) => {
-  const { boardId, url, media_type = "image" } = req.body;
-
-  await supabase
-  .from("board_images")
-  .insert([{ board_id: boardId, url, media_type }]);
-  
+  const { boardId, url, media_type = "image", caption = "", buy_link = "" } = req.body;
 
   if (!boardId || !url) {
     return res.status(400).json({ success: false, error: "Missing boardId or url" });
   }
 
   try {
-    // Insert image
     const result = await supabase
       .from("board_images")
-      .insert([{ board_id: boardId, url }])
+      .insert([{ board_id: boardId, url, media_type, caption, buy_link }])
       .select();
 
-    const imageId = result.data?.[0]?.id;
-
-    // Check if moodboard has a cover image yet
-    const { data: board, error: boardError } = await supabase
-      .from("user_moodboards")
-      .select("cover_image")
-      .eq("id", boardId)
-      .single();
-
-    if (!board.cover_image) {
-      await supabase
-        .from("user_moodboards")
-        .update({ cover_image: url, updated_at: new Date().toISOString() })
-        .eq("id", boardId);
-    }
-
-    res.json({ success: true, imageId });
+    res.json({ success: true, imageId: result.data?.[0]?.id });
   } catch (err) {
     console.error("Error saving board image", err);
     res.status(500).json({ success: false, error: "Failed to save image" });
   }
 });
+
 
 
 // Get Images from Moodboard
