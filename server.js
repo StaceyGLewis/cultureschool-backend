@@ -401,25 +401,35 @@ app.post("/api/delete-moodboard", async (req, res) => {
 
 // Add Image to Moodboard
 app.post("/api/add-image-to-board", async (req, res) => {
-  const { boardId, url, media_type = "image", caption = "", buy_link = "" } = req.body;
+  const { boardId, url, caption = "", buy_link = "", media_type = "image" } = req.body;
 
   if (!boardId || !url) {
     return res.status(400).json({ success: false, error: "Missing boardId or url" });
   }
 
   try {
-    const result = await supabase
-      .from("board_images")
-      .insert([{ board_id: boardId, url, media_type, caption, buy_link }])
-      .select();
+    const { data, error } = await supabase
+      .from("cocoboard_media")
+      .insert([
+        {
+          board_id: boardId,
+          url,
+          caption,
+          buy_link,
+          media_type
+        }
+      ])
+      .select()
+      .single();
 
-    res.json({ success: true, imageId: result.data?.[0]?.id });
+    if (error) throw error;
+
+    res.status(200).json({ success: true, media: data });
   } catch (err) {
-    console.error("Error saving board image", err);
-    res.status(500).json({ success: false, error: "Failed to save image" });
+    console.error("❌ Failed to add image to board:", err.message);
+    res.status(500).json({ success: false, error: err.message });
   }
 });
-
 
 
 // Get Images from Moodboard
@@ -479,114 +489,83 @@ app.get("/api/get-theme", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+// ✅ Save CoCoBoard
 app.post("/api/save-cocoboard", async (req, res) => {
+  const {
+    email,
+    created_by = email,
+    username = "Anonymous",
+    title = "My Board",
+    description = "",
+    is_public = false,
+    cover_image = "",
+    tags = [],
+    theme = "default",
+  } = req.body;
+
+  const created_at = new Date().toISOString();
+  const updated_at = created_at;
+
+  const title_slug = title.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^\w-]/g, "");
+
   try {
-    const {
-      email,
-      title = "Untitled CoCo Board",
-      description = "",
-      created_by = email,
-      username = "Anonymous",
-      is_public = false,
-      cover_image = "",
-      tags = [],
-      theme = "default"
-    } = req.body;
-
-    const title_slug = title.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^\w-]/g, "");
-
-    // Optional: Check for existing board with same slug + creator
-    const { data: existing, error: existingError } = await supabase
+    const { data, error } = await supabase
       .from("cocoboards")
-      .select("id")
-      .eq("title_slug", title_slug)
-      .eq("created_by", created_by)
-      .single();
-
-    let boardId;
-
-    if (existing && existing.id) {
-      boardId = existing.id;
-    } else {
-      // Insert new board
-      const { data: inserted, error: insertError } = await supabase
-        .from("cocoboards")
-        .insert([{
+      .insert([
+        {
           email,
+          created_by,
+          username,
           title,
           title_slug,
           description,
-          created_by,
-          username,
           is_public,
           cover_image,
           tags,
-          theme
-        }])
-        .select()
-        .single();
+          theme,
+          created_at,
+          updated_at,
+        },
+      ])
+      .select()
+      .single(); // ✅ returns a single board
 
-      if (insertError || !inserted) {
-        return res.status(500).json({ success: false, error: "Failed to save board" });
-      }
+    if (error || !data) throw error;
 
-      boardId = inserted.id;
-    }
-
-    // Re-fetch full board + media
-    const { data: savedBoard, error: fetchError } = await supabase
-      .from("cocoboards")
-      .select("*, cocoboard_media(*)")
-      .eq("id", boardId)
-      .single();
-
-    if (fetchError || !savedBoard) {
-      return res.status(500).json({ success: false, error: "Fetch after save failed" });
-    }
-
-    const images = (savedBoard.cocoboard_media || []).map(item => ({
-      url: item.url,
-      caption: item.caption,
-      buy_link: item.buy_link,
-      media_type: item.media_type
-    }));
-
-    return res.status(200).json({
+    res.json({
       success: true,
       board: {
-        id: savedBoard.id,
-        title: savedBoard.title,
-        description: savedBoard.description,
-        cover_image: savedBoard.cover_image,
-        images
+        id: data.id,
+        title: data.title,
+        description: data.description,
+        cover_image: data.cover_image,
+        images: [] // Media may be added separately
       }
     });
-
   } catch (err) {
-    console.error("❌ POST /api/save-cocoboard error:", err);
-    return res.status(500).json({ success: false, error: err.message });
+    console.error("❌ Failed to save cocoboard:", err);
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
 
+
 // ✅ BACKEND ROUTE — Express
+// ✅ Get Single CoCoBoard by ID or Slug
 app.get("/api/get-cocoboard", async (req, res) => {
   const { id, slug } = req.query;
+  if (!id && !slug) {
+    return res.status(400).json({ success: false, message: "Missing board ID or slug" });
+  }
 
   try {
-    const boardQuery = supabase
+    const { data, error } = await supabase
       .from("cocoboards")
-      .select("*, cocoboard_media(*)");
+      .select("*, cocoboard_media(*)")
+      .eq(id ? "id" : "title_slug", id || slug)
+      .single();
 
-    const { data, error } = await (
-      id
-        ? boardQuery.eq("id", id).single()
-        : boardQuery.eq("title_slug", slug).single()
-    );
-
-    if (error || !data) {
-      return res.status(404).json({ success: false, error: "Board not found" });
-    }
+    if (error || !data) throw error;
 
     const images = (data.cocoboard_media || []).map(item => ({
       url: item.url,
@@ -595,7 +574,7 @@ app.get("/api/get-cocoboard", async (req, res) => {
       media_type: item.media_type
     }));
 
-    return res.status(200).json({
+    res.json({
       success: true,
       board: {
         id: data.id,
@@ -606,8 +585,26 @@ app.get("/api/get-cocoboard", async (req, res) => {
       }
     });
   } catch (err) {
-    console.error("❌ GET /api/get-cocoboard error:", err);
-    return res.status(500).json({ success: false, error: err.message });
+    console.error("❌ Fetch cocoboard error:", err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+app.get("/api/get-cocoboards", async (req, res) => {
+  const { email } = req.query;
+  if (!email) return res.status(400).json({ success: false, message: "Missing email" });
+
+  try {
+    const { data, error } = await supabase
+      .from("cocoboards")
+      .select("*")
+      .eq("email", email)
+      .order("updated_at", { ascending: false });
+
+    if (error) throw error;
+    res.json({ success: true, boards: data });
+  } catch (err) {
+    console.error("❌ Fetch cocoboards error:", err.message);
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
