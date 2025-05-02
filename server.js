@@ -531,34 +531,24 @@ app.post("/api/save-cocoboard", async (req, res) => {
   }
 });
 app.get("/api/get-cocoboard", async (req, res) => {
-  const { id } = req.query;
-  if (!id) return res.status(400).json({ success: false, message: "Missing board ID." });
+  const { boardId } = req.query;
 
-  try {
-    const { data: board, error: boardError } = await supabase
-      .from("cocoboards")
-      .select("*")
-      .eq("id", id)
-      .single();
-
-    if (boardError) throw boardError;
-
-    const { data: media, error: mediaError } = await supabase
-      .from("cocoboard_media")
-      .select("*")
-      .eq("board_id", id);
-
-    if (mediaError) throw mediaError;
-
-    res.json({
-      success: true,
-      board,
-      media,
-    });
-  } catch (err) {
-    console.error("❌ Failed to fetch board:", err);
-    res.status(500).json({ success: false, message: "Failed to retrieve board." });
+  if (!boardId) {
+    return res.status(400).json({ success: false, message: "Missing board ID" });
   }
+
+  const { data: board, error } = await supabase
+    .from("cocoboards")
+    .select("*, cocoboard_media(*)")
+    .eq("id", boardId)
+    .single();
+
+  if (error) {
+    console.error("Supabase fetch error:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+
+  return res.status(200).json({ success: true, board }); // ✅ Required!
 });
 
 
