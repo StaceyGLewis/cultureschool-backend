@@ -547,6 +547,23 @@ app.post("/api/save-cocoboard", async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+// ✅ Save CoCoBoard Media
+app.post("/api/save-cocoboard-media", async (req, res) => {
+  try {
+    const { board_id, url, caption = "", type = "image", buy_link = null } = req.body;
+
+    const { data, error } = await supabase
+      .from("cocoboard_media")
+      .insert([{ board_id, url, caption, media_type: type, buy_link }]);
+
+    if (error) throw error;
+
+    res.status(200).json({ success: true, media: data[0] });
+  } catch (err) {
+    console.error("❌ Error saving media:", err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 
 
