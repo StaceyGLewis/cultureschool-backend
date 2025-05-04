@@ -503,32 +503,31 @@ app.post("/api/save-cocoboard", async (req, res) => {
     theme = "default",
   } = req.body;
 
-  const created_at = new Date().toISOString();
-  const updated_at = created_at;
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+
 
   const title_slug = title.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^\w-]/g, "");
 
   try {
     const { data, error } = await supabase
-      .from("cocoboards")
-      .insert([
-        {
-          email,
-          created_by,
-          username,
-          title,
-          title_slug,
-          description,
-          is_public,
-          cover_image,
-          tags,
-          theme,
-          created_at,
-          updated_at,
-        },
-      ])
-      .select()
-      .single(); // ✅ returns a single board
+  .from("cocoboards")
+  .insert([{
+    email,
+    created_by,
+    username,
+    title,
+    title_slug,
+    description,
+    is_public,
+    cover_image,
+    tags: Array.isArray(tags) ? tags : [],
+    theme,
+    created_at,
+    updated_at
+  }])
+  .select()
+  .single(); // ✅ returns a single board
 
     if (error || !data) throw error;
 
