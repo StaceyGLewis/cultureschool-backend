@@ -622,7 +622,35 @@ app.get("/api/cocoboard-gallery", async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+// POST route to save OG content to Supabase
+app.post("/api/save-og-content", async (req, res) => {
+  const { title, description, image, url, publisher = "Unknown", email = null } = req.body;
 
+  if (!title || !url || !image) {
+    return res.status(400).json({ success: false, message: "Missing required OG fields." });
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("media_uploads")
+      .insert([{
+        title,
+        caption: description,
+        image_url: image,
+        external_url: url,
+        publisher,
+        publicwall: false, // ✅ Set private by default
+        email // Optional: associate with user
+      }]);
+
+    if (error) throw error;
+
+    res.status(200).json({ success: true, data });
+  } catch (err) {
+    console.error("❌ Error saving OG content:", err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 
 // WebSocket + Express listener
