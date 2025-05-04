@@ -606,21 +606,19 @@ app.get("/api/get-cocoboard", async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
-app.get("/api/get-cocoboards", async (req, res) => {
-  const { email } = req.query;
-  if (!email) return res.status(400).json({ success: false, message: "Missing email" });
-
+app.get("/api/cocoboard-gallery", async (req, res) => {
   try {
     const { data, error } = await supabase
       .from("cocoboards")
-      .select("*")
-      .eq("email", email)
+      .select("id, title, cover_image, title_slug")
+      .eq("is_public", true)
       .order("updated_at", { ascending: false });
 
     if (error) throw error;
+
     res.json({ success: true, boards: data });
   } catch (err) {
-    console.error("❌ Fetch cocoboards error:", err.message);
+    console.error("❌ Fetch gallery error:", err.message);
     res.status(500).json({ success: false, error: err.message });
   }
 });
