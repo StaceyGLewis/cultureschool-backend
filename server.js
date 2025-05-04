@@ -535,12 +535,14 @@ app.post("/api/save-cocoboard", async (req, res) => {
     res.status(200).json({
       success: true,
       board: {
-        id: inserted.id, // 👈 use the actual inserted board's ID
-        title: inserted.title,
-        title_slug: inserted.title_slug, // optional
-        email: inserted.email
+        id: data.id,
+        title: data.title,
+        description: data.description,
+        cover_image: data.cover_image,
+        images: [] // just send an empty list for now
       }
     });
+    
     
   } catch (err) {
     console.error("❌ Failed to save cocoboard:", err);
