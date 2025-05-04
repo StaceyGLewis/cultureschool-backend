@@ -503,9 +503,8 @@ app.post("/api/save-cocoboard", async (req, res) => {
     theme = "default",
   } = req.body;
 
-  created_at: new Date().toISOString(),
-  updated_at: new Date().toISOString(),
-
+  const created_at = new Date().toISOString();
+  const updated_at = created_at;
 
   const title_slug = title.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^\w-]/g, "");
 
