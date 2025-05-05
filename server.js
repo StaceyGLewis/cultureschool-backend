@@ -653,7 +653,6 @@ app.post("/api/save-og-content", async (req, res) => {
 });
 // ✅ Upload Media to Supabase Storage
 
-const fs = require("fs");
 const Busboy = require("busboy");
 
 app.post("/api/upload-media", (req, res) => {
@@ -665,35 +664,44 @@ app.post("/api/upload-media", (req, res) => {
 
   busboy.on("file", (fieldname, file, filename, encoding, mimetype) => {
     file.on("data", (data) => fileBuffer.push(data));
+
     file.on("end", async () => {
-      const finalBuffer = Buffer.concat(fileBuffer);
+      try {
+        const finalBuffer = Buffer.concat(fileBuffer);
 
-      const { data, error } = await supabase.storage
-        .from("public-uploads")
-        .upload(path, finalBuffer, {
-          contentType: mimetype,
-          upsert: true
-        });
+        const { data, error } = await supabase.storage
+          .from("public-uploads")
+          .upload(path, finalBuffer, {
+            contentType: mimetype,
+            upsert: true
+          });
 
-      if (error) {
-        console.error("❌ Upload error:", error.message);
-        return res.status(500).json({ success: false, error: error.message });
+        if (error) {
+          console.error("❌ Upload error:", error.message);
+          return res.status(500).json({ success: false, error: error.message });
+        }
+
+        const { publicUrl } = supabase.storage
+          .from("public-uploads")
+          .getPublicUrl(path);
+
+        return res.status(200).json({ success: true, publicUrl });
+      } catch (err) {
+        console.error("❌ Unexpected upload error:", err);
+        return res.status(500).json({ success: false, error: err.message });
       }
-
-      const { publicUrl } = supabase.storage
-        .from("public-uploads")
-        .getPublicUrl(path);
-
-      return res.json({ success: true, publicUrl });
     });
+  });
+
+  busboy.on("error", (err) => {
+    console.error("❌ Busboy error:", err);
+    res.status(500).json({ success: false, error: "Busboy processing failed" });
   });
 
   req.pipe(busboy);
 });
 
 
-  req.pipe(bb);
-});
 
 
 
