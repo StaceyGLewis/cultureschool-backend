@@ -651,6 +651,38 @@ app.post("/api/save-og-content", async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+// ✅ Upload Media to Supabase Storage
+const multer = require("multer");
+const upload = multer({ storage: multer.memoryStorage() });
+
+app.post("/api/upload-media", upload.single("file"), async (req, res) => {
+  try {
+    const file = req.file;
+    if (!file) return res.status(400).json({ success: false, message: "Missing file" });
+
+    const ext = file.originalname.split(".").pop();
+    const fileName = `cocoboards/${Date.now()}-${Math.random().toString(36).substring(2)}.${ext}`;
+
+    const { data, error } = await supabase.storage
+      .from("public-uploads")
+      .upload(fileName, file.buffer, {
+        contentType: file.mimetype,
+        upsert: true
+      });
+
+    if (error) throw error;
+
+    const { data: publicUrlData } = supabase.storage
+      .from("public-uploads")
+      .getPublicUrl(fileName);
+
+    res.json({ success: true, url: publicUrlData.publicUrl });
+  } catch (err) {
+    console.error("❌ Upload media error:", err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 
 
 // WebSocket + Express listener
