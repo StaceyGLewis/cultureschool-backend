@@ -652,8 +652,6 @@ app.post("/api/save-og-content", async (req, res) => {
   }
 });
 // ✅ Upload Media to Supabase Storage
-const multer = require("multer");
-const upload = multer({ storage: multer.memoryStorage() });
 
 app.post("/api/upload-media", upload.single("file"), async (req, res) => {
   try {
