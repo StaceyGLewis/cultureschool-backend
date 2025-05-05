@@ -590,7 +590,7 @@ app.get("/api/get-cocoboard", async (req, res) => {
       buy_link: item.buy_link,
       media_type: item.media_type
     }));
-
+    console.log("🎯 Full board data:", data); // ADD THIS
     res.json({
       success: true,
       board: {
