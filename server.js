@@ -659,7 +659,7 @@ app.post("/api/upload-media", (req, res) => {
   const path = req.query.path;
   if (!path) return res.status(400).json({ success: false, error: "Missing file path" });
 
-  const busboy = new Busboy({ headers: req.headers });
+  const busboy = Busboy({ headers: req.headers }); 
   let fileBuffer = [];
 
   busboy.on("file", (fieldname, file, filename, encoding, mimetype) => {
