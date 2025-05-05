@@ -653,33 +653,49 @@ app.post("/api/save-og-content", async (req, res) => {
 });
 // ✅ Upload Media to Supabase Storage
 
-app.post("/api/upload-media", upload.single("file"), async (req, res) => {
-  try {
-    const file = req.file;
-    if (!file) return res.status(400).json({ success: false, message: "Missing file" });
+app.post("/api/upload-media", async (req, res) => {
+  const busboy = require("busboy");
+  const bb = busboy({ headers: req.headers });
 
-    const ext = file.originalname.split(".").pop();
-    const fileName = `cocoboards/${Date.now()}-${Math.random().toString(36).substring(2)}.${ext}`;
+  let fileBuffer = [];
+  let fileName = "";
+  let mimeType = "";
+
+  bb.on("file", (fieldname, file, info) => {
+    fileName = info.filename;
+    mimeType = info.mimeType;
+
+    file.on("data", (data) => {
+      fileBuffer.push(data);
+    });
+  });
+
+  bb.on("close", async () => {
+    const finalBuffer = Buffer.concat(fileBuffer);
+    const path = `public-uploads/${Date.now()}_${fileName}`;
 
     const { data, error } = await supabase.storage
       .from("public-uploads")
-      .upload(fileName, file.buffer, {
-        contentType: file.mimetype,
-        upsert: true
+      .upload(path, finalBuffer, {
+        contentType: mimeType,
+        upsert: true,
       });
 
-    if (error) throw error;
+    if (error) {
+      console.error("Upload error:", error);
+      return res.status(500).json({ success: false, error: error.message });
+    }
 
     const { data: publicUrlData } = supabase.storage
       .from("public-uploads")
-      .getPublicUrl(fileName);
+      .getPublicUrl(path);
 
-    res.json({ success: true, url: publicUrlData.publicUrl });
-  } catch (err) {
-    console.error("❌ Upload media error:", err.message);
-    res.status(500).json({ success: false, error: err.message });
-  }
+    res.status(200).json({ success: true, publicUrl: publicUrlData.publicUrl });
+  });
+
+  req.pipe(bb);
 });
+
 
 
 
