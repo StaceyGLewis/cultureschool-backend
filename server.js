@@ -554,7 +554,14 @@ app.post("/api/save-cocoboard-media", async (req, res) => {
 
     const { data, error } = await supabase
       .from("cocoboard_media")
-      .insert([{ board_id, url, caption, media_type: type, buy_link }]);
+      .insert([{
+        board_id,
+        url,
+        caption,
+        media_type: type,
+        buy_link,
+        publicwall: true // ✅ ADD THIS LINE
+      }]);
 
     if (error) throw error;
 
@@ -564,7 +571,6 @@ app.post("/api/save-cocoboard-media", async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
-
 
 
 // ✅ BACKEND ROUTE — Express
