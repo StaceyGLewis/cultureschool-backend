@@ -70,49 +70,72 @@ app.get('/api/get-user', async (req, res) => {
 
 // Save or update media
 app.post("/api/save-media-item", async (req, res) => {
+  const {
+    id,
+    url,
+    caption = "",
+    email,
+    source_url = "",
+    reactions = {}
+  } = req.body;
+
+  if (!url || !email) {
+    return res.status(400).json({ success: false, message: "Missing required fields" });
+  }
+
   try {
-    const { email, url, reactions, caption, username, tags = [] } = req.body;
+    const { data, error } = await supabase
+      .from("media_uploads")
+      .upsert([
+        {
+          id,
+          url,
+          caption,
+          email,
+          source_url,
+          reactions
+        }
+      ], { onConflict: ['id'], returning: 'minimal' });
 
-    const { data, error } = await supabase.from("media_uploads").upsert([
-      {
-        email,
-        username,
-        url,
-        reactions,
-        caption,
-        tags, // ✅ new field
-        publicwall: true, // ✅ ensures visibility
-        created_at: new Date().toISOString(),
-      },
-    ]);
+    if (error) {
+      console.error("❌ Supabase error:", error);
+      return res.status(500).json({ success: false, message: "Database error" });
+    }
 
-    if (error) throw error;
-    res.json({ success: true, data });
+    return res.status(200).json({ success: true });
   } catch (err) {
-    console.error("❌ Save media error:", err);
-    res.status(500).json({ success: false, error: err.message });
+    console.error("❌ Server error:", err);
+    return res.status(500).json({ success: false, message: "Server error" });
   }
 });
-
 
 // Get media
 app.get("/api/get-media-items", async (req, res) => {
+  const { publicwall } = req.query;
+
   try {
-    const { data, error } = await supabase
-      .from("media_uploads") // 👈 FIXED: match the table used in upsert
-      .select("*")
-      .eq("publicwall", true)
-      .order("created_at", { ascending: false }) // 👈 match your field name
-      .limit(50);
+    const query = supabase
+      .from("media_uploads")
+      .select("id, url, caption, email, created_at, reactions, source_url"); // ✅ added source_url
 
-    if (error) throw error;
+    if (publicwall === "true") {
+      query.eq("publicwall", true);
+    }
 
-    res.json({ success: true, data });
+    const { data, error } = await query;
+
+    if (error) {
+      console.error("❌ Supabase fetch error:", error);
+      return res.status(500).json({ success: false, message: "Failed to load media." });
+    }
+
+    return res.status(200).json({ success: true, data });
   } catch (err) {
-    console.error("❌ Get media error:", err);
-    res.status(500).json({ success: false, error: err.message });
+    console.error("❌ Server error:", err);
+    return res.status(500).json({ success: false, message: "Server error." });
   }
 });
+
 const axios = require("axios");
 const cheerio = require("cheerio");
 
