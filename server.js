@@ -69,62 +69,7 @@ app.get('/api/get-user', async (req, res) => {
 });
 
 // Save or update media
-app.post("/api/save-media-item", async (req, res) => {
-  const {
-    id,
-    url,
-    caption = "",
-    email,
-    source_url = "",
-    reactions = {}
-  } = req.body;
-
-  if (!url || !email) {
-    return res.status(400).json({ success: false, message: "Missing required fields" });
-  }
-
-  try {
-    const { data, error } = await supabase
-      .from("media_uploads")
-      .upsert([
-        {
-          id,
-          url,
-          caption,
-          email,
-          source_url,
-          reactions
-        }
-      ], { onConflict: ['id'], returning: 'minimal' });
-
-    if (error) {
-      console.error("❌ Supabase error:", error);
-      return res.status(500).json({ success: false, message: "Database error" });
-    }
-
-    return res.status(200).json({ success: true });
-  } catch (err) {
-    console.error("❌ Server error:", err);
-    return res.status(500).json({ success: false, message: "Server error" });
-  }
-});
-
-// Get media
-app.get("/api/get-media-items", async (req, res) => {
-  const { publicwall } = req.query;
-
-  try {
-    const query = supabase
-      .from("media_uploads")
-      .select("id, url, caption, email, created_at, reactions, source_url"); // ✅ added source_url
-
-    if (publicwall === "true") {
-      query.eq("publicwall", true);
-    }
-
-    const { data, error } = await query;
-
-    if (error) {
+{
       console.error("❌ Supabase fetch error:", error);
       return res.status(500).json({ success: false, message: "Failed to load media." });
     }
@@ -265,7 +210,95 @@ app.post("/api/save-moodboard", async (req, res) => {
           user_email: email,
           created_by,
           username,
-          title,
+  const {
+    id,
+    url,
+    caption = "",
+    email,
+    source_url = "",
+    reactions = {}
+  } = req.body;
+
+  if (!url || !email) {
+    return res.status(400).json({ success: false, message: "Missing required fields" });
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("media_uploads")
+      .upsert([
+        {
+          id,
+          url,
+          caption,
+          email,
+          source_url,
+          reactions
+        }
+      ], { onConflict: ['id'], returning: 'minimal' });
+
+    if (error) {
+      console.error("❌ Supabase error:", error);
+      return res.status(500).json({ success: false, message: "Database error" });
+    }
+
+    return res.status(200).json({ success: true });
+  } catch (err) {
+    console.error("❌ Server error:", err);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+// ✅ Save or update media item
+app.post("/api/save-media-item", async (req, res) => {
+  const {
+    id,
+    url,
+    caption = "",
+    email,
+    source_url = "",
+    reactions = {}
+  } = req.body;
+
+  if (!url || !email) {
+    return res.status(400).json({ success: false, message: "Missing required fields" });
+  }
+
+  try {
+    const { error } = await supabase
+      .from("media_uploads")
+      .upsert(
+        [{ id, url, caption, email, source_url, reactions }],
+        { onConflict: ["id"], returning: "minimal" }
+      );
+
+    if (error) {
+      console.error("❌ Supabase error:", error);
+      return res.status(500).json({ success: false, message: "Database error" });
+    }
+
+    return res.status(200).json({ success: true });
+  } catch (err) {
+    console.error("❌ Server error:", err);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+// Get media
+app.get("/api/get-media-items", async (req, res) => {
+  const { publicwall } = req.query;
+
+  try {
+    const query = supabase
+      .from("media_uploads")
+      .select("id, url, caption, email, created_at, reactions, source_url"); // ✅ added source_url
+
+    if (publicwall === "true") {
+      query.eq("publicwall", true);
+    }
+
+    const { data, error } = await query;
+
+    if (error) ,
           description,
           is_public,
           cover_image,
