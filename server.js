@@ -68,19 +68,6 @@ app.get('/api/get-user', async (req, res) => {
   }
 });
 
-// Save or update media
-{
-      console.error("❌ Supabase fetch error:", error);
-      return res.status(500).json({ success: false, message: "Failed to load media." });
-    }
-
-    return res.status(200).json({ success: true, data });
-  } catch (err) {
-    console.error("❌ Server error:", err);
-    return res.status(500).json({ success: false, message: "Server error." });
-  }
-});
-
 const axios = require("axios");
 const cheerio = require("cheerio");
 
@@ -186,7 +173,7 @@ app.post('/api/delete-all-circle-messages', async (req, res) => {
 });
 
 // Save Moodboard
-aapp.post("/api/save-moodboard", async (req, res) => {
+app.post("/api/save-moodboard", async (req, res) => {
   const {
     email,
     created_by = email,
@@ -280,20 +267,9 @@ app.get("/api/get-media-items", async (req, res) => {
 
     const { data, error } = await query;
 
-    if (error) ,
-          description,
-          is_public,
-          cover_image,
-          tags,
-          theme,
-          created_at,
-          updated_at,
-        },
-      ]);
-
     if (error) throw error;
-
-    res.json({ success: true, board: data[0] }); // ✅ Return as 'board' for frontend match
+    res.json({ success: true, data });
+    
   } catch (err) {
     console.error("❌ Failed to save moodboard:", err);
     res.status(500).json({ success: false, error: err.message });
