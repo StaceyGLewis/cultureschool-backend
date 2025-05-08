@@ -186,7 +186,7 @@ app.post('/api/delete-all-circle-messages', async (req, res) => {
 });
 
 // Save Moodboard
-app.post("/api/save-moodboard", async (req, res) => {
+aapp.post("/api/save-moodboard", async (req, res) => {
   const {
     email,
     created_by = email,
@@ -210,44 +210,26 @@ app.post("/api/save-moodboard", async (req, res) => {
           user_email: email,
           created_by,
           username,
-  const {
-    id,
-    url,
-    caption = "",
-    email,
-    source_url = "",
-    reactions = {}
-  } = req.body;
-
-  if (!url || !email) {
-    return res.status(400).json({ success: false, message: "Missing required fields" });
-  }
-
-  try {
-    const { data, error } = await supabase
-      .from("media_uploads")
-      .upsert([
-        {
-          id,
-          url,
-          caption,
-          email,
-          source_url,
-          reactions
+          title,
+          description,
+          is_public,
+          cover_image,
+          tags,
+          theme,
+          created_at,
+          updated_at,
         }
-      ], { onConflict: ['id'], returning: 'minimal' });
+      ]);
 
-    if (error) {
-      console.error("❌ Supabase error:", error);
-      return res.status(500).json({ success: false, message: "Database error" });
-    }
+    if (error) throw error;
 
-    return res.status(200).json({ success: true });
+    res.json({ success: true, board: data[0] });
   } catch (err) {
-    console.error("❌ Server error:", err);
-    return res.status(500).json({ success: false, message: "Server error" });
+    console.error("❌ Failed to save moodboard:", err);
+    res.status(500).json({ success: false, error: err.message });
   }
 });
+
 // ✅ Save or update media item
 app.post("/api/save-media-item", async (req, res) => {
   const {
