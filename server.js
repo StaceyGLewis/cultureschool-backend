@@ -253,6 +253,7 @@ app.post("/api/save-media-item", async (req, res) => {
 });
 
 // Get media
+// Get media
 app.get("/api/get-media-items", async (req, res) => {
   const { publicwall } = req.query;
 
@@ -268,10 +269,10 @@ app.get("/api/get-media-items", async (req, res) => {
     const { data, error } = await query;
 
     if (error) throw error;
+
     res.json({ success: true, data });
-    
   } catch (err) {
-    console.error("❌ Failed to save moodboard:", err);
+    console.error("❌ Failed to fetch media items:", err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
@@ -719,6 +720,94 @@ app.post("/api/upload-media", (req, res) => {
   });
 
   req.pipe(busboy);
+});
+app.post("/api/create-link", async (req, res) => {
+  const { slug, file_url, email = "", media_type = "" } = req.body;
+
+  if (!slug || !file_url) {
+    return res.status(400).json({ success: false, message: "Missing slug or file_url" });
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("media_links")
+      .insert([{ slug, file_url, email, media_type }])
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.status(200).json({
+      success: true,
+      message: "🔗 Media link created!",
+      link: `https://cultureschool.org/m/${slug}`, // or whatever your share route is
+      data
+    });
+  } catch (err) {
+    console.error("❌ Error creating media link:", err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+app.get("/m/:slug", async (req, res) => {
+  const { slug } = req.params;
+
+  try {
+    const { data, error } = await supabase
+      .from("media_links")
+      .select("title, file_url, media_type")
+      .eq("slug", slug)
+      .single();
+
+    if (error || !data) {
+      return res.status(404).send("Media not found.");
+    }
+
+    const title = data.title || "Untitled Media";
+    const fileUrl = data.file_url;
+    const isVideo = data.media_type === "video";
+
+    // Use template literal with backticks for multiline HTML
+    return res.send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${title}</title>
+  <style>
+    body {
+      background: #1a2238;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      font-family: sans-serif;
+    }
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 20px;
+    }
+    video, audio {
+      width: 90%;
+      max-width: 800px;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.3);
+    }
+  </style>
+</head>
+<body>
+  <h1>${title}</h1>
+  ${isVideo
+    ? `<video src="${fileUrl}" controls autoplay playsinline></video>`
+    : `<audio src="${fileUrl}" controls autoplay></audio>`}
+</body>
+</html>`);
+  } catch (err) {
+    console.error("❌ Error serving media page:", err.message);
+    return res.status(500).send("Internal server error.");
+  }
 });
 
 
