@@ -743,6 +743,29 @@ app.post("/api/create-link", async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+// ✅ Return all shareable media links for a user
+app.get("/api/get-media-links", async (req, res) => {
+  const { email } = req.query;
+  if (!email) {
+    return res.status(400).json({ success: false, message: "Missing email" });
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("media_links")
+      .select("*")
+      .eq("email", email)
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+
+    res.status(200).json({ success: true, links: data });
+  } catch (err) {
+    console.error("❌ Error fetching media links:", err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 app.get("/m/:slug", async (req, res) => {
   const { slug } = req.params;
 
