@@ -785,43 +785,51 @@ app.get("/m/:slug", async (req, res) => {
     const isVideo = data.media_type === "video";
 
     // Use template literal with backticks for multiline HTML
-    return res.send(`<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>${title}</title>
-  <style>
-    body {
-      background: #1a2238;
-      color: white;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      margin: 0;
-      font-family: sans-serif;
-    }
-    h1 {
-      font-size: 1.8rem;
-      margin-bottom: 20px;
-    }
-    video, audio {
-      width: 90%;
-      max-width: 800px;
-      border-radius: 12px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.3);
-    }
-  </style>
-</head>
-<body>
-  <h1>${title}</h1>
-  ${isVideo
-    ? `<video src="${fileUrl}" controls autoplay playsinline></video>`
-    : `<audio src="${fileUrl}" controls autoplay></audio>`}
-</body>
-</html>`);
+    return res.send(`
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>${title}</title>
+    
+        <!-- Social Sharing Meta -->
+        <meta property="og:title" content="${title}" />
+        <meta property="og:type" content="${isVideo ? "video.other" : "image"}" />
+        <meta property="og:url" content="https://cultureschool.org/m/${slug}" />
+        <meta property="og:image" content="${file_url}" />
+        <meta property="og:description" content="A shared media experience from CultureSchool." />
+        <meta property="og:site_name" content="CultureSchool" />
+    
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="${isVideo ? "player" : "summary_large_image"}" />
+        <meta name="twitter:title" content="${title}" />
+        <meta name="twitter:description" content="Check out this content from CultureSchool!" />
+        <meta name="twitter:image" content="${file_url}" />
+    
+        <style>
+          body {
+            background: #1a2238;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+          }
+          video, img {
+            max-width: 90%;
+            max-height: 90vh;
+          }
+        </style>
+      </head>
+      <body>
+        ${isVideo
+          ? `<video src="${file_url}" controls autoplay muted playsinline></video>`
+          : `<img src="${file_url}" alt="${title}" />`}
+      </body>
+      </html>
+    `);    
   } catch (err) {
     console.error("❌ Error serving media page:", err.message);
     return res.status(500).send("Internal server error.");
