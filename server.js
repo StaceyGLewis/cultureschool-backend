@@ -219,36 +219,31 @@ app.post("/api/save-moodboard", async (req, res) => {
 
 // ✅ Save or update media item
 app.post("/api/save-media-item", async (req, res) => {
-  const {
-    id,
-    url,
-    caption = "",
-    email,
-    source_url = "",
-    reactions = {}
-  } = req.body;
+  const { url, email, caption = "", source_url = "", reactions = {}, media_type = "", created_at = new Date().toISOString() } = req.body;
 
   if (!url || !email) {
     return res.status(400).json({ success: false, message: "Missing required fields" });
   }
 
   try {
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("media_uploads")
-      .upsert(
-        [{ id, url, caption, email, source_url, reactions }],
-        { onConflict: ["id"], returning: "minimal" }
-      );
+      .insert([{
+        url,
+        email,
+        caption,
+        source_url,
+        reactions,
+        media_type,
+        created_at
+      }]);
 
-    if (error) {
-      console.error("❌ Supabase error:", error);
-      return res.status(500).json({ success: false, message: "Database error" });
-    }
+    if (error) throw error;
 
-    return res.status(200).json({ success: true });
+    res.json({ success: true, data });
   } catch (err) {
-    console.error("❌ Server error:", err);
-    return res.status(500).json({ success: false, message: "Server error" });
+    console.error("❌ Failed to save media item:", err.message);
+    res.status(500).json({ success: false, message: err.message });
   }
 });
 
