@@ -767,72 +767,115 @@ app.get("/api/get-media-links", async (req, res) => {
 });
 
 app.get("/m/:slug", async (req, res) => {
-  const { slug } = req.params;
-
-  try {
+  app.get("/media/:slug/stream", async (req, res) => {
+    const { slug } = req.params;
+  
     const { data, error } = await supabase
       .from("media_links")
-      .select("title, file_url, media_type")
+      .select("file_url")
       .eq("slug", slug)
       .single();
-
-    if (error || !data) {
-      return res.status(404).send("Media not found.");
+  
+    if (error || !data) return res.status(404).send("Not found");
+  
+    try {
+      const response = await fetch(data.file_url);
+      if (!response.ok) throw new Error("Fetch failed");
+  
+      res.setHeader("Content-Type", response.headers.get("content-type"));
+      response.body.pipe(res);
+    } catch (err) {
+      console.error("❌ Proxy error:", err.message);
+      res.status(500).send("Proxy failed");
     }
+  });  
 
     const title = data.title || "Untitled Media";
-    const fileUrl = data.file_url;
     const isVideo = data.media_type === "video";
-
-    // Use template literal with backticks for multiline HTML
+    
     return res.send(`
-      <!DOCTYPE html>
-      <html lang="en">
-      <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>${title}</title>
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>${title}</title>
     
-        <!-- Social Sharing Meta -->
-        <meta property="og:title" content="${title}" />
-        <meta property="og:type" content="${isVideo ? "video.other" : "image"}" />
-        <meta property="og:url" content="https://cultureschool.org/m/${slug}" />
-        <meta property="og:image" content="${file_url}" />
-        <meta property="og:description" content="A shared media experience from CultureSchool." />
-        <meta property="og:site_name" content="CultureSchool" />
+      <!-- Social Sharing Meta -->
+      <meta property="og:title" content="${title}" />
+      <meta property="og:type" content="${isVideo ? "video.other" : "image"}" />
+      <meta property="og:url" content="https://cultureschool.org/m/${slug}" />
+      <meta property="og:image" content="https://cultureschool.org/preview/${slug}.jpg" />
+      <meta property="og:description" content="A shared media experience from CultureSchool." />
+      <meta property="og:site_name" content="CultureSchool" />
     
-        <!-- Twitter Card -->
-        <meta name="twitter:card" content="${isVideo ? "player" : "summary_large_image"}" />
-        <meta name="twitter:title" content="${title}" />
-        <meta name="twitter:description" content="Check out this content from CultureSchool!" />
-        <meta name="twitter:image" content="${file_url}" />
+      <!-- Twitter Card -->
+      <meta name="twitter:card" content="${isVideo ? "player" : "summary_large_image"}" />
+      <meta name="twitter:title" content="${title}" />
+      <meta name="twitter:description" content="Check out this CultureSchool video!" />
+      <meta name="twitter:image" content="https://cultureschool.org/preview/${slug}.jpg" />
     
-        <style>
-          body {
-            background: #1a2238;
-            color: white;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-          }
-          video, img {
-            max-width: 90%;
-            max-height: 90vh;
-          }
-        </style>
-      </head>
-      <body>
-        ${isVideo
-          ? `<video src="${file_url}" controls autoplay muted playsinline></video>`
-          : `<img src="${file_url}" alt="${title}" />`}
-      </body>
-      </html>
-    `);    
+      <style>
+        body {
+          background: #1a2238;
+          color: white;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          min-height: 100vh;
+          margin: 0;
+          font-family: 'Inter', sans-serif;
+          text-align: center;
+        }
+    
+        video, img {
+          max-width: 90%;
+          max-height: 80vh;
+          border-radius: 12px;
+          box-shadow: 0 8px 16px rgba(0,0,0,0.5);
+        }
+    
+        h1 {
+          font-size: 1.5rem;
+          margin-bottom: 1rem;
+        }
+      </style>
+    </head>
+    <body>
+      <h1>${title}</h1>
+      ${isVideo
+        ? `<video src="/media/${slug}/stream" controls autoplay muted playsinline></video>`
+        : `<img src="/media/${slug}/stream" alt="${title}" />`}
+    </body>
+    </html>
+    `);
+     
   } catch (err) {
     console.error("❌ Error serving media page:", err.message);
     return res.status(500).send("Internal server error.");
+  }
+});
+app.get("/media/:slug/stream", async (req, res) => {
+  const { slug } = req.params;
+
+  const { data, error } = await supabase
+    .from("media_links")
+    .select("file_url")
+    .eq("slug", slug)
+    .single();
+
+  if (error || !data) return res.status(404).send("Not found");
+
+  try {
+    const response = await fetch(data.file_url);
+    if (!response.ok) throw new Error("Fetch failed");
+
+    res.setHeader("Content-Type", response.headers.get("content-type"));
+    response.body.pipe(res);
+  } catch (err) {
+    console.error("❌ Proxy error:", err.message);
+    res.status(500).send("Proxy failed");
   }
 });
 
