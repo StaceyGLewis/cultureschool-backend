@@ -557,6 +557,7 @@ app.post("/api/save-cocoboard", async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+
 // ✅ Save CoCoBoard Media
 app.post("/api/save-cocoboard-media", async (req, res) => {
   try {
@@ -570,19 +571,21 @@ app.post("/api/save-cocoboard-media", async (req, res) => {
         caption,
         media_type: type,
         buy_link,
-        publicwall: true // ✅ ADD THIS LINE
-      }]);
+        publicwall: true
+      }])
+      .select()
+      .single();
 
-    if (error) throw error;
+    if (error || !data) throw new Error(error?.message || "Media insert returned no data");
 
-    if (!data || data.length === 0) throw new Error("Media insert returned no data");
-
-    res.status(200).json({ success: true, media: data[0] });    
+    res.status(200).json({ success: true, media: data });
   } catch (err) {
     console.error("❌ Error saving media:", err.message);
     res.status(500).json({ success: false, error: err.message });
   }
 });
+
+// ✅ Get CoCoBoard Media
 app.get("/api/get-cocoboard-media", async (req, res) => {
   const { board_id } = req.query;
 
@@ -605,6 +608,7 @@ app.get("/api/get-cocoboard-media", async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+
 
 
 // ✅ BACKEND ROUTE — Express
