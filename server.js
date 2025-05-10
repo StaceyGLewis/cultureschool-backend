@@ -575,7 +575,9 @@ app.post("/api/save-cocoboard-media", async (req, res) => {
 
     if (error) throw error;
 
-    res.status(200).json({ success: true, media: data[0] });
+    if (!data || data.length === 0) throw new Error("Media insert returned no data");
+
+    res.status(200).json({ success: true, media: data[0] });    
   } catch (err) {
     console.error("❌ Error saving media:", err.message);
     res.status(500).json({ success: false, error: err.message });
