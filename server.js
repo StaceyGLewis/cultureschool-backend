@@ -581,6 +581,28 @@ app.post("/api/save-cocoboard-media", async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+app.get("/api/get-cocoboard-media", async (req, res) => {
+  const { board_id } = req.query;
+
+  if (!board_id) {
+    return res.status(400).json({ success: false, error: "Missing board_id" });
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("cocoboard_media")
+      .select("*")
+      .eq("board_id", board_id)
+      .order("created_at", { ascending: true });
+
+    if (error) throw error;
+
+    res.json({ success: true, media: data });
+  } catch (err) {
+    console.error("❌ Fetch media error:", err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 
 // ✅ BACKEND ROUTE — Express
@@ -768,7 +790,6 @@ app.get("/api/get-media-links", async (req, res) => {
 
 app.get("/media/:slug/stream", async (req, res) => {
   const { slug } = req.params;
-
   const { data, error } = await supabase
     .from("media_links")
     .select("file_url")
