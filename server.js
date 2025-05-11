@@ -899,7 +899,7 @@ app.get("/m/:slug", async (req, res) => {
 app.post('/api/save-inspo-teaser', async (req, res) => {
   const teaser = req.body;
 
-  if (!teaser.title || !teaser.image || !teaser.boardId) {
+  if (!teaser.title || !teaser.image || !teaser.board_id) {
     return res.status(400).json({ success: false, error: "Missing required teaser data." });
   }
 
@@ -910,7 +910,7 @@ app.post('/api/save-inspo-teaser', async (req, res) => {
         title: teaser.title,
         image: teaser.image,
         type: teaser.type || 'drop',
-        board_id: teaser.boardId,
+        board_id: teaser.board_id, // ✅ consistent and correct
         is_public: true,
         featured_at: teaser.featured_at || new Date().toISOString()
       }]);
