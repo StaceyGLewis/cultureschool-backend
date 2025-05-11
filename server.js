@@ -896,6 +896,33 @@ app.get("/m/:slug", async (req, res) => {
   }
 });
 
+app.post('/api/save-inspo-teaser', async (req, res) => {
+  const teaser = req.body;
+
+  if (!teaser.title || !teaser.image || !teaser.boardId) {
+    return res.status(400).json({ success: false, error: "Missing required teaser data." });
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('inspo_wall') // Replace with your actual table name
+      .insert([{
+        title: teaser.title,
+        image: teaser.image,
+        type: teaser.type || 'drop',
+        board_id: teaser.boardId,
+        is_public: true,
+        featured_at: teaser.featured_at || new Date().toISOString()
+      }]);
+
+    if (error) throw error;
+
+    return res.status(200).json({ success: true, data });
+  } catch (err) {
+    console.error("❌ Failed to save inspo teaser:", err);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 
 // WebSocket + Express listener
