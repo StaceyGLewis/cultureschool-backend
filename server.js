@@ -923,6 +923,23 @@ app.post('/api/save-inspo-teaser', async (req, res) => {
     return res.status(500).json({ success: false, error: err.message });
   }
 });
+app.get('/api/get-inspo-teasers', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('inspo_wall') // your table
+      .select('*')
+      .eq('is_public', true)
+      .order('featured_at', { ascending: false })
+      .limit(30); // adjust as needed
+
+    if (error) throw error;
+
+    return res.status(200).json({ success: true, data });
+  } catch (err) {
+    console.error("❌ Error fetching inspo teasers:", err);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 
 // WebSocket + Express listener
