@@ -572,8 +572,8 @@ app.post("/api/save-cocoboard-media", async (req, res) => {
         caption,
         media_type: type,
         buy_link,
-        collection: collectionName
         publicwall: true
+        collection
       }])
       .select()
       .single();
