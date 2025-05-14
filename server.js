@@ -561,7 +561,8 @@ app.post("/api/save-cocoboard", async (req, res) => {
 // ✅ Save CoCoBoard Media
 app.post("/api/save-cocoboard-media", async (req, res) => {
   try {
-    const { board_id, url, caption = "", type = "image", buy_link = null } = req.body;
+    const { board_id, url, caption = "", type = "image", buy_link = null, collection = "Media" } = req.body;
+
 
     const { data, error } = await supabase
       .from("cocoboard_media")
@@ -571,6 +572,7 @@ app.post("/api/save-cocoboard-media", async (req, res) => {
         caption,
         media_type: type,
         buy_link,
+        collection: collectionName
         publicwall: true
       }])
       .select()
