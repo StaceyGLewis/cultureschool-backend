@@ -616,47 +616,34 @@ app.get("/api/get-cocoboard-media", async (req, res) => {
 // ✅ BACKEND ROUTE — Express
 // ✅ Get Single CoCoBoard by ID or Slug
 app.get("/api/get-cocoboard", async (req, res) => {
-  const { id, slug } = req.query;
-  if (!id && !slug) {
-    return res.status(400).json({ success: false, message: "Missing board ID or slug" });
+  const { id } = req.query;
+  if (!id) return res.status(400).json({ success: false, message: "Missing board ID" });
+
+  const { data: board, error: boardError } = await supabase
+    .from("cocoboards")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (boardError || !board) {
+    return res.status(404).json({ success: false, message: "Board not found" });
   }
 
-  try {
-    const { data, error } = await supabase
-      .from("cocoboards")
-      .select("*, cocoboard_media(*)")
-      .eq(id ? "id" : "title_slug", id || slug)
-      .single();
+  const { data: media, error: mediaError } = await supabase
+    .from("cocoboard_media")
+    .select("*")
+    .eq("board_id", id);
 
-    if (error || !data) throw error;
+  board.tiles = media || [];
 
-    const images = (data.cocoboard_media || []).map(item => ({
-      url: item.url,
-      caption: item.caption,
-      buy_link: item.buy_link,
-      media_type: item.media_type
-    }));
-    console.log("🎯 Full board data:", data); // ADD THIS
-    res.json({
-      success: true,
-      board: {
-        id: data.id,
-        title: data.title,
-        description: data.description,
-        cover_image: data.cover_image,
-        images
-      }
-    });
-  } catch (err) {
-    console.error("❌ Fetch cocoboard error:", err.message);
-    res.status(500).json({ success: false, error: err.message });
-  }
+  return res.status(200).json({ success: true, board });
 });
+
 app.get("/api/cocoboard-gallery", async (req, res) => {
   try {
     const { data, error } = await supabase
       .from("cocoboards")
-      .select("id, title, cover_image, title_slug")
+      .select("id, title, cover_image")  // Removed title_slug
       .eq("is_public", true)
       .order("updated_at", { ascending: false });
 
@@ -668,6 +655,7 @@ app.get("/api/cocoboard-gallery", async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+
 // POST route to save OG content to Supabase
 app.post("/api/save-og-content", async (req, res) => {
   const { title, description, image, url, publisher = "Unknown", email = null } = req.body;
