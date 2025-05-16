@@ -572,7 +572,7 @@ app.post("/api/save-cocoboard-media", async (req, res) => {
         caption,
         media_type: type,
         buy_link,
-        publicwall: true,
+        publicwall: true
         collection
       }])
       .select()
@@ -941,6 +941,21 @@ app.get('/api/get-inspo-teasers', async (req, res) => {
     console.error("❌ Error fetching inspo teasers:", err);
     return res.status(500).json({ success: false, error: err.message });
   }
+});
+app.get("/m/:slug", async (req, res) => {
+  const { slug } = req.params;
+  const { data, error } = await supabase
+    .from("media_links")
+    .select("board_id")
+    .eq("slug", slug)
+    .single();
+
+  if (error || !data?.board_id) {
+    return res.status(404).send("Board not found.");
+  }
+
+  // Permanent redirect to new format
+  return res.redirect(301, `/pages/cocoboard-preview-html?board=${data.board_id}`);
 });
 
 
