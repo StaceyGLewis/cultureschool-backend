@@ -1004,6 +1004,17 @@ app.post("/api/export-timeline", async (req, res) => {
     res.status(500).json({ success: false, error: "Timeline export failed", message: err.message });
   }
 });
+app.get("/api/test-ffmpeg", (req, res) => {
+  const { exec } = require("child_process");
+  exec("ffmpeg -version", (error, stdout, stderr) => {
+    if (error) {
+      console.error("❌ FFmpeg error:", error.message);
+      return res.status(500).json({ success: false, error: error.message });
+    }
+    res.json({ success: true, version: stdout });
+  });
+});
+
 
 // WebSocket + Express listener
 const PORT = process.env.PORT || 5055;
