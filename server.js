@@ -944,7 +944,61 @@ app.get("/m/:slug", async (req, res) => {
   // Permanent redirect to new format
   return res.redirect(301, `/pages/cocoboard-preview-html?board=${data.board_id}`);
 });
+app.post("/api/export-timeline", async (req, res) => {
+  try {
+    const { timeline } = req.body;
+    if (!timeline || !Array.isArray(timeline) || timeline.length === 0) {
+      return res.status(400).json({ success: false, error: "Missing or invalid timeline array" });
+    }
 
+    const sessionId = uuidv4();
+    const tempDir = path.join(__dirname, "temp", sessionId);
+    fs.mkdirSync(tempDir, { recursive: true });
+
+    const tsFiles = [];
+
+    for (let i = 0; i < timeline.length; i++) {
+      const { url } = timeline[i];
+      const inputFile = path.join(tempDir, `input${i}.mp4`);
+      const tsFile = path.join(tempDir, `input${i}.ts`);
+
+      const writer = fs.createWriteStream(inputFile);
+      const response = await axios({ method: "GET", url, responseType: "stream" });
+      await new Promise((resolve, reject) => {
+        response.data.pipe(writer);
+        writer.on("finish", resolve);
+        writer.on("error", reject);
+      });
+
+      await new Promise((resolve, reject) => {
+        exec(`ffmpeg -y -i "${inputFile}" -c copy -bsf:v h264_mp4toannexb -f mpegts "${tsFile}"`, err => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+
+      tsFiles.push(tsFile);
+    }
+
+    const concatList = tsFiles.map(f => `file '${f}'`).join("\n");
+    fs.writeFileSync(path.join(tempDir, "input.txt"), concatList);
+
+    const outputPath = path.join(tempDir, "output.mp4");
+    await new Promise((resolve, reject) => {
+      exec(`ffmpeg -y -f concat -safe 0 -i "${path.join(tempDir, "input.txt")}" -c copy "${outputPath}"`, err => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+
+    res.download(outputPath, "MyShortFilm.mp4", () => {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    });
+  } catch (err) {
+    console.error("❌ FFmpeg export error:", err.message);
+    res.status(500).json({ success: false, error: "Timeline export failed", message: err.message });
+  }
+});
 
 // WebSocket + Express listener
 const PORT = process.env.PORT || 5055;
