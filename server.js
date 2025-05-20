@@ -948,12 +948,13 @@ app.get("/m/:slug", async (req, res) => {
   // Permanent redirect to new format
   return res.redirect(301, `/pages/cocoboard-preview-html?board=${data.board_id}`);
 });
-app.post("/api/export-timeline", async (req, res) => {
-  try {
-    const { timeline } = req.body;
-    if (!timeline || !Array.isArray(timeline) || timeline.length === 0) {
-      return res.status(400).json({ success: false, error: "Missing or invalid timeline array" });
-    }
+aapp.post("/api/export-timeline", async (req, res) => {
+  console.log("📦 Incoming timeline payload:", req.body);
+
+  const { timeline } = req.body;
+  if (!timeline || !Array.isArray(timeline) || timeline.length === 0) {
+    return res.status(400).json({ success: false, error: "Missing or invalid timeline array" });
+  }
 
     const sessionId = uuidv4();
     const tempDir = path.join(__dirname, "temp", sessionId);
