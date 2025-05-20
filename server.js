@@ -4,6 +4,10 @@ const cors = require('cors');
 const setupWebSocket = require('./websocket');
 const bodyParser = require('body-parser');
 const { v4: uuidv4 } = require('uuid');
+const { exec } = require('child_process');
+const fs = require('fs');
+const path = require('path');
+const axios = require('axios');
 require('dotenv').config();
 
 const { createClient } = require('@supabase/supabase-js');
