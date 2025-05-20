@@ -73,7 +73,6 @@ app.get('/api/get-user', async (req, res) => {
   }
 });
 
-const axios = require("axios");
 const cheerio = require("cheerio");
 
 // RSS-style image preview parser
