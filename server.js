@@ -948,13 +948,15 @@ app.get("/m/:slug", async (req, res) => {
   // Permanent redirect to new format
   return res.redirect(301, `/pages/cocoboard-preview-html?board=${data.board_id}`);
 });
-aapp.post("/api/export-timeline", async (req, res) => {
-  console.log("📦 Incoming timeline payload:", req.body);
+// ✅ SERVER EXPORT TIMELINE ROUTE
+app.post("/api/export-timeline", async (req, res) => {
+  try {
+    console.log("📦 Incoming timeline payload:", req.body);
 
-  const { timeline } = req.body;
-  if (!timeline || !Array.isArray(timeline) || timeline.length === 0) {
-    return res.status(400).json({ success: false, error: "Missing or invalid timeline array" });
-  }
+    const { timeline } = req.body;
+    if (!timeline || !Array.isArray(timeline) || timeline.length === 0) {
+      return res.status(400).json({ success: false, error: "Missing or invalid timeline array" });
+    }
 
     const sessionId = uuidv4();
     const tempDir = path.join(__dirname, "temp", sessionId);
@@ -999,13 +1001,15 @@ aapp.post("/api/export-timeline", async (req, res) => {
     res.download(outputPath, "MyShortFilm.mp4", () => {
       fs.rmSync(tempDir, { recursive: true, force: true });
     });
+
   } catch (err) {
     console.error("❌ FFmpeg export error:", err.message);
     res.status(500).json({ success: false, error: "Timeline export failed", message: err.message });
   }
 });
+
+// ✅ TEST FFMPEG INSTALLATION
 app.get("/api/test-ffmpeg", (req, res) => {
-  const { exec } = require("child_process");
   exec("ffmpeg -version", (error, stdout, stderr) => {
     if (error) {
       console.error("❌ FFmpeg error:", error.message);
@@ -1014,6 +1018,7 @@ app.get("/api/test-ffmpeg", (req, res) => {
     res.json({ success: true, version: stdout });
   });
 });
+
 
 
 // WebSocket + Express listener
