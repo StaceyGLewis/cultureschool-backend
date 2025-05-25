@@ -165,13 +165,32 @@ app.get("/api/get-circle-from-supabase", async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+app.post("/api/update-circle-message", async (req, res) => {
+  const { group_id, new_message } = req.body;
+  if (!group_id || !new_message) return res.status(400).json({ success: false, message: "Missing data" });
 
-// Debug Keys
-app.get('/api/supabase-keys', (req, res) => {
-  res.json({
-    url: process.env.SUPABASE_PROJECT_URL,
-    anonKey: process.env.SUPABASE_ANON_KEY
-  });
+  try {
+    const { data: existing, error } = await supabase
+      .from("circles")
+      .select("messages")
+      .eq("group_id", group_id)
+      .single();
+
+    if (error) throw error;
+
+    const updatedMessages = [...(existing?.messages || []), new_message];
+
+    const { error: updateError } = await supabase
+      .from("circles")
+      .update({ messages: updatedMessages })
+      .eq("group_id", group_id);
+
+    if (updateError) throw updateError;
+    res.json({ success: true });
+  } catch (err) {
+    console.error("❌ Update Circle message error:", err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
 // Clean Messages
@@ -188,21 +207,53 @@ app.post("/api/delete-circle-message", async (req, res) => {
 
     if (error || !existing) throw error;
 
-    const updatedMessages = existing.messages.filter(m => m.timestamp !== timestamp);
+    const filteredMessages = existing.messages.filter(m => m.timestamp !== timestamp);
 
     const { error: updateError } = await supabase
       .from("circles")
-      .update({ messages: updatedMessages })
+      .update({ messages: filteredMessages })
       .eq("group_id", group_id);
 
     if (updateError) throw updateError;
 
     res.json({ success: true });
   } catch (err) {
-    console.error("❌ Delete message error:", err.message);
+    console.error("❌ Delete Circle message error:", err.message);
     res.status(500).json({ success: false, error: err.message });
   }
 });
+app.post("/api/seed-circle-table", async (req, res) => {
+  const { group_id, circle_id, tribe_members = [], messages = [], pins = [], images = [] } = req.body;
+
+  if (!group_id || !circle_id) {
+    return res.status(400).json({ success: false, error: "Missing group_id or circle_id" });
+  }
+
+  try {
+    const { error } = await supabase
+      .from("circles")
+      .upsert([{ group_id, circle_id, tribe_members, messages, pins, images }], {
+        onConflict: ["group_id"]
+      });
+
+    if (error) throw error;
+
+    res.status(200).json({ success: true });
+  } catch (err) {
+    console.error("❌ Seed Circle error:", err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Debug Keys
+app.get('/api/supabase-keys', (req, res) => {
+  res.json({
+    url: process.env.SUPABASE_PROJECT_URL,
+    anonKey: process.env.SUPABASE_ANON_KEY
+  });
+});
+
+
 
 // Save Moodboard
 app.post("/api/save-moodboard", async (req, res) => {
