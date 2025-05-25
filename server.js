@@ -147,6 +147,24 @@ app.get("/api/test-connection", async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+app.get("/api/get-circle-from-supabase", async (req, res) => {
+  const { group_id } = req.query;
+  if (!group_id) return res.status(400).json({ success: false, message: "Missing group_id" });
+
+  try {
+    const { data, error } = await supabase
+      .from("circles")
+      .select("*")
+      .eq("group_id", group_id)
+      .single();
+
+    if (error || !data) throw error;
+    res.json({ success: true, ...data });
+  } catch (err) {
+    console.error("❌ Get Circle error:", err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 // Debug Keys
 app.get('/api/supabase-keys', (req, res) => {
@@ -157,21 +175,31 @@ app.get('/api/supabase-keys', (req, res) => {
 });
 
 // Clean Messages
-app.post('/api/delete-all-circle-messages', async (req, res) => {
+app.post("/api/delete-circle-message", async (req, res) => {
+  const { group_id, timestamp } = req.body;
+  if (!group_id || !timestamp) return res.status(400).json({ success: false, message: "Missing data" });
+
   try {
-    const { group_id } = req.body;
-    if (!group_id) return res.status(400).json({ success: false, message: 'Missing group_id' });
+    const { data: existing, error } = await supabase
+      .from("circles")
+      .select("messages")
+      .eq("group_id", group_id)
+      .single();
 
-    const { data, error } = await supabase
-      .from('users')
-      .delete()
-      .eq('invite_code', group_id);
+    if (error || !existing) throw error;
 
-    if (error) throw error;
+    const updatedMessages = existing.messages.filter(m => m.timestamp !== timestamp);
 
-    res.json({ success: true, data });
+    const { error: updateError } = await supabase
+      .from("circles")
+      .update({ messages: updatedMessages })
+      .eq("group_id", group_id);
+
+    if (updateError) throw updateError;
+
+    res.json({ success: true });
   } catch (err) {
-    console.error('❌ Purge Error:', err);
+    console.error("❌ Delete message error:", err.message);
     res.status(500).json({ success: false, error: err.message });
   }
 });
@@ -1018,7 +1046,55 @@ app.get("/api/test-ffmpeg", (req, res) => {
     res.json({ success: true, version: stdout });
   });
 });
+app.post("/api/auto-assign-media-to-board", async (req, res) => {
+  const { email, mediaUrl, mediaType, caption = "", isPublic = false } = req.body;
+  if (!email || !mediaUrl || !mediaType) {
+    return res.status(400).json({ success: false, message: "Missing required fields." });
+  }
 
+  try {
+    // Step 1: Find or create a default board for this user
+    const { data: boards } = await supabase
+      .from("cocoboards")
+      .select("id")
+      .eq("created_by", email)
+      .order("created_at", { ascending: true });
+
+    let boardId = boards?.[0]?.id;
+
+    if (!boardId) {
+      const { data: newBoard } = await supabase
+        .from("cocoboards")
+        .insert({
+          title: "My CoCoBoard",
+          description: "Auto-generated board for your uploads",
+          created_by: email,
+          is_public: false
+        })
+        .select();
+      boardId = newBoard?.[0]?.id;
+    }
+
+    // Step 2: Add the media to the board
+    const { error: insertError } = await supabase
+      .from("cocoboard_media")
+      .insert({
+        board_id: boardId,
+        url: mediaUrl,
+        media_type: mediaType,
+        caption,
+        source_url: mediaUrl,
+        is_public: isPublic
+      });
+
+    if (insertError) throw insertError;
+
+    return res.status(200).json({ success: true, boardId });
+  } catch (err) {
+    console.error("Auto-assign error:", err.message);
+    return res.status(500).json({ success: false, message: "Failed to assign media to board." });
+  }
+});
 
 
 // WebSocket + Express listener
