@@ -222,6 +222,18 @@ app.post("/api/delete-circle-message", async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+app.get("/api/get-circle-boards", async (req, res) => {
+  const email = req.query.email;
+  const { data, error } = await supabase
+    .from("cocoboards")
+    .select("title, cover_image, slug")
+    .eq("created_by", email)
+    .eq("is_public", true);
+
+  if (error) return res.status(500).json({ error });
+  res.json({ boards: data });
+});
+
 app.post("/api/seed-circle-table", async (req, res) => {
   const { group_id, circle_id, tribe_members = [], messages = [], pins = [], images = [] } = req.body;
 
@@ -252,7 +264,6 @@ app.get('/api/supabase-keys', (req, res) => {
     anonKey: process.env.SUPABASE_ANON_KEY
   });
 });
-
 
 
 // Save Moodboard
