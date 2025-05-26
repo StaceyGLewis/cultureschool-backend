@@ -1157,6 +1157,26 @@ app.post("/api/auto-assign-media-to-board", async (req, res) => {
     return res.status(500).json({ success: false, message: "Failed to assign media to board." });
   }
 });
+app.get("/api/get-reactions", async (req, res) => {
+  const board_id = req.query.board_id;
+
+  if (!board_id) {
+    return res.status(400).json({ success: false, message: "Missing board_id." });
+  }
+
+  const { data, error } = await supabase
+    .from("cocoboard_reactions")
+    .select("text, username, created_at")
+    .eq("board_id", board_id)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("❌ Supabase fetch error:", error);
+    return res.status(500).json({ success: false, error });
+  }
+
+  res.json({ success: true, reactions: data });
+});
 
 
 // WebSocket + Express listener
