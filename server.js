@@ -1177,6 +1177,33 @@ app.get("/api/get-reactions", async (req, res) => {
 
   res.json({ success: true, reactions: data });
 });
+app.post('/api/log-event', async (req, res) => {
+  try {
+    const { user_email, board_id, event_type, metadata } = req.body;
+
+    if (!event_type) {
+      return res.status(400).json({ success: false, message: 'Missing event_type' });
+    }
+
+    const { data, error } = await supabase
+      .from('coco_events')
+      .insert([
+        {
+          user_email,
+          board_id,
+          event_type,
+          metadata,
+        },
+      ]);
+
+    if (error) throw error;
+
+    res.status(200).json({ success: true, message: 'Event logged' });
+  } catch (err) {
+    console.error('Log event error:', err);
+    res.status(500).json({ success: false, message: 'Error logging event' });
+  }
+});
 
 
 // WebSocket + Express listener
