@@ -1240,6 +1240,56 @@ app.get("/api/get-creators", async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+app.get("/api/get-public-creators", async (req, res) => {
+  try {
+    // 1. Get all public boards
+    const { data: boards, error: boardErr } = await supabase
+      .from("cocoboards")
+      .select("id, created_by, cover_image, title, updated_at")
+      .eq("is_public", true)
+      .order("updated_at", { ascending: false });
+
+    if (boardErr) throw boardErr;
+
+    // 2. Deduplicate by creator
+    const latestBoardByUser = {};
+    for (const board of boards) {
+      if (!latestBoardByUser[board.created_by]) {
+        latestBoardByUser[board.created_by] = board;
+      }
+    }
+
+    const creators = await Promise.all(
+      Object.entries(latestBoardByUser).map(async ([email, board]) => {
+        const { data: user, error: userErr } = await supabase
+          .from("users")
+          .select("username, bio, avatar_url")
+          .eq("email", email)
+          .single();
+
+        // Optional: log or handle userErr
+
+        const CryptoJS = require("crypto-js");
+        const gravatarHash = CryptoJS.MD5(email.trim().toLowerCase()).toString();
+        const fallbackAvatar = `https://www.gravatar.com/avatar/${gravatarHash}?d=identicon`;
+
+        return {
+          id: email,
+          username: user?.username || "Anonymous",
+          bio: user?.bio || "",
+          avatar: user?.avatar_url || fallbackAvatar,
+          previewImage: board.cover_image || null,
+          board_id: board.id
+        };
+      })
+    );
+
+    res.json({ success: true, creators });
+  } catch (err) {
+    console.error("❌ get-public-creators error:", err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 
 // WebSocket + Express listener
