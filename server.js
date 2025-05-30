@@ -8,6 +8,7 @@ const { exec } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
+const CryptoJS = require("crypto-js");
 require('dotenv').config();
 
 const { createClient } = require('@supabase/supabase-js');
