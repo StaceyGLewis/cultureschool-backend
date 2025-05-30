@@ -1204,6 +1204,41 @@ app.post('/api/log-event', async (req, res) => {
     res.status(500).json({ success: false, message: 'Error logging event' });
   }
 });
+app.get("/api/get-creators", async (req, res) => {
+  try {
+    const { data: users, error: userErr } = await supabase
+      .from("users")
+      .select("email, username, bio, avatar_url")
+      .limit(100); // or more if needed
+
+    if (userErr) throw userErr;
+
+    const creatorsWithBoards = await Promise.all(users.map(async user => {
+      const { data: board } = await supabase
+        .from("cocoboards")
+        .select("id, cover_image")
+        .eq("created_by", user.email)
+        .eq("is_public", true)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      return {
+        id: user.email,
+        username: user.username || "Anonymous",
+        bio: user.bio || "",
+        avatar: user.avatar_url || `https://www.gravatar.com/avatar/${CryptoJS.MD5(user.email.trim().toLowerCase())}?d=identicon`,
+        board_id: board?.id || null,
+        previewImage: board?.cover_image || null
+      };
+    }));
+
+    res.json({ success: true, creators: creatorsWithBoards });
+  } catch (err) {
+    console.error("❌ Failed to fetch creators:", err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 
 // WebSocket + Express listener
