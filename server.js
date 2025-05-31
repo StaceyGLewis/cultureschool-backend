@@ -656,30 +656,37 @@ app.post("/api/save-cocoboard", async (req, res) => {
 // ✅ Save CoCoBoard Media
 app.post("/api/save-cocoboard-media", async (req, res) => {
   try {
-    const { board_id, url, caption = "", type = "image", buy_link = null, collection = "Media" } = req.body;
-
+    const {
+      board_id,
+      image_url,        // ✅ Rename from 'url'
+      caption = "",
+      media_type = "image", // ✅ Rename from 'type'
+      buy_link = null,
+      collection = "Media"
+    } = req.body;
 
     const { data, error } = await supabase
       .from("cocoboard_media")
       .insert([{
         board_id,
-        url,
+        image_url,        // ✅ Save in correct column
         caption,
-        media_type: type,
+        media_type,       // ✅ Correct column
         buy_link,
+        collection,
         publicwall: true
       }])
       .select()
       .single();
 
-    if (error || !data) throw new Error(error?.message || "Media insert returned no data");
-
-    res.status(200).json({ success: true, media: data });
+    if (error) throw error;
+    res.json({ success: true, media: data });
   } catch (err) {
-    console.error("❌ Error saving media:", err.message);
+    console.error("Save media error:", err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
+
 
 // ✅ Get CoCoBoard Media
 app.get("/api/get-cocoboard-media", async (req, res) => {
