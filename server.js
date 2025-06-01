@@ -1235,7 +1235,7 @@ app.get("/api/get-creators", async (req, res) => {
         id: user.email,
         username: user.username || "Anonymous",
         bio: user.bio || "",
-        avatar: user.avatar_url || user.avatar || `https://www.gravatar.com/avatar/${CryptoJS.MD5(user.email.trim().toLowerCase())}?d=identicon`,
+        avatar: user?.avatar_url || user?.avatar || `https://www.gravatar.com/avatar/${CryptoJS.MD5(user.email.trim().toLowerCase())}?d=identicon`,
         board_id: board?.id || null,
         previewImage: board?.cover_image || null
       };
@@ -1284,7 +1284,7 @@ app.get("/api/get-public-creators", async (req, res) => {
           id: email,
           username: user?.username || "Anonymous",
           bio: user?.bio || "",
-          avatar: user.avatar_url || user.avatar || fallbackAvatar,
+          avatar: user?.avatar_url || user?.avatar || fallbackAvatar,
           previewImage: board.cover_image || null,
           board_id: board.id
         };
