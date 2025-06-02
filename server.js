@@ -1306,7 +1306,7 @@ app.get('/admin/dashboard', async (req, res) => {
 
   const { data: items } = await supabase
     .from('collector_items')
-    .select('title, image_url, creator, product_link, run_id')
+    .select('title, image_url, creator, product_link, run_id, board_id, tags')
     .order('collected_at', { ascending: false })
     .limit(10);
 
