@@ -24,6 +24,7 @@ const supabase = createClient(
 app.use(cors());
 app.use(bodyParser.json({ limit: '25mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '25mb' }));
+app.use('/public', express.static(path.join(__dirname, 'public')));
 
 app.get("/", (req, res) => {
   res.send("✅ CultureSchool backend is running!");
