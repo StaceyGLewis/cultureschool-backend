@@ -44,7 +44,8 @@ const items = %%ITEM_DATA%%;
     opt.textContent = board.slice(0, 8) + "...";
     boardFilter.appendChild(opt);
   });
-
+  
+console.log("Loaded items:", items);
   function renderItems(filteredItems) {
     itemsEl.innerHTML = "";
     filteredItems.forEach(item => {
