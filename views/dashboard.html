@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>CoCo Collector Admin</title>
+  <link rel="stylesheet" href="/public/style.css">
+</head>
+<body>
+  <h1>📊 CoCo Collector Admin Dashboard</h1>
+  <button onclick="triggerRun()">Run Collector Now</button>
+
+  <h2>Recent Runs</h2>
+  <div id="runs"></div>
+
+  <h2>Latest Collected Items</h2>
+  <div class="grid" id="items"></div>
+
+  <script>
+    const runs = <!--RUN_DATA-->;
+    const items = <!--ITEM_DATA-->;
+
+    const runsEl = document.getElementById("runs");
+    runs.forEach(run => {
+      const div = document.createElement("div");
+      div.className = "run";
+      div.innerHTML = `<strong>${run.source}</strong><br>${new Date(run.run_date).toLocaleString()}<br>${run.item_count} items`;
+      runsEl.appendChild(div);
+    });
+
+    const itemsEl = document.getElementById("items");
+    items.forEach(item => {
+      const card = document.createElement("div");
+      card.className = "card";
+      card.innerHTML = `
+        <img src="${item.image_url}" />
+        <div><strong>${item.title}</strong><br><small>${item.creator}</small></div>
+      `;
+      itemsEl.appendChild(card);
+    });
+
+    async function triggerRun() {
+      const res = await fetch('/admin/trigger-run', { method: 'POST' });
+      if (res.ok) location.reload();
+      else alert('Run failed!');
+    }
+  </script>
+</body>
+</html>

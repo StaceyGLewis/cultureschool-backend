@@ -1,0 +1,38 @@
+body {
+    font-family: sans-serif;
+    padding: 2rem;
+    background: #f4f4f4;
+  }
+  h1 {
+    margin-bottom: 1rem;
+  }
+  button {
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+  }
+  .run {
+    background: white;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 8px;
+  }
+  .grid {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .card {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    width: 180px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  }
+  .card img {
+    width: 100%;
+  }
+  .card div {
+    padding: 0.5rem;
+    font-size: 0.9rem;
+  }
+  
