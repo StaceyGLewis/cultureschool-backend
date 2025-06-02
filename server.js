@@ -10,7 +10,7 @@ const path = require('path');
 const axios = require('axios');
 const CryptoJS = require("crypto-js");
 require('dotenv').config();
-
+const cors = require("cors");
 const { createClient } = require('@supabase/supabase-js');
 const app = express();
 const server = http.createServer(app);
@@ -20,7 +20,10 @@ const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
+const cors = require("cors");
 
+// ⬇️ Add this line early
+app.use(cors({ origin: 'https://www.cultureschool.org' }));
 app.use(cors());
 app.use(bodyParser.json({ limit: '25mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '25mb' }));
@@ -1417,17 +1420,25 @@ app.post("/admin/seed-demo-items", async (req, res) => {
   res.json({ success: true, message: "🌱 Seeded 3 demo items + run", run_id });
 });
 app.post("/api/saveGrab", async (req, res) => {
-  const { email, title, image_url, board_id } = req.body;
-  if (!email || !title || !image_url || !board_id) return res.status(400).send("Missing fields");
-  if (!validEmails.includes(email)) return res.status(403).send("Not authorized");
+  const item = req.body;
+  if (!item?.email || !item?.title || !item?.image_url || !item?.board_id) {
+    return res.status(400).json({ success: false, message: "Missing required fields" });
+  }
 
-  const { error } = await supabase
-    .from("cocoboard_media")
-    .insert([{ ...req.body, created_at: new Date().toISOString() }]);
+  try {
+    const { error } = await supabase
+      .from("cocoboard_media")
+      .insert([{ ...item, created_at: new Date().toISOString() }]);
 
-  if (error) return res.status(500).send(error.message);
-  res.send({ success: true });
+    if (error) throw error;
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("❌ saveGrab error:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
 });
+
 
 // WebSocket + Express listener
 const PORT = process.env.PORT || 5055;
