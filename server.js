@@ -1330,6 +1330,13 @@ app.post('/admin/trigger-run', async (req, res) => {
   if (error) return res.status(500).json({ error });
   res.json({ success: true, run: data[0] });
 });
+process.on("uncaughtException", err => {
+  console.error("Uncaught exception:", err);
+});
+
+process.on("unhandledRejection", err => {
+  console.error("Unhandled rejection:", err);
+});
 
 // WebSocket + Express listener
 const PORT = process.env.PORT || 5055;
