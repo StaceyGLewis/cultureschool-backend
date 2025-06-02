@@ -1297,7 +1297,39 @@ app.get("/api/get-public-creators", async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+app.get('/admin/dashboard', async (req, res) => {
+  const { data: runs, error } = await supabase
+    .from('collector_runs')
+    .select('*')
+    .order('run_date', { ascending: false });
 
+  const { data: items } = await supabase
+    .from('collector_items')
+    .select('title, image_url, creator, product_link, run_id')
+    .order('collected_at', { ascending: false })
+    .limit(10);
+
+  const html = fs.readFileSync(path.join(__dirname, 'views/dashboard.html'), 'utf8');
+  const rendered = html
+    .replace('<!--RUN_DATA-->', JSON.stringify(runs || []))
+    .replace('<!--ITEM_DATA-->', JSON.stringify(items || []));
+
+  res.send(rendered);
+});
+
+// Route: Trigger fake Collector run
+app.post('/admin/trigger-run', async (req, res) => {
+  const { error, data } = await supabase.from('collector_runs').insert({
+    run_date: new Date().toISOString(),
+    source: 'admin_ui_manual_trigger',
+    item_count: Math.floor(Math.random() * 5) + 1,
+    created_by: 'stacey.a.grant@gmail.com',
+    notes: 'Triggered via dashboard button'
+  });
+
+  if (error) return res.status(500).json({ error });
+  res.json({ success: true, run: data[0] });
+});
 
 // WebSocket + Express listener
 const PORT = process.env.PORT || 5055;
