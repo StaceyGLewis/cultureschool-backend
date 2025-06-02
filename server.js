@@ -1419,18 +1419,41 @@ app.post("/admin/seed-demo-items", async (req, res) => {
 });
 app.post("/api/saveGrab", async (req, res) => {
   const item = req.body;
+
   if (!item?.email || !item?.title || !item?.image_url || !item?.board_id) {
     return res.status(400).json({ success: false, message: "Missing required fields" });
   }
 
+  const timestamp = new Date().toISOString();
+
   try {
-    const { error } = await supabase
+    // Step 1: Insert to creator's board
+    const { error: mediaError } = await supabase
       .from("cocoboard_media")
-      .insert([{ ...item, created_at: new Date().toISOString() }]);
+      .insert([{ ...item, created_at: timestamp }]);
 
-    if (error) throw error;
+    if (mediaError) throw mediaError;
 
+    // Step 2: Shadow insert to collector_items (optional, non-blocking)
+    await supabase.from("collector_items").insert([{
+      title: item.title,
+      creator: item.email,
+      image_url: item.image_url,
+      product_link: item.link,
+      collected_at: timestamp,
+      board_id: item.board_id,
+      sku: null,
+      tags: (item.tags || "").split(/[\s,#]+/).filter(Boolean),
+      metadata: {
+        source: "coco-collector",
+        collection: item.collection || "web",
+        description: item.description || null
+      }
+    }]);
+
+    // Step 3: Return success
     res.json({ success: true });
+
   } catch (err) {
     console.error("❌ saveGrab error:", err);
     res.status(500).json({ success: false, message: err.message });
