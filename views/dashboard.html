@@ -3,12 +3,19 @@
 <head>
   <title>CoCo Collector Admin</title>
   <link rel="stylesheet" href="/public/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <style>
+    .section { margin-bottom: 1rem; border: 1px solid #ccc; border-radius: 6px; overflow: hidden; }
+    .section-header { background: #f5f5f5; padding: 10px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
+    .section-content { display: none; padding: 10px; }
+    .section.active .section-content { display: block; }
+    .card { margin-bottom: 1rem; }
+  </style>
 </head>
 <body>
   <h1>📊 CoCo Collector Admin Dashboard</h1>
   <button onclick="triggerRun()">Run Collector Now</button>
   <button onclick="seedDemo()">🌱 Seed Demo Items</button>
-
 
   <h2>Recent Runs</h2>
   <div id="runs"></div>
@@ -18,148 +25,241 @@
       <option value="">All Boards</option>
     </select>
   </div>
-  
+
   <h2>Latest Collected Items</h2>
   <div class="grid" id="items"></div>
 
+  <h2>📁 Grabs Overview</h2>
+  <div id="adminSections"></div>
+
   <script>
-    const runs = %%RUN_DATA%%;
-const items = %%ITEM_DATA%%;
+    const { createClient } = supabase;
+    const supabaseClient = createClient(
+      "https://qwulthvbwujfehgdegtn.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3dWx0aHZid3VqZmVoZ2RlZ3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQyMDcxODIsImV4cCI6MjA1OTc4MzE4Mn0.t9n4eZng6d0jggiPNK-J_DByvEE2L9tqy5Xh_1-TSoQ"
+    );
 
+    let runs = [];
+    let items = [];
 
-renderRuns(runs);
+    document.addEventListener("DOMContentLoaded", async () => {
+      const { data: runData, error: runErr } = await supabaseClient
+        .from("collector_runs")
+        .select("*")
+        .order("run_date", { ascending: false });
 
+      const { data: itemData, error: itemErr } = await supabaseClient
+        .from("collector_items")
+        .select("*")
+        .order("collected_at", { ascending: false });
 
-  const boardFilter = document.getElementById("boardFilter");
-  const itemsEl = document.getElementById("items");
+      if (runErr || itemErr) {
+        console.error("Error fetching data:", runErr || itemErr);
+        alert("❌ Failed to load dashboard data");
+        return;
+      }
 
-  // Populate board filter
-  const uniqueBoards = [...new Set(items.map(i => i.board_id).filter(Boolean))];
+      runs = runData;
+      items = itemData;
 
-  uniqueBoards.forEach(board => {
-  if (!board) return; // skip if null/undefined
-  const opt = document.createElement("option");
-  opt.value = board;
-  opt.textContent = board.slice(0, 8) + "...";
-  boardFilter.appendChild(opt);
-});
-
-  
-console.log("Loaded items:", items);
-  function renderItems(filteredItems) {
-    itemsEl.innerHTML = "";
-    filteredItems.forEach(item => {
-      const card = document.createElement("div");
-      card.className = "card";
-      const tags = (item.tags || []).map(tag => `<span style="background:#eee;border-radius:4px;padding:2px 6px;margin-right:4px;font-size:0.75rem;">${tag}</span>`).join('');
-
-      card.innerHTML = `
-        <img src="${item.image_url}" />
-        <div>
-          <strong>${item.title}</strong><br/>
-          <small>${item.creator}</small><br/>
-          <div style="margin: 0.5rem 0;">${tags}</div>
-          <a href="${item.product_link}" target="_blank" style="font-size: 0.85rem; color: #0070f3;">View Source →</a>
-          <div style="margin-top: 0.5rem;">💚 12 &nbsp; ⭐ 4 &nbsp; 🎯 7</div>
-        </div>
-      `;
-      itemsEl.appendChild(card);
+      renderRuns(runs);
+      renderItems(items);
+      populateFiltersAndSections(items);
     });
-  }
-  function renderRuns(runs) {
-  const now = new Date();
-  const oneHour = 1000 * 60 * 60;
 
-  const recent = runs.filter(run => now - new Date(run.run_date) < oneHour);
-  const today = runs.filter(run => {
-    const d = new Date(run.run_date);
-    return d.toDateString() === now.toDateString() && now - d >= oneHour;
-  });
-  const older = runs.filter(run => new Date(run.run_date).toDateString() !== now.toDateString());
+    function renderRuns(runs) {
+      const now = new Date();
+      const oneHour = 1000 * 60 * 60;
 
-  const runsEl = document.getElementById("runs");
-  runsEl.innerHTML = "";
+      const recent = runs.filter(run => now - new Date(run.run_date) < oneHour);
+      const today = runs.filter(run => {
+        const d = new Date(run.run_date);
+        return d.toDateString() === now.toDateString() && now - d >= oneHour;
+      });
+      const older = runs.filter(run => new Date(run.run_date).toDateString() !== now.toDateString());
 
-  if (recent.length) {
-    runsEl.appendChild(makeRunSection("🕐 Recent (Past Hour)", recent));
-  }
+      const runsEl = document.getElementById("runs");
+      runsEl.innerHTML = "";
 
-  if (today.length) {
-    runsEl.appendChild(makeRunSection("📅 Today", today));
-  }
+      if (recent.length) runsEl.appendChild(makeRunSection("🕐 Recent (Past Hour)", recent));
+      if (today.length) runsEl.appendChild(makeRunSection("📅 Today", today));
+      if (older.length) runsEl.appendChild(makeRunSection("📁 Older", older));
+    }
 
-  if (older.length) {
-    runsEl.appendChild(makeRunSection("📁 Older", older));
-  }
-}
+    function makeRunSection(title, runList) {
+      const section = document.createElement("div");
+      section.className = "run-section";
+      const header = document.createElement("h3");
+      header.textContent = title;
+      header.style.cursor = "pointer";
+      const content = document.createElement("div");
+      content.className = "run-content";
+      content.style.marginLeft = "1rem";
+      runList.forEach(run => content.appendChild(addRunBlock(run)));
+      header.onclick = () => content.style.display = content.style.display === "none" ? "block" : "none";
+      section.appendChild(header);
+      section.appendChild(content);
+      return section;
+    }
 
-function makeRunSection(title, runList) {
-  const section = document.createElement("div");
-  section.className = "run-section";
+    function addRunBlock(run) {
+      const div = document.createElement("div");
+      div.className = "run";
+      div.innerHTML = `<strong>${run.source}</strong><br>${new Date(run.run_date).toLocaleString()}<br>${run.item_count} items`;
+      return div;
+    }
 
-  const header = document.createElement("h3");
-  header.textContent = title;
-  header.style.cursor = "pointer";
+    function renderItems(filteredItems) {
+      const itemsEl = document.getElementById("items");
+      itemsEl.innerHTML = "";
+      filteredItems.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "card";
+        const tags = (item.tags || []).map(tag => `<span style="background:#eee;border-radius:4px;padding:2px 6px;margin-right:4px;font-size:0.75rem;">${tag}</span>`).join('');
+        card.innerHTML = `
+          <img src="${item.image_url}" />
+          <div>
+            <strong>${item.title}</strong><br/>
+            <small>${item.creator}</small><br/>
+            <div style="margin: 0.5rem 0;">${tags}</div>
+            <a href="${item.product_link}" target="_blank" style="font-size: 0.85rem; color: #0070f3;">View Source →</a>
+            <div style="margin-top: 0.5rem;">💚 12 &nbsp; ⭐ 4 &nbsp; 🎯 7</div>
+          </div>
+        `;
+        itemsEl.appendChild(card);
+      });
+    }
 
-  const content = document.createElement("div");
-  content.className = "run-content";
-  content.style.marginLeft = "1rem";
+    function filterByBoard() {
+      const selected = document.getElementById("boardFilter").value;
+      const filtered = selected ? items.filter(i => i.board_id === selected) : items;
+      renderItems(filtered);
+    }
 
-  runList.forEach(run => {
-    content.appendChild(addRunBlock(run));
-  });
+    function populateFiltersAndSections(items) {
+      const boardFilter = document.getElementById("boardFilter");
+      const uniqueBoards = [...new Set(items.map(i => i.board_id).filter(Boolean))];
+      uniqueBoards.forEach(board => {
+        const opt = document.createElement("option");
+        opt.value = board;
+        opt.textContent = board.slice(0, 8) + "...";
+        boardFilter.appendChild(opt);
+      });
 
-  // toggle on click
-  header.onclick = () => {
-    content.style.display = content.style.display === "none" ? "block" : "none";
-  };
+      const now = new Date();
+      const oneHour = 1000 * 60 * 60;
+      const recent = items.filter(i => now - new Date(i.collected_at) < oneHour);
+      const today = items.filter(i => {
+        const d = new Date(i.collected_at);
+        return d.toDateString() === now.toDateString();
+      });
+      const thisWeek = items.filter(i => {
+        const d = new Date(i.collected_at);
+        const oneWeekAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
+        return d >= oneWeekAgo;
+      });
 
-  section.appendChild(header);
-  section.appendChild(content);
-  return section;
-}
+      const topCreators = {};
+      const tagsMap = {};
+      items.forEach(i => {
+        topCreators[i.creator] = (topCreators[i.creator] || 0) + 1;
+        (i.tags || []).forEach(t => tagsMap[t] = (tagsMap[t] || 0) + 1);
+      });
 
-function addRunBlock(run) {
-  const div = document.createElement("div");
-  div.className = "run";
-  div.innerHTML = `<strong>${run.source}</strong><br>${new Date(run.run_date).toLocaleString()}<br>${run.item_count} items`;
-  return div;
-}
+      const adminSections = document.getElementById("adminSections");
+      createSection("🕒 Recent (Last Hour)", recent);
+      createSection("📅 Today’s Grabs", today);
+      createSection("📚 This Week", thisWeek);
+      createTopCreatorsSection(topCreators);
+      createTrendingTagsSection(tagsMap);
+    }
 
+    function createSection(title, data) {
+      const section = document.createElement("div");
+      section.className = "section";
+      const header = document.createElement("div");
+      header.className = "section-header";
+      header.innerHTML = `<strong>${title}</strong><span>(${data.length})</span>`;
+      header.onclick = () => section.classList.toggle("active");
+      const content = document.createElement("div");
+      content.className = "section-content";
+      data.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          <img src="${item.image_url}" width="100"><br>
+          <strong>${item.title}</strong><br>
+          <small>${item.creator}</small>
+        `;
+        content.appendChild(card);
+      });
+      section.appendChild(header);
+      section.appendChild(content);
+      adminSections.appendChild(section);
+    }
 
-  function filterByBoard() {
-    const selected = boardFilter.value;
-    const filtered = selected ? items.filter(i => i.board_id === selected) : items;
-    renderItems(filtered);
-  }
+    function createTopCreatorsSection(creators) {
+      const sorted = Object.entries(creators).sort((a, b) => b[1] - a[1]);
+      const section = document.createElement("div");
+      section.className = "section";
+      const header = document.createElement("div");
+      header.className = "section-header";
+      header.innerHTML = `<strong>📌 Top Creators</strong><span>(${sorted.length})</span>`;
+      header.onclick = () => section.classList.toggle("active");
+      const content = document.createElement("div");
+      content.className = "section-content";
+      sorted.forEach(([email, count]) => {
+        const div = document.createElement("div");
+        div.innerHTML = `<strong>${email}</strong>: ${count} grabs`;
+        content.appendChild(div);
+      });
+      section.appendChild(header);
+      section.appendChild(content);
+      adminSections.appendChild(section);
+    }
 
-  renderItems(items);
-
+    function createTrendingTagsSection(tags) {
+      const sorted = Object.entries(tags).sort((a, b) => b[1] - a[1]);
+      const section = document.createElement("div");
+      section.className = "section";
+      const header = document.createElement("div");
+      header.className = "section-header";
+      header.innerHTML = `<strong>📈 Trending Tags</strong><span>(${sorted.length})</span>`;
+      header.onclick = () => section.classList.toggle("active");
+      const content = document.createElement("div");
+      content.className = "section-content";
+      sorted.forEach(([tag, count]) => {
+        const div = document.createElement("div");
+        div.innerHTML = `#${tag} (${count})`;
+        content.appendChild(div);
+      });
+      section.appendChild(header);
+      section.appendChild(content);
+      adminSections.appendChild(section);
+    }
 
     async function triggerRun() {
       const res = await fetch('/admin/trigger-run', { method: 'POST' });
       if (res.ok) location.reload();
       else alert('Run failed!');
     }
-    async function seedDemoItems() {
-  const email = localStorage.getItem("userEmail") || "";
-  const res = await fetch("/admin/seed-demo-items", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email })
-  });
 
-  const data = await res.json();
-  if (data.success) {
-    alert("✅ Demo items seeded!");
-    location.reload();
-  } else {
-    alert("❌ Failed to seed: " + data.error);
-  }
-}
+    async function seedDemo() {
+      const email = localStorage.getItem("userEmail") || "";
+      const res = await fetch("/admin/seed-demo-items", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email })
+      });
 
- 
-
+      const data = await res.json();
+      if (data.success) {
+        alert("✅ Demo items seeded!");
+        location.reload();
+      } else {
+        alert("❌ Failed to seed: " + data.error);
+      }
+    }
   </script>
 </body>
 </html>
