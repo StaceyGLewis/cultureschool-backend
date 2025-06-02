@@ -10,7 +10,13 @@
 
   <h2>Recent Runs</h2>
   <div id="runs"></div>
-
+  <div style="text-align: center; margin-bottom: 1rem;">
+    <label for="boardFilter"><strong>Filter by Board:</strong></label>
+    <select id="boardFilter" onchange="filterByBoard()">
+      <option value="">All Boards</option>
+    </select>
+  </div>
+  
   <h2>Latest Collected Items</h2>
   <div class="grid" id="items"></div>
 
@@ -26,16 +32,48 @@
       runsEl.appendChild(div);
     });
 
-    const itemsEl = document.getElementById("items");
-    items.forEach(item => {
+  const boardFilter = document.getElementById("boardFilter");
+  const itemsEl = document.getElementById("items");
+
+  // Populate board filter
+  const uniqueBoards = [...new Set(items.map(i => i.board_id))];
+  uniqueBoards.forEach(board => {
+    const opt = document.createElement("option");
+    opt.value = board;
+    opt.textContent = board.slice(0, 8) + "...";
+    boardFilter.appendChild(opt);
+  });
+
+  function renderItems(filteredItems) {
+    itemsEl.innerHTML = "";
+    filteredItems.forEach(item => {
       const card = document.createElement("div");
       card.className = "card";
+      const tags = (item.tags || []).map(tag => `<span style="background:#eee;border-radius:4px;padding:2px 6px;margin-right:4px;font-size:0.75rem;">${tag}</span>`).join('');
+
       card.innerHTML = `
         <img src="${item.image_url}" />
-        <div><strong>${item.title}</strong><br><small>${item.creator}</small></div>
+        <div>
+          <strong>${item.title}</strong><br/>
+          <small>${item.creator}</small><br/>
+          <div style="margin: 0.5rem 0;">${tags}</div>
+          <a href="${item.product_link}" target="_blank" style="font-size: 0.85rem; color: #0070f3;">View Source →</a>
+          <div style="margin-top: 0.5rem;">💚 12 &nbsp; ⭐ 4 &nbsp; 🎯 7</div>
+        </div>
       `;
       itemsEl.appendChild(card);
     });
+  }
+
+  function filterByBoard() {
+    const selected = boardFilter.value;
+    const filtered = selected ? items.filter(i => i.board_id === selected) : items;
+    renderItems(filtered);
+  }
+
+  renderItems(items);
+
+
 
     async function triggerRun() {
       const res = await fetch('/admin/trigger-run', { method: 'POST' });
