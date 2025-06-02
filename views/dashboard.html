@@ -7,6 +7,8 @@
 <body>
   <h1>📊 CoCo Collector Admin Dashboard</h1>
   <button onclick="triggerRun()">Run Collector Now</button>
+  <button onclick="seedDemo()">🌱 Seed Demo Items</button>
+
 
   <h2>Recent Runs</h2>
   <div id="runs"></div>
@@ -37,13 +39,16 @@ const items = %%ITEM_DATA%%;
   const itemsEl = document.getElementById("items");
 
   // Populate board filter
-  const uniqueBoards = [...new Set(items.map(i => i.board_id))];
+  const uniqueBoards = [...new Set(items.map(i => i.board_id).filter(Boolean))];
+
   uniqueBoards.forEach(board => {
-    const opt = document.createElement("option");
-    opt.value = board;
-    opt.textContent = board.slice(0, 8) + "...";
-    boardFilter.appendChild(opt);
-  });
+  if (!board) return; // skip if null/undefined
+  const opt = document.createElement("option");
+  opt.value = board;
+  opt.textContent = board.slice(0, 8) + "...";
+  boardFilter.appendChild(opt);
+});
+
   
 console.log("Loaded items:", items);
   function renderItems(filteredItems) {
@@ -82,6 +87,16 @@ console.log("Loaded items:", items);
       if (res.ok) location.reload();
       else alert('Run failed!');
     }
+    async function seedDemo() {
+  const res = await fetch("/admin/seed-demo-items", { method: "POST" });
+  if (res.ok) {
+    alert("✅ Demo items seeded!");
+    location.reload();
+  } else {
+    alert("❌ Seed failed.");
+  }
+}
+
   </script>
 </body>
 </html>

@@ -1338,6 +1338,52 @@ process.on("uncaughtException", err => {
 process.on("unhandledRejection", err => {
   console.error("Unhandled rejection:", err);
 });
+app.post("/admin/seed-demo-items", async (req, res) => {
+  const testItems = [
+    {
+      title: "Boho Interior Vibes",
+      creator: "stacey.a.grant@gmail.com",
+      image_url: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80",
+      product_link: "https://cultureschool.org/product/boho-vibes",
+      collected_at: new Date().toISOString(),
+      board_id: "seed-demo-1",
+      sku: "DEMO-001",
+      tags: ["boho", "interior", "style"],
+      metadata: { source: "unsplash", type: "image" }
+    },
+    {
+      title: "Vision Board Kit",
+      creator: "stacey.a.grant@gmail.com",
+      image_url: "https://images.unsplash.com/photo-1519710164239-da123dc03ef4?auto=format&fit=crop&w=800&q=80",
+      product_link: "https://cultureschool.org/product/vision-kit",
+      collected_at: new Date().toISOString(),
+      board_id: "seed-demo-1",
+      sku: "DEMO-002",
+      tags: ["vision", "kit"],
+      metadata: { source: "unsplash", type: "image" }
+    },
+    {
+      title: "Cultural Color Palette",
+      creator: "stacey.a.grant@gmail.com",
+      image_url: "https://images.unsplash.com/photo-1598620615060-2b6bb763a427?auto=format&fit=crop&w=800&q=80",
+      product_link: "https://cultureschool.org/product/palette",
+      collected_at: new Date().toISOString(),
+      board_id: "seed-demo-1",
+      sku: "DEMO-003",
+      tags: ["culture", "color", "palette"],
+      metadata: { source: "unsplash", type: "image" }
+    }
+  ];
+
+  const { error } = await supabase.from("collector_items").insert(testItems);
+
+  if (error) {
+    console.error("❌ Failed to seed collector items:", error.message);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+
+  res.json({ success: true, message: "🌱 Seeded 3 demo items" });
+});
 
 // WebSocket + Express listener
 const PORT = process.env.PORT || 5055;
