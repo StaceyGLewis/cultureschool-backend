@@ -1312,8 +1312,8 @@ app.get('/admin/dashboard', async (req, res) => {
 
   const html = fs.readFileSync(path.join(__dirname, 'views/dashboard.html'), 'utf8');
   const rendered = html
-    .replace('<!--RUN_DATA-->', JSON.stringify(runs || []))
-    .replace('<!--ITEM_DATA-->', JSON.stringify(items || []));
+  .replace('%%RUN_DATA%%', JSON.stringify(runs || []))
+  .replace('%%ITEM_DATA%%', JSON.stringify(items || []));
 
   res.send(rendered);
 });
