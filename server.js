@@ -10,7 +10,6 @@ const path = require('path');
 const axios = require('axios');
 const CryptoJS = require("crypto-js");
 require('dotenv').config();
-const cors = require("cors");
 const { createClient } = require('@supabase/supabase-js');
 const app = express();
 const server = http.createServer(app);
@@ -20,7 +19,6 @@ const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
-const cors = require("cors");
 
 // ⬇️ Add this line early
 app.use(cors({ origin: 'https://www.cultureschool.org' }));
