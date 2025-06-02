@@ -1339,6 +1339,33 @@ process.on("unhandledRejection", err => {
   console.error("Unhandled rejection:", err);
 });
 app.post("/admin/seed-demo-items", async (req, res) => {
+  if (req.body.email !== "stacey.a.grant@gmail.com") {
+    return res.status(403).json({ success: false, error: "Not authorized" });
+  }
+  
+  // Step 1: Create a new collector_runs entry
+  const run = {
+    run_date: new Date().toISOString(),
+    source: "admin_seed_button",
+    item_count: 3,
+    created_by: "stacey.a.grant@gmail.com",
+    notes: "Demo seed run from admin"
+  };
+
+  const { data: newRun, error: runError } = await supabase
+    .from("collector_runs")
+    .insert(run)
+    .select()
+    .single();
+
+  if (runError) {
+    console.error("❌ Failed to create run:", runError.message);
+    return res.status(500).json({ success: false, error: runError.message });
+  }
+
+  const run_id = newRun.id;
+
+  // Step 2: Seed collector_items with that run_id
   const testItems = [
     {
       title: "Boho Interior Vibes",
@@ -1349,6 +1376,7 @@ app.post("/admin/seed-demo-items", async (req, res) => {
       board_id: "seed-demo-1",
       sku: "DEMO-001",
       tags: ["boho", "interior", "style"],
+      run_id,
       metadata: { source: "unsplash", type: "image" }
     },
     {
@@ -1360,6 +1388,7 @@ app.post("/admin/seed-demo-items", async (req, res) => {
       board_id: "seed-demo-1",
       sku: "DEMO-002",
       tags: ["vision", "kit"],
+      run_id,
       metadata: { source: "unsplash", type: "image" }
     },
     {
@@ -1371,18 +1400,21 @@ app.post("/admin/seed-demo-items", async (req, res) => {
       board_id: "seed-demo-1",
       sku: "DEMO-003",
       tags: ["culture", "color", "palette"],
+      run_id,
       metadata: { source: "unsplash", type: "image" }
     }
   ];
 
-  const { error } = await supabase.from("collector_items").insert(testItems);
+  const { error: itemError } = await supabase
+    .from("collector_items")
+    .insert(testItems);
 
-  if (error) {
-    console.error("❌ Failed to seed collector items:", error.message);
-    return res.status(500).json({ success: false, error: error.message });
+  if (itemError) {
+    console.error("❌ Failed to seed collector items:", itemError.message);
+    return res.status(500).json({ success: false, error: itemError.message });
   }
 
-  res.json({ success: true, message: "🌱 Seeded 3 demo items" });
+  res.json({ success: true, message: "🌱 Seeded 3 demo items + run", run_id });
 });
 
 // WebSocket + Express listener
