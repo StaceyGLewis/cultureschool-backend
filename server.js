@@ -1416,6 +1416,18 @@ app.post("/admin/seed-demo-items", async (req, res) => {
 
   res.json({ success: true, message: "🌱 Seeded 3 demo items + run", run_id });
 });
+app.post("/api/saveGrab", async (req, res) => {
+  const { email, title, image_url, board_id } = req.body;
+  if (!email || !title || !image_url || !board_id) return res.status(400).send("Missing fields");
+  if (!validEmails.includes(email)) return res.status(403).send("Not authorized");
+
+  const { error } = await supabase
+    .from("cocoboard_media")
+    .insert([{ ...req.body, created_at: new Date().toISOString() }]);
+
+  if (error) return res.status(500).send(error.message);
+  res.send({ success: true });
+});
 
 // WebSocket + Express listener
 const PORT = process.env.PORT || 5055;
