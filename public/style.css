@@ -63,4 +63,17 @@ body {
     padding: 0.75rem;
     font-size: 0.9rem;
   }
+  .run-section h3 {
+    background: #f7f7f7;
+    padding: 6px 10px;
+    border-radius: 6px;
+    transition: background 0.2s;
+  }
+  .run-section h3:hover {
+    background: #e2e2e2;
+  }
+  .run {
+    padding: 6px 0;
+    border-bottom: 1px solid #eee;
+  }
   
