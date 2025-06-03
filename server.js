@@ -12,7 +12,6 @@ const CryptoJS = require("crypto-js");
 require('dotenv').config();
 const { createClient } = require('@supabase/supabase-js');
 const app = express();
-const dailyTrends = require('./routes/daily-board-trends');
 const server = http.createServer(app);
 setupWebSocket(server);
 
@@ -27,7 +26,6 @@ app.use(cors());
 app.use(bodyParser.json({ limit: '25mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '25mb' }));
 app.use('/public', express.static(path.join(__dirname, 'public')));
-app.use('/api/daily-board-trends', dailyTrends);
 app.get("/", (req, res) => {
   res.send("✅ CultureSchool backend is running!");
 });
