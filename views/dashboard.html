@@ -29,7 +29,9 @@
       <option value="">All Boards</option>
     </select>
   </div>
-
+  <h2>📈 Digital Space Trends</h2>
+  <div id="trendStats"></div>
+  
   <h2>Recent Runs</h2>
   <div id="runs"></div>
 
@@ -280,6 +282,42 @@
         alert("❌ Failed to seed: " + data.error);
       }
     }
+    async function loadTrends() {
+  const trendsContainer = document.getElementById('trendStats');
+  trendsContainer.innerHTML = '<p>Loading trends...</p>';
+
+  try {
+    const response = await fetch('https://cultureschool-backend.onrender.com/api/daily-board-trends');
+    const data = await response.json();
+
+    if (!data.success) {
+      trendsContainer.innerHTML = `<p>Error loading trends: ${data.message}</p>`;
+      return;
+    }
+
+    trendsContainer.innerHTML = '';
+
+    data.trends.forEach(group => {
+      const detail = document.createElement('details');
+      detail.innerHTML = `<summary>${group.date} — ${group.count} digital spaces</summary>`;
+      trendsContainer.appendChild(detail);
+    });
+
+    const topCreators = document.createElement('details');
+    topCreators.innerHTML = `<summary>📌 Top Creators</summary>`;
+    data.top_creators.forEach(c => {
+      const p = document.createElement('p');
+      p.textContent = `${c.email}: ${c.count} spaces`;
+      topCreators.appendChild(p);
+    });
+    trendsContainer.appendChild(topCreators);
+  } catch (err) {
+    trendsContainer.innerHTML = `<p>⚠️ Failed to fetch trends: ${err.message}</p>`;
+  }
+}
+
+loadTrends();
+
   </script>
   <style>
     body {

@@ -12,6 +12,7 @@ const CryptoJS = require("crypto-js");
 require('dotenv').config();
 const { createClient } = require('@supabase/supabase-js');
 const app = express();
+const dailyTrends = require('./routes/daily-board-trends');
 const server = http.createServer(app);
 setupWebSocket(server);
 
@@ -26,7 +27,7 @@ app.use(cors());
 app.use(bodyParser.json({ limit: '25mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '25mb' }));
 app.use('/public', express.static(path.join(__dirname, 'public')));
-
+app.use('/api/daily-board-trends', dailyTrends);
 app.get("/", (req, res) => {
   res.send("✅ CultureSchool backend is running!");
 });
@@ -1456,6 +1457,48 @@ app.post("/api/saveGrab", async (req, res) => {
 
   } catch (err) {
     console.error("❌ saveGrab error:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+app.get('/api/daily-board-trends', async (req, res) => {
+  try {
+    const { data: boards, error } = await supabase
+      .from('cocoboards')
+      .select('id, created_at, created_by');
+
+    if (error) throw error;
+
+    // Group by date
+    const trends = {};
+    const creatorCounts = {};
+
+    boards.forEach(board => {
+      const date = new Date(board.created_at).toISOString().split('T')[0];
+
+      trends[date] = (trends[date] || 0) + 1;
+      if (board.created_by) {
+        creatorCounts[board.created_by] = (creatorCounts[board.created_by] || 0) + 1;
+      }
+    });
+
+    // Convert trend object to sorted array
+    const trendArray = Object.entries(trends)
+      .map(([date, count]) => ({ date, count }))
+      .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    // Convert top creators to array
+    const topCreators = Object.entries(creatorCounts)
+      .map(([email, count]) => ({ email, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+
+    res.json({
+      success: true,
+      trends: trendArray,
+      top_creators: topCreators,
+    });
+  } catch (err) {
+    console.error("Trend fetch failed:", err);
     res.status(500).json({ success: false, message: err.message });
   }
 });
