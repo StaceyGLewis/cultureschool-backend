@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html>
 <head>
   <title>CoCo Collector Admin</title>
@@ -10,114 +10,28 @@
     .section-content { display: none; padding: 10px; }
     .section.active .section-content { display: block; }
     .card { margin-bottom: 1rem; }
-    body {
-      font-family: 'Inter', sans-serif;
-      margin: 0;
-      padding: 2rem;
-      background: #f9f9fc;
-      color: #333;
-    }
-    h1, h2 {
-      color: #2c3e50;
-    }
-    button {
-      margin-right: 1rem;
-      padding: 0.5rem 1rem;
-      background: #0070f3;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-weight: 600;
-    }
-    button:hover {
-      background: #005bb5;
-    }
-    select {
-      padding: 0.5rem;
-      border-radius: 4px;
-      border: 1px solid #ccc;
-      font-size: 1rem;
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-      gap: 1rem;
-      margin-bottom: 2rem;
-    }
-    .card {
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-      overflow: hidden;
-      padding: 0.5rem;
-      display: flex;
-      flex-direction: column;
-    }
-    .card img {
-      width: 100%;
-      object-fit: cover;
-      border-radius: 6px;
-      margin-bottom: 0.5rem;
-    }
-    .section {
-      margin-bottom: 1.5rem;
-      border-radius: 6px;
-      overflow: hidden;
-      background: #fff;
-      border: 1px solid #ddd;
-    }
-    .section-header {
-      background: #f0f0f5;
-      padding: 0.75rem 1rem;
-      cursor: pointer;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-weight: bold;
-      font-size: 1rem;
-    }
-    .section-content {
-      display: none;
-      padding: 1rem;
-      border-top: 1px solid #eee;
-    }
-    .section.active .section-content {
-      display: block;
-    }
-    .run-section h3 {
-      margin: 0;
-      padding: 0.5rem;
-      background: #e8e8f1;
-      border-radius: 4px;
-    }
-    .run {
-      margin-bottom: 0.75rem;
-      padding: 0.5rem;
-      background: #fafafa;
-      border-radius: 4px;
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
-    }
-    small {
-      color: #666;
-      font-size: 0.85rem;
-    }
-  
+    .filter-bar { display: flex; gap: 1rem; margin: 1rem 0; flex-wrap: wrap; align-items: center; }
+    .filter-bar input, .filter-bar select { padding: 6px; font-size: 1rem; border: 1px solid #ccc; border-radius: 4px; }
   </style>
 </head>
 <body>
   <h1>📊 CoCo Collector Admin Dashboard</h1>
   <button onclick="triggerRun()">Run Collector Now</button>
   <button onclick="seedDemo()">🌱 Seed Demo Items</button>
+  <button onclick="exportCSV()">📤 Export as CSV</button>
 
-  <h2>Recent Runs</h2>
-  <div id="runs"></div>
-  <div style="text-align: center; margin-bottom: 1rem;">
-    <label for="boardFilter"><strong>Filter by Board:</strong></label>
-    <select id="boardFilter" onchange="filterByBoard()">
+  <div class="filter-bar">
+    <input type="text" id="creatorSearch" placeholder="Search by creator..." oninput="applyFilters()" />
+    <select id="tagFilter" onchange="applyFilters()">
+      <option value="">Filter by tag</option>
+    </select>
+    <select id="boardFilter" onchange="applyFilters()">
       <option value="">All Boards</option>
     </select>
   </div>
+
+  <h2>Recent Runs</h2>
+  <div id="runs"></div>
 
   <h2>Latest Collected Items</h2>
   <div class="grid" id="items"></div>
@@ -131,39 +45,55 @@
       "https://qwulthvbwujfehgdegtn.supabase.co",
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3dWx0aHZid3VqZmVoZ2RlZ3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQyMDcxODIsImV4cCI6MjA1OTc4MzE4Mn0.t9n4eZng6d0jggiPNK-J_DByvEE2L9tqy5Xh_1-TSoQ"
     );
-
     let runs = [];
     let items = [];
+    let filteredItems = [];
 
     document.addEventListener("DOMContentLoaded", async () => {
-      const { data: runData, error: runErr } = await supabaseClient
-        .from("collector_runs")
-        .select("*")
-        .order("run_date", { ascending: false });
-
-      const { data: itemData, error: itemErr } = await supabaseClient
-        .from("collector_items")
-        .select("*")
-        .order("collected_at", { ascending: false });
-
-      if (runErr || itemErr) {
-        console.error("Error fetching data:", runErr || itemErr);
-        alert("❌ Failed to load dashboard data");
-        return;
-      }
+      const { data: runData } = await supabaseClient.from("collector_runs").select("*").order("run_date", { ascending: false });
+      const { data: itemData } = await supabaseClient.from("collector_items").select("*").order("collected_at", { ascending: false });
 
       runs = runData;
       items = itemData;
+      filteredItems = [...items];
 
       renderRuns(runs);
-      renderItems(items);
       populateFiltersAndSections(items);
+      renderItems(filteredItems);
     });
+
+    function exportCSV() {
+      const source = filteredItems.length ? filteredItems : items;
+      const csvHeader = "Title,Creator,Tags,Board ID,Collected At,Image URL,Product Link\n";
+      const csvRows = source.map(i => {
+        return `"${i.title}","${i.creator}","${(i.tags || []).join(',')}","${i.board_id}","${i.collected_at}","${i.image_url}","${i.product_link}"`;
+      });
+      const blob = new Blob([csvHeader + csvRows.join("\n")], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "collector_export.csv";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function applyFilters() {
+      const creator = document.getElementById("creatorSearch").value.toLowerCase();
+      const tag = document.getElementById("tagFilter").value;
+      const board = document.getElementById("boardFilter").value;
+
+      filteredItems = items.filter(i => {
+        return (!creator || i.creator?.toLowerCase().includes(creator)) &&
+               (!tag || (i.tags || []).includes(tag)) &&
+               (!board || i.board_id === board);
+      });
+
+      renderItems(filteredItems);
+    }
 
     function renderRuns(runs) {
       const now = new Date();
       const oneHour = 1000 * 60 * 60;
-
       const recent = runs.filter(run => now - new Date(run.run_date) < oneHour);
       const today = runs.filter(run => {
         const d = new Date(run.run_date);
@@ -223,39 +153,36 @@
       });
     }
 
-    function filterByBoard() {
-      const selected = document.getElementById("boardFilter").value;
-      const filtered = selected ? items.filter(i => i.board_id === selected) : items;
-      renderItems(filtered);
-    }
-
     function populateFiltersAndSections(items) {
       const boardFilter = document.getElementById("boardFilter");
-      const uniqueBoards = [...new Set(items.map(i => i.board_id).filter(Boolean))];
+      const tagFilter = document.getElementById("tagFilter");
+
+      const uniqueBoards = [...new Set(items.map(i => i.board_id).filter(Boolean))].sort();
       uniqueBoards.forEach(board => {
         const opt = document.createElement("option");
         opt.value = board;
-        opt.textContent = board.slice(0, 8) + "...";
+        opt.textContent = `${board.slice(0, 8)}... (${board})`;
         boardFilter.appendChild(opt);
+      });
+
+      const allTags = Array.from(new Set(items.flatMap(i => i.tags || []))).sort();
+      allTags.forEach(tag => {
+        const opt = document.createElement("option");
+        opt.value = tag;
+        opt.textContent = tag;
+        tagFilter.appendChild(opt);
       });
 
       const now = new Date();
       const oneHour = 1000 * 60 * 60;
       const recent = items.filter(i => now - new Date(i.collected_at) < oneHour);
-      const today = items.filter(i => {
-        const d = new Date(i.collected_at);
-        return d.toDateString() === now.toDateString();
-      });
-      const thisWeek = items.filter(i => {
-        const d = new Date(i.collected_at);
-        const oneWeekAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
-        return d >= oneWeekAgo;
-      });
+      const today = items.filter(i => new Date(i.collected_at).toDateString() === now.toDateString());
+      const thisWeek = items.filter(i => new Date(i.collected_at) >= new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7));
 
       const topCreators = {};
       const tagsMap = {};
       items.forEach(i => {
-        topCreators[i.creator] = (topCreators[i.creator] || 0) + 1;
+        if (i.creator) topCreators[i.creator] = (topCreators[i.creator] || 0) + 1;
         (i.tags || []).forEach(t => tagsMap[t] = (tagsMap[t] || 0) + 1);
       });
 
@@ -353,8 +280,75 @@
         alert("❌ Failed to seed: " + data.error);
       }
     }
-    
-
   </script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      padding: 1rem;
+      background: #f0f4f8;
+      color: #333;
+    }
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 1.5rem;
+    }
+    h2 {
+      margin-top: 2rem;
+    }
+    details {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      margin-bottom: 1.25rem;
+      padding: 0.75rem 1.25rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+      transition: all 0.2s ease-in-out;
+    }
+    details:hover {
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+    }
+    summary {
+      font-size: 1.2rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .grab-item {
+      display: flex;
+      align-items: center;
+      margin: 0.75rem 0;
+      gap: 1rem;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 0.75rem;
+    }
+    .grab-item:last-child {
+      border-bottom: none;
+    }
+    .grab-thumb {
+      width: 80px;
+      height: 80px;
+      border-radius: 10px;
+      object-fit: cover;
+      background: #ddd;
+      border: 1px solid #ccc;
+    }
+    .grab-meta {
+      flex: 1;
+    }
+    .grab-meta p {
+      margin: 0.2rem 0;
+      font-size: 0.95rem;
+    }
+    .grab-meta a {
+      color: #007acc;
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+    .grab-meta a:hover {
+      text-decoration: underline;
+    }
+  </style>
 </body>
 </html>
+  
+
