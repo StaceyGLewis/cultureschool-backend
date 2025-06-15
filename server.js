@@ -1504,7 +1504,7 @@ app.post("/api/set-profile-cover", async (req, res) => {
   const { email, cover_image } = req.body;
 
   if (!email || !cover_image) {
-    return res.status(400).json({ error: "Missing email or cover_image" });
+    return res.status(400).json({ success: false, error: "Missing email or cover image" });
   }
 
   try {
@@ -1513,17 +1513,15 @@ app.post("/api/set-profile-cover", async (req, res) => {
       .update({ cover_image })
       .eq("email", email);
 
-    if (error) {
-      console.error("Supabase update error:", error.message);
-      return res.status(500).json({ error: error.message });
-    }
+    if (error) throw error;
 
-    res.status(200).json({ success: true, updated: data });
+    res.json({ success: true, message: "Cover image updated", data });
   } catch (err) {
-    console.error("Server error:", err.message);
-    res.status(500).json({ error: err.message });
+    console.error("Error setting profile cover:", err.message);
+    res.status(500).json({ success: false, error: err.message });
   }
 });
+
 
 
 // WebSocket + Express listener
