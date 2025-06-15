@@ -1215,32 +1215,53 @@ app.post('/api/log-event', async (req, res) => {
 });
 app.get("/api/get-creators", async (req, res) => {
   try {
-    const { data: users, error: userErr } = await supabase
+    const { data: userRecords } = await supabase
       .from("users")
-      .select("email, username, bio, avatar_url")
-      .limit(100); // or more if needed
+      .select("email, username, bio, avatar_url");
 
-    if (userErr) throw userErr;
+    const { data: creatorRecords } = await supabase
+      .from("creators")
+      .select("email, username, bio, profile_pic, location");
 
-    const creatorsWithBoards = await Promise.all(users.map(async user => {
-      const { data: board } = await supabase
-        .from("cocoboards")
-        .select("id, cover_image")
-        .eq("created_by", user.email)
-        .eq("is_public", true)
-        .order("updated_at", { ascending: false })
-        .limit(1)
-        .single();
+    const combined = [...(userRecords || []), ...(creatorRecords || [])];
 
-      return {
-        id: user.email,
-        username: user.username || "Anonymous",
-        bio: user.bio || "",
-        avatar: user?.avatar_url || user?.avatar || `https://www.gravatar.com/avatar/${CryptoJS.MD5(user.email.trim().toLowerCase())}?d=identicon`,
-        board_id: board?.id || null,
-        previewImage: board?.cover_image || null
-      };
-    }));
+    // Deduplicate by email — favoring creator records if overlap
+    const deduped = Object.values(
+      combined.reduce((acc, user) => {
+        acc[user.email] = {
+          ...acc[user.email],
+          ...user,
+          avatar:
+            user.avatar_url ||
+            user.profile_pic ||
+            `https://www.gravatar.com/avatar/${CryptoJS.MD5(user.email.trim().toLowerCase())}?d=identicon`
+        };
+        return acc;
+      }, {})
+    );
+
+    // Now join each deduped user with their latest public board
+    const creatorsWithBoards = await Promise.all(
+      deduped.map(async (user) => {
+        const { data: board } = await supabase
+          .from("cocoboards")
+          .select("id, cover_image")
+          .eq("created_by", user.email)
+          .eq("is_public", true)
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .single();
+
+        return {
+          id: user.email,
+          username: user.username || "Anonymous",
+          bio: user.bio || "",
+          avatar: user.avatar,
+          board_id: board?.id || null,
+          previewImage: board?.cover_image || null,
+        };
+      })
+    );
 
     res.json({ success: true, creators: creatorsWithBoards });
   } catch (err) {
@@ -1248,75 +1269,7 @@ app.get("/api/get-creators", async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
-app.get("/api/get-public-creators", async (req, res) => {
-  try {
-    // 1. Get all public boards
-    const { data: boards, error: boardErr } = await supabase
-      .from("cocoboards")
-      .select("id, created_by, cover_image, title, updated_at")
-      .eq("is_public", true)
-      .order("updated_at", { ascending: false });
 
-    if (boardErr) throw boardErr;
-
-    // 2. Deduplicate by creator
-    const latestBoardByUser = {};
-    for (const board of boards) {
-      if (!latestBoardByUser[board.created_by]) {
-        latestBoardByUser[board.created_by] = board;
-      }
-    }
-
-    const creators = await Promise.all(
-      Object.entries(latestBoardByUser).map(async ([email, board]) => {
-        const { data: user, error: userErr } = await supabase
-          .from("users")
-          .select("username, bio, avatar_url")
-          .eq("email", email)
-          .single();
-
-        // Optional: log or handle userErr
-
-        const CryptoJS = require("crypto-js");
-        const gravatarHash = CryptoJS.MD5(email.trim().toLowerCase()).toString();
-        const fallbackAvatar = `https://www.gravatar.com/avatar/${gravatarHash}?d=identicon`;
-
-        return {
-          id: email,
-          username: user?.username || "Anonymous",
-          bio: user?.bio || "",
-          avatar: user?.avatar_url || user?.avatar || fallbackAvatar,
-          previewImage: board.cover_image || null,
-          board_id: board.id
-        };
-      })
-    );
-
-    res.json({ success: true, creators });
-  } catch (err) {
-    console.error("❌ get-public-creators error:", err.message);
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-app.get('/admin/dashboard', async (req, res) => {
-  const { data: runs, error } = await supabase
-    .from('collector_runs')
-    .select('*')
-    .order('run_date', { ascending: false });
-
-  const { data: items } = await supabase
-    .from('collector_items')
-    .select('title, image_url, creator, product_link, run_id, board_id, tags')
-    .order('collected_at', { ascending: false })
-    .limit(10);
-
-  const html = fs.readFileSync(path.join(__dirname, 'views/dashboard.html'), 'utf8');
-  const rendered = html
-  .replace('%%RUN_DATA%%', JSON.stringify(runs || []))
-  .replace('%%ITEM_DATA%%', JSON.stringify(items || []));
-
-  res.send(rendered);
-});
 
 // Route: Trigger fake Collector run
 app.post('/admin/trigger-run', async (req, res) => {
@@ -1518,6 +1471,72 @@ app.post("/api/set-profile-cover", async (req, res) => {
     res.json({ success: true, message: "Cover image updated", data });
   } catch (err) {
     console.error("Error setting profile cover:", err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+app.get("/api/get-public-creators", async (req, res) => {
+  try {
+    // 1. Get all public boards
+    const { data: boards, error: boardErr } = await supabase
+      .from("cocoboards")
+      .select("id, created_by, cover_image, title, updated_at")
+      .eq("is_public", true)
+      .order("updated_at", { ascending: false });
+
+    if (boardErr) throw boardErr;
+
+    // 2. Deduplicate by creator (email) to get latest board per creator
+    const latestBoardByUser = {};
+    for (const board of boards) {
+      if (!latestBoardByUser[board.created_by]) {
+        latestBoardByUser[board.created_by] = board;
+      }
+    }
+
+    // 3. Fetch users and creators separately
+    const { data: userRecords } = await supabase
+      .from("users")
+      .select("email, username, bio, avatar_url");
+
+    const { data: creatorRecords } = await supabase
+      .from("creators")
+      .select("email, username, bio, profile_pic, location");
+
+    const combined = [...(userRecords || []), ...(creatorRecords || [])];
+
+    // 4. Deduplicate by email — favoring creator data
+    const allCreators = Object.values(
+      combined.reduce((acc, user) => {
+        acc[user.email] = {
+          ...acc[user.email],
+          ...user,
+          avatar:
+            user.avatar_url ||
+            user.profile_pic ||
+            `https://www.gravatar.com/avatar/${CryptoJS.MD5(user.email.trim().toLowerCase())}?d=identicon`
+        };
+        return acc;
+      }, {})
+    );
+
+    // 5. Merge creators with boards
+    const publicCreators = Object.entries(latestBoardByUser).map(
+      ([email, board]) => {
+        const user = allCreators.find((u) => u.email === email);
+        return {
+          id: email,
+          username: user?.username || "Anonymous",
+          bio: user?.bio || "",
+          avatar: user?.avatar,
+          previewImage: board.cover_image || null,
+          board_id: board.id
+        };
+      }
+    );
+
+    res.json({ success: true, creators: publicCreators });
+  } catch (err) {
+    console.error("❌ get-public-creators error:", err.message);
     res.status(500).json({ success: false, error: err.message });
   }
 });
