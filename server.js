@@ -1563,6 +1563,20 @@ app.get("/api/get-public-creators", async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+// server.js
+app.get("/api/fetch-profile-meta", async (req, res) => {
+  const url = req.query.url;
+  if (!url) return res.status(400).json({ error: "Missing URL" });
+
+  const preview = await fetch(`https://api.microlink.io/?url=${encodeURIComponent(url)}`);
+  const { data } = await preview.json();
+
+  res.json({
+    title: data?.title || "",
+    description: data?.description || "",
+    image: data?.image?.url || ""
+  });
+});
 
 
 // WebSocket + Express listener
