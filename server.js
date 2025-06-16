@@ -1474,7 +1474,7 @@ app.post("/api/set-profile-cover", async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
-aapp.get("/api/get-public-creators", async (req, res) => {
+app.get("/api/get-public-creators", async (req, res) => {
   try {
     const { data: boards, error: boardErr } = await supabase
       .from("cocoboards")
@@ -1563,8 +1563,6 @@ aapp.get("/api/get-public-creators", async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
-
-
 
 
 // WebSocket + Express listener
