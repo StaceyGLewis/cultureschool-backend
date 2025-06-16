@@ -1474,9 +1474,8 @@ app.post("/api/set-profile-cover", async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
-app.get("/api/get-public-creators", async (req, res) => {
+aapp.get("/api/get-public-creators", async (req, res) => {
   try {
-    // 1. Get all public boards
     const { data: boards, error: boardErr } = await supabase
       .from("cocoboards")
       .select("id, created_by, cover_image, title, updated_at")
@@ -1485,7 +1484,6 @@ app.get("/api/get-public-creators", async (req, res) => {
 
     if (boardErr) throw boardErr;
 
-    // 2. Deduplicate by creator (email) to get latest board per creator
     const latestBoardByUser = {};
     for (const board of boards) {
       if (!latestBoardByUser[board.created_by]) {
@@ -1493,7 +1491,6 @@ app.get("/api/get-public-creators", async (req, res) => {
       }
     }
 
-    // 3. Fetch users and creators separately
     const { data: userRecords } = await supabase
       .from("users")
       .select("email, username, bio, avatar_url");
@@ -1504,7 +1501,6 @@ app.get("/api/get-public-creators", async (req, res) => {
 
     const combined = [...(userRecords || []), ...(creatorRecords || [])];
 
-    // 4. Deduplicate by email — favoring creator data
     const allCreators = Object.values(
       combined.reduce((acc, user) => {
         acc[user.email] = {
@@ -1519,7 +1515,6 @@ app.get("/api/get-public-creators", async (req, res) => {
       }, {})
     );
 
-    // 5. Merge creators with boards
     const publicCreators = Object.entries(latestBoardByUser).map(
       ([email, board]) => {
         const user = allCreators.find((u) => u.email === email);
@@ -1528,18 +1523,47 @@ app.get("/api/get-public-creators", async (req, res) => {
           username: user?.username || "Anonymous",
           bio: user?.bio || "",
           avatar: user?.avatar,
+          location: user?.location || "",
           previewImage: board.cover_image || null,
           board_id: board.id
         };
       }
     );
 
-    res.json({ success: true, creators: publicCreators });
+    // ✅ Region tagging logic
+    function getRegionFromLocation(location = "") {
+      const normalized = location.trim().toLowerCase();
+      if (normalized.includes("ny") || normalized.includes("brooklyn") || normalized.includes("queens") || normalized.includes("manhattan"))
+        return "New York Area";
+      if (normalized.includes("ma") || normalized.includes("boston") || normalized.includes("holliston"))
+        return "New England";
+      if (normalized.includes("ca") || normalized.includes("los angeles") || normalized.includes("san francisco"))
+        return "California";
+      if (normalized.includes("tx") || normalized.includes("houston") || normalized.includes("austin"))
+        return "Texas";
+      if (normalized.includes("atlanta") || normalized.includes("ga"))
+        return "Southeast";
+      if (normalized.includes("chicago") || normalized.includes("il"))
+        return "Midwest";
+      if (normalized.includes("seattle") || normalized.includes("wa"))
+        return "Pacific Northwest";
+      if (normalized.includes("fl") || normalized.includes("miami") || normalized.includes("orlando"))
+        return "Florida";
+      return "Other / International";
+    }
+
+    const creatorsWithRegions = publicCreators.map(creator => ({
+      ...creator,
+      region: getRegionFromLocation(creator.location)
+    }));
+
+    res.json({ success: true, creators: creatorsWithRegions });
   } catch (err) {
     console.error("❌ get-public-creators error:", err.message);
     res.status(500).json({ success: false, error: err.message });
   }
 });
+
 
 
 
