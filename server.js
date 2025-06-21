@@ -1576,6 +1576,11 @@ app.get("/api/fetch-profile-meta", async (req, res) => {
     description: data?.description || "",
     image: data?.image?.url || ""
   });
+});app.get("/api/upc-lookup", async (req, res) => {
+  const { upc } = req.query;
+  const result = await fetch(`https://api.upcitemdb.com/prod/trial/lookup?upc=${upc}`);
+  const data = await result.json();
+  res.json(data);
 });
 
 
