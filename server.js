@@ -1585,8 +1585,7 @@ app.get("/api/fetch-profile-meta", async (req, res) => {
 
 app.use('/api/voice', elevenlabsRoute); // Your POST endpoint is now: /api/voice/speak
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Server listening on port ${PORT}`));
+
 
 
 // WebSocket + Express listener
