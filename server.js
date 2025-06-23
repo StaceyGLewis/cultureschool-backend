@@ -14,7 +14,7 @@ const { createClient } = require('@supabase/supabase-js');
 const app = express();
 const server = http.createServer(app);
 setupWebSocket(server);
-
+const elevenlabsRoute = require('./routes/elevenlabs');
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -1582,6 +1582,11 @@ app.get("/api/fetch-profile-meta", async (req, res) => {
   const data = await result.json();
   res.json(data);
 });
+
+app.use('/api/voice', elevenlabsRoute); // Your POST endpoint is now: /api/voice/speak
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`🚀 Server listening on port ${PORT}`));
 
 
 // WebSocket + Express listener
