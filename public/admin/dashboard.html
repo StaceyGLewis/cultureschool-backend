@@ -386,6 +386,17 @@ loadTrends();
       text-decoration: underline;
     }
   </style>
+  <h2>🆕 Create New Board</h2>
+  <div style="margin-bottom: 1.5rem;">
+    <input type="text" id="newBoardTitle" placeholder="Board Title" style="padding: 6px; width: 200px;" />
+    <input type="text" id="newBoardDescription" placeholder="Description" style="padding: 6px; width: 300px;" />
+    <label style="margin-left: 1rem;">
+      <input type="checkbox" id="newBoardPublic" /> Public
+    </label>
+    <button onclick="createNewBoard()" style="margin-left: 1rem;">✨ Create Board</button>
+  </div>
+  <div id="newBoardStatus" style="font-weight: 500; margin-top: 0.5rem;"></div>
+  
 </body>
 </html>
   
