@@ -1585,6 +1585,34 @@ app.get("/api/fetch-profile-meta", async (req, res) => {
 
 app.use('/api/voice', elevenlabsRoute); // Your POST endpoint is now: /api/voice/speak
 
+app.get("/api/get-public-locations", async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("locations")
+      .select("*")
+      .eq("is_public", true);
+
+    if (error) throw error;
+
+    const enriched = data.map((loc) => ({
+      id: loc.id,
+      name: loc.name,
+      type: loc.type,
+      tags: loc.tags || [],
+      lat: loc.lat,
+      lng: loc.lng,
+      region: loc.region || "",
+      website: loc.website || "",
+      description: loc.description || "",
+      image: loc.image_url || "",
+    }));
+
+    res.json({ success: true, locations: enriched });
+  } catch (err) {
+    console.error("❌ get-public-locations error:", err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 
 
