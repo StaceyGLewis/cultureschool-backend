@@ -16,7 +16,7 @@ exports.handler = async (event, context) => {
     const response = await fetch("https://api.elevenlabs.io/v1/text-to-speech/2qfp6zPuviqeCOZIE9RZ", {
       method: "POST",
       headers: {
-        "xi-api-key": process.env.sk_788ddf93115a04249f79dad57fe96e06e65b8a2950787ee6,
+        "xi-api-key": process.env.ELEVENLABS_API_KEY,
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
