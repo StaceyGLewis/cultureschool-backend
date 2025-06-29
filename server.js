@@ -28,7 +28,8 @@ const corsOptions = {
   origin: [
     'https://www.cultureschool.org',
     'https://cocoboard-preview-html.netlify.app',
-    'https://coco-collector.netlify.app'
+    'https://coco-collector.netlify.app',
+    'https://coco-speak.netlify.app'
     // Add more Netlify or local dev URLs here as needed
   ],
   credentials: true,
