@@ -1,6 +1,6 @@
 const express = require('express');
 const http = require('http');
-const cors = require('cors');
+const cors = require('cors'); // ✅ Only once!
 const setupWebSocket = require('./websocket');
 const bodyParser = require('body-parser');
 const { v4: uuidv4 } = require('uuid');
@@ -11,24 +11,39 @@ const axios = require('axios');
 const CryptoJS = require("crypto-js");
 require('dotenv').config();
 const { createClient } = require('@supabase/supabase-js');
+
 const app = express();
 const server = http.createServer(app);
 setupWebSocket(server);
+
 const elevenlabsRoute = require('./routes/elevenlabs');
+
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// ⬇️ Add this line early
-app.use(cors({ origin: 'https://www.cultureschool.org' }));
-app.use(cors());
+// ✅ Only one CORS declaration with all allowed origins
+const corsOptions = {
+  origin: [
+    'https://www.cultureschool.org',
+    'https://cocoboard-preview-html.netlify.app',
+    'https://coco-collector.netlify.app'
+    // Add more Netlify or local dev URLs here as needed
+  ],
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
+
 app.use(bodyParser.json({ limit: '25mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '25mb' }));
 app.use('/public', express.static(path.join(__dirname, 'public')));
+
 app.get("/", (req, res) => {
   res.send("✅ CultureSchool backend is running!");
 });
+
 
 // Save or Update user by email
 app.post('/api/save-to-supabase', async (req, res) => {
