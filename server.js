@@ -1629,6 +1629,60 @@ app.get("/api/get-public-locations", async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+// Save tile endpoint
+app.post('/api/saveFlourishTile', async (req, res) => {
+  const tile = req.body;
+
+  if (!tile.board_id || !tile.email) {
+    return res.status(400).json({ success: false, message: "Missing board_id or email" });
+  }
+
+  try {
+    let result;
+    if (tile.id) {
+      // Update
+      const { data, error } = await supabase
+        .from('flourish_tiles')
+        .update(tile)
+        .eq('id', tile.id)
+        .select();
+      if (error) throw error;
+      result = data;
+    } else {
+      // Insert
+      const { data, error } = await supabase
+        .from('flourish_tiles')
+        .insert([tile])
+        .select();
+      if (error) throw error;
+      result = data;
+    }
+
+    res.json({ success: true, data: result });
+  } catch (err) {
+    console.error("Tile save error:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Delete tile endpoint
+app.delete('/api/deleteFlourishTile', async (req, res) => {
+  const { id } = req.query;
+  if (!id) return res.status(400).json({ success: false, message: "Tile ID required" });
+
+  try {
+    const { error } = await supabase
+      .from('flourish_tiles')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Tile delete error:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
 
 
 
