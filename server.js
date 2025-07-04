@@ -1683,6 +1683,37 @@ app.delete('/api/deleteFlourishTile', async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 });
+// Add to your Express backend (or wherever your routes live)
+app.get("/api/get-support-board", async (req, res) => {
+  const boardId = req.query.id;
+  if (!boardId) {
+    return res.status(400).json({ success: false, message: "No board_id provided" });
+  }
+
+  // Fetch board metadata
+  const { data: board, error: boardError } = await supabase
+    .from("cocoboards")
+    .select("*")
+    .eq("id", boardId)
+    .single();
+
+  if (boardError || !board) {
+    return res.status(404).json({ success: false, message: "Board not found" });
+  }
+
+  // Fetch tiles
+  const { data: tiles, error: tileError } = await supabase
+    .from("cocoboard_media")
+    .select("*")
+    .eq("board_id", boardId)
+    .order("created_at", { ascending: false });
+
+  if (tileError) {
+    return res.status(500).json({ success: false, message: "Error fetching tiles" });
+  }
+
+  return res.json({ success: true, board, tiles });
+});
 
 
 
