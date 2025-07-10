@@ -11,11 +11,13 @@ const axios = require('axios');
 const CryptoJS = require("crypto-js");
 require('dotenv').config();
 const { createClient } = require('@supabase/supabase-js');
+const fetch = require("node-fetch")
 
 const app = express();
 const server = http.createServer(app);
 setupWebSocket(server);
 
+const OPENCAGE_API_KEY = process.env.OPENCAGE_API_KEY;
 const elevenlabsRoute = require('./routes/elevenlabs');
 
 const supabase = createClient(
@@ -1714,7 +1716,23 @@ app.get("/api/get-support-board", async (req, res) => {
 
   return res.json({ success: true, board, tiles });
 });
+app.get("/api/geocode", async (req, res) => {
+  const q = req.query.q;
+  if (!q) {
+    return res.status(400).json({ error: "Missing query parameter 'q'" });
+  }
 
+  try {
+    const geoRes = await fetch(`https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(q)}&key=${OPENCAGE_API_KEY}`);
+    const json = await geoRes.json();
+    res.json(json);
+  } catch (err) {
+    console.error("Geocode API error:", err);
+    res.status(500).json({ error: "Failed to fetch geocode data" });
+  }
+});
+
+module.exports = app;
 
 
 // WebSocket + Express listener
