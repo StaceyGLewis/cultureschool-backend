@@ -1716,6 +1716,7 @@ app.get("/api/get-support-board", async (req, res) => {
 
   return res.json({ success: true, board, tiles });
 });
+
 app.get("/api/geocode", async (req, res) => {
   const q = req.query.q;
   if (!q) {
@@ -1734,7 +1735,30 @@ app.get("/api/geocode", async (req, res) => {
 
 module.exports = app;
 
+// ✅ Get all Flourish Tiles for a board
+app.get('/api/getFlourishTiles', async (req, res) => {
+  const { board_id, email } = req.query;
 
+  if (!board_id || !email) {
+    return res.status(400).json({ success: false, message: "Missing board_id or email" });
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('flourish_tiles')
+      .select('*')
+      .eq('board_id', board_id)
+      .eq('email', email)
+      .order('sort_order', { ascending: true });
+
+    if (error) throw error;
+
+    res.json({ success: true, tiles: data });
+  } catch (err) {
+    console.error("Tile fetch error:", err.message);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
 // WebSocket + Express listener
 const PORT = process.env.PORT || 5055;
 server.listen(PORT, () => {
