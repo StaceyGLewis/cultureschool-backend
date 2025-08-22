@@ -361,7 +361,7 @@ app.post("/api/save-media-item", async (req, res) => {
   }
 });
 
-// Get media
+
 // Get media
 app.get("/api/get-media-items", async (req, res) => {
   const { publicwall } = req.query;
