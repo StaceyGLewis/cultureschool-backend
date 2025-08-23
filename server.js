@@ -8,19 +8,32 @@ const { exec } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
-const CryptoJS = require("crypto-js");
+const CryptoJS = require('crypto-js');
 require('dotenv').config();
 const { createClient } = require('@supabase/supabase-js');
-const fetch = require("node-fetch")
+const fetch = require('node-fetch');
+
+// --- OpenAI (SDK) ---
+
+const OpenAI = require('openai');
+if (!process.env.OPENAI_API_KEY) {
+  throw new Error('OPENAI_API_KEY is missing from .env');
+}
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const app = express();
 const server = http.createServer(app);
 setupWebSocket(server);
 
+// (optional) expose the client to other route files via app
+app.set('openai', openai);
+app.use(express.json({ limit: '10mb' }));  // needed for JSON body {prompt:"..."}
+
 const OPENCAGE_API_KEY = process.env.OPENCAGE_API_KEY;
 const elevenlabsRoute = require('./routes/elevenlabs');
 
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+// If you still want a variable, use this (but you don’t need both):
+// const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -1773,6 +1786,14 @@ app.post('/api/images', async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+app.get('/api/health/env', (req, res) => {
+  const seen = {
+    OPENAI_API_KEY: !!process.env.OPENAI_API_KEY,
+    OPENCAGE_API_KEY: !!process.env.OPENCAGE_API_KEY,
+    // add any others you care about
+  };
+  res.json(seen);
 });
 
 // WebSocket + Express listener
