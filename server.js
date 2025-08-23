@@ -20,6 +20,8 @@ setupWebSocket(server);
 const OPENCAGE_API_KEY = process.env.OPENCAGE_API_KEY;
 const elevenlabsRoute = require('./routes/elevenlabs');
 
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -1759,6 +1761,20 @@ app.get('/api/getFlourishTiles', async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 });
+app.post('/api/images', async (req, res) => {
+  try {
+    const { prompt, size = '1024x1024' } = req.body;
+    const out = await client.images.generate({
+      model: 'gpt-image-1',
+      prompt,
+      size
+    });
+    res.json({ url: out.data[0].url }); // or b64_json if you prefer
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // WebSocket + Express listener
 const PORT = process.env.PORT || 5055;
 server.listen(PORT, () => {
