@@ -1774,26 +1774,38 @@ app.get('/api/getFlourishTiles', async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 });
+// Health check (optional)
+app.get('/api/health/env', (req, res) => {
+  res.json({ OPENAI_API_KEY: !!process.env.OPENAI_API_KEY });
+});
+
+// ✅ matches your frontend: POST https://cultureschool-backend.onrender.com/api/images
 app.post('/api/images', async (req, res) => {
   try {
-    const { prompt, size = '1024x1024' } = req.body;
-    const out = await client.images.generate({
+    const { prompt, size = '1024x1024' } = req.body || {};
+    if (!prompt) return res.status(400).json({ error: 'Missing prompt' });
+    if (!process.env.OPENAI_API_KEY) {
+      return res.status(500).json({ error: 'OPENAI_API_KEY missing on server' });
+    }
+
+    const out = await openai.images.generate({
       model: 'gpt-image-1',
       prompt,
       size
     });
-    res.json({ url: out.data[0].url }); // or b64_json if you prefer
+
+    const first = out?.data?.[0];
+    if (!first) return res.status(502).json({ error: 'No image returned from OpenAI' });
+
+    // Your frontend supports either {url} or base64
+    if (first.url) return res.json({ url: first.url });
+    if (first.b64_json) return res.json({ b64: first.b64_json });
+
+    return res.status(502).json({ error: 'Unexpected image payload' });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Image gen error:', err?.response?.data || err);
+    res.status(500).json({ error: err?.message || 'Server error' });
   }
-});
-app.get('/api/health/env', (req, res) => {
-  const seen = {
-    OPENAI_API_KEY: !!process.env.OPENAI_API_KEY,
-    OPENCAGE_API_KEY: !!process.env.OPENCAGE_API_KEY,
-    // add any others you care about
-  };
-  res.json(seen);
 });
 
 // WebSocket + Express listener
