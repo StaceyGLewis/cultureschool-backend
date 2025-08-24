@@ -20,6 +20,9 @@ if (!process.env.OPENAI_API_KEY) {
   throw new Error('OPENAI_API_KEY is missing from .env');
 }
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const PEXELS_API_KEY  = process.env.PEXELS_API_KEY;
+const PIXABAY_API_KEY = process.env.PIXABAY_API_KEY;
+const FREESOUND_TOKEN = process.env.FREESOUND_TOKEN;
 
 const app = express();
 const server = http.createServer(app);
@@ -1807,7 +1810,107 @@ app.post('/api/images', async (req, res) => {
     res.status(500).json({ error: err?.message || 'Server error' });
   }
 });
+// GET /api/pexels-proxy?query=calm&per_page=4&page=1&thumb=1
+app.get('/api/pexels-proxy', async (req, res) => {
+  if (!ensureKey('PEXELS_API_KEY', PEXELS_API_KEY, res)) return;
 
+  const { query = '', per_page = 10, page = 1, thumb } = req.query;
+  try {
+    const r = await axios.get('https://api.pexels.com/v1/search', {
+      headers: { Authorization: PEXELS_API_KEY },
+      params: { query, per_page, page }
+    });
+
+    const data = r.data || {};
+    // If the client asked for a thumbnail, redirect to the first image URL
+    if (String(thumb) === '1') {
+      const first = data.photos?.[0];
+      const thumbUrl = first?.src?.medium || first?.src?.large || first?.src?.original;
+      if (thumbUrl) {
+        // Cache thumbnails for 10 minutes
+        res.set('Cache-Control', 'public, max-age=600');
+        return res.redirect(302, thumbUrl);
+      }
+      return res.redirect(302, 'about:blank');
+    }
+
+    // Standard JSON response
+    res.set('Cache-Control', 'public, max-age=60');
+    return res.json(data);
+  } catch (err) {
+    console.error('pexels-proxy error:', err?.response?.status, err?.message);
+    const status = err?.response?.status || 500;
+    return res.status(status).json({ error: 'Pexels proxy failed' });
+  }
+});
+
+// GET /api/pixabay-proxy?query=nature&per_page=4&page=1&thumb=1
+app.get('/api/pixabay-proxy', async (req, res) => {
+  if (!ensureKey('PIXABAY_API_KEY', PIXABAY_API_KEY, res)) return;
+
+  const { query = '', per_page = 10, page = 1, image_type = 'photo', thumb } = req.query;
+  try {
+    const r = await axios.get('https://pixabay.com/api/', {
+      params: {
+        key: PIXABAY_API_KEY,
+        q: query,
+        per_page,
+        page,
+        image_type,
+        safesearch: 'true'
+      }
+    });
+
+    const data = r.data || {};
+    if (String(thumb) === '1') {
+      const first = data.hits?.[0];
+      const thumbUrl = first?.webformatURL || first?.previewURL || first?.largeImageURL;
+      if (thumbUrl) {
+        res.set('Cache-Control', 'public, max-age=600');
+        return res.redirect(302, thumbUrl);
+      }
+      return res.redirect(302, 'about:blank');
+    }
+
+    res.set('Cache-Control', 'public, max-age=60');
+    return res.json(data);
+  } catch (err) {
+    console.error('pixabay-proxy error:', err?.response?.status, err?.message);
+    const status = err?.response?.status || 500;
+    return res.status(status).json({ error: 'Pixabay proxy failed' });
+  }
+});
+
+// GET /api/freesound-proxy?q=birds&page_size=5&page=1
+// Returns a trimmed JSON list you can iterate
+app.get('/api/freesound-proxy', async (req, res) => {
+  if (!ensureKey('FREESOUND_TOKEN', FREESOUND_TOKEN, res)) return;
+
+  const { q = '', page_size = 5, page = 1 } = req.query;
+  try {
+    const r = await axios.get('https://freesound.org/apiv2/search/text/', {
+      headers: { Authorization: `Token ${FREESOUND_TOKEN}` },
+      params: { query: q, page_size, page, fields: 'id,name,previews,username,duration' }
+    });
+
+    // Thin response: only what you’ll actually use in the UI
+    const items = (r.data.results || []).map(s => ({
+      id: s.id,
+      name: s.name,
+      duration: s.duration,
+      user: s.username,
+      // preview MP3/OGG URLs
+      preview: s.previews?.['preview-hq-mp3'] || s.previews?.['preview-lq-mp3'] || null
+    }));
+
+    res.set('Cache-Control', 'public, max-age=60');
+    return res.json({ count: items.length, results: items });
+  } catch (err) {
+    console.error('freesound-proxy error:', err?.response?.status, err?.message);
+    const status = err?.response?.status || 500;
+    return res.status(status).json({ error: 'Freesound proxy failed' });
+  }
+});
 // WebSocket + Express listener
 const PORT = process.env.PORT || 5055;
 server.listen(PORT, () => {
