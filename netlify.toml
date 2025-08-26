@@ -1,0 +1,13 @@
+[build]
+  functions = "netlify/functions"
+  publish   = "dist"   # change to "public" or "build" if that’s your output folder
+
+[[redirects]]
+  from = "/api/pexels-proxy"
+  to = "/.netlify/functions/pexels-proxy"
+  status = 200
+
+[[redirects]]
+  from = "/api/pixabay-proxy"
+  to = "/.netlify/functions/pixabay-proxy"
+  status = 200
