@@ -1,18 +1,17 @@
 [build]
+  publish   = "dist"
   functions = "netlify/functions"
-  publish   = "dist"   # or "public" if that's where your index.html lives
 
 [[redirects]]
   from = "/api/pexels-proxy"
-  to = "/.netlify/functions/pexels-proxy"
+  to   = "/.netlify/functions/pexels-proxy"
   status = 200
 
 [[redirects]]
   from = "/api/pixabay-proxy"
-  to = "/.netlify/functions/pixabay-proxy"
+  to   = "/.netlify/functions/pixabay-proxy"
   status = 200
 
-# SPA fallback
 [[redirects]]
   from = "/*"
   to   = "/index.html"
