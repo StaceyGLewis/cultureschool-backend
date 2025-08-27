@@ -11,8 +11,3 @@
   from = "/api/pixabay-proxy"
   to   = "/.netlify/functions/pixabay-proxy"
   status = 200
-
-[[redirects]]
-  from = "/*"
-  to   = "/index.html"
-  status = 200
