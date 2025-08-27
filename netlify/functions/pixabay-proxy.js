@@ -1,19 +1,52 @@
-export async function handler(event) {
-  const query = event.queryStringParameters.query || "design";
-  const per_page = event.queryStringParameters.per_page || 12;
-  const API_KEY = process.env.PIXABAY_API;
+// Serverless proxy for Pixabay. Keeps your API key private.
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type"
+};
+
+exports.handler = async (event) => {
+  if (event.httpMethod === 'OPTIONS') {
+    return { statusCode: 204, headers: CORS };
+  }
 
   try {
-    const res = await fetch(
-      `https://pixabay.com/api/?key=${API_KEY}&q=${encodeURIComponent(query)}&image_type=photo&per_page=${per_page}`
-    );
+    const key = process.env.PIXABAY_API;
+    if (!key) {
+      return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: "PIXABAY_API not set" }) };
+    }
+
+    const qs = new URLSearchParams(event.queryStringParameters || {});
+    const query = qs.get('query') || qs.get('q') || 'inspiration';
+    const per   = Math.min(parseInt(qs.get('per_page') || '12', 10), 50); // Pixabay higher cap
+    const thumb = qs.get('thumb');
+
+    const url = `https://pixabay.com/api/?key=${encodeURIComponent(key)}&q=${encodeURIComponent(query)}&image_type=photo&per_page=${per}`;
+    const res = await fetch(url);
+    if (!res.ok) {
+      return { statusCode: res.status, headers: CORS, body: JSON.stringify({ error: `Pixabay ${res.status}` }) };
+    }
     const data = await res.json();
+
+    if (thumb) {
+      const h = data?.hits?.[0];
+      const tiny = h?.previewURL || h?.webformatURL || h?.largeImageURL;
+      if (tiny) {
+        return {
+          statusCode: 302,
+          headers: { ...CORS, Location: tiny, "Cache-Control": "public, max-age=600" },
+          body: ""
+        };
+      }
+      return { statusCode: 404, headers: CORS, body: "No thumb" };
+    }
+
     return {
-      statusCode: res.status,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
+      statusCode: 200,
+      headers: { ...CORS, "Content-Type": "application/json", "Cache-Control": "public, max-age=60" },
+      body: JSON.stringify(data)
     };
-  } catch (err) {
-    return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
+  } catch (e) {
+    return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: e.message }) };
   }
-}
+};
