@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>CoCo Collect — Desktop</title>
+
+  <!-- Defaults (override via localStorage or gear) -->
+  <meta name="backend-base" content="https://cultureschool-backend.onrender.com">
+  <!-- Optional: set PIXABAY / PEXELS here if you want (local dev only) -->
+  <!-- <meta name="pixabay-key" content="YOUR_PIXABAY_KEY"> -->
+  <!-- <meta name="pexels-key"  content="YOUR_PEXELS_KEY"> -->
+
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg1:#0b0c12; --bg2:#151733; --plate:#0b0c12; --card:#111626; --line:#232743;
+      --ink:#f6f7ff; --muted:#a0a6ba; --accent:#a278e6; --pill:#ffce8a;
+      --ok:#22c55e; --warn:#f59e0b; --bad:#ef4444;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    html,body{margin:0;padding:0;background:linear-gradient(180deg,var(--bg1),var(--bg2)); color:var(--ink); font:15px/1.5 Inter, system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif}
+    img{display:block;max-width:100%}
+    a{color:inherit;text-decoration:none}
+
+    /* ====== Desktop App Grid ====== */
+    body{ display:grid; grid-template-columns:280px minmax(720px,1fr) 360px; grid-template-rows:56px 1fr;
+          grid-template-areas:"topbar topbar topbar" "left main right"; height:100vh; overflow:hidden }
+    header.coco-topbar{ grid-area:topbar; position:sticky; top:0; z-index:60; border-bottom:1px solid rgba(255,255,255,.06);
+      background:rgba(10,12,20,.7); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px) }
+    .wrap{ max-width:1200px; margin:0 auto; padding:10px 14px; display:flex; align-items:center; justify-content:space-between; gap:12px }
+    .brand{ display:flex; align-items:center; gap:10px }
+    .brand .dot{ width:10px; height:10px; border-radius:50%; background:var(--warn); box-shadow:0 0 0 2px rgba(245,158,11,.25) }
+    .brand .dot.ok{ background:var(--ok); box-shadow:0 0 0 2px rgba(34,197,94,.25) }
+    .brand .dot.warn{ background:var(--warn) }
+    .h1{ margin:0; font:800 18px/1.2 Inter }
+    .sub{ margin:2px 0 0; font-size:.88rem; color:var(--muted) }
+    .top-actions{display:flex; gap:8px; align-items:center}
+
+    /* left rail */
+    aside.coco-left{ grid-area:left; overflow:auto; border-right:1px solid rgba(255,255,255,.08); padding:12px;
+      background:linear-gradient(180deg,rgba(255,255,255,.02),transparent) }
+    .nav-title{ font-weight:800; font-size:.95rem; margin:6px 0 10px }
+    .nav-group{ display:flex; flex-direction:column; gap:6px }
+    .nav-item{ display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 10px; border-radius:10px;
+      border:1px solid rgba(255,255,255,.08); background:#121528; cursor:pointer }
+    .nav-item:hover{ border-color:rgba(255,255,255,.18) }
+    .nav-item small{ color:var(--muted) }
+
+    /* main feed */
+    main.coco-main{ grid-area:main; overflow:auto; padding:16px }
+    .hero{ position:relative; border:1px solid var(--line); background:#0e1322; border-radius:16px; overflow:hidden; margin-bottom:16px }
+    .hero img{ width:100%; height:min(64svh,520px); object-fit:cover }
+    .hero .meta{ position:absolute; left:0; right:0; bottom:0; padding:12px; background:linear-gradient(180deg,transparent,rgba(0,0,0,.6)) }
+    .hero .meta h2{ margin:0 0 6px; font:800 1.05rem Inter }
+    .hero .meta p{ margin:0; color:var(--muted); font-size:.9rem }
+
+    /* packs ribbon */
+    .packs-wrap{ margin:0 0 14px }
+    #packs{ display:grid; grid-auto-flow:column; grid-auto-columns: minmax(160px, 22%); gap:10px; overflow:auto; padding:2px 2px 8px }
+    .pack{ position:relative; border:1px solid rgba(255,255,255,.12); border-radius:16px; overflow:hidden; background:#0f1426; min-height:110px; cursor:pointer }
+    .pack img{ width:100%; height:110px; object-fit:cover; display:block }
+    .pack span{ position:absolute; left:8px; bottom:8px; right:8px; font-weight:800; font-size:.9rem; text-shadow:0 2px 8px rgba(0,0,0,.6) }
+
+    /* grid feed */
+    #feed{ display:grid; grid-template-columns:1fr; gap:16px; align-content:start }
+    @media(min-width:860px){ #feed{ grid-template-columns:1fr 1fr } }
+    @media(min-width:1100px){ #feed{ grid-template-columns:1fr 1fr 1fr } }
+
+    .card,.preview-card{ position:relative; aspect-ratio: var(--ratio, 4/5); border-radius:16px; overflow:hidden;
+      background:var(--card); border:1px solid var(--line); box-shadow:0 8px 22px rgba(0,0,0,.28); transition:transform .25s ease, box-shadow .25s ease }
+    .card:hover,.preview-card:hover{ transform:translateY(-3px); box-shadow:0 12px 28px rgba(0,0,0,.4) }
+    .card img,.preview-card img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center }
+    .preview-card.selected{ outline:3px solid var(--accent); outline-offset:-3px }
+
+    /* right dock */
+    aside#cocoSidePanel{ grid-area:right; position:relative; background:var(--plate); border-left:1px solid rgba(255,255,255,.12);
+      height:100%; overflow:auto; padding:12px; box-shadow:none }
+
+    /* float toolbar */
+    body{ padding-bottom:120px }
+    .toolbar{ position:fixed; left:50%; bottom:calc(18px + env(safe-area-inset-bottom)); transform:translateX(-50%);
+      display:flex; gap:10px; justify-content:center; align-items:center; width:min(760px,94vw);
+      padding:10px; border-radius:16px; background:rgba(17,22,38,.55); backdrop-filter:blur(10px);
+      border:1px solid rgba(255,255,255,.12); box-shadow:0 14px 40px rgba(0,0,0,.35); z-index:80 }
+    .tool{ flex:1 1 auto; min-width:110px; background:linear-gradient(135deg,var(--pill),var(--accent)); color:#1a1330; border:0; border-radius:12px; padding:10px 12px; font-weight:800; cursor:pointer; box-shadow:0 8px 18px rgba(0,0,0,.35); transition:transform .2s ease, box-shadow .2s ease }
+    .tool:hover{ transform:translateY(-2px); box-shadow:0 12px 26px rgba(0,0,0,.45) }
+    .tool.secondary{ background:#222742; color:var(--ink); border:1px solid rgba(255,255,255,.12) }
+
+    /* modal */
+    .modal,#lightbox{ display:none; pointer-events:none; opacity:0 }
+    .modal.open,#lightbox.open{ display:flex; pointer-events:auto; opacity:1 }
+    #saveModal{ align-items:flex-end; justify-content:center; background:rgba(0,0,0,.45) }
+    #saveModal .sheet{ background:#16182a; width:100%; max-width:560px; border-radius:20px 20px 0 0;
+      padding:18px 16px calc(18px + env(safe-area-inset-bottom)); border-top:1px solid rgba(255,255,255,.12);
+      box-shadow:0 -8px 24px rgba(0,0,0,.4); transform:translateY(24px); max-height:80svh; overflow:auto; transition:transform .25s ease }
+    #saveModal.open .sheet{ transform:translateY(0) }
+
+    footer{ text-align:center; color:var(--muted); font-size:.9rem; padding:20px 0 }
+
+    /* shimmer for skeletons */
+    @keyframes shimmer{ 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+    .shimmer{ background:linear-gradient(90deg,#1a2033 0%,#222a44 50%,#1a2033 100%); background-size:200% 100%; animation:shimmer 1.2s linear infinite }
+
+    /* ==== Dark-mode text & controls ==== */
+    :root{ color-scheme:dark; --ink:#f3f4ff; --ink-weak:#c6c9d8; --ink-invert:#11131e }
+    html,body{ color:var(--ink)!important } *,*::before,*::after{ color:inherit }
+    button,input,select,textarea,label{ color:var(--ink)!important }
+    input,select,textarea{ background:#121528!important; border:1px solid rgba(255,255,255,.14)!important }
+    ::placeholder{ color:var(--ink-weak) }
+    .nav-item,.nav-item *{ color:var(--ink)!important } small,.sub{ color:var(--ink-weak)!important }
+    .hero .meta h2,.hero .meta p{ color:var(--ink)!important }
+    .tool{ color:var(--ink-invert)!important } .tool.secondary{ color:var(--ink)!important }
+    #cocoSidePanel h3,#cocoSidePanel label{ color:var(--ink)!important }
+    #cocoToast{ color:var(--ink)!important }
+    a{ color:var(--ink)!important; opacity:.92 } a:hover{ opacity:1 }
+    .card,.preview-card,.nav-item,#cocoSidePanel,.coco-left{ border-color:rgba(255,255,255,.14)!important }
+
+    /* offline bar */
+    #offline{ display:none; position:fixed; left:0; right:0; top:56px; z-index:70; padding:8px 12px;
+      background:rgba(245,158,11,.15); color:#f8fafc; border-bottom:1px solid rgba(245,158,11,.35); text-align:center }
+
+    /* Sign-in modal */
+    #signinModal .sheet{ background:#16182a; width:100%; max-width:420px; border-radius:16px; padding:16px; display:flex; gap:12px; flex-direction:column }
+    #signinModal input{ width:100%; padding:10px; border-radius:10px; border:1px solid rgba(255,255,255,.14); background:#121528; color:var(--ink) }
+  </style>
+</head>
+<body>
+
+  <!-- offline notice -->
+  <div id="offline">You’re offline. Some features may be unavailable.</div>
+
+  <!-- ===== Topbar ===== -->
+  <header class="coco-topbar">
+    <div class="wrap">
+      <div class="brand">
+        <div class="dot ok" id="statusDot" title="Backend status"></div>
+        <div>
+          <h1 class="h1">✨ CoCo Collect</h1>
+          <p class="sub">Collect → compose → publish. Canva-clean, CoCo-smart.</p>
+        </div>
+      </div>
+      <div class="top-actions">
+        <span id="whoAmI" class="sub" title="Signed in as"></span>
+        <a href="https://collector-desktop.netlify.app/" target="_blank" rel="noopener" class="tool secondary" style="min-width:auto;padding:8px 12px">🌐 Collector</a>
+        <button id="themesBtn" class="tool secondary" style="min-width:auto;padding:8px 12px">✨ Themes</button>
+        <button id="gearBtn" class="tool secondary" style="min-width:auto;padding:8px 12px">⚙</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== Left rail ===== -->
+  <aside class="coco-left">
+    <div class="nav-title">Your Boards</div>
+    <div id="boardsList" class="nav-group">
+      <div class="nav-item" data-demo="1"><span>My Inspiration</span><small>12 items</small></div>
+      <div class="nav-item" data-demo="1"><span>Wellness — Fall</span><small>8 items</small></div>
+      <div class="nav-item" data-demo="1"><span>Pocket Studio</span><small>5 items</small></div>
+    </div>
+
+    <div class="nav-title" style="margin-top:14px;">Quick Add</div>
+    <div class="nav-group">
+      <button id="wbPaste" class="nav-item">📋 Paste from clipboard</button>
+      <button id="scanBtn" class="nav-item">📸 Snap</button>
+      <button id="addBtn"  class="nav-item">🔗 Add by URL</button>
+    </div>
+
+    <div class="nav-title" style="margin-top:14px;">Bookmarklet</div>
+    <div class="nav-group">
+      <a id="bookmarklet" class="nav-item" href="#" title="Drag to your bookmarks bar">🔖 CoCo Add</a>
+      <small>Drag “CoCo Add” to your bookmarks bar, then click it on any page to send the URL here.</small>
+    </div>
+  </aside>
+
+  <!-- ===== Main ===== -->
+  <main class="coco-main">
+    <section class="hero" aria-label="Spotlight">
+      <img id="heroImg" alt="" src="https://images.unsplash.com/photo-1545239351-1141bd82e8a6?q=80&w=1600&auto=format&fit=crop" />
+      <div class="meta">
+        <h2>Today’s Spark</h2>
+        <p>Drop images, paste, or snap to build your board in minutes.</p>
+      </div>
+    </section>
+
+    <!-- Packs ribbon -->
+    <section class="packs-wrap">
+      <div id="packs" aria-label="Spark packs"></div>
+    </section>
+
+    <!-- Feed target -->
+    <section id="feed" aria-label="Inspiration feed"></section>
+  </main>
+
+  <!-- ===== Right panel ===== -->
+  <aside id="cocoSidePanel" aria-label="CoCo Panel">
+    <h3 style="margin:2px 0 12px; font-weight:800;">CoCo Panel</h3>
+    <div style="display:grid; gap:10px">
+      <button id="openSave" class="tool">💾 Save / Compose</button>
+      <button id="openScene" class="tool secondary">🧩 Scene / Collage</button>
+      <button id="downloadOne" class="tool secondary">⬇ Download</button>
+
+      <div style="height:1px;background:rgba(255,255,255,.12);margin:2px 0 6px"></div>
+
+      <label style="font-weight:600">Search</label>
+      <div class="nav-group">
+        <input id="pasteInput" placeholder="Paste an image URL or type a query…" style="background:#121528;border:1px solid rgba(255,255,255,.12); color:#e5e7eb; padding:8px 10px; border-radius:10px" />
+        <div style="display:flex; gap:8px;">
+          <button id="searchBtn" class="nav-item" style="flex:1">🔍 Search Packs</button>
+          <label class="nav-item" style="gap:6px; display:flex; align-items:center; padding:6px 8px;">
+            <input type="checkbox" id="directMode" />
+            <span>Direct APIs</span>
+          </label>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ===== Toolbar ===== -->
+  <div class="toolbar" role="toolbar" aria-label="Quick actions">
+    <button id="saveBtn" class="tool secondary">💾 Save</button>
+    <button id="sceneBtn" class="tool secondary">🧩 Scene</button>
+    <button id="collageBtn" class="tool secondary">🖼 Collage</button>
+    <button id="downloadBtn" class="tool">⬇ Export</button>
+  </div>
+
+  <!-- ===== Modals ===== -->
+  <div class="modal" id="saveModal" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="sheet">
+      <h3 style="margin:0 0 10px">Choose action</h3>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px">
+        <button class="nav-item" data-act="scene">Build Scene</button>
+        <button class="nav-item" data-act="collage">Build Collage</button>
+        <button class="nav-item" data-act="download">Download</button>
+        <button class="nav-item" data-act="board">Save to Board</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="lightbox" class="modal" aria-hidden="true" role="dialog" aria-modal="true"></div>
+
+  <!-- === Sign-in Modal === -->
+  <div id="signinModal" class="modal" role="dialog" aria-modal="true">
+    <div class="sheet">
+      <h3 style="margin:0">Sign in</h3>
+      <p class="sub" style="margin:0 0 6px">Enter your email to save boards & personalize.</p>
+      <input id="emailInput" type="email" placeholder="you@studio.com" autocomplete="email" />
+      <div style="display:flex; gap:8px; justify-content:flex-end;">
+        <button id="signinCancel" class="tool secondary">Not now</button>
+        <button id="signinGo" class="tool">Sign in</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- === Scene/Collage Composer Modal (Pro) === -->
+  <div id="sceneMaker" class="modal" role="dialog" aria-modal="true">
+    <div class="sheet" style="max-width:720px; border-radius:12px; padding:16px; background:#16182a; flex-direction:column; display:flex; gap:12px;">
+      <h3 style="margin:0 0 8px">Scene Composer</h3>
+
+      <!-- Controls -->
+      <div id="sceneControls" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <label>BG <input id="bgColor" type="color" value="#0b0c12" style="width:100%"></label>
+        <label>Aspect
+          <select id="aspect" style="width:100%">
+            <option value="1:1">1:1</option>
+            <option value="4:5">4:5</option>
+            <option value="9:16">9:16</option>
+            <option value="16:9">16:9</option>
+          </select>
+        </label>
+        <label>Padding <input id="pad" type="range" min="0" max="120" step="2" value="24"></label>
+        <label>Radius  <input id="rad" type="range" min="0" max="80" step="2" value="20"></label>
+        <label>BorderW <input id="bw"  type="range" min="0" max="24" step="1" value="4"></label>
+        <label>Border <input id="bc" type="color" value="#a278e6" style="width:100%"></label>
+        <label>Shadow  <input id="sh"  type="range" min="0" max="40" step="1" value="12"></label>
+        <label>Export×  <input id="scale" type="range" min="1" max="4" step="1" value="2"></label>
+        <label style="grid-column:1 / -1">Brand text <input id="brandText" placeholder="Your brand" style="width:100%"></label>
+      </div>
+
+      <canvas id="sceneCanvas" width="1000" height="1000" style="max-width:100%; border:1px solid rgba(255,255,255,.2); border-radius:12px;"></canvas>
+      <div style="display:flex; gap:8px; justify-content:flex-end;">
+        <button id="closeScene" class="tool secondary">Cancel</button>
+        <button id="saveScene" class="tool">Save Scene</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>Made with ❤ by CultureSchool</footer>
+
+  <!-- ===== App Wiring ===== -->
+  <script>
+    // ===== Helpers & State =====
+    const qs = new URLSearchParams(location.search);
+    const getQS = (k)=> qs.get(k);
+    function setQS(obj){
+      const cur = new URL(location.href);
+      Object.entries(obj).forEach(([k,v]) => v==null ? cur.searchParams.delete(k) : cur.searchParams.set(k, v));
+      history.replaceState({}, '', cur.toString());
+    }
+
+    const statusDot  = document.getElementById('statusDot');
+    const offlineBar = document.getElementById('offline');
+    const feed       = document.getElementById('feed');
+    const packsEl    = document.getElementById('packs');
+    const whoAmI     = document.getElementById('whoAmI');
+
+    window.addEventListener('online',  ()=> { if (offlineBar) offlineBar.style.display='none';  });
+    window.addEventListener('offline', ()=> { if (offlineBar) offlineBar.style.display='block'; });
+    if (!navigator.onLine && offlineBar) offlineBar.style.display='block';
+
+    function readBackendBase(){
+      const meta = document.querySelector('meta[name="backend-base"]')?.content?.trim();
+      const ls   = localStorage.getItem('BACKEND_BASE');
+      return (meta || ls || 'https://cultureschool-backend.onrender.com').replace(/\/$/,'');
+    }
+    let BACKEND_BASE = readBackendBase();
+
+    function readKey(metaName, lsName){
+      const meta = document.querySelector(`meta[name="${metaName}"]`)?.content?.trim();
+      const ls = localStorage.getItem(lsName);
+      return (ls || meta || '').trim();
+    }
+    let PIXABAY_API = readKey('pixabay-key','PIXABAY_API');
+    let PEXELS_API  = readKey('pexels-key','PEXELS_API');
+
+    async function apiFetch(path, opts={}, timeoutMs=12000){
+      const controller = new AbortController();
+      const id = setTimeout(()=>controller.abort(), timeoutMs);
+      try{
+        const res = await fetch(BACKEND_BASE + path, { mode:'cors', ...opts, signal: controller.signal });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res;
+      } finally { clearTimeout(id); }
+    }
+
+    async function pingBackend(){
+      try{
+        await apiFetch('/api/health/env').catch(()=> apiFetch('/'));
+        statusDot?.classList.remove('warn'); statusDot?.classList.add('ok');
+      }catch{ statusDot?.classList.remove('ok'); statusDot?.classList.add('warn'); }
+    }
+    pingBackend();
+
+    document.getElementById('gearBtn')?.addEventListener('click', async ()=>{
+      const nextBase = prompt('Set BACKEND_BASE (no trailing slash):', BACKEND_BASE);
+      if (nextBase){ BACKEND_BASE = nextBase.replace(/\/$/,''); localStorage.setItem('BACKEND_BASE', BACKEND_BASE); await pingBackend(); }
+      const px = prompt('Set PIXABAY_API key (leave blank to keep):', PIXABAY_API);
+      if (px !== null){ PIXABAY_API = px.trim(); localStorage.setItem('PIXABAY_API', PIXABAY_API); }
+      const pex = prompt('Set PEXELS_API token (leave blank to keep):', PEXELS_API);
+      if (pex !== null){ PEXELS_API = pex.trim(); localStorage.setItem('PEXELS_API', PEXELS_API); }
+    });
+
+    // Toast
+    let toastTimer=null;
+    function toast(msg){
+      let t=document.getElementById('cocoToast');
+      if(!t){
+        t=document.createElement('div'); t.id='cocoToast';
+        Object.assign(t.style,{ position:'fixed', left:'50%', bottom:'24px', transform:'translateX(-50%)',
+          background:'rgba(17,22,38,.85)', color:'var(--ink)', border:'1px solid rgba(255,255,255,.15)',
+          padding:'10px 14px', borderRadius:'12px', zIndex:1000, backdropFilter:'blur(10px)' });
+        document.body.appendChild(t);
+      }
+      t.textContent=msg; t.style.opacity='1';
+      clearTimeout(toastTimer); toastTimer=setTimeout(()=> t.style.opacity='0', 1800);
+    }
+
+    // addCard
+    window.addCard = window.addCard || function({src, title='Untitled', desc=''}){
+      if (!feed) return;
+      const card = document.createElement('div'); card.className='card preview-card';
+      const img  = document.createElement('img'); img.alt=title; img.src=src;
+      const overlay = document.createElement('div');
+      overlay.style.position='absolute'; overlay.style.inset='auto 0 0 0'; overlay.style.padding='8px 10px';
+      overlay.style.background='linear-gradient(180deg,transparent,rgba(0,0,0,.6))';
+      overlay.innerHTML = `<div style="font-weight:800">${title}</div><div style="color:var(--muted);font-size:.9rem">${desc||''}</div>`;
+      card.append(img, overlay);
+      card.dataset.title=title; card.dataset.image=src; card.dataset.selected='false';
+      card.addEventListener('click', ()=>{
+        const sel = card.dataset.selected === 'true';
+        card.dataset.selected = (!sel).toString();
+        card.classList.toggle('selected', !sel);
+      });
+      feed.prepend(card);
+    };
+
+    // Quick add URL
+    document.getElementById('addBtn')?.addEventListener('click', ()=>{
+      const raw = (document.getElementById('pasteInput')?.value||'').trim(); if(!raw) return;
+      let src = raw; try{ new URL(raw); }catch{ src='https://source.unsplash.com/1200x900/?design'; }
+      addCard({ src, title:'Grabbed', desc: raw });
+      document.getElementById('pasteInput').value='';
+    });
+
+    // Save modal + hotkeys
+    document.addEventListener('DOMContentLoaded', ()=>{
+      const $ = id => document.getElementById(id);
+      const saveModal = $('saveModal');
+      function openSaveModal(){ if(!saveModal) return; saveModal.classList.add('open'); saveModal.style.display='flex'; saveModal.removeAttribute('aria-hidden'); }
+      function closeSaveModal(){ if(!saveModal) return; saveModal.classList.remove('open'); saveModal.style.display=''; saveModal.setAttribute('aria-hidden','true'); }
+      $('openSave')?.addEventListener('click', openSaveModal);
+      $('saveBtn')?.addEventListener('click', openSaveModal);
+      saveModal?.addEventListener('click', (e)=>{
+        if (e.target === saveModal) return closeSaveModal();
+        const btn = e.target.closest('[data-act]'); if (!btn) return;
+        const act = btn.dataset.act;
+        if (act==='scene' || act==='collage') openScene();
+        else if (act==='download') triggerDownload();
+        else if (act==='board') saveActiveToBoard();
+        closeSaveModal();
+      });
+      window.addEventListener('keydown',(e)=>{
+        if (e.target && ['INPUT','TEXTAREA'].includes(e.target.tagName)) return;
+        const k=e.key.toLowerCase();
+        if (k==='s'){ e.preventDefault(); openSaveModal(); }
+        if (k==='c'){ e.preventDefault(); openScene(); }
+        if (k==='d'){ e.preventDefault(); triggerDownload(); }
+        if (e.key==='Escape' || e.key==='escape') closeSaveModal();  // fix
+      });
+    });
+
+    function activeMedia(){
+      const modal = document.getElementById('sceneMaker');
+      const isOpen = modal && (modal.classList.contains('open') || modal.style.display==='flex');
+      if (isOpen){
+        try{ const c=document.getElementById('sceneCanvas'); return { src:c.toDataURL('image/png'), kind:'canvas' }; }catch{}
+      }
+      const sel = document.querySelector('.preview-card.selected img') || document.querySelector('.preview-card:last-child img');
+      if (sel?.src) return { src: sel.src, kind:'image' };
+      const hero=document.getElementById('heroImg'); if (hero?.src) return { src: hero.src, kind:'image' };
+      return { src:'', kind:'none' };
+    }
+    function triggerDownload(){
+      const { src, kind } = activeMedia();
+      if (!src) return alert('Select or compose something first.');
+      const a=document.createElement('a'); a.download = (kind==='canvas' ? 'coco-scene.png' : 'coco.png'); a.href=src; a.click();
+    }
+    document.getElementById('downloadBtn')?.addEventListener('click', triggerDownload);
+    document.getElementById('downloadOne')?.addEventListener('click', triggerDownload);
+
+    async function saveActiveToBoard(){
+      const { src } = activeMedia();
+      if (!src) return alert('Nothing to save.');
+      if (typeof window.saveSingleToBoard === 'function') {
+        try { await window.saveSingleToBoard(src); toast('Saved to board ✅'); }
+        catch(e){ console.warn(e); toast('Save failed.'); }
+      } else { toast('Save to Board is not available here.'); }
+    }
+
+    // ===== Packs (Netlify same-origin proxies) =====
+    const sparkThemes = {
+      Calm:'calm', Bold:'bold design', Nature:'nature',
+      Wellness:'breathwork serene gradients', Creators:'studio portraits', Books:'book covers texture'
+    };
+    async function loadPack(name, query){
+      const sks = Array.from({length:2},()=>{ const s=document.createElement('div'); s.className='card shimmer'; feed.appendChild(s); return s; });
+      try{
+        const res = await fetch(`/api/pexels-proxy?query=${encodeURIComponent(query)}&per_page=12`);
+        const data = await res.json();
+        feed.innerHTML='';
+        (data.photos||[]).forEach(p => addCard({ src: p.src?.large || p.src?.medium || p.src?.original, title:`${name} Pack`, desc: query }));
+      }catch(err){
+        console.error('Pack load failed:', err);
+        addCard({ src:'https://source.unsplash.com/1200x900/?inspiration', title:`${name} Pack`, desc:query });
+      }finally{ sks.forEach(s=> s.remove()); }
+    }
+    (async function initPacks(){
+      if (!packsEl || packsEl.dataset.initialized==='true') return;
+      for (const [name,query] of Object.entries(sparkThemes)){
+        const div=document.createElement('div'); div.className='pack'; div.title=query;
+        const img=document.createElement('img'); img.alt=name;
+        const label=document.createElement('span'); label.textContent=name;
+        div.append(img,label); packsEl.appendChild(div);
+        try{
+          const r = await fetch(`/api/pexels-proxy?query=${encodeURIComponent(query)}&per_page=1`);
+          const d = await r.json();
+          img.src = d?.photos?.[0]?.src?.tiny || d?.photos?.[0]?.src?.small || 'https://source.unsplash.com/600x400/?abstract';
+        }catch{ img.src = 'https://source.unsplash.com/600x400/?abstract'; }
+        div.addEventListener('click', ()=> loadPack(name, query));
+      }
+      packsEl.dataset.initialized='true';
+    })();
+
+    // ===== Search: proxies by default; optional Direct mode if keys exist =====
+    function uniqBySrc(arr){
+      const seen = new Set(); const out=[];
+      for (const it of arr){ const k = it?.src || it?.image || it?.url; if (!k || seen.has(k)) continue; seen.add(k); out.push(it); }
+      return out;
+    }
+    async function searchViaProxies(q){
+      const [pex,pix] = await Promise.all([
+        fetch(`/api/pexels-proxy?query=${encodeURIComponent(q)}&per_page=12`).then(r=>r.json()).catch(()=>({photos:[]})),
+        fetch(`/api/pixabay-proxy?query=${encodeURIComponent(q)}&per_page=12`).then(r=>r.json()).catch(()=>({hits:[]}))
+      ]);
+      const a = (pex.photos||[]).map(p => ({ src:p.src?.large || p.src?.medium, title:'Pexels',  desc:q }));
+      const b = (pix.hits  ||[]).map(h => ({ src:h.largeImageURL || h.webformatURL, title:'Pixabay', desc:q }));
+      return uniqBySrc([...a, ...b]);
+    }
+    async function searchViaDirect(q){
+      const res=[];
+      try{
+        if (PEXELS_API){
+          const pex = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(q)}&per_page=12`, { headers:{ Authorization: PEXELS_API }}).then(r=>r.json());
+          res.push(...(pex.photos||[]).map(p=>({ src:p.src?.large || p.src?.medium, title:'Pexels (direct)', desc:q })));
+        }
+      }catch(e){ console.warn('Pexels direct failed', e); }
+      try{
+        if (PIXABAY_API){
+          const pix = await fetch(`https://pixabay.com/api/?key=${PIXABAY_API}&q=${encodeURIComponent(q)}&image_type=photo&per_page=12`).then(r=>r.json());
+          res.push(...(pix.hits||[]).map(h=>({ src:h.largeImageURL || h.webformatURL, title:'Pixabay (direct)', desc:q })));
+        }
+      }catch(e){ console.warn('Pixabay direct failed', e); }
+      return uniqBySrc(res);
+    }
+
+    // ---- Spark Pack for arbitrary query (merge into search)
+    async function loadPackFromQuery(query, perPage = 12){
+      try {
+        const res = await fetch(`/api/pexels-proxy?query=${encodeURIComponent(query)}&per_page=${perPage}`);
+        const data = await res.json();
+        return (data.photos || []).map(p => ({
+          src: p.src?.large || p.src?.medium || p.src?.original,
+          title: 'Search Pack',
+          desc: query
+        }));
+      } catch (e) {
+        console.warn('Search-pack failed', e);
+        return [];
+      }
+    }
+    async function loadMultiPacksFromQuery(query){
+      const flavors = [ query, `${query} minimal`, `${query} bold color` ];
+      const lists = await Promise.all(flavors.map(q => loadPackFromQuery(q, 8)));
+      return uniqBySrc(lists.flat());
+    }
+
+    async function runSearch(q, forceDirect){
+      feed.innerHTML='';
+      const sks = Array.from({length:6},()=>{ const s=document.createElement('div'); s.className='card shimmer'; feed.appendChild(s); return s; });
+      try{
+        let results = await searchViaProxies(q);
+        if (forceDirect && (PEXELS_API || PIXABAY_API)){
+          const direct = await searchViaDirect(q);
+          results = uniqBySrc([...results, ...direct]);
+        }
+        const packResults = await loadMultiPacksFromQuery(q);
+        results = uniqBySrc([...packResults, ...results]);
+
+        if (!results.length){
+          addCard({ src:'https://source.unsplash.com/1200x900/?inspiration', title:'No results', desc:q });
+        } else {
+          results.forEach(addCard);
+        }
+      } finally { sks.forEach(s=> s.remove()); }
+    }
+    document.getElementById('searchBtn')?.addEventListener('click', ()=>{
+      const q = (document.getElementById('pasteInput')?.value || '').trim();
+      const forceDirect = !!document.getElementById('directMode')?.checked;
+      if (q) runSearch(q, forceDirect);
+    });
+
+    // ===== Paste helper =====
+    document.getElementById('wbPaste')?.addEventListener('click', async ()=>{
+      try{
+        if (navigator.clipboard && navigator.clipboard.read){
+          const items = await navigator.clipboard.read();
+          for (const it of items){
+            const mime = it.types?.find(t => t.startsWith('image/'));
+            if (!mime) continue;
+            const blob = await it.getType(mime);
+            const url  = URL.createObjectURL(blob);
+            addCard({ src:url, title:'Pasted', desc:'Clipboard' });
+            return;
+          }
+        }
+        const text = await navigator.clipboard.readText();
+        try { new URL(text); addCard({ src:text, title:'Pasted', desc:'Clipboard' }); } catch { toast('Clipboard has no image/URL'); }
+      }catch(e){ toast('Clipboard blocked. Use ⌘/Ctrl+V.'); }
+    });
+
+    // Camera stub (hook your modal here)
+    document.getElementById('scanBtn')?.addEventListener('click', ()=> alert('Camera modal wiring present in your builder.'));
+
+    // ===== Scene Builder Pro =====
+    const SBP = { imgs:[], tiles:[], opts:{ bg:'#0b0c12', pad:24, rad:20, bw:4, bc:'#a278e6', sh:12, aspect:'1:1', scale:2, brand:'' } };
+    const parseAspect = (a)=>{ const [w,h]=a.split(':').map(Number); return {w,h, r:w/h}; };
+    const fitContain = (w,h,W,H)=>{ const r=Math.min(W/w,H/h); const nw=w*r, nh=h*r; return { w:nw, h:nh, x:(W-nw)/2, y:(H-nh)/2 }; };
+    function roundRect(ctx,x,y,w,h,r){ const rr=Math.min(r,w/2,h/2); ctx.beginPath(); ctx.moveTo(x+rr,y);
+      ctx.arcTo(x+w,y,x+w,y+h,rr); ctx.arcTo(x+w,y+h,x,y+h,rr); ctx.arcTo(x,y+h,x,y,rr); ctx.arcTo(x,y,x+w,y,rr); ctx.closePath(); }
+    async function loadSelImages(limit=6){
+      const sel=Array.from(document.querySelectorAll('#feed .preview-card')).filter(c=>c.dataset.selected==="true").map(c=>c.dataset.image||c.querySelector('img')?.src).filter(Boolean);
+      const pick=(sel.length? sel : Array.from(document.querySelectorAll('#feed .preview-card img')).slice(-limit).map(i=>i.src)).slice(0,limit);
+      const loaded = await Promise.all(pick.map(src => new Promise((res,rej)=>{ const i=new Image(); i.crossOrigin='anonymous'; i.onload=()=>res(i); i.onerror=rej; i.src=src; })));
+      return loaded;
+    }
+    function layoutTiles(canvas, imgs, pad){
+      const W=canvas.width, H=canvas.height, tiles=[], n=imgs.length;
+      if (n<=1){ tiles.push({x:pad,y:pad,w:W-2*pad,h:H-2*pad}); }
+      else if (n===2){ const w=(W-3*pad)/2, h=H-2*pad; tiles.push({x:pad,y:pad,w,h},{x:2*pad+w,y:pad,w,h}); }
+      else if (n===3){ const hTop=(H-3*pad)/2, wFull=W-2*pad, wHalf=(W-3*pad)/2;
+        tiles.push({x:pad,y:pad,w:wFull,h:hTop},{x:pad,y:2*pad+hTop,w:wHalf,h:hTop},{x:2*pad+wHalf,y:2*pad+hTop,w:wHalf,h:hTop}); }
+      else { const cols = n>=5? 3 : 2; const rows = Math.ceil(n/cols);
+        const cellW=(W-(cols+1)*pad)/cols, cellH=(H-(rows+1)*pad)/rows;
+        for(let r=0,i=0;r<rows;r++){ for(let c=0;c<cols && i<n;c++,i++){ const x=pad+c*(cellW+pad), y=pad+r*(cellH+pad); tiles.push({x,y,w:cellW,h:cellH}); } } }
+      return tiles.map((t,i)=>({ ...t, img:imgs[i], rot:0, scale:1 }));
+    }
+    function setAspect(canvas, aspect){ const {w,h}=parseAspect(aspect); const base=1000; canvas.height=base; canvas.width=Math.round(base*(w/h)); }
+    function render(canvas, tiles, opts){
+      const ctx=canvas.getContext('2d'); ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.fillStyle=opts.bg; ctx.fillRect(0,0,canvas.width,canvas.height);
+      const pad=0, insetX=pad, insetY=pad, W=canvas.width-2*pad, H=canvas.height-2*pad;
+      if (opts.sh>0){ ctx.save(); ctx.shadowColor='rgba(0,0,0,0.35)'; ctx.shadowBlur=opts.sh; ctx.shadowOffsetY=Math.round(opts.sh/3);
+        roundRect(ctx,insetX+opts.bw,insetY+opts.bw,W-2*opts.bw,H-2*opts.bw,opts.rad); ctx.fillStyle=opts.bg; ctx.fill(); ctx.restore(); }
+      if (opts.bw>0){ ctx.save(); roundRect(ctx,insetX+opts.bw/2,insetY+opts.bw/2,W-opts.bw,H-opts.bw,opts.rad); ctx.strokeStyle=opts.bc; ctx.lineWidth=opts.bw; ctx.stroke(); ctx.restore(); }
+      ctx.save(); roundRect(ctx,insetX+opts.bw,insetY+opts.bw,W-2*opts.bw,H-2*opts.bw,Math.max(0,opts.rad-opts.bw/2)); ctx.clip();
+      tiles.forEach(t=>{
+        const inner={x:t.x+opts.pad,y:t.y+opts.pad,w:t.w-2*opts.pad,h:t.h-2*opts.pad};
+        const fit=fitContain(t.img.width,t.img.height,inner.w,inner.h);
+        const cx=inner.x+fit.x+fit.w/2, cy=inner.y+fit.y+fit.h/2;
+        const s=t.scale||1, r=(t.rot||0)*Math.PI/180, drawW=fit.w*s, drawH=fit.h*s;
+        ctx.save(); ctx.translate(cx,cy); ctx.rotate(r); ctx.drawImage(t.img,-drawW/2,-drawH/2,drawW,drawH); ctx.restore();
+      });
+      ctx.restore();
+      if (opts.brand){ ctx.save(); ctx.fillStyle='rgba(0,0,0,0.25)'; ctx.font='800 40px Inter, system-ui'; ctx.textAlign='right'; ctx.textBaseline='bottom';
+        ctx.fillText(opts.brand, canvas.width-28, canvas.height-24); ctx.restore(); }
+    }
+    function hookControls(canvas){
+      const $=id=>document.getElementById(id);
+      const apply=()=>{
+        SBP.opts={...SBP.opts,
+          bg:$('#bgColor')?.value||SBP.opts.bg, pad:+($('#pad')?.value||SBP.opts.pad), rad:+($('#rad')?.value||SBP.opts.rad),
+          bw:+($('#bw')?.value||SBP.opts.bw), bc:$('#bc')?.value||SBP.opts.bc, sh:+($('#sh')?.value||SBP.opts.sh),
+          aspect:$('#aspect')?.value||SBP.opts.aspect, scale:+($('#scale')?.value||SBP.opts.scale), brand:$('#brandText')?.value||''
+        };
+        setAspect(canvas, SBP.opts.aspect);
+        SBP.tiles=layoutTiles(canvas, SBP.imgs, SBP.opts.pad);
+        render(canvas, SBP.tiles, SBP.opts);
+      };
+      ['bgColor','pad','rad','bw','bc','sh','aspect','scale','brandText'].forEach(id=>$('#'+id)?.addEventListener('input',apply));
+      apply();
+      let idx=0;
+      canvas.addEventListener('click',(e)=>{
+        const rect=canvas.getBoundingClientRect();
+        const x=(e.clientX-rect.left)*(canvas.width/rect.width);
+        const y=(e.clientY-rect.top)*(canvas.height/rect.height);
+        idx = SBP.tiles.findIndex(t=>x>=t.x && y>=t.y && x<=t.x+t.w && y<=t.y+t.h);
+      });
+      window.addEventListener('keydown',(e)=>{
+        if (!SBP.tiles.length) return;
+        const t=SBP.tiles[Math.max(0,idx)]; if (!t) return;
+        if (e.key==='['){ t.rot=(t.rot||0)-5; render(canvas,SBP.tiles,SBP.opts); }
+        if (e.key===']'){ t.rot=(t.rot||0)+5; render(canvas,SBP.tiles,SBP.opts); }
+        if (e.key==='-'){ t.scale=Math.max(0.2,(t.scale||1)-0.05); render(canvas,SBP.tiles,SBP.opts); }
+        if (e.key==='='){ t.scale=Math.min(3,(t.scale||1)+0.05); render(canvas,SBP.tiles,SBP.opts); }
+      });
+      document.getElementById('saveScene')?.addEventListener('click',()=>{
+        const s=SBP.opts.scale||1;
+        const tmp=document.createElement('canvas');
+        tmp.width=Math.round(canvas.width*s); tmp.height=Math.round(canvas.height*s);
+        const tilesScaled=SBP.tiles.map(t=>({...t,x:t.x*s,y:t.y*s,w:t.w*s,h:t.h*s,scale:t.scale}));
+        render(tmp, tilesScaled, { ...SBP.opts, pad:SBP.opts.pad*s, bw:SBP.opts.bw*s, rad:SBP.opts.rad*s, sh:SBP.opts.sh*s });
+        const data=tmp.toDataURL('image/png');
+        addCard({ src:data, title:'Scene', desc:'Composed' });
+        const m=document.getElementById('sceneMaker'); m.classList.remove('open'); m.style.display='';
+      }, { once:false });
+    }
+    window.CocoSpark = window.CocoSpark || {};
+    function openScene(){ if (window.CocoSpark?.openSceneComposer) return window.CocoSpark.openSceneComposer(); alert('Scene composer not loaded yet.'); }
+    CocoSpark.openSceneComposer = async function(){
+      const modal=document.getElementById('sceneMaker'); modal.classList.add('open'); modal.style.display='flex';
+      const canvas=document.getElementById('sceneCanvas');
+      SBP.imgs = await loadSelImages(6);
+      setAspect(canvas, SBP.opts.aspect);
+      SBP.tiles = layoutTiles(canvas, SBP.imgs, SBP.opts.pad);
+      render(canvas, SBP.tiles, SBP.opts);
+      hookControls(canvas);
+    };
+    document.getElementById('openScene')?.addEventListener('click', openScene);
+    document.getElementById('sceneBtn')?.addEventListener('click', openScene);
+    document.getElementById('closeScene')?.addEventListener('click', ()=>{
+      const m=document.getElementById('sceneMaker'); m.classList.remove('open'); m.style.display='';
+    });
+
+    // ===== Auth & Bookmarklet =====
+    function getEmail(){ const fromQS=getQS('email'); if (fromQS){ localStorage.setItem('USER_EMAIL', fromQS); return fromQS; } return localStorage.getItem('USER_EMAIL')||''; }
+    function setEmail(email){ localStorage.setItem('USER_EMAIL', email); setQS({ email }); }
+    function showSignin(show=true){ const m=document.getElementById('signinModal'); if (!m) return; if (show){ m.classList.add('open'); m.style.display='flex'; } else { m.classList.remove('open'); m.style.display=''; } }
+    function updateWho(){ const e=getEmail(); if (whoAmI) whoAmI.textContent = e ? `Signed in: ${e}` : ''; }
+    (function initAuth(){
+      const email=getEmail();
+      if (!email){ showSignin(true); } else { updateWho(); }
+      document.getElementById('signinGo')?.addEventListener('click', ()=>{
+        const val=String(document.getElementById('emailInput')?.value||'').trim(); if(!val) return alert('Enter your email');
+        setEmail(val); updateWho(); showSignin(false); toast('Signed in ✅');
+      });
+      document.getElementById('signinCancel')?.addEventListener('click', ()=> showSignin(false));
+      const emailInput=document.getElementById('emailInput'); if (emailInput && email) emailInput.value=email;
+    })();
+    (function initBookmarklet(){
+      const base = location.origin + location.pathname;
+      const js = `javascript:(()=>{const u=location.href;window.open('${base}?add='+encodeURIComponent(u),'_blank');})();`;
+      const a=document.getElementById('bookmarklet'); if (a) a.href=js;
+      const add=getQS('add'); if (add){ addCard({ src:add, title:'Bookmark', desc:'From bookmarklet' }); setQS({ add:null }); }
+    })();
+
+    updateWho();
+  </script>
+</body>
+</html>
