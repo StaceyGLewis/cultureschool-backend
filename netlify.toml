@@ -11,3 +11,6 @@
   from = "/api/pixabay-proxy"
   to   = "/.netlify/functions/pixabay-proxy"
   status = 200
+  
+/b/:slug   /pages/seaport-viewer?slug=:slug   200
+/board/:id /pages/seaport-viewer?board=:id    200
