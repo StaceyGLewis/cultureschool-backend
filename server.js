@@ -51,6 +51,12 @@ const corsOptions = {
     'https://coco-collector.netlify.app',
     'https://explore-cocospark.netlify.app/',
      'https://ultimate-viewer.netlify.app',
+     'https://flourish-viewer.netlify.app/',
+     'https://travel-luxe-viewer.netlify.app/',
+     'https://story-carousel-viewer.netlify.app/',
+     'https://event-collector.netlify.app/',
+     'https://cococreate-admin.netlify.app/',
+     'https://coco-course-viewer.netlify.app/',
     'https://coco-flourish-ultimate.netlify.app',
     'https://coco-speak.netlify.app'
     // Add more Netlify or local dev URLs here as needed
