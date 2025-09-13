@@ -50,7 +50,7 @@ const corsOptions = {
     'https://cocoboard-preview-html.netlify.app',
     'https://coco-collector.netlify.app',
      'https://ultimate-viewer.netlify.app',
-    'https://coco-flourish-ultimate.netlify.app'
+    'https://coco-flourish-ultimate.netlify.app',
     'https://coco-speak.netlify.app'
     // Add more Netlify or local dev URLs here as needed
   ],
