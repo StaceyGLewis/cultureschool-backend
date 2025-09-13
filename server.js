@@ -49,6 +49,7 @@ const corsOptions = {
     'https://www.cultureschool.org',
     'https://cocoboard-preview-html.netlify.app',
     'https://coco-collector.netlify.app',
+    'https://explore-cocospark.netlify.app/',
      'https://ultimate-viewer.netlify.app',
     'https://coco-flourish-ultimate.netlify.app',
     'https://coco-speak.netlify.app'
