@@ -58,7 +58,13 @@ const corsOptions = {
      'https://coco-admin.netlify.app/',
      'https://coco-course-viewer.netlify.app/',
     'https://coco-flourish-ultimate.netlify.app',
-    'https://coco-speak.netlify.app'
+    'https://creative-market-viewer.netlify.app/',
+    'https://flourish-ultimate.netlify.app/',
+    'https://mosaic-viewer.netlify.app/',
+    'https://magazine-viewer.netlify.app/',
+    'https://gallery-viewer.netlify.app/',
+    'https://kinetic-zine-viewer.netlify.app/',
+    'https://coco-speak.netlify.app/'
     // Add more Netlify or local dev URLs here as needed
   ],
   credentials: true,
