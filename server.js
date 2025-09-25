@@ -64,7 +64,9 @@ const corsOptions = {
     'https://magazine-viewer.netlify.app/',
     'https://gallery-viewer.netlify.app/',
     'https://kinetic-zine-viewer.netlify.app/',
-    'https://coco-speak.netlify.app/'
+    'https://coco-speak.netlify.app/',
+    'https://cocoqr.netlify.app/my-pass/',
+    'https://cocoqr.netlify.app/'
     // Add more Netlify or local dev URLs here as needed
   ],
   credentials: true,
