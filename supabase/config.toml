@@ -364,15 +364,16 @@ entrypoint = "./functions/host-image/index.ts"
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/host-image/*.html" ]
 
-[functions.motherseed]
-enabled = true
-verify_jwt = true
-import_map = "./functions/motherseed/deno.json"
-# Uncomment to specify a custom file path to the entrypoint.
-# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
-entrypoint = "./functions/motherseed/index.ts"
-# Specifies static files to be bundled with the function. Supports glob patterns.
-# For example, if you want to serve static HTML pages in your function:
-# static_files = [ "./functions/motherseed/*.html" ]
-# Ensure this block exists (and only once) in supabase/config.toml
-awk '1; END{ print "[functions.\"mother-seed\"]\nverify_jwt = false" }' supabase/config.toml > supabase/config.tmp && mv supabase/config.tmp supabase/config.toml
+# supabase/config.toml
+
+[functions]
+
+[functions."mother-seed"]
+# Make it public (no JWT required)
+verify_jwt = false
+
+# Optional: only include if you actually have this file
+# import_map = "./functions/mother-seed/deno.json"
+
+# Optional: usually not needed since default is index.ts in the function folder
+# entrypoint = "index.ts"
