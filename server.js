@@ -56,6 +56,8 @@ const corsOptions = {
      'https://story-carousel-viewer.netlify.app/',
      'https://event-collector.netlify.app/',
      'https://coco-admin.netlify.app/',
+     'https://coco-popups.netlify.app/',
+     'https://coco-popups.cultureschool.org/',
      'https://coco-course-viewer.netlify.app/',
     'https://coco-flourish-ultimate.netlify.app',
     'https://creative-market-viewer.netlify.app/',
