@@ -14,3 +14,26 @@
   
 /b/:slug   /pages/seaport-viewer?slug=:slug   200
 /board/:id /pages/seaport-viewer?board=:id    200
+[build]
+  publish = "dist"
+
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+  Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.css"
+  [headers.values]
+  Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/.netlify/images*"
+  [headers.values]
+  Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+  Cache-Control = "public, max-age=300" # HTML kept short
+
