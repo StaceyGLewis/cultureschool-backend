@@ -1,1 +1,13 @@
-/*\n  Cross-Origin-Opener-Policy: same-origin\n  Cross-Origin-Embedder-Policy: require-corp
+/*
+  # -- Optional advanced isolation (commented out) --
+  # Cross-Origin-Opener-Policy: same-origin
+  # Cross-Origin-Embedder-Policy: require-corp
+
+  # Allow Shopify pages on your domain to frame this site
+  Content-Security-Policy: frame-ancestors 'self' https://www.cultureschool.org https://cultureschool.org https://admin.shopify.com
+  # (Optional legacy header; CSP above is what matters)
+  X-Frame-Options: SAMEORIGIN
+
+  # Nice-to-haves
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: fullscreen=(), clipboard-read=(), clipboard-write=()

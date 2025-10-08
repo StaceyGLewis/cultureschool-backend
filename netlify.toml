@@ -37,6 +37,9 @@
   [headers.values]
   Cache-Control = "public, max-age=300" # HTML kept short
 /*
-  Content-Security-Policy: frame-ancestors 'self' https://www.cultureschool.org https://cultureschool.org;
-  X-Frame-Options: ALLOW-FROM https://www.cultureschool.org
+  [[headers]]
+for = "/*"
+[headers.values]
+Content-Security-Policy = "frame-ancestors 'self' https://www.cultureschool.org https://cultureschool.org"
+
 
