@@ -1,0 +1,6 @@
+# Proxy your API to Render (keeps query params)
+# /path -> https://target  [status]
+/api/get-media-items   https://cultureschool-backend.onrender.com/api/get-media-items   200
+
+# (optional) Single-Page App fallback
+/*   /index.html   200
