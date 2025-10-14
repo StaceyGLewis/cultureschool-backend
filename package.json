@@ -12,7 +12,7 @@
   "description": "",
   "dependencies": {
     "@sendgrid/mail": "^8.1.5",
-    "@supabase/supabase-js": "^2.49.4",
+    "@supabase/supabase-js": "^2.75.0",
     "ai": "^5.0.22",
     "autoprefixer": "^10.4.21",
     "axios": "^1.9.0",
@@ -30,8 +30,10 @@
     "postcss": "^8.5.3",
     "qs": "^6.14.0",
     "rss-parser": "^3.13.0",
+    "sharp": "^0.34.4",
     "socket.io-client": "^4.8.1",
     "tailwindcss": "^4.0.17",
+    "undici": "^7.16.0",
     "uuid": "^11.1.0",
     "ws": "^8.18.1"
   },
