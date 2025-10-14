@@ -12,6 +12,7 @@ const CryptoJS = require('crypto-js');
 require('dotenv').config();
 const { createClient } = require('@supabase/supabase-js');
 const fetch = require('node-fetch');
+const ingestUrl = require('./routes/ingest-url.cjs');
 
 // --- OpenAI (SDK) ---
 
@@ -31,6 +32,7 @@ setupWebSocket(server);
 // (optional) expose the client to other route files via app
 app.set('openai', openai);
 app.use(express.json({ limit: '10mb' }));  // needed for JSON body {prompt:"..."}
+app.use(ingestUrl);
 
 const OPENCAGE_API_KEY = process.env.OPENCAGE_API_KEY;
 const elevenlabsRoute = require('./routes/elevenlabs');
@@ -1876,6 +1878,8 @@ app.get('/api/pixabay-proxy', async (req, res) => {
     res.status(500).json({ error: 'Pixabay proxy failed' });
   }
 });
+app.get('/health', (_req, res) => res.json({ ok: true }));
+
 
 
 // GET /api/freesound-proxy?q=birds&page_size=5&page=1
