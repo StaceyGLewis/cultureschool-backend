@@ -37,6 +37,7 @@
     "qs": "^6.14.0",
     "rss-parser": "^3.13.0",
     "sharp": "^0.34.4",
+    "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
     "tailwindcss": "^4.0.17",
     "undici": "^7.16.0",
