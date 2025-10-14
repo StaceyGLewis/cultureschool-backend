@@ -70,6 +70,7 @@ const corsOptions = {
     'https://cocoqr.netlify.app/my-pass/',
     'https://www.cultureschool.org/pages/holiday-creator-hub-coco',
     'https://cococreator-assets-hub.netlify.app',
+    'https://collector-desktop.netlify.app/',
     'https://coco-popups.netlify.app',
     'https://coco-daily-inspo.netlify.app',
     'https://cocoqr.netlify.app/'
