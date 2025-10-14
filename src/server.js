@@ -12,7 +12,7 @@ const CryptoJS = require('crypto-js');
 require('dotenv').config();
 const { createClient } = require('@supabase/supabase-js');
 const fetch = require('node-fetch');
-const ingestUrl = require('../routes/ingest-url.cjs');
+const ingestUrl = require(path.join(__dirname, '..', 'routes', 'ingest-url.cjs'));
 
 // --- OpenAI (SDK) ---
 

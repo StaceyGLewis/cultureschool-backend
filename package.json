@@ -9,7 +9,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
+  "description": "WebSocket + API backend for CultureSchool",
   "dependencies": {
     "@sendgrid/mail": "^8.1.5",
     "@supabase/supabase-js": "^2.75.0",
@@ -24,6 +24,7 @@
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "fast-glob": "^3.3.3",
+    "morgan": "^1.10.1",
     "node-fetch": "^2.7.0",
     "open": "^10.2.0",
     "openai": "^5.15.0",
@@ -39,5 +40,14 @@
   },
   "devDependencies": {
     "supabase": "^2.31.8"
+  }
+}
+{
+  "name": "coco-collector-api",
+  "version": "1.0.0",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "node src/server.js",
+    "start": "node src/server.js"
   }
 }
