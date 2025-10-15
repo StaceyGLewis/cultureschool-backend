@@ -46,42 +46,83 @@ const supabase = createClient(
 );
 
 // ✅ Only one CORS declaration with all allowed origins
+// server.js (Render)
+// npm i cors if you haven't
+
+
+const ALLOWED_ORIGINS = [
+  'https://www.cultureschool.org',
+  'https://cocoboard-preview-html.netlify.app',
+  'https://coco-collector.netlify.app',
+  'https://explore-cocospark.netlify.app',
+  'https://ultimate-viewer.netlify.app',
+  'https://flourish-viewer.netlify.app',
+  'https://travel-luxe-viewer.netlify.app',
+  'https://story-carousel-viewer.netlify.app',
+  'https://event-collector.netlify.app',
+  'https://coco-admin.netlify.app',
+  'https://coco-popups.netlify.app',
+  'https://coco-popups.cultureschool.org',
+  'https://coco-course-viewer.netlify.app',
+  'https://coco-flourish-ultimate.netlify.app',
+  'https://creative-market-viewer.netlify.app',
+  'https://flourish-ultimate.netlify.app',
+  'https://mosaic-viewer.netlify.app',
+  'https://magazine-viewer.netlify.app',
+  'https://gallery-viewer.netlify.app',
+  'https://kinetic-zine-viewer.netlify.app',
+  'https://coco-speak.netlify.app',
+  'https://cocoqr.netlify.app',
+  'https://cocoqr.netlify.app/my-pass', // optional; origin is same as above
+  'https://cococreator-assets-hub.netlify.app',
+  'https://collector-desktop.netlify.app',
+  'https://coco-daily-inspo.netlify.app',
+  // dev:
+  'http://localhost:3000',
+  'http://localhost:5173'
+].map(o => o.replace(/\/$/, '')); // <-- strip trailing slash
+
 const corsOptions = {
-  origin: [
-    'https://www.cultureschool.org',
-    'https://cocoboard-preview-html.netlify.app',
-    'https://coco-collector.netlify.app',
-    'https://explore-cocospark.netlify.app/',
-     'https://ultimate-viewer.netlify.app',
-     'https://flourish-viewer.netlify.app/',
-     'https://travel-luxe-viewer.netlify.app/',
-     'https://story-carousel-viewer.netlify.app/',
-     'https://event-collector.netlify.app/',
-     'https://coco-admin.netlify.app/',
-     'https://coco-popups.netlify.app/',
-     'https://coco-popups.cultureschool.org/',
-     'https://coco-course-viewer.netlify.app/',
-    'https://coco-flourish-ultimate.netlify.app',
-    'https://creative-market-viewer.netlify.app/',
-    'https://flourish-ultimate.netlify.app/',
-    'https://mosaic-viewer.netlify.app/',
-    'https://magazine-viewer.netlify.app/',
-    'https://gallery-viewer.netlify.app/',
-    'https://kinetic-zine-viewer.netlify.app/',
-    'https://coco-speak.netlify.app/',
-    'https://cocoqr.netlify.app/my-pass/',
-    'https://www.cultureschool.org/pages/holiday-creator-hub-coco',
-    'https://cococreator-assets-hub.netlify.app',
-    'https://collector-desktop.netlify.app/',
-    'https://coco-popups.netlify.app',
-    'https://coco-daily-inspo.netlify.app',
-    'https://cocoqr.netlify.app/'
-    // Add more Netlify or local dev URLs here as needed
-  ],
-  credentials: true,
+  origin(origin, cb) {
+    // allow server-to-server / curl (no Origin header)
+    if (!origin) return cb(null, true);
+    const clean = origin.replace(/\/$/, '');
+    return ALLOWED_ORIGINS.includes(clean)
+      ? cb(null, true)
+      : cb(new Error(`CORS blocked for ${origin}`));
+  },
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  maxAge: 86400,
+  credentials: false, // <- IMPORTANT: keep false unless you truly need cookies
 };
 
-app.use(cors(corsOptions));
+// Preflight + CORS only on API routes
+app.options('/api/*', cors(corsOptions));
+app.use('/api', cors(corsOptions));
+
+// Example: Pexels proxy route
+app.get('/api/pexels-proxy', async (req, res) => {
+  try {
+    // …your server-side fetch to Pexels here…
+    // const r = await fetch(PEXELS_URL, { headers:{ Authorization:`Bearer ${PEXELS_API_KEY}` }});
+    // const json = await r.json();
+
+    res.set({
+      'Content-Type': 'application/json',
+      'Cache-Control': 'public, max-age=300',
+      'Vary': 'Origin', // so caches keep per-origin CORS variants
+    });
+    res.status(200).send(/* json */);
+  } catch (e) {
+    res.status(502).json({ error: 'pexels_upstream_failed' });
+  }
+});
+
+
+
+
+
 
 app.use(bodyParser.json({ limit: '25mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '25mb' }));
