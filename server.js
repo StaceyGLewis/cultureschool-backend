@@ -12,7 +12,7 @@ const CryptoJS = require('crypto-js');
 require('dotenv').config();
 const { createClient } = require('@supabase/supabase-js');
 const fetch = require('node-fetch');
-const ingestUrl = require(path.join(__dirname, '..', 'routes', 'ingest-url.cjs'));
+
 
 // --- OpenAI (SDK) ---
 
@@ -32,7 +32,7 @@ setupWebSocket(server);
 // (optional) expose the client to other route files via app
 app.set('openai', openai);
 app.use(express.json({ limit: '10mb' }));  // needed for JSON body {prompt:"..."}
-app.use(ingestUrl);
+
 
 const OPENCAGE_API_KEY = process.env.OPENCAGE_API_KEY;
 const elevenlabsRoute = require('./routes/elevenlabs');
@@ -123,6 +123,10 @@ app.get('/api/pexels-proxy', async (req, res) => {
 
 
 
+// 🔒 Ingest URL is disabled everywhere
+app.all(['/api/ingest-url', '/api/ingest.url', '/ingest-url'], (req, res) => {
+  res.status(410).json({ error: 'ingest-url disabled' }); // 410 Gone (intentional)
+});
 
 app.use(bodyParser.json({ limit: '25mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '25mb' }));
