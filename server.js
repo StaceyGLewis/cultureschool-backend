@@ -50,10 +50,13 @@ const supabase = createClient(
 // npm i cors if you haven't
 
 
+// 1) Simple whitelist — NO trailing slashes
 const ALLOWED_ORIGINS = [
   'https://www.cultureschool.org',
   'https://cocoboard-preview-html.netlify.app',
   'https://coco-collector.netlify.app',
+  'https://collector-desktop.netlify.app',   // desktop
+  'https://collector-mobile.netlify.app',    // mobile (add this)
   'https://explore-cocospark.netlify.app',
   'https://ultimate-viewer.netlify.app',
   'https://flourish-viewer.netlify.app',
@@ -73,32 +76,24 @@ const ALLOWED_ORIGINS = [
   'https://kinetic-zine-viewer.netlify.app',
   'https://coco-speak.netlify.app',
   'https://cocoqr.netlify.app',
-  'https://cocoqr.netlify.app/my-pass', // optional; origin is same as above
   'https://cococreator-assets-hub.netlify.app',
-  'https://collector-desktop.netlify.app',
   'https://coco-daily-inspo.netlify.app',
-  // dev:
+  // dev (optional):
   'http://localhost:3000',
   'http://localhost:5173'
-].map(o => o.replace(/\/$/, '')); // <-- strip trailing slash
+];
 
+// 2) Simple CORS options — keep credentials FALSE (you don’t need cookies)
 const corsOptions = {
-  origin(origin, cb) {
-    // allow server-to-server / curl (no Origin header)
-    if (!origin) return cb(null, true);
-    const clean = origin.replace(/\/$/, '');
-    return ALLOWED_ORIGINS.includes(clean)
-      ? cb(null, true)
-      : cb(new Error(`CORS blocked for ${origin}`));
-  },
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  maxAge: 86400,
-  credentials: false, // <- IMPORTANT: keep false unless you truly need cookies
+  origin: ALLOWED_ORIGINS,                // <-- simple array whitelist
+  methods: ['GET','POST','OPTIONS'],
+  allowedHeaders: ['Content-Type','Authorization'],
+  credentials: false,                     // important: matches frontend fetch(credentials:'omit')
+  maxAge: 86400
 };
 
-// Preflight + CORS only on API routes
-app.options('/api/*', cors(corsOptions));
+// 3) Apply to API only (unchanged elsewhere)
+app.options('/api/*', cors(corsOptions)); // preflight
 app.use('/api', cors(corsOptions));
 
 // Example: Pexels proxy route
