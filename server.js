@@ -78,9 +78,7 @@ const ALLOWED_ORIGINS = [
   'https://cocoqr.netlify.app',
   'https://cococreator-assets-hub.netlify.app',
   'https://coco-daily-inspo.netlify.app',
-  // dev (optional):
-  'http://localhost:3000',
-  'http://localhost:5173'
+ 
 ];
 
 // 2) Simple CORS options — keep credentials FALSE (you don’t need cookies)
@@ -88,7 +86,7 @@ const corsOptions = {
   origin: ALLOWED_ORIGINS,                // <-- simple array whitelist
   methods: ['GET','POST','OPTIONS'],
   allowedHeaders: ['Content-Type','Authorization'],
-  credentials: false,                     // important: matches frontend fetch(credentials:'omit')
+  credentials: true,                     // important: matches frontend fetch(credentials:'omit')
   maxAge: 86400
 };
 
