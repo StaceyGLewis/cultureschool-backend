@@ -86,7 +86,7 @@ const corsOptions = {
   origin: ALLOWED_ORIGINS,                // <-- simple array whitelist
   methods: ['GET','POST','OPTIONS'],
   allowedHeaders: ['Content-Type','Authorization'],
-  credentials: true,                     // important: matches frontend fetch(credentials:'omit')
+  credentials: false,                     // important: matches frontend fetch(credentials:'omit')
   maxAge: 86400
 };
 
@@ -94,23 +94,7 @@ const corsOptions = {
 app.options('/api/*', cors(corsOptions)); // preflight
 app.use('/api', cors(corsOptions));
 
-// Example: Pexels proxy route
-app.get('/api/pexels-proxy', async (req, res) => {
-  try {
-    // …your server-side fetch to Pexels here…
-    // const r = await fetch(PEXELS_URL, { headers:{ Authorization:`Bearer ${PEXELS_API_KEY}` }});
-    // const json = await r.json();
 
-    res.set({
-      'Content-Type': 'application/json',
-      'Cache-Control': 'public, max-age=300',
-      'Vary': 'Origin', // so caches keep per-origin CORS variants
-    });
-    res.status(200).send(/* json */);
-  } catch (e) {
-    res.status(502).json({ error: 'pexels_upstream_failed' });
-  }
-});
 
 
 
