@@ -12,7 +12,7 @@ const CryptoJS = require('crypto-js');
 require('dotenv').config();
 const { createClient } = require('@supabase/supabase-js');
 const fetch = require('node-fetch');
-
+const jwt = require("jsonwebtoken");
 
 
 // --- OpenAI (SDK) ---
@@ -1942,8 +1942,8 @@ app.get('/api/freesound-proxy', async (req, res) => {
 // Optional: allowlist admins (email comes from bookmarklet body, like your other admin tools)
 const INSIGHTS_ADMINS = new Set([
   "info@cultureschool.org",
-  "stacey.a.grant@gmail.com"
-  "stacey@cococreate.app"
+  "stacey.a.grant@gmail.com",
+  "stacey@cococreate.app",
 ]);
 
 
