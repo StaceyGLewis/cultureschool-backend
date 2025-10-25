@@ -1958,32 +1958,27 @@ function buildAdvice(p) {
   return `Page: ${title}\n${intent}Top Fixes:\n${top || "• Looks solid — no high-priority fixes"}\n\nScore Gaps:\n${gaps || "• None notable"}`;
 }
 
-app.post("/api/creator_insights_upsert", cors(corsOptions), async (req, res) => {
+// Loosen CORS just for this route; do NOT rely on origin checks for bookmarklets
+app.post("/api/creator_insights_upsert", cors({ origin: true }), async (req, res) => {
   try {
-    // 1) Lightweight gate, same spirit as your image bookmarklet
-    const referer = (req.get("referer") || "").toLowerCase();
-    if (!referer.includes("coco-admin.netlify.app")) {
-      return res.status(403).json({ error: "forbidden_origin" });
-    }
-
-    // (Optional) shared key check
+    // 🔐 Require a shared admin key
+    const ADMIN_SHARED_KEY = process.env.COCO_ADMIN_KEY; // set in Render
     if (ADMIN_SHARED_KEY) {
-      const key = req.get("x-coco-admin-key") || "";
-      if (key !== ADMIN_SHARED_KEY) {
+      const k = req.get("x-coco-admin-key") || "";
+      if (k !== ADMIN_SHARED_KEY) {
         return res.status(403).json({ error: "bad_admin_key" });
       }
     }
 
-    // (Optional) email allowlist like your other admin endpoints
+    // (Optional) email allowlist
+    const INSIGHTS_ADMINS = new Set(["stacey@cultureschool.org", "stacey@cococreate.app"]);
     const adminEmail = String(req.body?.admin_email || "").toLowerCase();
     if (INSIGHTS_ADMINS.size && !INSIGHTS_ADMINS.has(adminEmail)) {
       return res.status(403).json({ error: "not_admin" });
     }
 
-    // 2) Build friendly one-pager advice from the heuristics posted by the bookmarklet
+    // Build advice + insert (same as before)
     const advice = buildAdvice(req.body || {});
-
-    // 3) Persist to supabase (use your existing supabase client)
     const { error } = await supabase.from("creator_insights").insert([{
       url: req.body.url,
       page_title: req.body.page_title || null,
@@ -1996,13 +1991,14 @@ app.post("/api/creator_insights_upsert", cors(corsOptions), async (req, res) => 
       raw: req.body,
       creator_email: null
     }]);
-
     if (error) throw error;
+
     res.json({ ok: true, advice });
   } catch (e) {
     res.status(500).json({ error: String(e?.message || e) });
   }
 });
+
 
 // WebSocket + Express listener
 const PORT = process.env.PORT || 5055;
