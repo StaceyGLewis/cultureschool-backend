@@ -12,7 +12,7 @@ const CryptoJS = require('crypto-js');
 require('dotenv').config();
 const { createClient } = require('@supabase/supabase-js');
 const fetch = require('node-fetch');
-const jwt = require("jsonwebtoken");
+
 
 
 // --- OpenAI (SDK) ---
@@ -1934,6 +1934,73 @@ app.get('/api/freesound-proxy', async (req, res) => {
     console.error('freesound-proxy error:', err?.response?.status, err?.message);
     const status = err?.response?.status || 500;
     return res.status(status).json({ error: 'Freesound proxy failed' });
+  }
+});
+// --- ADD: Creator Insights (minimal) ---
+// Reuse your existing: app, cors, corsOptions, and supabase client
+
+// Optional: allowlist admins (email comes from bookmarklet body, like your other admin tools)
+const INSIGHTS_ADMINS = new Set([
+  "info@cultureschool.org",
+  "stacey.a.grant@gmail.com"
+  "stacey@cococreate.app"
+]);
+
+
+
+function buildAdvice(p) {
+  const title = p.page_title || "(untitled)";
+  const top = (p.actions || []).slice(0, 5).map(a => `• ${a}`).join("\n");
+  const gaps = Object.entries(p.scores || {})
+    .sort((a, b) => a[1] - b[1]).slice(0, 3)
+    .map(([k, v]) => `• ${k}: ${v}`).join("\n");
+  const intent = p.keyword ? `Intent: “${p.keyword}”\n` : "";
+  return `Page: ${title}\n${intent}Top Fixes:\n${top || "• Looks solid — no high-priority fixes"}\n\nScore Gaps:\n${gaps || "• None notable"}`;
+}
+
+app.post("/api/creator_insights_upsert", cors(corsOptions), async (req, res) => {
+  try {
+    // 1) Lightweight gate, same spirit as your image bookmarklet
+    const referer = (req.get("referer") || "").toLowerCase();
+    if (!referer.includes("coco-admin.netlify.app")) {
+      return res.status(403).json({ error: "forbidden_origin" });
+    }
+
+    // (Optional) shared key check
+    if (ADMIN_SHARED_KEY) {
+      const key = req.get("x-coco-admin-key") || "";
+      if (key !== ADMIN_SHARED_KEY) {
+        return res.status(403).json({ error: "bad_admin_key" });
+      }
+    }
+
+    // (Optional) email allowlist like your other admin endpoints
+    const adminEmail = String(req.body?.admin_email || "").toLowerCase();
+    if (INSIGHTS_ADMINS.size && !INSIGHTS_ADMINS.has(adminEmail)) {
+      return res.status(403).json({ error: "not_admin" });
+    }
+
+    // 2) Build friendly one-pager advice from the heuristics posted by the bookmarklet
+    const advice = buildAdvice(req.body || {});
+
+    // 3) Persist to supabase (use your existing supabase client)
+    const { error } = await supabase.from("creator_insights").insert([{
+      url: req.body.url,
+      page_title: req.body.page_title || null,
+      keyword: req.body.keyword || null,
+      scores: req.body.scores || {},
+      highlights: req.body.highlights || {},
+      findings: req.body.findings || [],
+      actions: req.body.actions || [],
+      advice,
+      raw: req.body,
+      creator_email: null
+    }]);
+
+    if (error) throw error;
+    res.json({ ok: true, advice });
+  } catch (e) {
+    res.status(500).json({ error: String(e?.message || e) });
   }
 });
 
