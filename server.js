@@ -12,6 +12,7 @@ const CryptoJS = require('crypto-js');
 require('dotenv').config();
 const { createClient } = require('@supabase/supabase-js');
 const fetch = require('node-fetch');
+const jwt = require("jsonwebtoken");
 
 
 // --- OpenAI (SDK) ---
@@ -93,6 +94,7 @@ const corsOptions = {
 // 3) Apply to API only (unchanged elsewhere)
 app.options('/api/*', cors(corsOptions)); // preflight
 app.use('/api', cors(corsOptions));
+app.options("/api/creator_insights_upsert", cors(corsOptions));
 
 
 
@@ -1934,6 +1936,45 @@ app.get('/api/freesound-proxy', async (req, res) => {
     return res.status(status).json({ error: 'Freesound proxy failed' });
   }
 });
+
+
+
+app.post("/api/creator_insights_upsert", cors(corsOptions), async (req, res) => {
+  try {
+    // 1) Verify Supabase access token from client
+    const auth = req.get("authorization") || "";
+    const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
+    if (!token) return res.status(401).json({ error: "missing_token" });
+
+    // Verify with your project's JWT secret
+    const decoded = jwt.verify(token, SUPABASE_JWT_SECRET); // throws if invalid/expired
+    const email = String(decoded?.email || decoded?.user_metadata?.email || "").toLowerCase();
+    if (!ADMIN_EMAILS.has(email)) return res.status(403).json({ error: "not_admin" });
+
+    // 2) Build advice from heuristics
+    const body = req.body || {};
+    const advice = buildAdvice(body);
+
+    // 3) Insert into creator_insights
+    const { error } = await supabase.from("creator_insights").insert([{
+      url: body.url,
+      page_title: body.page_title || null,
+      keyword: body.keyword || null,
+      scores: body.scores || {},
+      highlights: body.highlights || {},
+      findings: body.findings || [],
+      actions: body.actions || [],
+      advice,
+      raw: body,
+      creator_email: null
+    }]);
+    if (error) throw error;
+
+    res.set("Access-Control-Allow-Origin", "*");
+    res.json({ ok: true, advice });
+  } catch (e) {
+    res.status(500).json({ error: String(e?.message || e) });
+  }
 // WebSocket + Express listener
 const PORT = process.env.PORT || 5055;
 server.listen(PORT, () => {
