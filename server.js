@@ -1936,6 +1936,14 @@ app.get('/api/freesound-proxy', async (req, res) => {
     return res.status(status).json({ error: 'Freesound proxy failed' });
   }
 });
+// First allowlist at top:
+const INSIGHTS_ADMINS = new Set([
+  "info@cultureschool.org",
+  "stacey.a.grant@gmail.com",
+  "stacey@cococreate.app",
+]);
+
+
 app.post("/api/creator_insights_upsert", cors({ origin: true }), async (req, res) => {
   try {
     const adminEmail = String(req.body?.admin_email || "").toLowerCase();
