@@ -1936,68 +1936,36 @@ app.get('/api/freesound-proxy', async (req, res) => {
     return res.status(status).json({ error: 'Freesound proxy failed' });
   }
 });
-// --- ADD: Creator Insights (minimal) ---
-// Reuse your existing: app, cors, corsOptions, and supabase client
-
-// Optional: allowlist admins (email comes from bookmarklet body, like your other admin tools)
-const INSIGHTS_ADMINS = new Set([
-  "info@cultureschool.org",
-  "stacey.a.grant@gmail.com",
-  "stacey@cococreate.app",
-]);
-
-
-
-function buildAdvice(p) {
-  const title = p.page_title || "(untitled)";
-  const top = (p.actions || []).slice(0, 5).map(a => `• ${a}`).join("\n");
-  const gaps = Object.entries(p.scores || {})
-    .sort((a, b) => a[1] - b[1]).slice(0, 3)
-    .map(([k, v]) => `• ${k}: ${v}`).join("\n");
-  const intent = p.keyword ? `Intent: “${p.keyword}”\n` : "";
-  return `Page: ${title}\n${intent}Top Fixes:\n${top || "• Looks solid — no high-priority fixes"}\n\nScore Gaps:\n${gaps || "• None notable"}`;
-}
-
-// Loosen CORS just for this route; do NOT rely on origin checks for bookmarklets
 app.post("/api/creator_insights_upsert", cors({ origin: true }), async (req, res) => {
   try {
-    // 🔐 Require a shared admin key
-    const ADMIN_SHARED_KEY = process.env.COCO_ADMIN_KEY; // set in Render
-    if (ADMIN_SHARED_KEY) {
-      const k = req.get("x-coco-admin-key") || "";
-      if (k !== ADMIN_SHARED_KEY) {
-        return res.status(403).json({ error: "bad_admin_key" });
-      }
-    }
-
-    // (Optional) email allowlist
-    const INSIGHTS_ADMINS = new Set(["stacey@cultureschool.org", "stacey@cococreate.app"]);
     const adminEmail = String(req.body?.admin_email || "").toLowerCase();
-    if (INSIGHTS_ADMINS.size && !INSIGHTS_ADMINS.has(adminEmail)) {
+    if (!INSIGHTS_ADMINS.has(adminEmail)) {
       return res.status(403).json({ error: "not_admin" });
     }
 
-    // Build advice + insert (same as before)
-    const advice = buildAdvice(req.body || {});
+    const body = req.body || {};
+    const advice = buildAdvice(body);
+
     const { error } = await supabase.from("creator_insights").insert([{
-      url: req.body.url,
-      page_title: req.body.page_title || null,
-      keyword: req.body.keyword || null,
-      scores: req.body.scores || {},
-      highlights: req.body.highlights || {},
-      findings: req.body.findings || [],
-      actions: req.body.actions || [],
+      url: body.url,
+      page_title: body.page_title || null,
+      keyword: body.keyword || null,
+      scores: body.scores || {},
+      highlights: body.highlights || {},
+      findings: body.findings || [],
+      actions: body.actions || [],
       advice,
-      raw: req.body,
-      creator_email: null
+      raw: body,
+      creator_email: adminEmail
     }]);
     if (error) throw error;
 
     res.json({ ok: true, advice });
   } catch (e) {
-    res.status(500).json({ error: String(e?.message || e) });
+    res.status(500).json({ error: String(e.message || e) });
   }
 });
+
 
 
 // WebSocket + Express listener
