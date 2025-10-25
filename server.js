@@ -1942,6 +1942,17 @@ const INSIGHTS_ADMINS = new Set([
   "stacey.a.grant@gmail.com",
   "stacey@cococreate.app",
 ]);
+function buildAdvice(p) {
+  const title = p.page_title || "(untitled)";
+  const top = (p.actions || []).slice(0, 5).map(a => `• ${a}`).join("\n");
+  const gaps = Object.entries(p.scores || {})
+    .sort((a, b) => a[1] - b[1]).slice(0, 3)
+    .map(([k, v]) => `• ${k}: ${v}`).join("\n");
+  const intent = p.keyword ? `Intent: “${p.keyword}”\n` : "";
+  const noFixes = "• No high-priority fixes found 🎯";
+
+  return `Page: ${title}\n${intent}Top Fixes:\n${top || noFixes}\n\nScore Gaps:\n${gaps || "• None notable"}`;
+}
 
 
 app.post("/api/creator_insights_upsert", cors({ origin: true }), async (req, res) => {
