@@ -1990,6 +1990,22 @@ app.post("/api/creator_insights_upsert", cors({ origin: true }), async (req, res
   }
 });
 
+// GET /api/creator_insights_list
+app.get("/api/creator_insights_list", cors({ origin: true }), async (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit || "100", 10), 500);
+    const { data, error } = await supabase
+      .from("creator_insights")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(limit);
+    if (error) throw error;
+    res.set("content-type", "application/json");
+    res.json({ rows: data || [] });
+  } catch (e) {
+    res.status(500).json({ error: String(e.message || e) });
+  }
+});
 
 
 // WebSocket + Express listener
