@@ -1965,18 +1965,23 @@ app.post("/api/creator_insights_upsert", cors({ origin: true }), async (req, res
     const body = req.body || {};
     const advice = buildAdvice(body);
 
-    const { error } = await supabase.from("creator_insights").insert([{
-      url: body.url,
-      page_title: body.page_title || null,
-      keyword: body.keyword || null,
-      scores: body.scores || {},
-      highlights: body.highlights || {},
-      findings: body.findings || [],
-      actions: body.actions || [],
-      advice,
-      raw: body,
-      creator_email: adminEmail
-    }]);
+      const { error } = await supabase.from("creator_insights").insert([{
+        url: body.url,
+        page_title: body.page_title || null,
+        keyword: body.keyword || null,
+        scores: body.scores || {},
+        highlights: body.highlights || {},
+        findings: body.findings || [],
+        actions: body.actions || [],
+        seo_terms: body.seo_terms || {},
+        tone: body.tone || {},
+        look: body.look || {},
+        brand_notes: body.brand_notes || null,
+        advice,
+        raw: body,
+        creator_email: adminEmail
+      }]);
+      
     if (error) throw error;
 
     res.json({ ok: true, advice });
