@@ -2006,22 +2006,28 @@ app.get("/api/creator_insights_list", cors({ origin: true }), async (req, res) =
     res.status(500).json({ error: String(e.message || e) });
   }
 });
+
 // POST /api/creator_insights_delete  { id, admin_email }
 app.post("/api/creator_insights_delete", cors({ origin: true }), async (req, res) => {
   try {
     const id = String(req.body?.id || "").trim();
     const adminEmail = String(req.body?.admin_email || "").toLowerCase();
-    if (!id)        return res.status(400).json({ error: "missing_id" });
+    if (!id) return res.status(400).json({ error: "missing_id" });
     if (!INSIGHTS_ADMINS.has(adminEmail)) return res.status(403).json({ error: "not_admin" });
 
-    const { error } = await supabase.from("creator_insights").delete().eq("id", id).limit(1);
-    if (error) throw error;
+    const { error } = await supabase
+      .from("creator_insights")
+      .delete()
+      .eq("id", id); // ← removed .limit(1)
 
+    if (error) throw error;
     res.json({ ok: true, id });
   } catch (e) {
     res.status(500).json({ error: String(e.message || e) });
   }
 });
+
+
 // POST /api/creator_insights_bulk_delete  { ids: string[], admin_email: string }
 app.post("/api/creator_insights_bulk_delete", cors({ origin: true }), async (req, res) => {
   try {
