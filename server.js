@@ -78,6 +78,7 @@ const ALLOWED_ORIGINS = [
   'https://coco-speak.netlify.app',
   'https://cocoqr.netlify.app',
   'https://cococreator-assets-hub.netlify.app',
+  'https://coco-insights-viewer.netlify.app',
   'https://coco-daily-inspo.netlify.app',
  
 ];
