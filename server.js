@@ -16,7 +16,6 @@ const fetch = require('node-fetch');
 
 const { JSDOM } = require("jsdom");
 const { Readability } = require("@mozilla/readability");
-const cheerio = require("cheerio");
 const nlp = require("compromise");
 
 
