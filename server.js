@@ -12,7 +12,12 @@ const CryptoJS = require('crypto-js');
 require('dotenv').config();
 const { createClient } = require('@supabase/supabase-js');
 const fetch = require('node-fetch');
+// ===== imports (top of server.js) =====
 
+const { JSDOM } = require("jsdom");
+const { Readability } = require("@mozilla/readability");
+const cheerio = require("cheerio");
+const nlp = require("compromise");
 
 
 // --- OpenAI (SDK) ---
@@ -2057,7 +2062,205 @@ app.post("/api/creator_insights_bulk_delete", cors({ origin: true }), async (req
     res.status(500).json({ error: String(e.message || e) });
   }
 });
+// ===== helpers =====
+function normalizeUrl(u){ try { return new URL(u).toString(); } catch { return String(u||""); } }
+function nowISO(){ return new Date().toISOString(); }
 
+// Heuristics reused
+function topKeywordsFrom(text, extraStop) {
+  const stop = new Set([
+    "the","a","an","and","or","but","of","to","in","on","for","is","are","was","were","it","with",
+    "you","your","at","from","by","as","this","that","these","those","be","we","our","us","they",
+    "i","me","my","&","–","—"
+  ].concat(extraStop||[]));
+  text = (text||"").toLowerCase();
+  const words = (text.match(/[a-z0-9’']+/g) || []).filter(w => !stop.has(w) && w.length>2);
+  const bigrams = [];
+  for (let i=0;i<words.length-1;i++) bigrams.push(words[i]+" "+words[i+1]);
+  const counts = new Map();
+  words.concat(bigrams).forEach(w => counts.set(w, (counts.get(w)||0)+1));
+  return Array.from(counts.entries())
+    .sort((a,b)=>b[1]-a[1])
+    .slice(0,25)
+    .map(([term,freq])=>({term,freq}));
+}
+
+function inferVoice(t){
+  const s = (t||"").toLowerCase();
+  const f = {
+    friendly: /\b(hey|hi|let’s|we|you|welcome|love|fun|enjoy|easy|simple)\b/.test(s),
+    luxury:   /\b(premium|luxury|bespoke|atelier|craftsmanship|silhouette|curated)\b/.test(s),
+    professional:/\b(solution|services|clients|portfolio|strategy|results|framework)\b/.test(s),
+    playful: /!/.test(t) || /\b(fun|play|joy|spark|magic)\b/.test(s),
+    academic:/\b(research|study|methodology|theory|evidence|peer)\b/.test(s)
+  };
+  const order = ["friendly","luxury","professional","playful","academic"].filter(k=>f[k]);
+  return order[0] || "neutral";
+}
+
+function readabilityBandFromFlesch(score){
+  return score>=70 ? "Grade 5–6"
+    : score>=60 ? "Grade 7–8"
+    : score>=50 ? "Grade 9–10"
+    : "Grade 11+";
+}
+
+function flesch(text){
+  const s = (text.match(/[\.\!\?]+/g)||[]).length || 1;
+  const words = (text.match(/\b[\w’']+\b/g)||[]);
+  const w = words.length || 1;
+  const syl = words.reduce((a,x)=> a + ((x.toLowerCase().match(/[aeiouy]+/g)||[]).length || 1), 0);
+  const raw = 206.835 - 1.015*(w/s) - 84.6*(syl/w);
+  return Math.max(0, Math.min(100, Math.round(raw)));
+}
+
+// ===== queue starter (simple in-process) =====
+async function runDeepReviewRow(rowId, supabase){
+  // 1) Load row
+  let { data: rows, error } = await supabase.from("deep_reviews").select("*").eq("id", rowId).limit(1);
+  if (error) throw error;
+  const row = (rows && rows[0]) || null;
+  if (!row) throw new Error("review_row_not_found");
+
+  // 2) Mark running
+  await supabase.from("deep_reviews").update({ status: "running", started_at: nowISO(), error: null }).eq("id", rowId);
+
+  try {
+    const url = normalizeUrl(row.url);
+
+    // 3) Fetch HTML (server-side, no CORS)
+    const resp = await fetch(url, { headers: { "user-agent": "CoCoDeepReview/1.0 (+https://cultureschool.org)" } });
+    const html = await resp.text();
+
+    // 4) Parse with JSDOM/Readability
+    const dom = new JSDOM(html, { url });
+    const doc = dom.window.document;
+    const reader = new Readability(doc);
+    const article = reader.parse() || {};
+    const readableText = (article.textContent || "").trim();
+
+    // 5) Meta/OG
+    const $ = cheerio.load(html);
+    const title = $("title").text() || article.title || "";
+    const metaDesc = $('meta[name="description"]').attr("content") || "";
+    const ogTitle = $('meta[property="og:title"]').attr("content") || "";
+    const ogDesc = $('meta[property="og:description"]').attr("content") || "";
+    const ogImage = $('meta[property="og:image"]').attr("content") || "";
+    const hText = ["h1","h2","h3"].map(sel => $(sel).map((i,el)=>$(el).text()).get().join(" ")).join(" ");
+
+    // 6) Basic NLP bits
+    const keywordsBody = topKeywordsFrom(readableText);
+    const keywordsHead = topKeywordsFrom(hText);
+    const keywordsMeta = topKeywordsFrom([title, metaDesc, ogTitle, ogDesc].filter(Boolean).join(" "));
+
+    // sentiment-ish / tone-ish (very light)
+    const docNlp = nlp(readableText);
+    const sentences = docNlp.sentences().out("array") || [];
+    const exclamations = (readableText.match(/!/g)||[]).length;
+    const voice = inferVoice(readableText + " " + title);
+    const reading = flesch(readableText);
+    const band = readabilityBandFromFlesch(reading);
+
+    // 7) Schema types
+    const schemaTypes = [];
+    $('script[type="application/ld+json"]').each((i,el)=>{
+      try{
+        const json = JSON.parse($(el).text());
+        const types = Array.isArray(json) ? json.map(x=>x["@type"]).flat() : [json["@type"]];
+        types.filter(Boolean).forEach(t=> schemaTypes.push(t));
+      }catch{}
+    });
+
+    // 8) Build result JSON
+    const result = {
+      url,
+      meta: { title, metaDesc, ogTitle, ogDesc, ogImage },
+      headings_present: Boolean(hText.trim()),
+      schema: { types: Array.from(new Set(schemaTypes)) },
+      nlp: {
+        sentences: sentences.length,
+        exclamations
+      },
+      seo_terms: {
+        top_keywords: keywordsBody,
+        headings: keywordsHead,
+        meta: keywordsMeta
+      },
+      tone: {
+        voice,
+        readability_score: reading,
+        readability_band: band
+      },
+      // keep the full Readability output in case you need it
+      readability: {
+        title: article.title || "",
+        byline: article.byline || "",
+        length: (article.textContent||"").length
+      }
+    };
+
+    // 9) Save result
+    await supabase.from("deep_reviews").update({
+      status: "done",
+      finished_at: nowISO(),
+      result
+    }).eq("id", rowId);
+
+  } catch (err) {
+    await supabase.from("deep_reviews").update({
+      status: "error",
+      finished_at: nowISO(),
+      error: String(err && err.message || err)
+    }).eq("id", rowId);
+  }
+}
+
+// ===== API: enqueue =====
+// POST /api/deep_review_enqueue { url, admin_email, insight_id? }
+app.post("/api/deep_review_enqueue", cors({ origin: true }), async (req, res) => {
+  try {
+    const url = normalizeUrl(req.body?.url || "");
+    const adminEmail = String(req.body?.admin_email || "").toLowerCase();
+    const insightId = req.body?.insight_id || null;
+
+    if (!url) return res.status(400).json({ error: "missing_url" });
+    if (!INSIGHTS_ADMINS.has(adminEmail)) return res.status(403).json({ error: "not_admin" });
+
+    const { data, error } = await supabase
+      .from("deep_reviews")
+      .insert([{ url, requested_by: adminEmail, insight_id: insightId, status: "queued" }])
+      .select("*")
+      .limit(1);
+    if (error) throw error;
+
+    const row = data[0];
+    // fire-and-forget in-process worker (simple)
+    setImmediate(() => runDeepReviewRow(row.id, supabase).catch(()=>{}));
+
+    res.json({ ok: true, id: row.id, status: "queued" });
+  } catch (e) {
+    res.status(500).json({ error: String(e.message || e) });
+  }
+});
+
+// GET /api/deep_review_status?id=<review_id>
+// or /api/deep_review_status?insight_id=<insight_id>&latest=1
+app.get("/api/deep_review_status", cors({ origin: true }), async (req, res) => {
+  try {
+    const id = req.query.id;
+    const insightId = req.query.insight_id;
+    let q = supabase.from("deep_reviews").select("*");
+    if (id) q = q.eq("id", id).limit(1);
+    else if (insightId) q = q.eq("insight_id", insightId).order("created_at", { ascending: false }).limit(1);
+    else return res.status(400).json({ error: "missing_id_or_insight_id" });
+
+    const { data, error } = await q;
+    if (error) throw error;
+    res.json({ rows: data || [] });
+  } catch (e) {
+    res.status(500).json({ error: String(e.message || e) });
+  }
+});
 
 // WebSocket + Express listener
 const PORT = process.env.PORT || 5055;
