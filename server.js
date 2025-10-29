@@ -84,6 +84,7 @@ const ALLOWED_ORIGINS = [
   'https://cococreator-assets-hub.netlify.app',
   'https://coco-insights-viewer.netlify.app',
    'https://coco-invite-template.netlify.app',
+   'https://coco-assets-library.netlify.app',
   'https://coco-daily-inspo.netlify.app',
  
 ];
