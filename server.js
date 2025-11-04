@@ -86,6 +86,7 @@ const ALLOWED_ORIGINS = [
   'https://coco-insights-viewer.netlify.app',
    'https://coco-invite-template.netlify.app',
    'https://coco-assets-library.netlify.app',
+   'https://farmers-market-viewer.netlify.app/',
   'https://coco-daily-inspo.netlify.app',
  
 ];
