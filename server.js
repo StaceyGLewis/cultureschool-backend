@@ -60,8 +60,8 @@ const ALLOWED_ORIGINS = [
   'https://www.cultureschool.org',
   'https://cocoboard-preview-html.netlify.app',
   'https://coco-collector.netlify.app',
-  'https://collector-desktop.netlify.app',   // desktop
-  'https://collector-mobile.netlify.app',    // mobile (add this)
+  'https://collector-desktop.netlify.app',
+  'https://collector-mobile.netlify.app',
   'https://explore-cocospark.netlify.app',
   'https://ultimate-viewer.netlify.app',
   'https://flourish-viewer.netlify.app',
@@ -84,12 +84,14 @@ const ALLOWED_ORIGINS = [
   'https://cocoqr.netlify.app',
   'https://cococreator-assets-hub.netlify.app',
   'https://coco-insights-viewer.netlify.app',
-   'https://coco-invite-template.netlify.app',
-   'https://coco-assets-library.netlify.app',
-   'https://farmers-market-viewer.netlify.app/',
-  'https://coco-daily-inspo.netlify.app',
- 
+  'https://coco-invite-template.netlify.app',
+  'https://coco-assets-library.netlify.app',
+  'https://farmers-market-viewer.netlify.app',
+  'https://coco-admin-editor.netlify.app',
+  'https://parisian-market-viewer.netlify.app/',
+  'https://coco-daily-inspo.netlify.app'
 ];
+
 
 // 2) Simple CORS options — keep credentials FALSE (you don’t need cookies)
 const corsOptions = {
