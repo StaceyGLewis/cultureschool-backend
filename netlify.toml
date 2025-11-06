@@ -46,5 +46,17 @@ Content-Security-Policy = "frame-ancestors 'self' https://www.cultureschool.org 
   [headers.values]
     Basic-Auth = "coco:letmein"
     X-Robots-Tag = "noindex, nofollow"
-
+    [[headers]]
+  for = "/coco-admin/*"
+  [headers.values]
+    Basic-Auth = "coco:letmein"
+    X-Robots-Tag = "noindex, nofollow"
+  for = "/event-collector/*"
+  [headers.values]
+    Basic-Auth = "coco:letmein"
+    X-Robots-Tag = "noindex, nofollow"
+  for = "/coco-admin-editor/*"
+  [headers.values]
+    Basic-Auth = "coco:letmein"
+    X-Robots-Tag = "noindex, nofollow"
 
