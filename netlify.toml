@@ -41,5 +41,10 @@
 for = "/*"
 [headers.values]
 Content-Security-Policy = "frame-ancestors 'self' https://www.cultureschool.org https://cultureschool.org"
+[[headers]]
+  for = "/admin/*"
+  [headers.values]
+    Basic-Auth = "coco:letmein"
+    X-Robots-Tag = "noindex, nofollow"
 
 
