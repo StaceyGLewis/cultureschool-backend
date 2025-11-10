@@ -4,18 +4,19 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
 
-  <!-- Dynamic OG Meta (populated via JS) -->
-  <title id="pageTitle">Loading… | CoCoCreate</title>
-  <meta property="og:type" content="website">
-  <meta property="og:site_name" content="CoCoCreate by CultureSchool">
-  <meta property="og:title" content="CoCo Pop-Up Board">
-  <meta property="og:description" content="Create, brand, and launch your pop-up instantly.">
-  <meta property="og:image" content="https://cococreate.netlify.app/og-default.jpg">
-  <meta property="og:url" content="https://cococreate.netlify.app/">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="CoCoCreate by CultureSchool">
-  <meta name="twitter:description" content="Pop-Up templates and tools for creators.">
-  <meta name="twitter:image" content="https://cococreate.netlify.app/og-default.jpg">
+  
+ <!-- Dynamic OG Meta (populated via JS if needed) -->
+<title id="pageTitle">Creator Bundle: Holiday Pop-Up Templates — CoCoCreate</title>
+<meta property="og:type" content="product">
+<meta property="og:site_name" content="CoCoCreate by CultureSchool">
+<meta property="og:title" content="Creator Bundle: Holiday Pop-Up Templates — 2 Pack">
+<meta property="og:description" content="Two festive pop-up templates to launch your seasonal microstore in minutes. Designed for creators, makers, and small brands — powered by CoCoCreate.">
+<meta property="og:image" content="https://cdn.shopify.com/s/files/1/0673/3637/2387/files/An_ad_for_CoCoreate_Holiday_Bundle.png?v=1762801743">
+<meta property="og:url" content="https://cultureschool.netlify.app/board.html?bundle=holiday-shoppe">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Creator Bundle: Holiday Pop-Up Templates — CoCoCreate">
+<meta name="twitter:description" content="Build your seasonal pop-up with CoCoCreate — festive templates, no design skills required.">
+<meta name="twitter:image" content="https://cdn.shopify.com/s/files/1/0673/3637/2387/files/An_ad_for_CoCoreate_Holiday_Bundle.png?v=1762801743">
 
   <style>
     body {
@@ -87,11 +88,11 @@
       document.title = `${b.title || 'CoCo Pop-Up'} | CoCoCreate`;
       setMeta('og:title', b.title);
       setMeta('og:description', b.description || 'See this pop-up made with CoCoCreate');
-      setMeta('og:image', b.banner_url || 'https://cococreate.netlify.app/og-default.jpg');
+      setMeta('og:image', b.banner_url || 'https://cdn.shopify.com/s/files/1/0673/3637/2387/files/CoCo_Creator_group.png?v=1761702500');
       setMeta('og:url', `${location.origin}${location.pathname}?board=${encodeURIComponent(b.slug || b.id)}`);
       setMeta('twitter:title', b.title);
       setMeta('twitter:description', b.description || '');
-      setMeta('twitter:image', b.banner_url || 'https://cococreate.netlify.app/og-default.jpg');
+      setMeta('twitter:image', b.banner_url || 'https://cdn.shopify.com/s/files/1/0673/3637/2387/files/CoCo_Creator_group.png?v=1761702500');
 
       // Populate body
       document.body.innerHTML = `
@@ -128,6 +129,38 @@
 
     loadBoard();
   </script>
+  <script>
+    (() => {
+      const params = new URLSearchParams(location.search);
+      const bundle = params.get('bundle');
+      const metaMap = {
+        'holiday-shoppe': {
+          title: "Creator Bundle: Holiday Pop-Up Templates — 2 Pack",
+          desc: "Two festive pop-up templates to launch your seasonal microstore in minutes. Designed for creators, makers, and small brands — powered by CoCoCreate.",
+          img: "https://cdn.shopify.com/s/files/1/0673/3637/2387/files/An_ad_for_CoCoreate_Holiday_Bundle.png?v=1762801743"
+        },
+        'social-skin-pack': {
+          title: "Social Skin Pack — Ready-to-Post Templates",
+          desc: "Instant, brand-ready social templates to make your posts shine.",
+          img: "https://cdn.shopify.com/s/files/1/0673/3637/2387/files/Social_Skin_Pack.png?v=1762802166"
+        }
+      };
+      const meta = metaMap[bundle];
+      if (!meta) return;
+    
+      document.title = `${meta.title} | CoCoCreate`;
+      const set = (p, c) => {
+        let m = document.querySelector(`meta[property="${p}"]`);
+        if (!m){ m = document.createElement('meta'); m.setAttribute('property', p); document.head.appendChild(m); }
+        m.setAttribute('content', c);
+      };
+      set('og:title', meta.title);
+      set('og:description', meta.desc);
+      set('og:image', meta.img);
+      set('og:url', location.href);
+    })();
+    </script>
+    
 </head>
 <body>
 </body>
