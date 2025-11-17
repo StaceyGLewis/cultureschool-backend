@@ -92,6 +92,8 @@ const ALLOWED_ORIGINS = [
   'https://farmers-market-viewer-demo.netlify.app/',
   'https://coco-daily-inspo.netlify.app',
   'https://clay-arch-studio.netlify.app/',
+  'https://holiday-night-shoppe.netlify.app/',
+  'https://holiday-shoppe-booth-green.netlify.app/',
   'https://holiday-shoppe-purple.netlify.app/',
   'https://fancy-embossed-holiday-popup.netlify.app/',
   'https://holiday-festival-of-lights.netlify.app/',
