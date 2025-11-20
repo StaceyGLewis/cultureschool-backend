@@ -2275,6 +2275,58 @@ app.get("/api/deep_review_status", cors({ origin: true }), async (req, res) => {
     res.status(500).json({ error: String(e.message || e) });
   }
 });
+// =====================
+// Product Scraper Route
+// =====================
+const axios = require('axios');
+const cheerio = require('cheerio');
+
+app.get('/api/scrape-product', async (req, res) => {
+  const url = req.query.url;
+  if (!url) return res.status(400).json({ error: 'Missing ?url=' });
+
+  try {
+    const response = await axios.get(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+      }
+    });
+
+    const html = response.data;
+    const $ = cheerio.load(html);
+
+    // ---- Extract metadata (OG + fallbacks) ----
+    const title =
+      $('meta[property="og:title"]').attr('content') ||
+      $('title').text() ||
+      null;
+
+    const image =
+      $('meta[property="og:image"]').attr('content') ||
+      $('meta[name="twitter:image"]').attr('content') ||
+      $('img').first().attr('src') ||
+      null;
+
+    const description =
+      $('meta[property="og:description"]').attr('content') ||
+      $('meta[name="description"]').attr('content') ||
+      null;
+
+    const canonical =
+      $('link[rel="canonical"]').attr('href') || url;
+
+    res.json({
+      title,
+      image,
+      description,
+      canonical
+    });
+
+  } catch (err) {
+    console.error('Scrape error:', err.message);
+    res.status(500).json({ error: 'Scrape failed', details: err.message });
+  }
+});
 
 // WebSocket + Express listener
 const PORT = process.env.PORT || 5055;
