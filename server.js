@@ -2278,8 +2278,7 @@ app.get("/api/deep_review_status", cors({ origin: true }), async (req, res) => {
 // =====================
 // Product Scraper Route
 // =====================
-const axios = require('axios');
-const cheerio = require('cheerio');
+
 
 app.get('/api/scrape-product', async (req, res) => {
   const url = req.query.url;
