@@ -98,7 +98,8 @@ const ALLOWED_ORIGINS = [
   'https://fancy-embossed-holiday-popup.netlify.app/',
   'https://holiday-festival-of-lights.netlify.app/',
   'https://rustic-market-viewer.netlify.app/',
-  'https://holiday-notebook-shoppe.netlify.app/'
+  'https://holiday-notebook-shoppe.netlify.app/',
+  'https://theme-viewer.netlify.app/'
 ];
 
 
