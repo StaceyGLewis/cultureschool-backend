@@ -80,18 +80,34 @@ function nowIso() {
 // ---------------------------------------------------------
 // MAIN HANDLER
 // ---------------------------------------------------------
-Deno.serve(async (req: Request) => {
+Deno.serve(async (req)=>{
+  // Preflight
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: cors(req) });
+    return new Response("ok", {
+      headers: corsHeaders(req)
+    });
   }
 
-  // 🔐 Extract API key — browser safe
-  const apiKey = extractApiKey(req);
-  if (!apiKey) {
-    return json(req, { ok: false, error: "missing_api_key" }, 401);
+  // ----- AUTH PATCH -----
+  // Ensure Supabase client ALWAYS has an Authorization header
+  let auth = req.headers.get("authorization");
+  if (!auth) {
+    auth = `Bearer ${Deno.env.get("SB_ANON_KEY")}`;
   }
 
-  const supabase = createClient(SB_URL, apiKey);
+  // Initialize supabase client with this auth header
+  const supabase = createClient(
+    Deno.env.get("SB_URL"),
+    auth.includes("service_role") 
+      ? Deno.env.get("SB_SERVICE_ROLE_KEY")
+      : Deno.env.get("SB_ANON_KEY"),
+    {
+      global: { headers: { Authorization: auth } }
+    }
+  );
+
+ 
+
 
   try {
     // Accept GET or POST
