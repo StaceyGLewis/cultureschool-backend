@@ -7,11 +7,15 @@
 //  • stable payload lookup
 // ---------------------------------------------------------
 
+// ===== SUPABASE CLIENT =====
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// ===== ENV =====
 const SB_URL = Deno.env.get("SB_URL");
 const SERVICE_ROLE = Deno.env.get("SB_SERVICE_ROLE_KEY");
+
+// service key lets the function bypass RLS (expected & safe for server functions)
+const supabase = createClient(SB_URL, SERVICE_ROLE);
+
 
 // ===== CORS =====
 const ALLOW_ORIGINS = new Set([
