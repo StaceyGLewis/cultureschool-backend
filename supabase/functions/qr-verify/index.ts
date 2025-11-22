@@ -1,127 +1,188 @@
-// =====================================================
-//  CoCoCreate QR Verification Function
-//  Used by event staff to validate check-in tokens
-// =====================================================
+// ---------------------------------------------------------
+// QR VERIFY — UNIVERSAL VERIFIER v2
+// Pairs with qr-resolve v2
+// ---------------------------------------------------------
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const url = Deno.env.get("SB_URL");
-const serviceKey = Deno.env.get("SB_SERVICE_ROLE_KEY");
-const supabase = createClient(url, serviceKey);
+// ===== ENV =====
+const SB_URL = Deno.env.get("SB_URL");
+const SERVICE_KEY = Deno.env.get("SB_SERVICE_ROLE_KEY");
 
+// ===== CORS =====
 const ALLOW_ORIGINS = new Set([
   "https://cocoqr.netlify.app",
   "https://www.cultureschool.org",
+  "https://theme-viewer.netlify.app",
+  "https://coco-public-profile.netlify.app",
   "http://localhost:5173",
-  "http://localhost:3000",
+  "http://localhost:3000"
 ]);
 
-function corsHeaders(req: Request) {
+function cors(req: Request) {
   const origin = req.headers.get("origin") ?? "";
-  const allow = ALLOW_ORIGINS.has(origin) ? origin : "https://cocoqr.netlify.app";
+  const allow = ALLOW_ORIGINS.has(origin)
+    ? origin
+    : "https://cocoqr.netlify.app";
 
   return {
     "Access-Control-Allow-Origin": allow,
     "Vary": "Origin",
-    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers":
+      "authorization, apikey, content-type, x-client-info",
+    "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
   };
 }
 
-function json(req: Request, payload: any, status = 200) {
-  return new Response(JSON.stringify(payload), {
+function json(req: Request, data: any, status = 200) {
+  return new Response(JSON.stringify(data), {
     status,
     headers: {
-      ...corsHeaders(req),
+      ...cors(req),
       "Content-Type": "application/json",
     },
   });
 }
 
-// =====================================================
-//  MAIN VERIFY HANDLER
-// =====================================================
+// ---------------------------------------------------------
+// Accept API keys in:
+// 1) Authorization Bearer
+// 2) apikey header
+// 3) ?apikey=
+// ---------------------------------------------------------
+function extractApiKey(req: Request) {
+  const auth = req.headers.get("authorization");
+  if (auth && auth.startsWith("Bearer ")) {
+    return auth.replace("Bearer ", "").trim();
+  }
+  const headerKey = req.headers.get("apikey");
+  if (headerKey) return headerKey.trim();
+  const url = new URL(req.url);
+  const qsKey = url.searchParams.get("apikey");
+  if (qsKey) return qsKey.trim();
+  return null;
+}
 
-Deno.serve(async (req) => {
+// ---------------------------------------------------------
+function nowIso() {
+  return new Date().toISOString();
+}
+
+// ---------------------------------------------------------
+// MAIN HANDLER
+// ---------------------------------------------------------
+Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders(req) });
+    return new Response("ok", { headers: cors(req) });
   }
 
+  // 🔐 Extract API key
+  const apiKey = extractApiKey(req);
+  if (!apiKey) {
+    return json(req, { ok: false, error: "missing_api_key" }, 401);
+  }
+
+  const supabase = createClient(SB_URL, apiKey);
+
   try {
-    if (req.method !== "POST") {
+    // Accept GET or POST
+    let slug = null;
+    let token = null;
+
+    if (req.method === "GET") {
+      const u = new URL(req.url);
+      slug = (u.searchParams.get("slug") || "").trim();
+      token = (u.searchParams.get("token") || "").trim();
+    } else if (req.method === "POST") {
+      const body = await req.json().catch(() => ({}));
+      slug = (body.slug || "").trim();
+      token = (body.token || "").trim();
+    } else {
       return json(req, { ok: false, error: "method_not_allowed" }, 405);
     }
 
-    const body = await req.json().catch(() => ({}));
-    const token = (body.token || "").trim();
-    const staff = body.staff || null;        // optional: who validated
-    const partner = body.partner || null;    // optional: which vendor is validating
-
-    if (!token) {
-      return json(req, { ok: false, reason: "missing_token" }, 400);
+    if (!slug || !token) {
+      return json(req, { ok: false, error: "missing_slug_or_token" }, 400);
     }
 
-    // =====================================================
-    // LOOKUP — Check token validity
-    // =====================================================
-    const nowIso = new Date().toISOString();
-
-    const { data: row, error } = await supabase
+    // ---------------------------------------------------------
+    // 1) Lookup token
+    // ---------------------------------------------------------
+    const { data: chk, error: chkErr } = await supabase
       .from("qr_checkins")
       .select("*")
+      .eq("slug", slug)
       .eq("token", token)
-      .lte("expires", nowIso)   // not expired
+      .order("created_at", { ascending: false })
       .maybeSingle();
 
-    if (error) {
+    if (chkErr) {
       return json(req, {
         ok: false,
         error: "lookup_error",
-        details: error.message,
+        details: chkErr.message,
       }, 500);
     }
 
-    if (!row) {
+    if (!chk) {
       return json(req, {
         ok: false,
-        reason: "invalid_or_expired",
-      }, 400);
+        error: "invalid_token",
+        reason: "no token match",
+      }, 404);
     }
 
-    // =====================================================
-    // UPDATE STATUS — mark check-in complete
-    // =====================================================
-    const update = {
-      status: "verified",
-      verified_at: nowIso,
-      staff_verified: staff,
-      partner_verified: partner,
-    };
+    const now = nowIso();
 
-    const { error: updErr } = await supabase
+    // ---------------------------------------------------------
+    // 2) EXPIRED?
+    // ---------------------------------------------------------
+    const expiresAt = chk.expires ?? chk.token_expires_at;
+    if (expiresAt && now > expiresAt) {
+      // mark expired
+      await supabase
+        .from("qr_checkins")
+        .update({ status: "expired" })
+        .eq("id", chk.id);
+
+      return json(req, {
+        ok: false,
+        error: "expired",
+        expired_at: expiresAt,
+      }, 410);
+    }
+
+    // ---------------------------------------------------------
+    // 3) VALID TOKEN → verify
+    // ---------------------------------------------------------
+    await supabase
       .from("qr_checkins")
-      .update(update)
-      .eq("id", row.id);
+      .update({
+        status: "verified",
+        verified_at: now,
+      })
+      .eq("id", chk.id);
 
-    if (updErr) {
-      return json(req, {
-        ok: false,
-        error: "update_failed",
-        details: updErr.message,
-      }, 500);
-    }
+    // ---------------------------------------------------------
+    // 4) Load payloads (OPTIONAL return)
+    // ---------------------------------------------------------
+    const { data: payloads } = await supabase
+      .from("qr_payloads")
+      .select("*")
+      .eq("slug", slug)
+      .or(`user_id.eq.${chk.user_id}`);
 
-    // =====================================================
-    // SUCCESS
-    // =====================================================
     return json(req, {
       ok: true,
-      verified: true,
-      slug: row.slug || row.qr_slug,
-      checkin_id: row.id,
-      updated: update,
+      result: "verified",
+      slug,
+      token,
+      payloads: payloads ?? [],
+      checkin_id: chk.id,
     });
+
   } catch (err) {
+    console.error(err);
     return json(req, {
       ok: false,
       error: "exception",
