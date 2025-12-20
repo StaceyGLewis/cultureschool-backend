@@ -1924,6 +1924,68 @@ app.get('/api/pixabay-proxy', async (req, res) => {
   }
 });
 app.get('/health', (_req, res) => res.json({ ok: true }));
+// GET /api/unsplash-proxy?query=calm&per_page=6&page=1&thumb=1
+app.get('/api/unsplash-proxy', async (req, res) => {
+  const UNSPLASH_ACCESS_KEY = process.env.UNSPLASH_ACCESS_KEY;
+  if (!UNSPLASH_ACCESS_KEY) {
+    return res.status(500).json({ error: 'UNSPLASH_ACCESS_KEY missing' });
+  }
+
+  const {
+    query = 'inspiration',
+    per_page = 10,
+    page = 1,
+    thumb
+  } = req.query;
+
+  try {
+    const url =
+      `https://api.unsplash.com/search/photos` +
+      `?query=${encodeURIComponent(query)}` +
+      `&per_page=${per_page}` +
+      `&page=${page}` +
+      `&orientation=squarish`;
+
+    const r = await fetch(url, {
+      headers: {
+        Authorization: `Client-ID ${UNSPLASH_ACCESS_KEY}`,
+        'Accept-Version': 'v1'
+      }
+    });
+
+    if (!r.ok) {
+      const t = await r.text();
+      throw new Error(`Unsplash API error ${r.status}: ${t}`);
+    }
+
+    const data = await r.json();
+
+    // --- THUMB MODE (for <img src>) ---
+    if (String(thumb) === '1') {
+      const first = data?.results?.[0];
+
+      const imgUrl =
+        first?.urls?.small ||
+        first?.urls?.regular ||
+        first?.urls?.full;
+
+      if (imgUrl) {
+        res.set('Cache-Control', 'public, max-age=600'); // 10 min
+        return res.redirect(302, imgUrl);
+      }
+
+      return res.redirect(302, 'about:blank');
+    }
+
+    // --- JSON MODE ---
+    res.set('Cache-Control', 'public, max-age=60');
+    return res.json(data);
+
+  } catch (e) {
+    console.error('unsplash-proxy error:', e);
+    res.status(500).json({ error: 'Unsplash proxy failed' });
+  }
+});
 
 
 
