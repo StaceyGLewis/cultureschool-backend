@@ -64,3 +64,4 @@ Content-Security-Policy = "frame-ancestors 'self' https://www.cultureschool.org 
 for = "/*"
   [headers.values]
   Permissions-Policy = "autoplay=(self)"
+Content-Security-Policy: media-src 'self' https:;
