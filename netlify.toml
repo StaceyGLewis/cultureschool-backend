@@ -60,3 +60,7 @@ Content-Security-Policy = "frame-ancestors 'self' https://www.cultureschool.org 
     Basic-Auth = "coco:letmein"
     X-Robots-Tag = "noindex, nofollow"
 
+[[headers]]
+for = "/*"
+  [headers.values]
+  Permissions-Policy = "autoplay=(self)"
