@@ -139,7 +139,8 @@ Content-Security-Policy = "frame-ancestors 'self' https://www.cultureschool.org 
     X-Robots-Tag = "noindex, nofollow"
 
 [[headers]]
-for = "/*"
+  for = "/*"
   [headers.values]
-  Permissions-Policy = "autoplay=(self)"
-Content-Security-Policy: media-src 'self' https:;
+    Permissions-Policy = "microphone=*, autoplay=*, speaker=*"
+    Content-Security-Policy = "media-src 'self' blob: https:; frame-ancestors 'self' https://cultureschool.org https://www.cultureschool.org"
+
