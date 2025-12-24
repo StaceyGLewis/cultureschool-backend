@@ -1,12 +1,40 @@
 /*
-  # -- Optional advanced isolation (commented out) --
-  # Cross-Origin-Opener-Policy: same-origin
-  # Cross-Origin-Embedder-Policy: require-corp
+  # ------------------------------------------------------------
+  # Global Site Headers — SAFE for all CultureSchool pages
+  # Enables CoCo voice + audio (Flourish, WS2, WS3)
+  # ------------------------------------------------------------
 
-  # Allow Shopify pages on your domain to frame this site
-  Content-Security-Policy: frame-ancestors 'self' https://www.cultureschool.org https://cultureschool.org https://admin.shopify.com
-  # (Optional legacy header; CSP above is what matters)
+  Content-Security-Policy:
+    default-src 'self';
+    script-src 'self' 'unsafe-inline' 'unsafe-eval';
+    style-src 'self' 'unsafe-inline';
+    img-src 'self' data: blob: https:;
+    font-src 'self' data: https:;
+    connect-src
+      'self'
+      https://cultureschool-backend.onrender.com
+      https://*.netlify.app
+      https://*.shopify.com;
+    media-src
+      'self'
+      blob:
+      https://cultureschool-backend.onrender.com;
+    frame-ancestors
+      'self'
+      https://www.cultureschool.org
+      https://cultureschool.org
+      https://admin.shopify.com;
+
   X-Frame-Options: SAMEORIGIN
+  Referrer-Policy: strict-origin-when-cross-origin
+
+  Permissions-Policy:
+    microphone=(self),
+    speaker-selection=(self),
+    autoplay=(self),
+    clipboard-read=(self),
+    clipboard-write=(self)
+
 
   # Nice-to-haves
   Referrer-Policy: strict-origin-when-cross-origin
