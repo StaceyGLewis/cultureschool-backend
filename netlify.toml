@@ -141,6 +141,6 @@ Content-Security-Policy = "frame-ancestors 'self' https://www.cultureschool.org 
 [[headers]]
   for = "/*"
   [headers.values]
-    Permissions-Policy = "microphone=*, autoplay=*, speaker=*"
-    Content-Security-Policy = "media-src 'self' blob: https:; frame-ancestors 'self' https://cultureschool.org https://www.cultureschool.org"
+    Permissions-Policy = "microphone=(self), autoplay=(self)"
 
+    Content-Security-Policy = "default-src 'self' https:; img-src 'self' https: blob: data:; media-src 'self' https: blob:; frame-ancestors 'self' https://cultureschool.org https://www.cultureschool.org"
