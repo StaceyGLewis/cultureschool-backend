@@ -134,9 +134,14 @@ Content-Security-Policy = "frame-ancestors 'self' https://www.cultureschool.org 
     Basic-Auth = "coco:letmein"
     X-Robots-Tag = "noindex, nofollow"
 
-[[headers]]
+[[[headers]]
   for = "/*"
   [headers.values]
-    Permissions-Policy = "microphone=(self), autoplay=(self)"
-
-    Content-Security-Policy = "default-src 'self' https:; img-src 'self' https: blob: data:; media-src 'self' https: blob:; frame-ancestors 'self' https://cultureschool.org https://www.cultureschool.org"
+    Permissions-Policy = "microphone=*, autoplay=*"
+    Content-Security-Policy = """
+      default-src 'self' https:;
+      connect-src 'self' https:;
+      img-src 'self' https: blob: data:;
+      media-src 'self' https: blob:;
+      frame-ancestors 'self' https://cultureschool.org https://www.cultureschool.org;
+    """
