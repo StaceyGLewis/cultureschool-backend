@@ -1849,9 +1849,14 @@ app.get('/api/getFlourishTiles', async (req, res) => {
   }
 });
 // Health check (optional)
-app.get('/api/health/env', (req, res) => {
-  res.json({ OPENAI_API_KEY: !!process.env.OPENAI_API_KEY });
+app.get('/api/health/env', (_req, res) => {
+  res.set('Cache-Control', 'no-store');
+  res.json({
+    ok: true,
+    ts: Date.now()
+  });
 });
+
 
 // ✅ matches your frontend: POST https://cultureschool-backend.onrender.com/api/images
 app.post('/api/images', async (req, res) => {
@@ -1985,6 +1990,14 @@ app.get('/api/unsplash-proxy', async (req, res) => {
     console.error('unsplash-proxy error:', e);
     res.status(500).json({ error: 'Unsplash proxy failed' });
   }
+});
+app.get('/api/health/config', (_req, res) => {
+  res.set('Cache-Control', 'no-store');
+  res.json({
+    openai: !!process.env.OPENAI_API_KEY,
+    pixabay: !!process.env.PIXABAY_API_KEY,
+    unsplash: !!process.env.UNSPLASH_ACCESS_KEY
+  });
 });
 
 
