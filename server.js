@@ -1902,19 +1902,44 @@ app.get('/api/pexels-proxy', async (req, res) => {
 });
 
 // GET /api/pixabay-proxy?query=nature&per_page=4&page=1&thumb=1
+// GET /api/pixabay-proxy?query=nature&per_page=50&page=1&thumb=1&seed=theme-key
 app.get('/api/pixabay-proxy', async (req, res) => {
-   setProxyHeaders(res);
+  setProxyHeaders(res);
   const PIXABAY_API_KEY = process.env.PIXABAY_API_KEY;
   if (!PIXABAY_API_KEY) return res.status(500).json({ error: 'PIXABAY_API_KEY missing' });
 
-  const { query = 'inspiration', per_page = 10, page = 1, image_type = 'photo', thumb } = req.query;
+  const { query = 'inspiration', per_page = 10, page = 1, image_type = 'photo', thumb, seed } = req.query;
+
   try {
-    const url = `https://pixabay.com/api/?key=${PIXABAY_API_KEY}&q=${encodeURIComponent(query)}&per_page=${per_page}&page=${page}&image_type=${image_type}&safesearch=true`;
+    const url =
+      `https://pixabay.com/api/?key=${PIXABAY_API_KEY}` +
+      `&q=${encodeURIComponent(query)}` +
+      `&per_page=${per_page}` +
+      `&page=${page}` +
+      `&image_type=${image_type}` +
+      `&safesearch=true`;
+
     const r = await fetch(url);
     const data = await r.json();
 
+    // --- helper: deterministic hash for stable selection ---
+    function hashStr(s = '') {
+      let h = 2166136261; // FNV-ish
+      for (let i = 0; i < s.length; i++) {
+        h ^= s.charCodeAt(i);
+        h = Math.imul(h, 16777619);
+      }
+      return (h >>> 0);
+    }
+
     if (String(thumb) === '1') {
-      const first = data?.hits?.[0];
+      const hits = Array.isArray(data?.hits) ? data.hits : [];
+      if (!hits.length) return res.redirect(302, 'about:blank');
+
+      // pick a stable index per theme (seed), otherwise 0
+      const idx = seed ? (hashStr(String(seed)) % hits.length) : 0;
+      const first = hits[idx];
+
       const imgUrl = first?.webformatURL || first?.previewURL || first?.largeImageURL;
       if (imgUrl) {
         res.set('Cache-Control', 'public, max-age=600');
@@ -1930,6 +1955,7 @@ app.get('/api/pixabay-proxy', async (req, res) => {
     res.status(500).json({ error: 'Pixabay proxy failed' });
   }
 });
+
 app.get('/health', (_req, res) => res.json({ ok: true }));
 // GET /api/unsplash-proxy?query=calm&per_page=6&page=1&thumb=1
 app.get('/api/unsplash-proxy', async (req, res) => {
