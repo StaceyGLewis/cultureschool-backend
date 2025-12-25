@@ -2,10 +2,6 @@
   publish   = "dist"
   functions = "netlify/functions"
 
-[[redirects]]
-  from = "/api/pexels-proxy"
-  to   = "/.netlify/functions/pexels-proxy"
-  status = 200
 
   [[redirects]]
   from = "/api/unsplash-proxy"
