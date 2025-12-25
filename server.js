@@ -1989,36 +1989,7 @@ app.get('/api/unsplash-proxy', async (req, res) => {
 
 
 
-// GET /api/freesound-proxy?q=birds&page_size=5&page=1
-// Returns a trimmed JSON list you can iterate
-app.get('/api/freesound-proxy', async (req, res) => {
-  if (!ensureKey('FREESOUND_TOKEN', FREESOUND_TOKEN, res)) return;
 
-  const { q = '', page_size = 5, page = 1 } = req.query;
-  try {
-    const r = await axios.get('https://freesound.org/apiv2/search/text/', {
-      headers: { Authorization: `Token ${FREESOUND_TOKEN}` },
-      params: { query: q, page_size, page, fields: 'id,name,previews,username,duration' }
-    });
-
-    // Thin response: only what you’ll actually use in the UI
-    const items = (r.data.results || []).map(s => ({
-      id: s.id,
-      name: s.name,
-      duration: s.duration,
-      user: s.username,
-      // preview MP3/OGG URLs
-      preview: s.previews?.['preview-hq-mp3'] || s.previews?.['preview-lq-mp3'] || null
-    }));
-
-    res.set('Cache-Control', 'public, max-age=60');
-    return res.json({ count: items.length, results: items });
-  } catch (err) {
-    console.error('freesound-proxy error:', err?.response?.status, err?.message);
-    const status = err?.response?.status || 500;
-    return res.status(status).json({ error: 'Freesound proxy failed' });
-  }
-});
 // First allowlist at top:
 const INSIGHTS_ADMINS = new Set([
   "info@cultureschool.org",
