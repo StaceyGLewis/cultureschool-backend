@@ -1870,35 +1870,7 @@ app.post('/api/images', async (req, res) => {
   return res.json({ images });
 });
 
-// GET /api/pexels-proxy?query=calm&per_page=4&page=1&thumb=1
-app.get('/api/pexels-proxy', async (req, res) => {
-  const PEXELS_API_KEY = process.env.PEXELS_API_KEY;
-  if (!PEXELS_API_KEY) return res.status(500).json({ error: 'PEXELS_API_KEY missing' });
 
-  const { query = 'inspiration', per_page = 10, page = 1, thumb } = req.query;
-  try {
-    const url = `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=${per_page}&page=${page}`;
-    const r = await fetch(url, { headers: { Authorization: PEXELS_API_KEY } });
-    const data = await r.json();
-
-    // If a thumbnail was requested, 302 redirect to the image URL so <img src=...> works
-    if (String(thumb) === '1') {
-      const first = data?.photos?.[0];
-      const imgUrl = first?.src?.medium || first?.src?.large || first?.src?.original;
-      if (imgUrl) {
-        res.set('Cache-Control', 'public, max-age=600');
-        return res.redirect(302, imgUrl);
-      }
-      return res.redirect(302, 'about:blank');
-    }
-
-    res.set('Cache-Control', 'public, max-age=60');
-    return res.json(data);
-  } catch (e) {
-    console.error('pexels-proxy error:', e);
-    res.status(500).json({ error: 'Pexels proxy failed' });
-  }
-});
 
 // GET /api/pixabay-proxy?query=nature&per_page=4&page=1&thumb=1
 app.get('/api/pixabay-proxy', async (req, res) => {
