@@ -1869,6 +1869,19 @@ app.post('/api/images', async (req, res) => {
   if (images.length === 1) return res.json(images[0]);  // preserves {url} or {b64}
   return res.json({ images });
 });
+// 🔒 Legacy safety net: redirect old pexels calls to pixabay
+app.get('/api/pexels-proxy', async (req, res) => {
+  const { query, thumb = 1 } = req.query;
+
+  console.warn('[LEGACY] pexels-proxy hit, redirecting to pixabay', query);
+
+  const q = encodeURIComponent(query || 'inspiration');
+  const seed = encodeURIComponent('legacy');
+
+  return res.redirect(302,
+    `/api/pixabay-proxy?query=${q}&per_page=50&thumb=${thumb}&seed=${seed}`
+  );
+});
 
 // GET /api/pexels-proxy?query=calm&per_page=4&page=1&thumb=1
 app.get('/api/pexels-proxy', async (req, res) => {
