@@ -1902,6 +1902,7 @@ app.get('/api/pexels-proxy', async (req, res) => {
 
 // GET /api/pixabay-proxy?query=nature&per_page=4&page=1&thumb=1
 app.get('/api/pixabay-proxy', async (req, res) => {
+   setProxyHeaders(res);
   const PIXABAY_API_KEY = process.env.PIXABAY_API_KEY;
   if (!PIXABAY_API_KEY) return res.status(500).json({ error: 'PIXABAY_API_KEY missing' });
 
@@ -1931,6 +1932,7 @@ app.get('/api/pixabay-proxy', async (req, res) => {
 app.get('/health', (_req, res) => res.json({ ok: true }));
 // GET /api/unsplash-proxy?query=calm&per_page=6&page=1&thumb=1
 app.get('/api/unsplash-proxy', async (req, res) => {
+  setProxyHeaders(res);
   const UNSPLASH_ACCESS_KEY = process.env.UNSPLASH_ACCESS_KEY;
   if (!UNSPLASH_ACCESS_KEY) {
     return res.status(500).json({ error: 'UNSPLASH_ACCESS_KEY missing' });
