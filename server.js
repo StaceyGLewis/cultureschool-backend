@@ -119,6 +119,19 @@ app.options("/api/creator_insights_upsert", cors(corsOptions));
 
 
 
+// ------------------------------------------------------------
+// Shared proxy headers (images + JSON)
+// ------------------------------------------------------------
+function setProxyHeaders(res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'Content-Type, Authorization'
+  );
+  // Important for <img src> redirects across domains
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+}
 
 
 
