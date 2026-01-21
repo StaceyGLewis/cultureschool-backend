@@ -57,7 +57,9 @@ const supabase = createClient(
 
 // 1) Simple whitelist — NO trailing slashes
 const ALLOWED_ORIGINS = [
-  'https://www.cultureschool.org',
+  [
+  'https://cultureschool.org',
+  'https://www.cultureschool.org',  
   'https://cocoboard-preview-html.netlify.app',
   'https://coco-collector.netlify.app',
   'https://collector-desktop.netlify.app',
@@ -99,6 +101,7 @@ const ALLOWED_ORIGINS = [
   'https://holiday-festival-of-lights.netlify.app/',
   'https://rustic-market-viewer.netlify.app/',
   'https://holiday-notebook-shoppe.netlify.app/',
+  'https://showcase-viewer.netlify.app/', 
   'https://theme-viewer.netlify.app/'
 ];
 
