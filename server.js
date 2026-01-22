@@ -17,7 +17,7 @@ const fetch = require('node-fetch');
 const { JSDOM } = require("jsdom");
 const { Readability } = require("@mozilla/readability");
 const nlp = require("compromise");
-
+const { TASTEMAKERS } = require('../config/tastemakers');
 
 // --- OpenAI (SDK) ---
 
@@ -2385,6 +2385,9 @@ app.get("/api/deep_review_status", cors({ origin: true }), async (req, res) => {
 // Product Scraper Route
 // =====================
 
+app.get('/api/tastemakers', (req, res) => {
+  res.json(TASTEMAKERS);
+});
 
 app.get('/api/scrape-product', async (req, res) => {
   const url = req.query.url;
