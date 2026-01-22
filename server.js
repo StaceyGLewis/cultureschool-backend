@@ -17,7 +17,8 @@ const fetch = require('node-fetch');
 const { JSDOM } = require("jsdom");
 const { Readability } = require("@mozilla/readability");
 const nlp = require("compromise");
-const { TASTEMAKERS } = require('../config/tastemakers');
+const { TASTEMAKERS } = require('./config/tastemakers');
+
 
 // --- OpenAI (SDK) ---
 
