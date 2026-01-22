@@ -89,30 +89,43 @@ const ALLOWED_ORIGINS = [
   'https://coco-assets-library.netlify.app',
   'https://farmers-market-viewer.netlify.app',
   'https://coco-admin-editor.netlify.app',
-  'https://parisian-market-viewer.netlify.app/',
-  'https://farmers-market-viewer-demo.netlify.app/',
+  'https://parisian-market-viewer.netlify.app',
+  'https://farmers-market-viewer-demo.netlify.app',
   'https://coco-daily-inspo.netlify.app',
-  'https://clay-arch-studio.netlify.app/',
-  'https://holiday-night-shoppe.netlify.app/',
-  'https://holiday-shoppe-booth-green.netlify.app/',
-  'https://holiday-shoppe-purple.netlify.app/',
-  'https://fancy-embossed-holiday-popup.netlify.app/',
-  'https://holiday-festival-of-lights.netlify.app/',
-  'https://rustic-market-viewer.netlify.app/',
-  'https://holiday-notebook-shoppe.netlify.app/',
-  'https://showcase-viewer.netlify.app/',
-  'https://theme-viewer.netlify.app/'
+  'https://clay-arch-studio.netlify.app',
+  'https://holiday-night-shoppe.netlify.app',
+  'https://holiday-shoppe-booth-green.netlify.app',
+  'https://holiday-shoppe-purple.netlify.app',
+  'https://fancy-embossed-holiday-popup.netlify.app',
+  'https://holiday-festival-of-lights.netlify.app',
+  'https://rustic-market-viewer.netlify.app',
+  'https://holiday-notebook-shoppe.netlify.app',
+  'https://showcase-viewer.netlify.app',
+  'https://theme-viewer.netlify.app'
 ];
 
 
 // 2) Simple CORS options — keep credentials FALSE (you don’t need cookies)
 const corsOptions = {
-  origin: ALLOWED_ORIGINS,                // <-- simple array whitelist
+  origin: function (reqOrigin, callback) {
+    const origin = (reqOrigin || '').trim();
+
+    // Allow non-browser tools (curl, server-to-server, Render health checks)
+    if (!origin) return callback(null, true);
+
+    if (ALLOWED_ORIGINS.includes(origin)) {
+      return callback(null, true);
+    }
+
+    console.warn('[CORS BLOCKED]', origin);
+    return callback(new Error('CORS blocked: ' + origin));
+  },
   methods: ['GET','POST','OPTIONS'],
   allowedHeaders: ['Content-Type','Authorization'],
-  credentials: false,                     // important: matches frontend fetch(credentials:'omit')
+  credentials: false,
   maxAge: 86400
 };
+
 
 // 3) Apply to API only (unchanged elsewhere)
 app.options('/api/*', cors(corsOptions)); // preflight
