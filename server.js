@@ -17,6 +17,7 @@ const fetch = require('node-fetch');
 const { JSDOM } = require("jsdom");
 const { Readability } = require("@mozilla/readability");
 const nlp = require("compromise");
+const rateLimit = require("express-rate-limit");
 
 
 
@@ -37,6 +38,15 @@ const FREESOUND_TOKEN = process.env.FREESOUND_TOKEN;
 const app = express();
 const server = http.createServer(app);
 setupWebSocket(server);
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000,   // 1 minute
+  max: 8,               // 8 requests per minute per IP
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+// Apply only to routes that call OpenAI
+app.use("/generate", apiLimiter);
 
 // (optional) expose the client to other route files via app
 app.set('openai', openai);
@@ -1892,7 +1902,7 @@ app.get('/api/health/env', (_req, res) => {
 
 
 // ✅ matches your frontend: POST https://cultureschool-backend.onrender.com/api/images
-app.post('/api/images', async (req, res) => {
+aapp.post('/api/images', imageLimiter, async (req, res) => {
   const { prompt, size = '1024x1024', n = 1 } = req.body || {};
   // ...
   const out = await openai.images.generate({ model: 'gpt-image-1', prompt, size, n });

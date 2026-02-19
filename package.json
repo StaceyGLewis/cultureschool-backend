@@ -30,6 +30,7 @@
     "css": "^3.0.0",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "express-rate-limit": "^8.2.1",
     "fast-glob": "^3.3.3",
     "file-saver": "^2.0.5",
     "jsdom": "^26.1.0",
