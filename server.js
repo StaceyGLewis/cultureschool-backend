@@ -1902,16 +1902,64 @@ app.get('/api/health/env', (_req, res) => {
 
 
 // ✅ matches your frontend: POST https://cultureschool-backend.onrender.com/api/images
-aapp.post('/api/images', imageLimiter, async (req, res) => {
+app.post('/api/images', imageLimiter, async (req, res) => {
   const { prompt, size = '1024x1024', n = 1 } = req.body || {};
-  // ...
-  const out = await openai.images.generate({ model: 'gpt-image-1', prompt, size, n });
-  const images = (out?.data || []).map(x => x.url ? { url: x.url } :
-                                       x.b64_json ? { b64: x.b64_json } : null).filter(Boolean);
-  if (!images.length) return res.status(502).json({ error: 'No image returned from OpenAI' });
-  if (images.length === 1) return res.json(images[0]);  // preserves {url} or {b64}
-  return res.json({ images });
+
+  if (!prompt) {
+    return res.status(400).json({ error: "Prompt is required." });
+  }
+
+  try {
+
+    const out = await openai.images.generate({
+      model: 'gpt-image-1',
+      prompt,
+      size,
+      n
+    });
+
+    const images = (out?.data || [])
+      .map(x =>
+        x.url ? { url: x.url } :
+        x.b64_json ? { b64: x.b64_json } :
+        null
+      )
+      .filter(Boolean);
+
+    if (!images.length) {
+      return res.status(502).json({ error: 'No image returned from OpenAI' });
+    }
+
+    if (images.length === 1) {
+      return res.json(images[0]);
+    }
+
+    return res.json({ images });
+
+  } catch (err) {
+
+    console.error("OpenAI error:", err);
+
+    // 🔴 Handle OpenAI rate limit cleanly
+    if (err.status === 429) {
+      return res.status(429).json({
+        error: "Image generation temporarily throttled. Please wait 30–60 seconds."
+      });
+    }
+
+    // 🔴 Handle Cloudflare HTML error body case
+    if (err.response?.headers?.get?.('content-type')?.includes('text/html')) {
+      return res.status(429).json({
+        error: "Rate limited by upstream service. Please retry shortly."
+      });
+    }
+
+    return res.status(500).json({
+      error: "Image generation failed."
+    });
+  }
 });
+
 
 
 // GET /api/pexels-proxy?query=calm&per_page=4&page=1&thumb=1
