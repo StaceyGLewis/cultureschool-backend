@@ -1,0 +1,109 @@
+// netlify/functions/shopify-webhook.js
+// Handles Shopify order creation → creates Supabase Auth invite + sets is_subscriber
+
+const { createClient } = require('@supabase/supabase-js');
+const crypto = require('crypto');
+
+// Supabase admin client — needs service role key (not anon key)
+const sb = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY  // ← service role only, never expose to client
+);
+
+// Verify the request actually came from Shopify
+function verifyShopifyWebhook(body, hmacHeader) {
+  const hash = crypto
+    .createHmac('sha256', process.env.SHOPIFY_WEBHOOK_SECRET)
+    .update(body, 'utf8')
+    .digest('base64');
+  return hash === hmacHeader;
+}
+
+exports.handler = async (event) => {
+  if (event.httpMethod !== 'POST') {
+    return { statusCode: 405, body: 'Method not allowed' };
+  }
+
+  // ── 1) Verify Shopify signature ──
+  const hmac = event.headers['x-shopify-hmac-sha256'];
+  if (!verifyShopifyWebhook(event.body, hmac)) {
+    console.error('[Webhook] Invalid Shopify signature');
+    return { statusCode: 401, body: 'Unauthorized' };
+  }
+
+  let order;
+  try {
+    order = JSON.parse(event.body);
+  } catch (e) {
+    return { statusCode: 400, body: 'Invalid JSON' };
+  }
+
+  const email = order?.email?.toLowerCase().trim();
+  const name  = order?.billing_address?.name || order?.customer?.first_name || '';
+
+  if (!email) {
+    console.warn('[Webhook] Order has no email — skipping');
+    return { statusCode: 200, body: 'No email, skipped' };
+  }
+
+  // ── 2) Check if this order contains an All-Access subscription ──
+  const lineItems = order.line_items || [];
+  const isSubscription = lineItems.some(item =>
+    // Match by product title or tag — adjust to match your Shopify product name
+    item.title?.toLowerCase().includes('all-access') ||
+    item.title?.toLowerCase().includes('all access') ||
+    item.sku?.toLowerCase().includes('all-access')
+  );
+
+  if (!isSubscription) {
+    console.log('[Webhook] Order is not a subscription — skipping auth invite');
+    return { statusCode: 200, body: 'Not a subscription order, skipped' };
+  }
+
+  console.log(`[Webhook] Processing subscription for ${email}`);
+
+  // ── 3) Upsert users row with is_subscriber = true ──
+  const { error: upsertErr } = await sb
+    .from('users')
+    .upsert({
+      email,
+      name,
+      is_subscriber: true,
+      subscription_tier: 'all-access'
+    }, {
+      onConflict: 'email',  // uses your existing unique constraint
+      ignoreDuplicates: false
+    });
+
+  if (upsertErr) {
+    console.error('[Webhook] Failed to upsert user:', upsertErr);
+    return { statusCode: 500, body: 'DB error' };
+  }
+
+  // ── 4) Check if Supabase Auth account already exists ──
+  const { data: { users: authUsers }, error: listErr } = await sb.auth.admin.listUsers();
+  const alreadyHasAuth = !listErr && authUsers?.some(u => u.email === email);
+
+  if (alreadyHasAuth) {
+    console.log(`[Webhook] Auth account already exists for ${email} — skipping invite`);
+    return { statusCode: 200, body: 'User already has auth, subscriber flag updated' };
+  }
+
+  // ── 5) Send Supabase Auth invite ──
+  const { error: inviteErr } = await sb.auth.admin.inviteUserByEmail(email, {
+    redirectTo: 'https://www.cultureschool.org/marketplace', // ← lands here after clicking invite
+    data: {
+      name,
+      subscription_tier: 'all-access'
+    }
+  });
+
+  if (inviteErr) {
+    console.error('[Webhook] Failed to send auth invite:', inviteErr);
+    // Don't return 500 — user row is already updated, invite failure is recoverable
+    return { statusCode: 200, body: 'Subscriber updated, invite failed — send manually' };
+  }
+
+  console.log(`[Webhook] Auth invite sent to ${email}`);
+  return { statusCode: 200, body: 'Subscriber created and invite sent' };
+};
