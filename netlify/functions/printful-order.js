@@ -61,6 +61,15 @@ exports.handler = async (event) => {
     };
   }
 
+  // Reject before Netlify's 6 MB hard limit returns an HTML error page
+  if (event.body && Buffer.byteLength(event.body, 'utf8') > 5 * 1024 * 1024) {
+    return {
+      statusCode: 413,
+      headers: { ...CORS, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error: 'Image too large. Please use a photo under 2000×2000 px, or reduce quality.' }),
+    };
+  }
+
   let body;
   try {
     body = JSON.parse(event.body);
@@ -72,7 +81,7 @@ exports.handler = async (event) => {
     };
   }
 
-  const { name, email, notes, product, palette_name, palette_colors, pattern_style, design_base64 } = body;
+  const { name, email, notes, product, palette_name, palette_colors, pattern_style, back_style, design_base64, back_base64 } = body;
 
   if (!name || !email || !product || !design_base64) {
     return {
@@ -92,8 +101,10 @@ exports.handler = async (event) => {
   }
 
   try {
-    // ── STEP 1: Upload design to Printful ──
-    const filename = `coco-${(palette_name || 'pattern').replace(/\s+/g, '-').toLowerCase()}-${Date.now()}.png`;
+    // ── STEP 1: Upload front design to Printful ──
+    const slug = (palette_name || 'pattern').replace(/\s+/g, '-').toLowerCase();
+    const ts = Date.now();
+    const filename = `coco-${slug}-${ts}.jpg`;
 
     const uploadRes = await fetch(`${PRINTFUL_BASE}/files`, {
       method: 'POST',
@@ -113,6 +124,27 @@ exports.handler = async (event) => {
       throw new Error('File upload failed: ' + JSON.stringify(uploadData));
     }
     const fileId = uploadData.result.id;
+
+    // ── STEP 1b: Upload back design (optional — photo-print orders only) ──
+    let backFileId = null;
+    if (back_base64) {
+      try {
+        const backRes = await fetch(`${PRINTFUL_BASE}/files`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${PRINTFUL_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            type:     'back',
+            filename: `coco-${slug}-back-${back_style||'pattern'}-${ts}.jpg`,
+            contents: back_base64,
+          }),
+        });
+        const backData = await backRes.json();
+        if (backRes.ok && backData.result?.id) backFileId = backData.result.id;
+      } catch (_) { /* non-fatal — proceed without back file */ }
+    }
 
     // ── STEP 2: Create draft order ──
     // Orders are draft by default — no status field needed. Confirm manually in
@@ -139,10 +171,10 @@ exports.handler = async (event) => {
           variant_id: variant.variant_id,
           quantity:   1,
           name:       `${palette_name || 'CoCo Pattern'} — ${pattern_style || 'Print'}`,
-          files: [{
-            type: 'default',
-            id:   fileId,
-          }],
+          files: [
+            { type: 'default', id: fileId },
+            ...(backFileId ? [{ type: 'back', id: backFileId }] : []),
+          ],
         }],
       }),
     });
@@ -172,6 +204,7 @@ exports.handler = async (event) => {
             palette_name:      palette_name || null,
             palette_colors:    palette_colors || null,
             pattern_style:     pattern_style || null,
+            back_style:        back_style || null,
             product_key:       product,
             notes:             notes || null,
             status:            'draft',
