@@ -1902,7 +1902,7 @@ app.get('/api/health/env', (_req, res) => {
 
 
 // ✅ matches your frontend: POST https://cultureschool-backend.onrender.com/api/images
-app.post('/api/images', imageLimiter, async (req, res) => {
+app.post('/api/images', apiLimiter, async (req, res) => {
   const { prompt, size = '1024x1024', n = 1 } = req.body || {};
 
   if (!prompt) {
