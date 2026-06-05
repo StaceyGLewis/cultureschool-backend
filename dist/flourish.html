@@ -6,7 +6,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CoCoCreate</title>
+<title>CoCo by CultureSchool</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
@@ -1282,9 +1282,11 @@ body::after {
 
   <!-- TOP BAR -->
   <div id="wsBar">
-    <a href="https://cococreate.cultureschool.org" class="ws-brand-link">
+    <a href="https://cultureschool.org" class="ws-brand-link" style="gap:10px;">
   <span class="ws-back-arrow">←</span>
-  <span class="ws-brand">CoCoCreate</span>
+  <img src="https://cdn.shopify.com/s/files/1/0673/3637/2387/files/CultureSchool_x_Coco_logo2.png?v=1769441790"
+       alt="CoCo" style="height:26px;width:auto;display:block;flex-shrink:0;">
+  <span class="ws-brand" style="font-size:.82rem;letter-spacing:.04em;">CoCo</span>
 </a>
     <div class="ws-sep"></div>
     <button class="ws-btn" onclick="openPicker()">Templates</button>
@@ -2708,12 +2710,24 @@ async function applyPatternSkin() {
     if (typeof drawPattern === 'function') drawPattern(offCanvas, patStyle, patColors);
     const patternDataUrl = offCanvas.toDataURL('image/png');
 
-    // 5. Apply pattern as repeating background — bakes into viewer_html on save
+    // 5. Apply pattern as background to viewerMount (page-level tile)
+    //    Also inject into [data-pattern-bg] slots for pattern-ready templates
     if (mount) {
+      const tileDisp = `${Math.round(tileSize * 0.65)}px`;
       mount.style.backgroundImage = `url(${patternDataUrl})`;
-      mount.style.backgroundSize  = `${Math.round(tileSize * 0.65)}px`;
+      mount.style.backgroundSize  = tileDisp;
       mount.style.backgroundRepeat = 'repeat';
       mount.style.backgroundPosition = 'top left';
+      // Set CSS vars so template CSS can use them too
+      mount.style.setProperty('--pattern-bg', `url(${patternDataUrl})`);
+      mount.style.setProperty('--pattern-tile', tileDisp);
+      // Apply directly to any tagged slots: card faces, liners, hero sections
+      mount.querySelectorAll('[data-pattern-bg]').forEach(slot => {
+        slot.style.backgroundImage = `url(${patternDataUrl})`;
+        slot.style.backgroundSize  = `${Math.round(tileSize * 0.5)}px`;
+        slot.style.backgroundRepeat = 'repeat';
+        slot.style.backgroundPosition = 'top left';
+      });
     }
 
     // 6. Track active skin for metadata
