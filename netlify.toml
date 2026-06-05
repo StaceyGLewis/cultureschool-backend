@@ -4,6 +4,11 @@
 
 
   [[redirects]]
+  from = "/api/anthropic"
+  to   = "/.netlify/functions/anthropic-proxy"
+  status = 200
+
+  [[redirects]]
   from = "/api/unsplash-proxy"
   to   = "/.netlify/functions/unsplash-proxy"
   status = 200
