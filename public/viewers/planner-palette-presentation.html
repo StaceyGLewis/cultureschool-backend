@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Palette Presentation · CultureSchool</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ─────────────────────────────────────────────
+   CSS VARIABLES
+   Workspace sets --palette-N; viewer reads via --pN alias.
+   applyPalette() overrides --pN inline (higher specificity).
+   ───────────────────────────────────────────── */
+:root {
+  --palette-1: #2F1F2A;
+  --palette-2: #4A2E3E;
+  --palette-3: #7A4F6A;
+  --palette-4: #C2A3B3;
+  --palette-5: #E6D9DF;
+  --p1: var(--palette-1);
+  --p2: var(--palette-2);
+  --p3: var(--palette-3);
+  --p4: var(--palette-4);
+  --p5: var(--palette-5);
+  --ink:     #1a1208;
+  --cream:   #faf6ef;
+  --gold:    #c9a96e;
+  --gold-lt: #e8d5a8;
+  --gold-dk: #8b6a3a;
+  --sand:    #ede3d4;
+  --bg:      #fdf9f3;
+  --serif:   'Cormorant Garamond', Georgia, serif;
+  --sans:    'Jost', system-ui, sans-serif;
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--sans);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── PALETTE STRIP — sticky hero swatch ── */
+.swatch-hero {
+  display: flex;
+  height: 120px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.swatch-hero span { flex: 1; transition: background .45s ease; }
+
+/* ── PALETTE NAME BAND ── */
+.palette-band {
+  background: var(--bg);
+  padding: 28px clamp(24px,6vw,72px) 24px;
+  border-bottom: 1px solid rgba(201,169,110,.14);
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.palette-number {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: .32em;
+  text-transform: uppercase;
+  color: var(--gold);
+  display: block;
+  margin-bottom: 8px;
+}
+.palette-name {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(32px, 5vw, 52px);
+  line-height: 1.05;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+.palette-story {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(14px, 1.8vw, 17px);
+  color: rgba(26,18,8,.48);
+  font-weight: 300;
+  line-height: 1.6;
+  max-width: 44ch;
+}
+.palette-tag {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: rgba(26,18,8,.28);
+  white-space: nowrap;
+  align-self: flex-end;
+}
+
+/* ── CHIP STRIP ── */
+.chip-strip-outer {
+  background: var(--bg);
+  border-bottom: 1px solid rgba(201,169,110,.12);
+  padding: 10px clamp(24px,6vw,72px);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.chip-strip-outer::-webkit-scrollbar { display: none; }
+.chip-strip-label {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: rgba(26,18,8,.3);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.pal-chip {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px 5px 7px;
+  border-radius: 99px;
+  border: 1px solid rgba(201,169,110,.2);
+  background: #fff;
+  cursor: pointer;
+  transition: border-color .18s, background .18s, box-shadow .18s;
+  white-space: nowrap;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
+}
+.pal-chip:hover { border-color: var(--gold); box-shadow: 0 2px 8px rgba(201,169,110,.18); }
+.pal-chip.active { border-color: var(--gold); background: var(--gold-lt); box-shadow: 0 2px 12px rgba(201,169,110,.22); }
+.pal-chip-swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 1px solid rgba(0,0,0,.08);
+}
+.pal-chip-name {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: .08em;
+  color: rgba(26,18,8,.55);
+}
+.pal-chip.active .pal-chip-name { color: var(--gold-dk); font-weight: 600; }
+
+/* ── LIFESTYLE GRID ── */
+.lifestyle-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px;
+  background: var(--sand);
+}
+.lifestyle-img {
+  aspect-ratio: 1/1;
+  object-fit: cover;
+  display: block;
+  width: 100%;
+}
+.lifestyle-placeholder {
+  aspect-ratio: 1/1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 10px;
+  background: #f0ebe2;
+}
+.ph-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid rgba(139,106,58,.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: rgba(139,106,58,.35);
+}
+.ph-label {
+  font-size: 9px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: rgba(139,106,58,.3);
+}
+
+/* ── ROOM SHOT ── */
+.room {
+  position: relative;
+  overflow: hidden;
+}
+.room-img {
+  width: 100%;
+  aspect-ratio: 16/9;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+.room-placeholder {
+  width: 100%;
+  aspect-ratio: 16/9;
+  background: #ede8df;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+}
+.room-caption-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 32px clamp(24px,6vw,72px) 24px;
+  background: linear-gradient(to top, rgba(250,246,239,.92) 0%, transparent 100%);
+}
+.room-caption {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(15px, 1.8vw, 18px);
+  color: rgba(26,18,8,.62);
+  font-weight: 300;
+  line-height: 1.5;
+  max-width: 42ch;
+}
+
+/* ── PRODUCTS ── */
+.products {
+  padding: clamp(36px,5vw,56px) 0 clamp(36px,5vw,56px) clamp(24px,5vw,56px);
+  background: var(--bg);
+  border-top: 1px solid rgba(201,169,110,.12);
+}
+.products-header {
+  padding-right: clamp(24px,5vw,56px);
+  margin-bottom: 22px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.products-eye {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: .28em;
+  text-transform: uppercase;
+  color: var(--gold-dk);
+  display: block;
+  margin-bottom: 6px;
+}
+.products-title {
+  font-family: var(--serif);
+  font-size: clamp(22px, 3.2vw, 34px);
+  font-weight: 400;
+  color: var(--ink);
+  line-height: 1.1;
+}
+.products-title em { font-style: italic; color: var(--gold-dk); }
+.products-row {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding-right: clamp(24px,5vw,56px);
+  padding-bottom: 4px;
+}
+.products-row::-webkit-scrollbar { display: none; }
+.product-card {
+  flex: 0 0 auto;
+  width: 172px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid rgba(201,169,110,.14);
+  text-decoration: none;
+  color: inherit;
+  box-shadow: 0 2px 12px rgba(0,0,0,.06);
+  transition: transform .22s, box-shadow .22s;
+}
+.product-card:hover { transform: translateY(-3px); box-shadow: 0 8px 28px rgba(0,0,0,.1); }
+.product-img {
+  width: 100%;
+  aspect-ratio: 1/1;
+  object-fit: cover;
+  display: block;
+}
+.product-ph-img {
+  width: 100%;
+  aspect-ratio: 1/1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  background: #f5f0e8;
+}
+.product-body { padding: 11px 13px 13px; }
+.product-name {
+  font-family: var(--serif);
+  font-size: 13px;
+  color: var(--ink);
+  line-height: 1.3;
+  margin-bottom: 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.product-price {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 7px;
+}
+.product-link {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--gold-dk);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(139,106,58,.28);
+  padding-bottom: 1px;
+}
+
+/* ── DIGITAL SUITE ── */
+.suite {
+  background: var(--sand);
+  padding: clamp(40px,6vw,64px) clamp(24px,6vw,72px);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(24px,4vw,56px);
+  align-items: center;
+  border-top: 1px solid rgba(201,169,110,.18);
+}
+.suite-preview {
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(201,169,110,.2);
+  background: #ede8df;
+  aspect-ratio: 4/3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+}
+.suite-preview-label {
+  font-size: 9px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: rgba(139,106,58,.35);
+}
+.suite-eye {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: .28em;
+  text-transform: uppercase;
+  color: var(--gold-dk);
+  display: block;
+  margin-bottom: 12px;
+}
+.suite-title {
+  font-family: var(--serif);
+  font-size: clamp(20px, 2.8vw, 30px);
+  font-weight: 400;
+  color: var(--ink);
+  line-height: 1.2;
+  margin-bottom: 12px;
+}
+.suite-title em { font-style: italic; color: var(--gold-dk); }
+.suite-desc {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 14px;
+  color: rgba(26,18,8,.5);
+  line-height: 1.65;
+  margin-bottom: 22px;
+  font-weight: 300;
+}
+.suite-pieces {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+.suite-piece {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--gold-dk);
+  padding: 5px 10px;
+  border: 1px solid rgba(139,106,58,.25);
+  border-radius: 99px;
+  background: rgba(201,169,110,.06);
+}
+.suite-btn {
+  display: inline-block;
+  background: linear-gradient(135deg, var(--gold-lt), var(--gold));
+  color: var(--ink);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  text-decoration: none;
+  padding: 12px 28px;
+  border-radius: 99px;
+  box-shadow: 0 3px 14px rgba(201,169,110,.28);
+}
+
+/* ── PLANNER FOOTER ── */
+.planner-footer {
+  background: var(--bg);
+  padding: clamp(36px,5vw,56px) clamp(24px,6vw,72px);
+  text-align: center;
+  border-top: 1px solid rgba(201,169,110,.16);
+}
+.planner-curated {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: .28em;
+  text-transform: uppercase;
+  color: rgba(26,18,8,.28);
+  display: block;
+  margin-bottom: 10px;
+}
+.planner-name {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(28px, 4vw, 42px);
+  font-weight: 400;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+.planner-tagline {
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: .14em;
+  color: rgba(26,18,8,.38);
+  margin-bottom: 28px;
+}
+.planner-divider {
+  width: 40px;
+  height: 1px;
+  background: rgba(201,169,110,.3);
+  margin: 0 auto 20px;
+}
+.planner-credit {
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: rgba(26,18,8,.25);
+}
+.planner-credit a {
+  color: rgba(26,18,8,.35);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(26,18,8,.12);
+  padding-bottom: 1px;
+}
+
+/* ── SITE FOOTER ── */
+.site-footer {
+  background: var(--ink);
+  padding: 18px clamp(24px,6vw,72px);
+  text-align: center;
+}
+.site-footer-text {
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: rgba(201,169,110,.3);
+}
+.site-footer-text a { color: rgba(201,169,110,.45); text-decoration: none; }
+
+/* ── DRAWER ── */
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(250,246,239,.7);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 299;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .28s;
+}
+.drawer-overlay.open { opacity: 1; pointer-events: auto; }
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(360px, 92vw);
+  background: var(--bg);
+  z-index: 300;
+  transform: translateX(100%);
+  transition: transform .32s cubic-bezier(.16,1,.3,1);
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid rgba(201,169,110,.2);
+  box-shadow: -12px 0 48px rgba(0,0,0,.1);
+}
+.drawer.open { transform: translateX(0); }
+.drawer-header {
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid rgba(201,169,110,.14);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  background: var(--bg);
+}
+.drawer-title {
+  font-family: var(--serif);
+  font-size: 20px;
+  font-weight: 400;
+  color: var(--ink);
+}
+.drawer-close {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid rgba(201,169,110,.25);
+  background: none;
+  color: rgba(26,18,8,.4);
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.drawer-close:hover { border-color: var(--gold); color: var(--ink); }
+.drawer-hint {
+  font-size: 11px;
+  color: rgba(26,18,8,.38);
+  padding: 10px 20px;
+  font-style: italic;
+  font-family: var(--serif);
+  border-bottom: 1px solid rgba(201,169,110,.08);
+  flex-shrink: 0;
+  background: var(--bg);
+}
+.drawer-palettes {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #f5f0e8;
+}
+.drawer-pal-card {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: border-color .2s, transform .18s;
+  background: #fff;
+  box-shadow: 0 2px 10px rgba(0,0,0,.06);
+}
+.drawer-pal-card:hover { border-color: rgba(201,169,110,.4); transform: translateX(-2px); }
+.drawer-pal-card.active { border-color: var(--gold); }
+.drawer-pal-img {
+  width: 100%;
+  height: 110px;
+  object-fit: cover;
+  display: block;
+}
+.drawer-pal-img-ph {
+  width: 100%;
+  height: 110px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.drawer-pal-body {
+  padding: 10px 12px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.drawer-pal-name {
+  font-family: var(--serif);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--ink);
+  display: block;
+  margin-bottom: 2px;
+}
+.drawer-pal-tag {
+  font-size: 8px;
+  font-weight: 500;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: rgba(26,18,8,.35);
+}
+.drawer-pal-swatches {
+  display: flex;
+  gap: 3px;
+  flex-shrink: 0;
+}
+.drawer-pal-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,.08);
+}
+.drawer-pal-check {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: #fff;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity .18s;
+}
+.drawer-pal-card.active .drawer-pal-check { opacity: 1; }
+
+/* ── FLOATING EXPLORE BTN ── */
+.explore-btn {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, var(--gold-lt), var(--gold));
+  color: var(--ink);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 99px;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(201,169,110,.35), 0 2px 8px rgba(0,0,0,.12);
+  transition: transform .2s, box-shadow .2s;
+}
+.explore-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(201,169,110,.45); }
+.explore-btn-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ink);
+  opacity: .4;
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%,100%{opacity:.4;transform:scale(1)}
+  50%{opacity:.8;transform:scale(1.2)}
+}
+
+/* palette switch transition */
+.transitioning * {
+  transition: background-color .45s ease, color .32s ease, border-color .32s ease !important;
+}
+
+/* toast */
+.share-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(16px);
+  background: var(--ink);
+  color: var(--gold-lt);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: .1em;
+  padding: 10px 20px;
+  border-radius: 99px;
+  opacity: 0;
+  transition: opacity .25s, transform .25s;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 400;
+}
+.share-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── VIEWER MOUNT — workspace targets this element ── */
+#viewerMount {
+  background: var(--bg);
+  background-size: cover;
+  background-position: center;
+  min-height: 100vh;
+}
+
+/* contenteditable focus ring */
+[contenteditable="true"] { outline: none; cursor: text; }
+[contenteditable="true"]:focus {
+  outline: 1px dashed rgba(201,169,110,.5);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* entry fade */
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(12px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+.palette-band > * { animation: fadeUp .55s ease both; }
+.palette-number { animation-delay:.1s; }
+.palette-name   { animation-delay:.2s; }
+.palette-story  { animation-delay:.3s; }
+
+/* RESPONSIVE */
+@media (max-width: 640px) {
+  .suite { grid-template-columns: 1fr; }
+  .suite-preview { aspect-ratio: 16/9; }
+  .explore-btn { bottom: 16px; right: 16px; padding: 10px 16px; }
+}
+
+/* PRINT */
+@media print {
+  .chip-strip-outer, .explore-btn, .drawer, .drawer-overlay, .share-toast { display: none !important; }
+  .swatch-hero { position: static; height: 80px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .products-row { flex-wrap: wrap; overflow: visible; padding-right: 0; }
+  .product-card { flex: 0 0 calc(50% - 6px); }
+  .suite { -webkit-print-color-adjust: exact; print-color-adjust: exact; page-break-before: always; }
+  .planner-footer { page-break-before: always; }
+}
+</style>
+</head>
+<body>
+<div id="viewerMount">
+
+<!-- ── SECTION 1: SWATCH HERO ── -->
+<div class="swatch-hero" id="swatchHero">
+  <span style="background:var(--p1)"></span>
+  <span style="background:var(--p2)"></span>
+  <span style="background:var(--p3)"></span>
+  <span style="background:var(--p4)"></span>
+  <span style="background:var(--p5)"></span>
+</div>
+
+<!-- ── PALETTE NAME BAND ── -->
+<div class="palette-band">
+  <div class="palette-band-left">
+    <span class="palette-number" id="palNumber"
+          contenteditable="true" data-editable="palette_number" data-loom="palette_number">CultureSchool Palette №012</span>
+    <h1 class="palette-name" id="palName" data-coco-title
+        contenteditable="true" data-editable="palette_name" data-loom="names">Amazonian Açaí Night</h1>
+    <p class="palette-story" id="palStory" data-coco-subtitle
+       contenteditable="true" data-editable="palette_story" data-loom="palette_story">Drawn from the deep plum of açaí berries — the fruit that fed river communities in the Amazon basin for thousands of years.</p>
+  </div>
+  <span class="palette-tag" id="palTag"
+        contenteditable="true" data-editable="palette_tag" data-loom="palette_tag">Deep Plum · Dusty Mauve · Warm Rose</span>
+</div>
+
+<!-- ── CHIP STRIP ── -->
+<div class="chip-strip-outer" id="chipStripOuter">
+  <span class="chip-strip-label">Explore palettes</span>
+  <div id="chipStrip" style="display:flex;gap:8px;flex-shrink:0;"></div>
+</div>
+
+<!-- ── SECTION 2: LIFESTYLE 2-UP ── -->
+<div class="lifestyle-grid">
+  <div data-slot="lifestyle_1">
+    <img class="lifestyle-img"
+         src="https://cdn.shopify.com/s/files/1/0673/3637/2387/files/Living_Room_with_CoCo_Pillows.png?v=1779249587"
+         alt="Palette styled lifestyle image" id="lifestyle1Img">
+  </div>
+  <div class="lifestyle-placeholder" data-slot="lifestyle_2" id="lifestyle2Slot">
+    <div class="ph-icon">＋</div>
+    <span class="ph-label">Lifestyle image</span>
+  </div>
+</div>
+
+<!-- ── SECTION 3: ROOM SHOT ── -->
+<div class="room">
+  <div class="room-placeholder" data-slot="room_shot" id="roomSlot">
+    <div class="ph-icon" style="width:52px;height:52px;font-size:20px;">＋</div>
+    <span class="ph-label">Room shot — full width</span>
+  </div>
+  <div class="room-caption-overlay">
+    <p class="room-caption" id="roomCaption"
+       contenteditable="true" data-editable="room_caption" data-loom="room_caption">The palette styled for the room that means something.</p>
+  </div>
+</div>
+
+<!-- ── SECTION 4: PRODUCTS ── -->
+<section class="products">
+  <div class="products-header">
+    <div>
+      <span class="products-eye">✦ Shop this palette</span>
+      <h2 class="products-title">Take it <em>home.</em></h2>
+    </div>
+  </div>
+  <div class="products-row" id="productsRow">
+    <!-- rendered by renderProducts() -->
+  </div>
+</section>
+
+<!-- ── SECTION 5: DIGITAL SUITE (hidden unless suite_url param present) ── -->
+<section class="suite" id="suiteSection" style="display:none;">
+  <div class="suite-preview" data-slot="suite_preview">
+    <div class="ph-icon" style="width:52px;height:52px;font-size:22px;">💌</div>
+    <span class="suite-preview-label">Digital suite preview</span>
+  </div>
+  <div class="suite-copy">
+    <span class="suite-eye">✦ Digital Suite</span>
+    <h2 class="suite-title"
+        contenteditable="true" data-editable="suite_title" data-loom="suite_title">The invitation.<br>The countdown.<br><em>The thank-you.</em></h2>
+    <p class="suite-desc"
+       contenteditable="true" data-editable="suite_desc" data-loom="suite_desc">Four digital pieces — landing page, animated invitation, blessing cards, and ceremony program — all in this palette.</p>
+    <div class="suite-pieces" id="suitePieces">
+      <span class="suite-piece">Landing page</span>
+      <span class="suite-piece">Invitation</span>
+      <span class="suite-piece">Blessing cards</span>
+      <span class="suite-piece">Program</span>
+    </div>
+    <a href="#" class="suite-btn" id="suiteBtn">Get the full kit →</a>
+  </div>
+</section>
+
+<!-- ── SECTION 6: PLANNER FOOTER ── -->
+<section class="planner-footer">
+  <span class="planner-curated">Curated by</span>
+  <div class="planner-name"
+       contenteditable="true" data-editable="planner_name" data-loom="planner_name">Your Name Here</div>
+  <div class="planner-tagline"
+       contenteditable="true" data-editable="planner_tagline" data-loom="planner_tagline">Your Location &nbsp;·&nbsp; Your Specialty</div>
+  <div class="planner-divider"></div>
+  <div class="planner-credit">
+    Palette by <a href="https://cultureschool.org">CultureSchool</a>
+    &nbsp;·&nbsp; Nothing here is interpreted. Everything here is lived.
+  </div>
+</section>
+
+<!-- ── SECTION 7: SITE FOOTER ── -->
+<footer class="site-footer">
+  <div class="site-footer-text">
+    <a href="https://cultureschool.org">CultureSchool</a> &nbsp;·&nbsp; cultureschool.org
+  </div>
+</footer>
+
+</div><!-- /#viewerMount — workspace targets this for palette vars, bg scene, and filter -->
+
+<!-- ── DRAWER ── (outside viewerMount so filter/bg don't affect it) -->
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-header">
+    <span class="drawer-title">Choose a palette</span>
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="drawer-hint">Tap any palette to see it applied — share the link with your client after.</div>
+  <div class="drawer-palettes" id="drawerPalettes"></div>
+</div>
+
+<!-- ── FLOATING EXPLORE BTN ── -->
+<button class="explore-btn" id="exploreBtn" onclick="openDrawer()">
+  <span class="explore-btn-dot"></span>
+  Explore palettes
+</button>
+
+<div class="share-toast" id="toast">✦ Link copied</div>
+
+<script>
+/* ── Palette data ── */
+const PALETTES = [
+  {
+    id:'acai', name:'Amazonian Açaí Night', tag:'Deep Plum · Dusty Mauve · Warm Rose',
+    number:'CultureSchool Palette №012',
+    story:'Drawn from the deep plum of açaí berries — the fruit that fed river communities in the Amazon basin for thousands of years.',
+    chip:'#4A2E3E',
+    img:'https://cdn.shopify.com/s/files/1/0673/3637/2387/files/Living_Room_with_CoCo_Pillows.png?v=1779249587',
+    colors:['#2F1F2A','#4A2E3E','#7A4F6A','#C2A3B3','#E6D9DF'],
+    vars:{'--p1':'#2F1F2A','--p2':'#4A2E3E','--p3':'#7A4F6A','--p4':'#C2A3B3','--p5':'#E6D9DF','--palette-1':'#2F1F2A','--palette-2':'#4A2E3E','--palette-3':'#7A4F6A','--palette-4':'#C2A3B3','--palette-5':'#E6D9DF','--ink':'#1a1208','--bg':'#fdf9f3','--gold':'#c9a96e','--gold-lt':'#e8d5a8','--gold-dk':'#8b6a3a','--sand':'#ede3d4'},
+    products:[
+      {name:'Persian Herati Premium Pillow',price:'From $32',emoji:null,img:'https://cdn.shopify.com/s/files/1/0673/3637/2387/files/Living_Room_with_CoCo_Pillows.png?v=1779249587',url:'https://cultureschool.org/products/premium-pillow-amazonian-acai-night-persian-herati',cta:'Shop →'},
+      {name:'Navajo Weave Premium Pillow',price:'From $32',emoji:'🧵',img:null,url:'https://cultureschool.org/products/premium-pillow-amazonian-acai-night-navajo-weave',cta:'Shop →'},
+      {name:'Naming Ceremony Digital Kit',price:'$49',emoji:'✦',img:null,url:'https://cultureschool.org/products/baby-naming-ceremony-supplies-digital-download-amazonian-acai-night',cta:'Get it →'},
+      {name:'Explore 1,000+ cultural palettes',price:'Free to browse',emoji:'🎨',img:null,url:'https://coco-palettes.cultureschool.org',cta:'Explore →'},
+    ],
+  },
+  {
+    id:'firenze', name:'Firenze Fuchsia', tag:'Hot Pink · Gold · Terracotta',
+    number:'CultureSchool Palette №031',
+    story:'That Tuscany sunset — hot pink above terracotta Florence — captured in color and pattern.',
+    chip:'#ff3881',
+    img:'https://cdn.shopify.com/s/files/1/0673/3637/2387/files/CultureSchool_Home-Firenze_Fuchsia.png?v=1778476632',
+    colors:['#2a0a14','#ff3881','#e0aa3e','#ffc0d4','#fff8f8'],
+    vars:{'--p1':'#2a0a14','--p2':'#8a0038','--p3':'#ff3881','--p4':'#ffc0d4','--p5':'#fff8f8','--palette-1':'#2a0a14','--palette-2':'#8a0038','--palette-3':'#ff3881','--palette-4':'#ffc0d4','--palette-5':'#fff8f8','--ink':'#2a0a14','--bg':'#fff5f8','--gold':'#e0aa3e','--gold-lt':'#fde8b8','--gold-dk':'#b07a20','--sand':'#ffe0ec'},
+    products:[
+      {name:'Explore 1,000+ cultural palettes',price:'Free to browse',emoji:'🎨',img:null,url:'https://coco-palettes.cultureschool.org',cta:'Explore →'},
+    ],
+  },
+  {
+    id:'rouge', name:'Parisian Vintage Rouge', tag:'Aged Crimson · Brass · Parchment',
+    number:'CultureSchool Palette №008',
+    story:'The faded rouge of a Haussmann-era wall — aged crimson and warm brass that no contemporary paint quite captures.',
+    chip:'#790c0c',
+    img:'https://cdn.shopify.com/s/files/1/0673/3637/2387/files/Parisian_Vintage_Rouge_Tablescape.png?v=1779467625',
+    colors:['#470000','#790c0c','#9a1818','#9c6b30','#f0e5c1'],
+    vars:{'--p1':'#470000','--p2':'#790c0c','--p3':'#9a1818','--p4':'#9c6b30','--p5':'#f0e5c1','--palette-1':'#470000','--palette-2':'#790c0c','--palette-3':'#9a1818','--palette-4':'#9c6b30','--palette-5':'#f0e5c1','--ink':'#2a0808','--bg':'#fdf5e8','--gold':'#9c6b30','--gold-lt':'#f0d7b2','--gold-dk':'#6a3a10','--sand':'#e5cda9'},
+    products:[
+      {name:'Explore 1,000+ cultural palettes',price:'Free to browse',emoji:'🎨',img:null,url:'https://coco-palettes.cultureschool.org',cta:'Explore →'},
+    ],
+  },
+  {
+    id:'harlem', name:'Harlem to Lagos', tag:'Warm Gold · Deep Earth · Kente',
+    number:'CultureSchool Palette №019',
+    story:'Nigeria to NYC — russets, gold, and bold prints from sidewalk markets across two continents.',
+    chip:'#B07020',
+    img:'https://cdn.shopify.com/s/files/1/0673/3637/2387/files/Summer_Palettes_Hero.png?v=1778897288',
+    colors:['#2A1808','#6A1A20','#B07020','#E8D090','#F5F0E0'],
+    vars:{'--p1':'#2A1808','--p2':'#6A1A20','--p3':'#B07020','--p4':'#E8D090','--p5':'#F5F0E0','--palette-1':'#2A1808','--palette-2':'#6A1A20','--palette-3':'#B07020','--palette-4':'#E8D090','--palette-5':'#F5F0E0','--ink':'#2A1808','--bg':'#F5F0E0','--gold':'#B07020','--gold-lt':'#E8D090','--gold-dk':'#7A4A10','--sand':'#E0D0A8'},
+    products:[
+      {name:'Explore 1,000+ cultural palettes',price:'Free to browse',emoji:'🎨',img:null,url:'https://coco-palettes.cultureschool.org',cta:'Explore →'},
+    ],
+  },
+  {
+    id:'gullah', name:'Gullah Sea Island Indigo', tag:'Deep Indigo · Sky Blue · Cream',
+    number:'CultureSchool Palette №004',
+    story:'The indigo of the Gullah Geechee Sea Islands — deep blue grown from soil, resistance, and memory.',
+    chip:'#2E4870',
+    img:'',
+    colors:['#0A1020','#1A2A4A','#2E4870','#7A9AB8','#E0EAF0'],
+    vars:{'--p1':'#0A1020','--p2':'#1A2A4A','--p3':'#2E4870','--p4':'#7A9AB8','--p5':'#E0EAF0','--palette-1':'#0A1020','--palette-2':'#1A2A4A','--palette-3':'#2E4870','--palette-4':'#7A9AB8','--palette-5':'#E0EAF0','--ink':'#0A1020','--bg':'#f0f4f8','--gold':'#7A9AB8','--gold-lt':'#E0EAF0','--gold-dk':'#2E4870','--sand':'#dce6f0'},
+    products:[
+      {name:'Explore 1,000+ cultural palettes',price:'Free to browse',emoji:'🎨',img:null,url:'https://coco-palettes.cultureschool.org',cta:'Explore →'},
+    ],
+  },
+];
+
+let activeId = 'acai';
+
+/* ── Workspace detection ── */
+const inWorkspace = !!(window.cocoWorkspace || window.loadAnyTemplate || window.loadTemplate || window.wsSetVibe || window !== window.top);
+
+/* ── Core: apply palette ── */
+function applyPalette(id) {
+  const pal = PALETTES.find(p => p.id === id);
+  if (!pal) return;
+  activeId = id;
+
+  document.body.classList.add('transitioning');
+  setTimeout(() => document.body.classList.remove('transitioning'), 500);
+
+  const root = inWorkspace
+    ? (document.getElementById('viewerMount') || document.documentElement)
+    : document.documentElement;
+  Object.entries(pal.vars).forEach(([k,v]) => root.style.setProperty(k,v));
+
+  // Swatches
+  document.querySelectorAll('#swatchHero span').forEach((s,i) => {
+    if (pal.colors[i]) s.style.background = pal.colors[i];
+  });
+
+  // Band text
+  setText('palName', pal.name);
+  setText('palStory', pal.story);
+  setText('palTag', pal.tag);
+  setText('palNumber', pal.number);
+
+  // Chip / drawer active states
+  document.querySelectorAll('.pal-chip').forEach(c => c.classList.toggle('active', c.dataset.id === id));
+  document.querySelectorAll('.drawer-pal-card').forEach(c => c.classList.toggle('active', c.dataset.id === id));
+
+  // Products
+  renderProducts(pal);
+
+  closeDrawer();
+
+  if (window.scheduleAutosave) window.scheduleAutosave();
+}
+
+function setText(id, val) {
+  const el = document.getElementById(id);
+  if (el && !el.matches(':focus')) el.textContent = val;
+}
+
+/* ── Products ── */
+function renderProducts(pal) {
+  const row = document.getElementById('productsRow');
+  if (!row) return;
+  const items = pal.products || [];
+  row.innerHTML = items.map(p => {
+    const imgHtml = p.img
+      ? `<img class="product-img" src="${p.img}" alt="${p.name}" loading="lazy">`
+      : `<div class="product-ph-img">${p.emoji || '✦'}</div>`;
+    return `<a href="${p.url}" class="product-card" target="_blank" rel="noopener">
+      ${imgHtml}
+      <div class="product-body">
+        <div class="product-name">${p.name}</div>
+        <div class="product-price">${p.price}</div>
+        <span class="product-link">${p.cta}</span>
+      </div>
+    </a>`;
+  }).join('');
+}
+
+/* ── Chip strip ── */
+function buildChips() {
+  const strip = document.getElementById('chipStrip');
+  if (!strip) return;
+  PALETTES.forEach(p => {
+    const btn = document.createElement('button');
+    btn.className = 'pal-chip' + (p.id === activeId ? ' active' : '');
+    btn.dataset.id = p.id;
+    btn.innerHTML = `<span class="pal-chip-swatch" style="background:${p.chip}"></span><span class="pal-chip-name">${p.name}</span>`;
+    btn.onclick = () => applyPalette(p.id);
+    strip.appendChild(btn);
+  });
+}
+
+/* ── Drawer ── */
+function buildDrawer() {
+  const container = document.getElementById('drawerPalettes');
+  if (!container) return;
+  PALETTES.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'drawer-pal-card' + (p.id === activeId ? ' active' : '');
+    card.dataset.id = p.id;
+    const imgHtml = p.img
+      ? `<img class="drawer-pal-img" src="${p.img}" alt="${p.name}" loading="lazy">`
+      : `<div class="drawer-pal-img-ph" style="background:${p.colors[1]}"></div>`;
+    card.innerHTML = imgHtml +
+      `<div class="drawer-pal-body">
+        <div>
+          <span class="drawer-pal-name">${p.name}</span>
+          <span class="drawer-pal-tag">${p.tag}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <div class="drawer-pal-swatches">${p.colors.map(c=>`<span class="drawer-pal-swatch" style="background:${c}"></span>`).join('')}</div>
+          <div class="drawer-pal-check">✓</div>
+        </div>
+      </div>`;
+    card.onclick = () => applyPalette(p.id);
+    container.appendChild(card);
+  });
+}
+
+function openDrawer() {
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('drawerOverlay').classList.add('open');
+}
+function closeDrawer() {
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('drawerOverlay').classList.remove('open');
+}
+
+/* ── Toast ── */
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg || '✦ Link copied';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+/* ── URL param init ── */
+function initFromURL() {
+  const params = new URLSearchParams(location.search);
+
+  // Palette
+  const palParam = params.get('palette');
+  if (palParam && PALETTES.find(p => p.id === palParam)) activeId = palParam;
+
+  // Planner info
+  const plannerName = params.get('planner_name');
+  const plannerTag  = params.get('planner_tagline');
+  if (plannerName) {
+    const el = document.querySelector('[data-editable="planner_name"]');
+    if (el) el.textContent = decodeURIComponent(plannerName);
+  }
+  if (plannerTag) {
+    const el = document.querySelector('[data-editable="planner_tagline"]');
+    if (el) el.textContent = decodeURIComponent(plannerTag);
+  }
+
+  // Room caption
+  const caption = params.get('room_caption');
+  if (caption) {
+    const el = document.getElementById('roomCaption');
+    if (el) el.textContent = decodeURIComponent(caption);
+  }
+
+  // Suite section — shown only if suite_url is present
+  const suiteUrl = params.get('suite_url');
+  if (suiteUrl) {
+    const section = document.getElementById('suiteSection');
+    const btn = document.getElementById('suiteBtn');
+    if (section) section.style.display = '';
+    if (btn) btn.href = decodeURIComponent(suiteUrl);
+  }
+}
+
+/* ── Window exports for workspace ── */
+window.applyPalette = applyPalette;
+window.applyVibe = applyPalette;
+window.PALETTE_PRESETS = PALETTES;
+
+/* ── Init ── */
+document.addEventListener('DOMContentLoaded', () => {
+  initFromURL();
+
+  if (inWorkspace) {
+    const cs = document.getElementById('chipStripOuter');
+    const eb = document.getElementById('exploreBtn');
+    if (cs) cs.style.display = 'none';
+    if (eb) eb.style.display = 'none';
+  }
+
+  buildChips();
+  buildDrawer();
+  applyPalette(activeId);
+});
+
+/* Autosave hook for contenteditable */
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('[contenteditable]').forEach(el => {
+    el.addEventListener('input', () => { if (window.scheduleAutosave) window.scheduleAutosave(); });
+  });
+});
+</script>
+</body>
+</html>

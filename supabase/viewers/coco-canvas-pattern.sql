@@ -1,0 +1,3079 @@
+-- ═══════════════════════════════════════════════════
+-- coco-canvas-pattern viewer
+-- INSERT INTO viewers with ON CONFLICT DO UPDATE
+-- Run in Supabase SQL editor
+-- ═══════════════════════════════════════════════════
+
+INSERT INTO public.viewers (
+  key,
+  viewer_name,
+  description,
+  template_type,
+  occasion_tag,
+  archetype,
+  feels,
+  palette,
+  palette_enabled,
+  is_active,
+  is_listed,
+  is_premium,
+  price,
+  html,
+  css,
+  js
+)
+VALUES (
+  'coco-canvas-pattern',
+  'Canvas Pattern Template',
+  'Full-bleed pattern canvas background with photo slot and text — palette-responsive',
+  'landing_page',
+  'cultural',
+  'expressive',
+  ARRAY['bold','cultural','textured'],
+  NULL,
+  true,
+  true,
+  true,
+  false,
+  0,
+  $HTML$<div id="patternViewer" class="pv-root">
+  <!-- Palette strip -->
+  <div class="pv-strip" id="pvStrip">
+    <div class="pv-strip-seg" style="background:var(--p1)"></div>
+    <div class="pv-strip-seg" style="background:var(--p2)"></div>
+    <div class="pv-strip-seg" style="background:var(--p3)"></div>
+    <div class="pv-strip-seg" style="background:var(--p4)"></div>
+    <div class="pv-strip-seg" style="background:var(--p5)"></div>
+  </div>
+
+  <!-- Layer 1: Pattern canvas (z-index 0) -->
+  <canvas id="patternCanvas" class="pv-canvas"></canvas>
+
+  <!-- Layer 2: Overlay (z-index 1) -->
+  <div class="pv-overlay" id="pvOverlay"></div>
+
+  <!-- Layer 3: Content (z-index 10) -->
+  <div class="pv-content" id="pvContent">
+    <div class="pv-frame" id="pvFrame">
+
+      <!-- Image slot -->
+      <div class="pv-img-slot" id="pvImgSlot" data-slot="main-image">
+        <div class="pv-img-placeholder" id="pvPlaceholder">
+          <span class="pv-plus">⦿</span>
+          <span class="pv-plus-label">Drop image here</span>
+        </div>
+        <img class="pv-img" id="pvImg" style="display:none" alt="">
+        <input type="file" id="pvFileInput" accept="image/*" style="display:none">
+      </div>
+
+      <!-- Text block -->
+      <div class="pv-text-block" id="pvTextBlock">
+        <div class="pv-eyebrow" contenteditable="true" data-loom="eyebrow" data-placeholder="Label">CultureSchool</div>
+        <div class="pv-title" contenteditable="true" data-loom="names" data-placeholder="Event Name">Your Event</div>
+        <div class="pv-subtitle" contenteditable="true" data-loom="date" data-placeholder="Date & Place">June 2025</div>
+      </div>
+
+    </div><!-- /pv-frame -->
+  </div><!-- /pv-content -->
+
+  <!-- Workspace controls (hidden on shared link) -->
+  <div class="pv-workspace" id="pvWorkspace">
+
+    <!-- Pattern style picker -->
+    <div class="pv-control-row">
+      <div class="pv-control-label">Pattern</div>
+      <div class="pv-style-scroll" id="pvStyleScroll"></div>
+    </div>
+
+    <!-- Overlay opacity -->
+    <div class="pv-control-row pv-control-inline">
+      <div class="pv-control-label">Overlay</div>
+      <input type="range" id="pvOverlaySlider" min="0" max="70" value="45" step="1">
+      <span class="pv-slider-val" id="pvOverlayVal">45%</span>
+    </div>
+
+    <!-- Image format -->
+    <div class="pv-control-row pv-control-inline">
+      <div class="pv-control-label">Format</div>
+      <div class="pv-toggle-group">
+        <button class="pv-toggle active" data-format="portrait" onclick="pvSetFormat(''portrait'',this)">Portrait</button>
+        <button class="pv-toggle" data-format="square" onclick="pvSetFormat(''square'',this)">Square</button>
+      </div>
+    </div>
+
+    <!-- Text position -->
+    <div class="pv-control-row pv-control-inline">
+      <div class="pv-control-label">Text</div>
+      <div class="pv-toggle-group">
+        <button class="pv-toggle active" data-pos="below" onclick="pvSetTextPos(''below'',this)">Below</button>
+        <button class="pv-toggle" data-pos="over" onclick="pvSetTextPos(''over'',this)">Over image</button>
+      </div>
+    </div>
+
+  </div><!-- /pv-workspace -->
+</div><!-- /pv-root -->$HTML$,
+  $CSS$:root {
+  --p1: var(--palette-1, #2F1F2A);
+  --p2: var(--palette-2, #7A4F6A);
+  --p3: var(--palette-3, #C2A3B3);
+  --p4: var(--palette-4, #E6D9DF);
+  --p5: var(--palette-5, #f8f4ef);
+  --gold: #c9a96e;
+  --ink:  #1a1208;
+  --bg:   #fdf9f3;
+  --serif: ''Cormorant Garamond'', Georgia, serif;
+  --sans:  ''DM Sans'', system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body, .pv-root {
+  width: 100%; height: 100%; min-height: 100vh;
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+.pv-root { position: relative; overflow: hidden; background: #0b0d14; }
+
+/* ── Palette strip ── */
+.pv-strip {
+  position: fixed; top: 0; left: 0; right: 0;
+  height: 6px; display: flex; z-index: 100; pointer-events: none;
+}
+.pv-strip-seg { flex: 1; }
+
+/* ── Pattern canvas (Layer 1) ── */
+.pv-canvas {
+  position: fixed; inset: 0; z-index: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+}
+
+/* ── Overlay (Layer 2) ── */
+.pv-overlay {
+  position: fixed; inset: 0; z-index: 1;
+  pointer-events: none;
+  background: var(--p1);
+  opacity: .45;
+  transition: opacity .3s;
+}
+
+/* ── Content (Layer 3) ── */
+.pv-content {
+  position: relative; z-index: 10;
+  display: flex; align-items: center; justify-content: center;
+  min-height: 100vh; padding: 80px 24px 200px;
+}
+
+/* ── Frame ── */
+.pv-frame {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 24px; width: 100%; max-width: 480px;
+}
+
+/* ── Image slot ── */
+.pv-img-slot {
+  width: 100%;
+  aspect-ratio: 4/5;
+  border-radius: 12px; overflow: hidden;
+  position: relative; cursor: pointer;
+  background: rgba(255,255,255,.08);
+  border: 2px dashed rgba(255,255,255,.18);
+  transition: border-color .2s;
+}
+.pv-img-slot:hover { border-color: rgba(255,255,255,.35); }
+.pv-img-slot.pv-square { aspect-ratio: 1/1; }
+.pv-img-slot.pv-has-image { border: none; }
+
+.pv-img-placeholder {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 8px;
+}
+.pv-plus { font-size: 40px; color: rgba(255,255,255,.35); line-height: 1; }
+.pv-plus-label {
+  font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+  color: rgba(255,255,255,.3);
+}
+.pv-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* ── Text block ── */
+.pv-text-block {
+  text-align: center; padding: 8px 16px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.pv-text-block.pv-text-over {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: linear-gradient(to top, rgba(0,0,0,.75) 0%, transparent 100%);
+  padding: 24px 20px 20px;
+  border-radius: 0 0 12px 12px;
+}
+.pv-eyebrow {
+  font: 600 10px var(--sans);
+  letter-spacing: .2em; text-transform: uppercase;
+  color: var(--gold); outline: none;
+}
+.pv-eyebrow:empty::before { content: attr(data-placeholder); opacity: .4; }
+.pv-title {
+  font: 300 42px var(--serif);
+  letter-spacing: -.01em; line-height: 1.1;
+  color: #fff; outline: none;
+}
+.pv-title:empty::before { content: attr(data-placeholder); opacity: .35; }
+.pv-subtitle {
+  font: 400 16px/1.5 var(--serif);
+  font-style: italic; color: rgba(255,255,255,.65); outline: none;
+}
+.pv-subtitle:empty::before { content: attr(data-placeholder); opacity: .4; }
+
+/* ── Workspace controls ── */
+.pv-workspace {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
+  background: rgba(11,13,20,.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(255,255,255,.07);
+  padding: 12px 20px 16px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.pv-workspace.pv-hidden { display: none; }
+
+.pv-control-row { display: flex; align-items: center; gap: 12px; }
+.pv-control-inline { flex-wrap: nowrap; }
+.pv-control-label {
+  font-size: 9px; letter-spacing: .2em; text-transform: uppercase;
+  color: rgba(255,255,255,.3); white-space: nowrap; min-width: 50px;
+}
+
+/* Style scroll */
+.pv-style-scroll {
+  display: flex; gap: 8px; overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; flex: 1;
+}
+.pv-style-scroll::-webkit-scrollbar { display: none; }
+
+.pv-style-chip {
+  flex-shrink: 0; display: flex; flex-direction: column;
+  align-items: center; gap: 4px; cursor: pointer;
+  transition: opacity .15s;
+}
+.pv-style-chip:hover { opacity: .8; }
+.pv-style-chip.active canvas { outline: 2px solid var(--gold); outline-offset: 2px; }
+.pv-chip-label {
+  font-size: 9px; letter-spacing: .06em; text-transform: capitalize;
+  color: rgba(255,255,255,.4); white-space: nowrap;
+}
+.pv-style-chip.active .pv-chip-label { color: var(--gold); }
+
+/* Slider */
+input[type=range] {
+  flex: 1; accent-color: var(--gold);
+  height: 3px; cursor: pointer;
+}
+.pv-slider-val {
+  font-size: 11px; color: rgba(255,255,255,.4); min-width: 30px;
+}
+
+/* Toggle group */
+.pv-toggle-group { display: flex; gap: 4px; }
+.pv-toggle {
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.1);
+  color: rgba(255,255,255,.45);
+  border-radius: 6px; padding: 4px 10px;
+  font-size: 11px; cursor: pointer; transition: all .15s;
+}
+.pv-toggle.active {
+  background: rgba(201,169,110,.18);
+  border-color: rgba(201,169,110,.4);
+  color: var(--gold);
+}
+
+/* ── Share mode: hide workspace ── */
+body.pv-share-mode .pv-workspace { display: none; }
+body.pv-share-mode .pv-img-slot { cursor: default; border: none; }
+
+@media (max-width: 600px) {
+  .pv-title { font-size: 30px; }
+  .pv-frame { max-width: 340px; }
+}$CSS$,
+  $JS$/* ═══════════════════════════════════════════════
+   coco-canvas-pattern viewer v1
+   Pattern canvas background + image slot + text
+═══════════════════════════════════════════════ */
+
+/* ── Draw functions (verbatim from coco-patterns-library) ── */
+const _renderQueue = []; // {canvas, style, colors, tileSize}
+let _renderScheduled = false;
+
+/* ═══════════════════════════════════════════════
+   DRAW FUNCTION MAP
+═══════════════════════════════════════════════ */
+const DRAW_FN = {
+  diamond:          drawDiamond,
+  chevron:          drawChevron,
+  grid:             drawGrid,
+  kente:            drawKente,
+  ikat:             drawIkat,
+  frond:            drawFrond,
+  toile:            drawToile,
+  wildflower:       drawWildflower,
+  tropical:         drawTropical,
+  vine:             drawVine,
+  heritage:         drawHeritage,
+  batik:            drawBatik,
+  ''batik+ikat'':     drawBatik,
+  floral:           drawFloral,
+  ''paisley+floral'': drawPaisley,
+  adinkra:          drawAdinkra,
+  mudcloth:         drawMudcloth,
+  asian:            drawAsianLattice,
+  shibori:          drawShibori,
+  suzani:           drawSuzani,
+  cintemani:        drawCintemani,
+  paisley:          drawPaisley,
+  kuba:             drawKuba,
+  zellige:          drawZellige,
+  botanical:        drawBotanical,
+  ndebele:          drawNdebele,
+  tapa:             drawTapa,
+  otomi:            drawOtomi,
+  phulkari:         drawPhulkari,
+  azulejo:          drawAzulejo,
+  quatrefoil:       drawQuatrefoil,
+  talavera:         drawTalavera,
+  ''ikat diamond'':   drawIkatDiamond,
+  ''ikat-diamond'':   drawIkatDiamond,
+  ''asian lattice'':  drawAsianLattice,
+  scatter:          drawWildflower,
+  // ── New cultural styles ──────────────────────
+  adire:            drawAdire,
+  kanga:            drawKanga,
+  ''kente-strip'':    drawKenteStrip,
+  kentestrip:       drawKenteStrip,
+  andean:           drawAndean,
+  ''greek-key'':      drawGreekKey,
+  greekkey:         drawGreekKey,
+  meander:          drawGreekKey,
+  hawaiian:         drawHawaiian,
+  ''toile-scenic'':   drawToileScenic,
+  toilescenic:      drawToileScenic,
+  ''batik-tulis'':    drawBatikTulis,
+  batiktulis:       drawBatikTulis,
+  tartan:           drawTartan,
+  plaid:            drawTartan,
+};
+
+/* ═══════════════════════════════════════════════
+   DRAW FUNCTIONS (verbatim from coco_pattern_generator_v3.html)
+═══════════════════════════════════════════════ */
+
+function drawDiamond(ctx, w, h, colors, tile, rot, cx) {
+  const bg = colors[colors.length-1] || colors[0];
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, w, h);
+
+  const cols = Math.ceil(w / tile) + 2;
+  const rows = Math.ceil(h / tile) + 2;
+  const half = tile / 2;
+  const inner = half * (0.3 + cx * 0.004);
+  const dotR  = Math.max(2, tile * 0.06);
+
+  ctx.save();
+  ctx.translate(w/2, h/2);
+  ctx.rotate(rot * Math.PI / 180);
+  ctx.translate(-w/2, -h/2);
+
+  for (let r = -1; r < rows; r++) {
+    for (let c = -1; c < cols; c++) {
+      const offset = (r % 2 === 0) ? 0 : half;
+      const x = c * tile + offset;
+      const y = r * tile;
+      const ci = (r * cols + c) % colors.length;
+
+      // Outer diamond
+      ctx.beginPath();
+      ctx.moveTo(x + half, y);
+      ctx.lineTo(x + tile, y + half);
+      ctx.lineTo(x + half, y + tile);
+      ctx.lineTo(x, y + half);
+      ctx.closePath();
+      ctx.fillStyle = colors[ci % colors.length];
+      ctx.fill();
+
+      // Inner diamond
+      ctx.beginPath();
+      ctx.moveTo(x + half, y + half - inner);
+      ctx.lineTo(x + half + inner, y + half);
+      ctx.lineTo(x + half, y + half + inner);
+      ctx.lineTo(x + half - inner, y + half);
+      ctx.closePath();
+      ctx.fillStyle = colors[(ci + 1) % colors.length];
+      ctx.fill();
+
+      // Center dot
+      if (cx > 30) {
+        ctx.beginPath();
+        ctx.arc(x + half, y + half, dotR, 0, Math.PI * 2);
+        ctx.fillStyle = colors[(ci + 2) % colors.length];
+        ctx.fill();
+      }
+    }
+  }
+  ctx.restore();
+}
+
+function drawChevron(ctx, w, h, colors, tile, rot, cx) {
+  ctx.fillStyle = colors[colors.length-1] || colors[0];
+  ctx.fillRect(0, 0, w, h);
+
+  const stripeH = tile / 2;
+  const stripes = Math.ceil(h / stripeH) + 4;
+  const detail = Math.max(1, Math.floor(cx / 25));
+
+  ctx.save();
+  ctx.translate(w/2, h/2);
+  ctx.rotate(rot * Math.PI / 180);
+  ctx.translate(-w/2, -h/2);
+
+  for (let i = -2; i < stripes; i++) {
+    const y = i * stripeH;
+    const ci = i % colors.length;
+    const amplitude = tile * 0.6;
+
+    ctx.beginPath();
+    ctx.moveTo(-tile, y + stripeH);
+    // Zigzag top
+    for (let x = -tile; x <= w + tile; x += tile) {
+      const peak = (Math.floor((x + tile) / tile) % 2 === 0);
+      ctx.lineTo(x, peak ? y : y + amplitude * 0.7);
+    }
+    // Zigzag bottom
+    for (let x = w + tile; x >= -tile; x -= tile) {
+      const peak = (Math.floor((x + tile) / tile) % 2 === 0);
+      ctx.lineTo(x, (peak ? y : y + amplitude * 0.7) + stripeH);
+    }
+    ctx.closePath();
+    ctx.fillStyle = colors[Math.abs(ci) % colors.length];
+    ctx.fill();
+
+    // Detail lines
+    if (detail > 1 && cx > 50) {
+      ctx.strokeStyle = colors[(Math.abs(ci) + 1) % colors.length];
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = 0.3;
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+  }
+  ctx.restore();
+}
+
+function drawGrid(ctx, w, h, colors, tile, rot, cx) {
+  const bg = colors[0];
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, w, h);
+
+  const cols = Math.ceil(w / tile) + 2;
+  const rows = Math.ceil(h / tile) + 2;
+  const gap = Math.max(1, tile * 0.04);
+  const inner = tile - gap * 2;
+  const dotR = tile * 0.08;
+
+  ctx.save();
+  ctx.translate(w/2, h/2);
+  ctx.rotate(rot * Math.PI / 180);
+  ctx.translate(-w/2, -h/2);
+
+  for (let r = -1; r < rows; r++) {
+    for (let c = -1; c < cols; c++) {
+      const x = c * tile + gap;
+      const y = r * tile + gap;
+      const ci = (r + c) % colors.length;
+
+      // Main cell
+      ctx.fillStyle = colors[Math.abs(ci) % colors.length];
+      ctx.fillRect(x, y, inner, inner);
+
+      // Inner accent square
+      if (cx > 40) {
+        const inset = inner * 0.18;
+        ctx.fillStyle = colors[Math.abs(ci + 1) % colors.length];
+        ctx.globalAlpha = 0.55;
+        ctx.fillRect(x + inset, y + inset, inner - inset*2, inner - inset*2);
+        ctx.globalAlpha = 1;
+      }
+
+      // Corner dots
+      if (cx > 65) {
+        ctx.fillStyle = colors[Math.abs(ci + 2) % colors.length];
+        [0, inner].forEach(dx => [0, inner].forEach(dy => {
+          ctx.beginPath();
+          ctx.arc(x + dx, y + dy, dotR, 0, Math.PI * 2);
+          ctx.fill();
+        }));
+      }
+    }
+  }
+  ctx.restore();
+}
+
+function drawKente(ctx, w, h, colors, tile, rot, cx) {
+  ctx.fillStyle = colors[0];
+  ctx.fillRect(0, 0, w, h);
+
+  const stripeW = Math.max(4, Math.floor(tile / 5));
+  const bands = Math.ceil(h / tile) + 2;
+  const detail = cx > 50;
+
+  ctx.save();
+  ctx.translate(w/2, h/2);
+  ctx.rotate(rot * Math.PI / 180);
+  ctx.translate(-w/2, -h/2);
+
+  for (let b = -1; b < bands; b++) {
+    const y = b * tile;
+    const bandH = tile;
+
+    // Horizontal bands
+    for (let sub = 0; sub < 5; sub++) {
+      const sy = y + sub * (bandH / 5);
+      const sh = bandH / 5;
+      ctx.fillStyle = colors[(b * 5 + sub) % colors.length];
+      ctx.fillRect(0, sy, w, sh);
+
+      // Vertical stripes within band
+      if (detail) {
+        const stripeCount = Math.ceil(w / (stripeW * 3));
+        for (let s = 0; s < stripeCount; s++) {
+          ctx.fillStyle = colors[(b + s + sub + 2) % colors.length];
+          ctx.globalAlpha = 0.45;
+          ctx.fillRect(s * stripeW * 3, sy, stripeW, sh);
+          ctx.globalAlpha = 1;
+        }
+      }
+    }
+
+    // Vertical accent columns
+    const colCount = Math.ceil(w / tile);
+    for (let col = 0; col < colCount; col++) {
+      const cx0 = col * tile + tile/2;
+      // Small accent square
+      const sq = tile * 0.18;
+      ctx.fillStyle = colors[(b + col + 1) % colors.length];
+      ctx.fillRect(cx0 - sq/2, y + bandH/2 - sq/2, sq, sq);
+      if (cx > 40) {
+        const sq2 = sq * 0.5;
+        ctx.fillStyle = colors[(b + col + 3) % colors.length];
+        ctx.fillRect(cx0 - sq2/2, y + bandH/2 - sq2/2, sq2, sq2);
+      }
+    }
+  }
+  ctx.restore();
+}
+
+function drawIkat(ctx, w, h, colors, tile, rot, cx) {
+  ctx.fillStyle = colors[colors.length-1] || colors[0];
+  ctx.fillRect(0, 0, w, h);
+
+  const cols = Math.ceil(w / tile) + 2;
+  const rows = Math.ceil(h / tile) + 2;
+  const rings = Math.max(2, Math.floor(cx / 20));
+
+  ctx.save();
+  ctx.translate(w/2, h/2);
+  ctx.rotate(rot * Math.PI / 180);
+  ctx.translate(-w/2, -h/2);
+
+  for (let r = -1; r < rows; r++) {
+    for (let c = -1; c < cols; c++) {
+      const offset = (r % 2 === 0) ? 0 : tile * 0.5;
+      const x = c * tile + tile/2 + offset;
+      const y = r * tile + tile/2;
+      const ci = (r * 2 + c) % colors.length;
+      const rx = tile * 0.42;
+      const ry = tile * 0.26;
+
+      // Concentric ikat ellipses
+      for (let ring = rings; ring >= 0; ring--) {
+        const frac = ring / rings;
+        const erx = rx * frac;
+        const ery = ry * frac;
+        if (erx < 1) continue;
+
+        ctx.beginPath();
+        ctx.ellipse(x, y, erx, ery, 0, 0, Math.PI * 2);
+        ctx.fillStyle = colors[Math.abs(ci + ring) % colors.length];
+        ctx.globalAlpha = ring === 0 ? 1 : 0.82;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+
+      // Corner quarter-ellipses
+      [[0,0],[tile,0],[0,tile],[tile,tile]].forEach(([dx,dy]) => {
+        const cx0 = c * tile + offset + dx;
+        const cy0 = r * tile + dy;
+        ctx.beginPath();
+        ctx.ellipse(cx0, cy0, rx * 0.42, ry * 0.42, 0, 0, Math.PI * 2);
+        ctx.fillStyle = colors[Math.abs(ci + 1) % colors.length];
+        ctx.globalAlpha = 0.5;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      });
+    }
+  }
+  ctx.restore();
+}
+
+function drawFrond(ctx, w, h, colors, tile, rot, cx) {
+  // Sweeping palm fronds — serrated, dramatic
+  ctx.fillStyle = colors[colors.length-1] || colors[0];
+  ctx.fillRect(0,0,w,h);
+  const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
+  const leafLayers = Math.max(2, Math.floor(cx/20));
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const ox = (r%2===0)?0:tile*0.5;
+      const cx0 = cl*tile+tile/2+ox, cy0 = r*tile+tile*0.88;
+      const ci = Math.abs(r*cols+cl)%colors.length;
+      // Draw multiple frond layers per tile, each slightly offset/scaled
+      for (let layer=0;layer<leafLayers;layer++) {
+        const frac = (layer+1)/leafLayers;
+        const spread = tile*0.52*frac;
+        const height = tile*0.9*frac;
+        const lci = (ci+layer)%colors.length;
+        const sides = 7 + Math.floor(cx/14); // serration count
+        // Left frond
+        ctx.beginPath();
+        ctx.moveTo(cx0, cy0);
+        for (let i=0;i<=sides;i++) {
+          const t = i/sides;
+          const lx = cx0 - spread*(1-t*0.3)*Math.sin(t*Math.PI*0.5+0.2);
+          const ly = cy0 - height*t;
+          const serr = (i%2===0)?tile*0.06:0;
+          ctx.lineTo(lx-serr, ly);
+        }
+        ctx.lineTo(cx0, cy0-height*0.1);
+        ctx.closePath();
+        ctx.fillStyle = colors[lci];
+        ctx.globalAlpha = 0.7+layer*0.1;
+        ctx.fill();
+        // Right frond (mirror)
+        ctx.beginPath();
+        ctx.moveTo(cx0, cy0);
+        for (let i=0;i<=sides;i++) {
+          const t = i/sides;
+          const lx = cx0 + spread*(1-t*0.3)*Math.sin(t*Math.PI*0.5+0.2);
+          const ly = cy0 - height*t;
+          const serr = (i%2===0)?tile*0.06:0;
+          ctx.lineTo(lx+serr, ly);
+        }
+        ctx.lineTo(cx0, cy0-height*0.1);
+        ctx.closePath();
+        ctx.fillStyle = colors[(lci+1)%colors.length];
+        ctx.globalAlpha = 0.65+layer*0.1;
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      // Central spine
+      ctx.beginPath();
+      ctx.moveTo(cx0, cy0);
+      ctx.bezierCurveTo(cx0, cy0-tile*0.3, cx0-tile*0.04, cy0-tile*0.65, cx0, cy0-tile*0.92);
+      ctx.strokeStyle = colors[(ci+2)%colors.length];
+      ctx.lineWidth = Math.max(1,tile*0.03);
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+
+function drawToile(ctx, w, h, colors, tile, rot, cx) {
+  // Engraved-look botanical — one or two colors, detailed line work
+  const bg = colors.length>2 ? colors[2] : ''#f5f0e8'';
+  const ink = colors[0];
+  const ink2 = colors[1]||colors[0];
+  ctx.fillStyle = bg;
+  ctx.fillRect(0,0,w,h);
+  const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
+  const detail = Math.max(3, Math.floor(cx/10));
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const ox = (r%2===0)?0:tile*0.5;
+      const cx0 = cl*tile+tile/2+ox, cy0 = r*tile+tile/2;
+      const ci = (r+cl)%2;
+      const strokeC = ci===0?ink:ink2;
+      ctx.strokeStyle = strokeC;
+      ctx.fillStyle = strokeC;
+      ctx.lineWidth = Math.max(0.6,tile*0.018);
+      // Stem
+      ctx.beginPath();
+      ctx.moveTo(cx0, cy0+tile*0.45);
+      ctx.bezierCurveTo(cx0-tile*0.05, cy0+tile*0.2, cx0+tile*0.05, cy0-tile*0.2, cx0, cy0-tile*0.44);
+      ctx.stroke();
+      // Flower head
+      const petalR = tile*0.14;
+      const petals = 5+Math.floor(cx/20);
+      for (let p=0;p<petals;p++) {
+        const angle = (p/petals)*Math.PI*2;
+        const px = cx0+Math.cos(angle)*petalR*1.5;
+        const py = cy0-tile*0.44+Math.sin(angle)*petalR*1.5;
+        ctx.beginPath();
+        ctx.ellipse(px,py,petalR,petalR*0.55,angle,0,Math.PI*2);
+        ctx.stroke();
+      }
+      // Center dot
+      ctx.beginPath();
+      ctx.arc(cx0,cy0-tile*0.44,tile*0.045,0,Math.PI*2);
+      ctx.fill();
+      // Side leaves — engraved style
+      for (let l=0;l<detail;l++) {
+        const t = (l+1)/(detail+1);
+        const ly = cy0+tile*0.4 - t*tile*0.8;
+        const side = l%2===0?1:-1;
+        const llen = tile*0.2*(0.6+t*0.8);
+        ctx.beginPath();
+        ctx.moveTo(cx0, ly);
+        ctx.bezierCurveTo(cx0+side*llen*0.5, ly-tile*0.06, cx0+side*llen, ly+tile*0.02, cx0+side*llen, ly+tile*0.04);
+        ctx.stroke();
+        // Leaf outline
+        ctx.beginPath();
+        ctx.moveTo(cx0, ly);
+        ctx.bezierCurveTo(cx0+side*llen*0.5, ly+tile*0.06, cx0+side*llen, ly+tile*0.03, cx0+side*llen, ly+tile*0.04);
+        ctx.stroke();
+      }
+    }
+  }
+  ctx.restore();
+}
+
+function drawWildflower(ctx, w, h, colors, tile, rot, cx) {
+  ctx.fillStyle = colors[colors.length-1]||colors[0];
+  ctx.fillRect(0,0,w,h);
+  function seededRand(seed) {
+    let s = seed;
+    return function() { s=(s*16807+0)%2147483647; return (s-1)/2147483646; };
+  }
+  const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
+  const motifCount = Math.max(2, Math.floor(cx/15));
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const rand = seededRand(r*1000+cl*37+13);
+      const basex = cl*tile, basey = r*tile;
+      for (let m=0;m<motifCount;m++) {
+        const mx = basex + rand()*tile;
+        const my = basey + rand()*tile;
+        // r2 is the base radius — minimum 6px, scales with tile
+        // multiply by 3.5 so motifs are actually visible at any tile size
+        const scale = 0.5 + rand()*0.9;
+        const r2 = Math.max(6, tile * 0.18 * scale);
+        const angle = rand()*Math.PI*2;
+        const ci = Math.floor(rand()*colors.length) % colors.length;
+        const type = Math.floor(rand()*2.99); // 0=daisy 1=stem+leaf 2=bud, never 3
+        ctx.save();
+        ctx.translate(mx, my); ctx.rotate(angle);
+        if (type < 1) {
+          // Daisy — petals around center
+          const petals = 5 + Math.floor(rand()*4);
+          for (let p=0;p<petals;p++) {
+            const pa = (p/petals)*Math.PI*2;
+            ctx.beginPath();
+            ctx.ellipse(
+              Math.cos(pa)*r2*1.5, Math.sin(pa)*r2*1.5,
+              r2*0.7, r2*0.35, pa, 0, Math.PI*2
+            );
+            ctx.fillStyle = colors[ci%colors.length];
+            ctx.globalAlpha = 0.9;
+            ctx.fill();
+          }
+          ctx.beginPath();
+          ctx.arc(0, 0, r2*0.55, 0, Math.PI*2);
+          ctx.fillStyle = colors[(ci+1)%colors.length];
+          ctx.globalAlpha = 1;
+          ctx.fill();
+        } else if (type < 2) {
+          // Stem + leaf pair
+          const stemLen = r2*2.8;
+          ctx.beginPath();
+          ctx.moveTo(0, stemLen); ctx.lineTo(0, -stemLen);
+          ctx.strokeStyle = colors[ci%colors.length];
+          ctx.lineWidth = Math.max(1.5, r2*0.22);
+          ctx.globalAlpha = 0.9;
+          ctx.stroke();
+          // Two leaves, one each side
+          [-1, 1].forEach((side, i) => {
+            ctx.beginPath();
+            ctx.ellipse(side*r2*1.3, 0, r2*1.2, r2*0.5, side*0.4, 0, Math.PI*2);
+            ctx.fillStyle = colors[(ci+1+i)%colors.length];
+            ctx.globalAlpha = 0.82;
+            ctx.fill();
+          });
+          // Top bud
+          ctx.beginPath();
+          ctx.ellipse(0, -stemLen*0.85, r2*0.45, r2*0.7, 0, 0, Math.PI*2);
+          ctx.fillStyle = colors[(ci+2)%colors.length];
+          ctx.globalAlpha = 0.9;
+          ctx.fill();
+        } else {
+          // Bud — outer + inner ellipse
+          ctx.beginPath();
+          ctx.ellipse(0, 0, r2, r2*1.6, 0, 0, Math.PI*2);
+          ctx.fillStyle = colors[ci%colors.length];
+          ctx.globalAlpha = 0.88;
+          ctx.fill();
+          ctx.beginPath();
+          ctx.ellipse(0, -r2*0.2, r2*0.55, r2*0.9, 0, 0, Math.PI*2);
+          ctx.fillStyle = colors[(ci+1)%colors.length];
+          ctx.globalAlpha = 0.75;
+          ctx.fill();
+          // Sepal lines
+          for (let s=-1;s<=1;s++) {
+            ctx.beginPath();
+            ctx.moveTo(0, r2*0.6);
+            ctx.lineTo(s*r2*0.5, r2*1.4);
+            ctx.strokeStyle = colors[(ci+2)%colors.length];
+            ctx.lineWidth = Math.max(1, r2*0.12);
+            ctx.globalAlpha = 0.6;
+            ctx.stroke();
+          }
+        }
+        ctx.globalAlpha = 1;
+        ctx.restore();
+      }
+    }
+  }
+  ctx.restore();
+}
+
+function drawTropical(ctx, w, h, colors, tile, rot, cx) {
+  // Oversized tropical leaves — dramatic negative space, large scale
+  ctx.fillStyle = colors[colors.length-1]||colors[0];
+  ctx.fillRect(0,0,w,h);
+  const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
+  const splits = Math.max(0, Math.floor((cx-30)/20)); // leaf splits at cx>30
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const ox = (r%2===0)?0:tile*0.5;
+      const cx0 = cl*tile+tile/2+ox, cy0 = r*tile+tile/2;
+      const ci = Math.abs(r*cols+cl)%colors.length;
+      const lw = tile*0.46, lh = tile*0.82;
+      // Main leaf shape — broad tropical
+      const angles = [[-0.6,lw,lh],[0,lw*0.7,lh],[0.6,lw,lh]];
+      angles.forEach(([ang,rw,rh],i) => {
+        ctx.save();
+        ctx.translate(cx0,cy0); ctx.rotate(ang);
+        ctx.beginPath();
+        ctx.moveTo(0,rh*0.5);
+        ctx.bezierCurveTo(-rw*1.1,rh*0.2,-rw*0.9,-rh*0.3,-rw*0.1,-rh*0.5);
+        ctx.bezierCurveTo(0,-rh*0.52,0,-rh*0.52,rw*0.1,-rh*0.5);
+        ctx.bezierCurveTo(rw*0.9,-rh*0.3,rw*1.1,rh*0.2,0,rh*0.5);
+        ctx.fillStyle = colors[(ci+i)%colors.length];
+        ctx.globalAlpha = i===1?0.9:0.75;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        // Midrib
+        ctx.beginPath();
+        ctx.moveTo(0,rh*0.5); ctx.lineTo(0,-rh*0.5);
+        ctx.strokeStyle = colors[(ci+2)%colors.length];
+        ctx.lineWidth = Math.max(0.8,tile*0.022);
+        ctx.stroke();
+        // Splits/cuts at high complexity
+        if (splits>0) {
+          for (let s=1;s<=splits;s++) {
+            const t = s/(splits+1);
+            const sy = rh*0.5 - t*rh;
+            const sw = rw*(1-t*0.6)*0.9;
+            ctx.beginPath();
+            ctx.moveTo(-sw,sy); ctx.lineTo(-sw*0.2,sy);
+            ctx.moveTo(sw,sy); ctx.lineTo(sw*0.2,sy);
+            ctx.strokeStyle = colors[(ci+3)%colors.length];
+            ctx.lineWidth = Math.max(0.6,tile*0.015);
+            ctx.globalAlpha=0.55; ctx.stroke(); ctx.globalAlpha=1;
+          }
+        }
+        ctx.restore();
+      });
+    }
+  }
+  ctx.restore();
+}
+
+function drawVine(ctx, w, h, colors, tile, rot, cx) {
+  // Continuous flowing vine — sinuous stems, leaves branching off
+  ctx.fillStyle = colors[colors.length-1]||colors[0];
+  ctx.fillRect(0,0,w,h);
+  const rows = Math.ceil(h/tile)+2;
+  const leafPairs = Math.max(2, Math.floor(cx/15));
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    const y0 = r*tile+tile/2;
+    const ci = Math.abs(r)%colors.length;
+    // Main vine — horizontal sinuous wave across full width
+    const amp = tile*0.28;
+    ctx.beginPath();
+    ctx.moveTo(-tile, y0);
+    for (let x=-tile; x<=w+tile; x+=8) {
+      const vy = y0 + Math.sin((x/(tile*0.8))*Math.PI*2)*amp;
+      ctx.lineTo(x,vy);
+    }
+    ctx.strokeStyle = colors[ci%colors.length];
+    ctx.lineWidth = Math.max(1.5,tile*0.04);
+    ctx.stroke();
+    // Leaves along the vine
+    for (let lp=0; lp<leafPairs; lp++) {
+      const t = lp/leafPairs;
+      const vx = -tile + t*(w+tile*2);
+      const vy = y0 + Math.sin((vx/(tile*0.8))*Math.PI*2)*amp;
+      const tangent = Math.atan2(
+        Math.cos((vx/(tile*0.8))*Math.PI*2)*amp*(Math.PI*2/(tile*0.8)),
+        1
+      );
+      [1,-1].forEach(side => {
+        ctx.save();
+        ctx.translate(vx,vy);
+        ctx.rotate(tangent + side*Math.PI*0.4);
+        const llen = tile*(0.18+0.14*(lp%3)/2);
+        const lw2  = tile*0.08;
+        ctx.beginPath();
+        ctx.moveTo(0,0);
+        ctx.bezierCurveTo(llen*0.3,-lw2,llen*0.7,-lw2*0.5,llen,0);
+        ctx.bezierCurveTo(llen*0.7,lw2,llen*0.3,lw2,0,0);
+        ctx.fillStyle = colors[(ci+1+lp)%colors.length];
+        ctx.globalAlpha = 0.82; ctx.fill(); ctx.globalAlpha=1;
+        // Leaf vein
+        ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(llen,0);
+        ctx.strokeStyle = colors[(ci+2)%colors.length];
+        ctx.lineWidth = Math.max(0.5,tile*0.012);
+        ctx.globalAlpha=0.5; ctx.stroke(); ctx.globalAlpha=1;
+        ctx.restore();
+      });
+    }
+    // Berries/buds at intervals
+    if (cx>45) {
+      for (let b=0;b<Math.floor(leafPairs/2);b++) {
+        const t2 = (b+0.5)/Math.floor(leafPairs/2);
+        const bx = -tile+t2*(w+tile*2);
+        const by = y0+Math.sin((bx/(tile*0.8))*Math.PI*2)*amp;
+        ctx.beginPath();
+        ctx.arc(bx,by,tile*0.045,0,Math.PI*2);
+        ctx.fillStyle = colors[(ci+3)%colors.length];
+        ctx.fill();
+      }
+    }
+  }
+  ctx.restore();
+}
+
+function drawHeritage(ctx, w, h, colors, tile, rot, cx) {
+  // West African / Caribbean heritage botanical — bold outlines, geometric leaf shapes
+  ctx.fillStyle = colors[colors.length-1]||colors[0];
+  ctx.fillRect(0,0,w,h);
+  const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
+  const detail = cx>50;
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const ox = (r%2===0)?0:tile*0.5;
+      const cx0 = cl*tile+tile/2+ox, cy0 = r*tile+tile/2;
+      const ci = Math.abs(r*cols+cl)%colors.length;
+      const h2 = tile*0.42, w2 = tile*0.28;
+      // Central diamond motif
+      ctx.beginPath();
+      ctx.moveTo(cx0,cy0-h2);
+      ctx.lineTo(cx0+w2,cy0);
+      ctx.lineTo(cx0,cy0+h2);
+      ctx.lineTo(cx0-w2,cy0);
+      ctx.closePath();
+      ctx.fillStyle = colors[ci%colors.length];
+      ctx.fill();
+      // Inner diamond
+      const sc = 0.55;
+      ctx.beginPath();
+      ctx.moveTo(cx0,cy0-h2*sc);
+      ctx.lineTo(cx0+w2*sc,cy0);
+      ctx.lineTo(cx0,cy0+h2*sc);
+      ctx.lineTo(cx0-w2*sc,cy0);
+      ctx.closePath();
+      ctx.fillStyle = colors[(ci+1)%colors.length];
+      ctx.fill();
+      // Geometric leaf arms — 4 directions
+      [[0,-1],[0,1],[1,0],[-1,0]].forEach(([dx,dy],i) => {
+        const arm = tile*0.48;
+        const lx = cx0+dx*w2, ly = cy0+dy*h2;
+        const ex = cx0+dx*arm*0.85, ey = cy0+dy*arm*0.85;
+        ctx.beginPath();
+        ctx.moveTo(lx,ly);
+        // Bold angular leaf shape
+        const perp = tile*0.13;
+        ctx.lineTo(lx+dy*perp,ly+dx*perp);
+        ctx.lineTo(ex,ey);
+        ctx.lineTo(lx-dy*perp,ly-dx*perp);
+        ctx.closePath();
+        ctx.fillStyle = colors[(ci+2+i)%colors.length];
+        ctx.globalAlpha = 0.8;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        if (detail) {
+          // Bold outline
+          ctx.strokeStyle = colors[(ci+1)%colors.length];
+          ctx.lineWidth = Math.max(1,tile*0.025);
+          ctx.stroke();
+        }
+      });
+      // Center accent dot
+      ctx.beginPath();
+      ctx.arc(cx0,cy0,tile*0.07,0,Math.PI*2);
+      ctx.fillStyle = colors[(ci+3)%colors.length];
+      ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+
+function drawBatik(ctx, w, h, colors, tile, rot, cx) {
+  // True batik — bold outlined motifs, flat fills, wax-resist character
+  const ground = colors[colors.length-1]||colors[0];
+  ctx.fillStyle = ground;
+  ctx.fillRect(0,0,w,h);
+
+  const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
+  const outline = Math.max(2, tile*0.045); // thick wax-resist outline
+  const motifs = [''flower'',''circle-diamond'',''starburst''];
+  const dots = cx > 35; // scatter dots appear at higher complexity
+
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const ox = (r%2===0)?0:tile*0.5;
+      const cx0 = cl*tile+tile/2+ox, cy0 = r*tile+tile/2;
+      const ci = Math.abs(r*cols+cl)%colors.length;
+      const motif = motifs[Math.abs(r*cols+cl)%motifs.length];
+      const fill1 = colors[ci%colors.length];
+      const fill2 = colors[(ci+1)%colors.length];
+      const fill3 = colors[(ci+2)%colors.length];
+      const R = tile*0.38;
+
+      ctx.save();
+      ctx.translate(cx0, cy0);
+
+      if (motif === ''flower'') {
+        // 4 bold filled petals
+        for (let p=0;p<4;p++) {
+          const angle = (p/4)*Math.PI*2;
+          ctx.save();
+          ctx.rotate(angle);
+          ctx.beginPath();
+          ctx.ellipse(0, -R*0.55, R*0.32, R*0.48, 0, 0, Math.PI*2);
+          ctx.fillStyle = fill1;
+          ctx.fill();
+          ctx.strokeStyle = ground;
+          ctx.lineWidth = outline;
+          ctx.stroke();
+          ctx.restore();
+        }
+        // Center circle
+        ctx.beginPath();
+        ctx.arc(0, 0, R*0.28, 0, Math.PI*2);
+        ctx.fillStyle = fill2;
+        ctx.fill();
+        ctx.strokeStyle = ground;
+        ctx.lineWidth = outline;
+        ctx.stroke();
+        // Inner center dot
+        ctx.beginPath();
+        ctx.arc(0, 0, R*0.12, 0, Math.PI*2);
+        ctx.fillStyle = fill3;
+        ctx.fill();
+
+      } else if (motif === ''circle-diamond'') {
+        // Circle with 4 pointed petals filling the corners
+        ctx.beginPath();
+        ctx.moveTo(0, -R);
+        ctx.bezierCurveTo(R*0.5,-R*0.5, R*0.5,R*0.5, 0,R);
+        ctx.bezierCurveTo(-R*0.5,R*0.5, -R*0.5,-R*0.5, 0,-R);
+        ctx.fillStyle = fill1;
+        ctx.fill();
+        ctx.strokeStyle = ground;
+        ctx.lineWidth = outline;
+        ctx.stroke();
+        // 4 petal cuts into the circle
+        for (let p=0;p<4;p++) {
+          const pa = (p/4)*Math.PI*2 + Math.PI/4;
+          ctx.save();
+          ctx.rotate(pa);
+          ctx.beginPath();
+          ctx.ellipse(0, -R*0.58, R*0.22, R*0.38, 0, 0, Math.PI*2);
+          ctx.fillStyle = fill2;
+          ctx.fill();
+          ctx.strokeStyle = ground;
+          ctx.lineWidth = outline*0.7;
+          ctx.stroke();
+          ctx.restore();
+        }
+        // Inner circle
+        ctx.beginPath();
+        ctx.arc(0, 0, R*0.22, 0, Math.PI*2);
+        ctx.fillStyle = fill3;
+        ctx.fill();
+        ctx.strokeStyle = ground;
+        ctx.lineWidth = outline*0.7;
+        ctx.stroke();
+
+      } else {
+        // Starburst
+        const points = 6 + Math.floor(cx/25);
+        for (let p=0;p<points;p++) {
+          const pa = (p/points)*Math.PI*2;
+          ctx.save();
+          ctx.rotate(pa);
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.bezierCurveTo(-R*0.22, -R*0.3, -R*0.18, -R*0.7, 0, -R*0.82);
+          ctx.bezierCurveTo(R*0.18, -R*0.7, R*0.22, -R*0.3, 0, 0);
+          ctx.fillStyle = p%2===0 ? fill1 : fill2;
+          ctx.fill();
+          ctx.strokeStyle = ground;
+          ctx.lineWidth = outline*0.8;
+          ctx.stroke();
+          ctx.restore();
+        }
+        // Center
+        ctx.beginPath();
+        ctx.arc(0, 0, R*0.2, 0, Math.PI*2);
+        ctx.fillStyle = fill3;
+        ctx.fill();
+        ctx.strokeStyle = ground;
+        ctx.lineWidth = outline*0.7;
+        ctx.stroke();
+      }
+
+      ctx.restore();
+
+      // Dot scatter between motifs — classic batik filler
+      if (dots) {
+        const dotR = Math.max(2, tile*0.04);
+        const dotPositions = [
+          [cx0+tile*0.35, cy0+tile*0.35],
+          [cx0-tile*0.35, cy0+tile*0.35],
+          [cx0+tile*0.35, cy0-tile*0.35],
+          [cx0-tile*0.35, cy0-tile*0.35],
+        ];
+        dotPositions.forEach(([dx,dy]) => {
+          ctx.beginPath();
+          ctx.arc(dx, dy, dotR, 0, Math.PI*2);
+          ctx.fillStyle = colors[(ci+2)%colors.length];
+          ctx.globalAlpha = 0.75; ctx.fill(); ctx.globalAlpha = 1;
+        });
+      }
+    }
+  }
+  ctx.restore();
+}
+
+function drawFloral(ctx, w, h, colors, tile, rot, cx) {
+  // Formal damask-style floral — symmetrical 6-petal blooms with layered detail
+  ctx.fillStyle = colors[colors.length-1]||colors[0];
+  ctx.fillRect(0,0,w,h);
+  const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
+  const petalLayers = Math.max(1, Math.floor(cx/30));
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const ox = (r%2===0)?0:tile*0.5;
+      const cx0 = cl*tile+tile/2+ox, cy0 = r*tile+tile/2;
+      const ci = Math.abs(r*cols+cl)%colors.length;
+      const petals = 6;
+      const baseR = tile*0.34;
+      // Draw petal layers from outside in
+      for (let layer=0; layer<=petalLayers; layer++) {
+        const frac = 1 - layer/(petalLayers+1);
+        const pr = baseR*frac;
+        const petalW = pr*0.55, petalH = pr*0.28;
+        const offset = layer%2===0 ? 0 : Math.PI/petals;
+        for (let p=0; p<petals; p++) {
+          const angle = (p/petals)*Math.PI*2 + offset;
+          const px = cx0 + Math.cos(angle)*pr*0.7;
+          const py = cy0 + Math.sin(angle)*pr*0.7;
+          ctx.beginPath();
+          ctx.ellipse(px, py, petalW, petalH, angle, 0, Math.PI*2);
+          ctx.fillStyle = colors[(ci+layer)%colors.length];
+          ctx.globalAlpha = 0.85;
+          ctx.fill();
+          ctx.globalAlpha = 1;
+        }
+      }
+      // Center stamen cluster
+      const stamens = 8 + Math.floor(cx/15);
+      for (let s=0; s<stamens; s++) {
+        const sa = (s/stamens)*Math.PI*2;
+        const sr = tile*0.08;
+        ctx.beginPath();
+        ctx.arc(cx0+Math.cos(sa)*sr, cy0+Math.sin(sa)*sr, tile*0.025, 0, Math.PI*2);
+        ctx.fillStyle = colors[(ci+2)%colors.length];
+        ctx.fill();
+      }
+      // Center dot
+      ctx.beginPath();
+      ctx.arc(cx0, cy0, tile*0.07, 0, Math.PI*2);
+      ctx.fillStyle = colors[(ci+1)%colors.length];
+      ctx.fill();
+      // Connecting stems to next tile
+      if (cx > 50) {
+        [[cx0,cy0-tile/2],[cx0,cy0+tile/2],[cx0-tile/2,cy0],[cx0+tile/2,cy0]].forEach(([tx,ty]) => {
+          ctx.beginPath();
+          ctx.moveTo(cx0, cy0);
+          ctx.bezierCurveTo(cx0, (cy0+ty)/2, tx, (cy0+ty)/2, tx, ty);
+          ctx.strokeStyle = colors[(ci+3)%colors.length];
+          ctx.lineWidth = Math.max(0.8, tile*0.02);
+          ctx.globalAlpha = 0.4; ctx.stroke(); ctx.globalAlpha = 1;
+        });
+      }
+    }
+  }
+  ctx.restore();
+}
+
+function drawAdinkra(ctx, w, h, colors, tile, rot, cx) {
+  // Ghanaian Adinkra — Gye Nyame + Sankofa + Dwennimmen inspired geometric symbols
+  ctx.fillStyle = colors[colors.length-1]||colors[0];
+  ctx.fillRect(0,0,w,h);
+  const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
+  const symbols = [''gye'',''sankofa'',''dwennimmen'',''funtunfunefu'',''nkyinkyim''];
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const ox = (r%2===0)?0:tile*0.5;
+      const cx0 = cl*tile+tile/2+ox, cy0 = r*tile+tile/2;
+      const ci = Math.abs(r*cols+cl)%colors.length;
+      const sym = symbols[(Math.abs(r*cols+cl))%symbols.length];
+      const ink = colors[ci%colors.length];
+      const bg2 = colors[(ci+1)%colors.length];
+      const R = tile*0.38;
+      ctx.strokeStyle = ink;
+      ctx.fillStyle = bg2;
+      ctx.lineWidth = Math.max(1.2, tile*0.03);
+      ctx.save();
+      ctx.translate(cx0, cy0);
+      if (sym === ''gye'') {
+        // Gye Nyame — "except God" — concentric rings with cross
+        for (let i=3;i>=1;i--) {
+          ctx.beginPath();
+          ctx.arc(0, 0, R*(i/3), 0, Math.PI*2);
+          ctx.strokeStyle = ink; ctx.stroke();
+        }
+        ctx.beginPath();
+        ctx.moveTo(-R,0); ctx.lineTo(R,0);
+        ctx.moveTo(0,-R); ctx.lineTo(0,R);
+        ctx.stroke();
+        ctx.beginPath(); ctx.arc(0,0,R*0.18,0,Math.PI*2);
+        ctx.fillStyle=ink; ctx.fill();
+      } else if (sym === ''sankofa'') {
+        // Sankofa — heart shape with backward bird implication (two arcs)
+        ctx.beginPath();
+        ctx.arc(-R*0.38, -R*0.18, R*0.38, Math.PI*0.1, Math.PI*1.1);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(R*0.38, -R*0.18, R*0.38, Math.PI*0, Math.PI*1.0);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(-R*0.72, -R*0.1);
+        ctx.bezierCurveTo(-R*0.4, R*0.6, R*0.4, R*0.6, R*0.72, -R*0.1);
+        ctx.stroke();
+        ctx.beginPath(); ctx.arc(0, R*0.28, R*0.14, 0, Math.PI*2);
+        ctx.fillStyle=ink; ctx.fill();
+      } else if (sym === ''dwennimmen'') {
+        // Ram''s horns — 4 spirals
+        [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx,sy]) => {
+          ctx.beginPath();
+          ctx.arc(sx*R*0.36, sy*R*0.36, R*0.3, 0, Math.PI*1.5*Math.sign(sx*sy)*-1);
+          ctx.stroke();
+        });
+        ctx.beginPath(); ctx.arc(0,0,R*0.15,0,Math.PI*2);
+        ctx.fillStyle=ink; ctx.fill();
+      } else if (sym === ''funtunfunefu'') {
+        // Two-headed crocodile — two overlapping circles with dividing line
+        ctx.beginPath(); ctx.arc(-R*0.28,0,R*0.36,0,Math.PI*2); ctx.stroke();
+        ctx.beginPath(); ctx.arc(R*0.28,0,R*0.36,0,Math.PI*2); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0,-R*0.4); ctx.lineTo(0,R*0.4); ctx.stroke();
+        ctx.beginPath(); ctx.arc(0,0,R*0.14,0,Math.PI*2);
+        ctx.fillStyle=ink; ctx.fill();
+      } else {
+        // Nkyinkyim — adaptation — zigzag S-curve
+        ctx.beginPath();
+        ctx.moveTo(-R,-R*0.5);
+        ctx.bezierCurveTo(-R*0.3,R*0.1, R*0.3,-R*0.1, R,R*0.5);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(-R,R*0.5);
+        ctx.bezierCurveTo(-R*0.3,-R*0.1, R*0.3,R*0.1, R,-R*0.5);
+        ctx.stroke();
+        // Corner dots
+        [[-R,-R*0.5],[R,R*0.5],[-R,R*0.5],[R,-R*0.5]].forEach(([px,py]) => {
+          ctx.beginPath(); ctx.arc(px,py,R*0.1,0,Math.PI*2);
+          ctx.fillStyle=ink; ctx.fill();
+        });
+      }
+      // Separator lines between tiles (classic adinkra stamped grid)
+      if (cx > 30) {
+        ctx.strokeStyle = colors[(ci+2)%colors.length];
+        ctx.lineWidth = Math.max(0.5, tile*0.015);
+        ctx.globalAlpha = 0.3;
+        ctx.beginPath();
+        ctx.moveTo(-tile/2, tile/2); ctx.lineTo(tile/2, tile/2);
+        ctx.moveTo(tile/2, -tile/2); ctx.lineTo(tile/2, tile/2);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+
+function drawMudcloth(ctx, w, h, colors, tile, rot, cx) {
+  // West African bogolan mudcloth — bold geometric marks on earthy ground
+  ctx.fillStyle = colors[0];
+  ctx.fillRect(0,0,w,h);
+  const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
+  const motifs = [''cross'',''square'',''zigzag'',''bars'',''diamond''];
+  const detail = cx > 50;
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const ox = 0; // mudcloth is strict grid
+      const cx0 = cl*tile+tile/2, cy0 = r*tile+tile/2;
+      const ci = Math.abs(r*cols+cl)%colors.length;
+      const motif = motifs[(Math.abs(r*2+cl))%motifs.length];
+      const ink = colors[(ci+1)%colors.length];
+      const mark = tile*0.36;
+      const lw = Math.max(2, tile*0.05);
+      ctx.fillStyle = ink;
+      ctx.strokeStyle = ink;
+      ctx.lineWidth = lw;
+      if (motif === ''cross'') {
+        ctx.fillRect(cx0-lw/2, cy0-mark, lw, mark*2);
+        ctx.fillRect(cx0-mark, cy0-lw/2, mark*2, lw);
+        if (detail) {
+          ctx.fillRect(cx0-mark*0.6, cy0-mark*0.6, mark*0.5, mark*0.5);
+          ctx.fillRect(cx0+mark*0.1, cy0-mark*0.6, mark*0.5, mark*0.5);
+          ctx.fillRect(cx0-mark*0.6, cy0+mark*0.1, mark*0.5, mark*0.5);
+          ctx.fillRect(cx0+mark*0.1, cy0+mark*0.1, mark*0.5, mark*0.5);
+        }
+      } else if (motif === ''square'') {
+        ctx.strokeRect(cx0-mark, cy0-mark, mark*2, mark*2);
+        if (detail) ctx.strokeRect(cx0-mark*0.55, cy0-mark*0.55, mark*1.1, mark*1.1);
+        ctx.fillRect(cx0-lw, cy0-lw, lw*2, lw*2);
+      } else if (motif === ''zigzag'') {
+        ctx.beginPath();
+        ctx.moveTo(cx0-mark, cy0-mark*0.5);
+        for (let z=0;z<4;z++) {
+          const zx = cx0-mark + z*(mark*0.5);
+          ctx.lineTo(zx+mark*0.25, cy0+(z%2===0?mark*0.5:-mark*0.5));
+        }
+        ctx.lineWidth = lw*1.2; ctx.stroke(); ctx.lineWidth = lw;
+        if (detail) {
+          ctx.beginPath();
+          ctx.moveTo(cx0-mark, cy0);
+          for (let z=0;z<4;z++) {
+            const zx = cx0-mark + z*(mark*0.5);
+            ctx.lineTo(zx+mark*0.25, cy0+(z%2===0?mark*0.35:-mark*0.35));
+          }
+          ctx.globalAlpha=0.4; ctx.stroke(); ctx.globalAlpha=1;
+        }
+      } else if (motif === ''bars'') {
+        const barCount = 3 + Math.floor(cx/25);
+        for (let b=0;b<barCount;b++) {
+          const bx = cx0-mark + b*(mark*2/(barCount-1));
+          ctx.fillRect(bx-lw*0.4, cy0-mark, lw*0.8, mark*2);
+        }
+      } else {
+        // Diamond
+        ctx.beginPath();
+        ctx.moveTo(cx0, cy0-mark);
+        ctx.lineTo(cx0+mark, cy0);
+        ctx.lineTo(cx0, cy0+mark);
+        ctx.lineTo(cx0-mark, cy0);
+        ctx.closePath(); ctx.stroke();
+        if (detail) {
+          ctx.fillRect(cx0-lw*0.5, cy0-lw*0.5, lw, lw);
+        }
+        // Corner marks
+        [[0,-1],[0,1],[1,0],[-1,0]].forEach(([dx,dy]) => {
+          ctx.fillRect(cx0+dx*mark*0.55-lw*0.4, cy0+dy*mark*0.55-lw*0.4, lw*0.8, lw*0.8);
+        });
+      }
+      // Horizontal grid separator
+      ctx.globalAlpha = 0.25;
+      ctx.fillStyle = colors[(ci+2)%colors.length];
+      ctx.fillRect(cl*tile+ox-tile/2, r*tile+tile-lw/2, tile, lw*0.5);
+      ctx.globalAlpha = 1;
+    }
+  }
+  ctx.restore();
+}
+
+function drawAsianLattice(ctx, w, h, colors, tile, rot, cx) {
+  // East Asian fretwork — interlocking squares, chrysanthemum centers, swastika fret
+  ctx.fillStyle = colors[colors.length-1]||colors[0];
+  ctx.fillRect(0,0,w,h);
+  const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
+  const detail = cx > 40;
+  const extraDetail = cx > 70;
+  const lw = Math.max(1, tile*0.025);
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const ox = 0;
+      const cx0 = cl*tile+tile/2, cy0 = r*tile+tile/2;
+      const ci = Math.abs(r+cl)%colors.length;
+      const ink = colors[ci%colors.length];
+      const accent = colors[(ci+1)%colors.length];
+      const fill2 = colors[(ci+2)%colors.length];
+      const m = tile*0.42; // half-size
+      ctx.strokeStyle = ink;
+      ctx.lineWidth = lw;
+      // Outer square frame
+      ctx.strokeRect(cx0-m, cy0-m, m*2, m*2);
+      // Inner rotated square (like a diamond inside)
+      ctx.beginPath();
+      ctx.moveTo(cx0, cy0-m);
+      ctx.lineTo(cx0+m, cy0);
+      ctx.lineTo(cx0, cy0+m);
+      ctx.lineTo(cx0-m, cy0);
+      ctx.closePath();
+      ctx.strokeStyle = accent;
+      ctx.stroke();
+      // Corner connecting fret lines
+      ctx.strokeStyle = ink;
+      const fret = m*0.5;
+      [[cx0-m,cy0-m],[cx0+m,cy0-m],[cx0-m,cy0+m],[cx0+m,cy0+m]].forEach(([fx,fy]) => {
+        const sx = fx===cx0-m ? 1 : -1;
+        const sy = fy===cy0-m ? 1 : -1;
+        ctx.beginPath();
+        ctx.moveTo(fx, fy);
+        ctx.lineTo(fx+sx*fret, fy);
+        ctx.lineTo(fx+sx*fret, fy+sy*fret);
+        ctx.stroke();
+      });
+      // Chrysanthemum center
+      if (detail) {
+        const petalR = m*0.26;
+        const petalCount = 8 + Math.floor(cx/18);
+        for (let p=0;p<petalCount;p++) {
+          const pa = (p/petalCount)*Math.PI*2;
+          ctx.beginPath();
+          ctx.ellipse(
+            cx0+Math.cos(pa)*petalR*1.2,
+            cy0+Math.sin(pa)*petalR*1.2,
+            petalR*0.45, petalR*0.22, pa, 0, Math.PI*2
+          );
+          ctx.fillStyle = p%2===0 ? accent : fill2;
+          ctx.globalAlpha = 0.8; ctx.fill(); ctx.globalAlpha = 1;
+        }
+        ctx.beginPath();
+        ctx.arc(cx0, cy0, petalR*0.4, 0, Math.PI*2);
+        ctx.fillStyle = ink; ctx.fill();
+      }
+      // Mid-edge connectors
+      if (extraDetail) {
+        ctx.strokeStyle = fill2;
+        ctx.lineWidth = lw*0.7;
+        [[cx0-m,cy0],[cx0+m,cy0],[cx0,cy0-m],[cx0,cy0+m]].forEach(([mx2,my2]) => {
+          ctx.beginPath();
+          ctx.arc(mx2, my2, m*0.12, 0, Math.PI*2);
+          ctx.fillStyle = fill2; ctx.fill();
+        });
+        ctx.lineWidth = lw;
+      }
+    }
+  }
+  ctx.restore();
+}
+
+function drawShibori(ctx, w, h, colors, tile, rot, cx) {
+  const ground = colors[0];
+  const ring1  = colors[1] || colors[0];
+  const ring2  = colors[2] || ring1;
+  ctx.fillStyle = ground;
+  ctx.fillRect(0,0,w,h);
+  const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
+  const rings = Math.max(3, Math.floor(cx/15));
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const ox = (r%2===0)?0:tile*0.5;
+      const cx0 = cl*tile+tile/2+ox, cy0 = r*tile+tile/2;
+      const isAlt = (r+cl)%2===0;
+      const rx = tile*(isAlt?0.46:0.38), ry = tile*(isAlt?0.28:0.44);
+      for (let ring=rings;ring>=1;ring--) {
+        const frac = ring/rings;
+        ctx.beginPath();
+        ctx.ellipse(cx0, cy0, rx*frac, ry*frac, isAlt?0.2:-0.2, 0, Math.PI*2);
+        ctx.strokeStyle = ring%2===0 ? ring1 : ring2;
+        ctx.lineWidth = Math.max(0.6, tile*0.022);
+        ctx.globalAlpha = 0.45 + frac*0.45;
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+      ctx.beginPath();
+      ctx.arc(cx0, cy0, Math.max(1.5, tile*0.04), 0, Math.PI*2);
+      ctx.fillStyle = ring2; ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+
+function drawSuzani(ctx, w, h, colors, tile, rot, cx) {
+  ctx.fillStyle = colors[colors.length-1]||colors[0];
+  ctx.fillRect(0,0,w,h);
+  const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
+  const petalCount = 8 + Math.floor(cx/18);
+  const detail = cx > 45;
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const ox = (r%2===0)?0:tile*0.5;
+      const cx0 = cl*tile+tile/2+ox, cy0 = r*tile+tile/2;
+      const ci = Math.abs(r*cols+cl)%colors.length;
+      const R = tile*0.42;
+      ctx.save(); ctx.translate(cx0,cy0);
+      for (let p=0;p<petalCount;p++) {
+        const angle = (p/petalCount)*Math.PI*2;
+        ctx.beginPath();
+        ctx.moveTo(0,0);
+        ctx.lineTo(Math.cos(angle)*R, Math.sin(angle)*R);
+        ctx.strokeStyle = colors[ci%colors.length];
+        ctx.lineWidth = Math.max(1, tile*0.025);
+        ctx.globalAlpha = 0.35; ctx.stroke(); ctx.globalAlpha = 1;
+      }
+      for (let p=0;p<petalCount;p++) {
+        const angle = (p/petalCount)*Math.PI*2;
+        const px = Math.cos(angle)*R*0.65, py = Math.sin(angle)*R*0.65;
+        ctx.beginPath();
+        ctx.ellipse(px, py, tile*0.13, tile*0.07, angle, 0, Math.PI*2);
+        ctx.fillStyle = colors[(ci+p%3)%colors.length];
+        ctx.globalAlpha = 0.88; ctx.fill(); ctx.globalAlpha=1;
+      }
+      ctx.beginPath();
+      ctx.arc(0,0,R*0.32,0,Math.PI*2);
+      ctx.strokeStyle = colors[(ci+1)%colors.length];
+      ctx.lineWidth = Math.max(1.5, tile*0.035); ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(0,0,tile*0.1,0,Math.PI*2);
+      ctx.fillStyle = colors[(ci+2)%colors.length]; ctx.fill();
+      if (detail) {
+        const ic = Math.floor(petalCount/2);
+        for (let p=0;p<ic;p++) {
+          const angle = (p/ic)*Math.PI*2 + Math.PI/ic;
+          const px = Math.cos(angle)*R*0.35, py = Math.sin(angle)*R*0.35;
+          ctx.beginPath();
+          ctx.ellipse(px,py,tile*0.07,tile*0.04,angle,0,Math.PI*2);
+          ctx.fillStyle=colors[(ci+2)%colors.length];
+          ctx.globalAlpha=0.7; ctx.fill(); ctx.globalAlpha=1;
+        }
+      }
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+
+function drawCintemani(ctx, w, h, colors, tile, rot, cx) {
+  ctx.fillStyle = colors[colors.length-1]||colors[0];
+  ctx.fillRect(0,0,w,h);
+  const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
+  const detail = cx > 40;
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const ox = (r%2===0)?0:tile*0.5;
+      const cx0 = cl*tile+tile/2+ox, cy0 = r*tile+tile/2;
+      const ci = Math.abs(r*cols+cl)%colors.length;
+      ctx.save(); ctx.translate(cx0,cy0);
+      const dotR = Math.max(3, tile*0.1);
+      const dotPositions = [[-tile*0.2,-tile*0.22],[tile*0.2,-tile*0.22],[0,-tile*0.06]];
+      dotPositions.forEach(([dx,dy],i) => {
+        ctx.beginPath();
+        ctx.arc(dx, dy, dotR, 0, Math.PI*2);
+        ctx.fillStyle = colors[(ci+i)%colors.length]; ctx.fill();
+        if (detail) {
+          ctx.beginPath();
+          ctx.arc(dx, dy, dotR*0.45, 0, Math.PI*2);
+          ctx.fillStyle = colors[(ci+i+2)%colors.length]; ctx.fill();
+        }
+      });
+      const waveY1 = tile*0.18, waveY2 = tile*0.33, amp = tile*0.08;
+      [waveY1, waveY2].forEach((wy, wi) => {
+        ctx.beginPath();
+        ctx.moveTo(-tile/2, wy);
+        for (let x=-tile/2; x<=tile/2; x+=4) {
+          ctx.lineTo(x, wy + Math.sin((x/tile)*Math.PI*2)*amp);
+        }
+        ctx.strokeStyle = colors[(ci+1+wi)%colors.length];
+        ctx.lineWidth = Math.max(1.5, tile*0.03); ctx.stroke();
+      });
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+
+function drawPaisley(ctx, w, h, colors, tile, rot, cx) {
+  ctx.fillStyle = colors[colors.length-1]||colors[0];
+  ctx.fillRect(0,0,w,h);
+  const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
+  const detail = cx > 35;
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const ox = (r%2===0)?0:tile*0.5;
+      const cx0 = cl*tile+tile/2+ox, cy0 = r*tile+tile/2;
+      const ci = Math.abs(r*cols+cl)%colors.length;
+      const isFlipped = (r+cl)%2===0;
+      const H = tile*0.44, W = tile*0.28;
+      ctx.save(); ctx.translate(cx0,cy0);
+      if (isFlipped) ctx.scale(1,-1);
+      ctx.beginPath();
+      ctx.moveTo(0,H*0.5);
+      ctx.bezierCurveTo(-W*1.1,H*0.2,-W*1.0,-H*0.4,-W*0.1,-H*0.5);
+      ctx.bezierCurveTo(0,-H*0.52,0,-H*0.52,W*0.1,-H*0.5);
+      ctx.bezierCurveTo(W*1.0,-H*0.4,W*1.1,H*0.2,0,H*0.5);
+      ctx.fillStyle = colors[ci%colors.length]; ctx.fill();
+      const sc = 0.6;
+      ctx.beginPath();
+      ctx.moveTo(0,H*0.5*sc);
+      ctx.bezierCurveTo(-W*1.1*sc,H*0.2*sc,-W*1.0*sc,-H*0.4*sc,-W*0.1*sc,-H*0.5*sc);
+      ctx.bezierCurveTo(0,-H*0.52*sc,0,-H*0.52*sc,W*0.1*sc,-H*0.5*sc);
+      ctx.bezierCurveTo(W*1.0*sc,-H*0.4*sc,W*1.1*sc,H*0.2*sc,0,H*0.5*sc);
+      ctx.fillStyle = colors[(ci+1)%colors.length]; ctx.fill();
+      ctx.beginPath();
+      ctx.arc(W*0.25,-H*0.48,tile*0.07,0,Math.PI*1.5);
+      ctx.strokeStyle=colors[(ci+2)%colors.length];
+      ctx.lineWidth=Math.max(1,tile*0.025); ctx.stroke();
+      if (detail) {
+        ctx.beginPath(); ctx.arc(0,-H*0.1,tile*0.06,0,Math.PI*2);
+        ctx.fillStyle=colors[(ci+2)%colors.length]; ctx.fill();
+      }
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+
+function drawKuba(ctx, w, h, colors, tile, rot, cx) {
+  ctx.fillStyle = colors[0];
+  ctx.fillRect(0,0,w,h);
+  const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
+  const detail = cx > 40;
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const ox = (r%2===0)?0:tile*0.5;
+      const cx0 = cl*tile+tile/2+ox, cy0 = r*tile+tile/2;
+      const ci = Math.abs(r*cols+cl)%colors.length;
+      const H = tile*0.48, W = tile*0.48;
+      const isAlt = (r+cl)%2===0;
+      ctx.save(); ctx.translate(cx0,cy0);
+      if (!isAlt) {
+        ctx.fillStyle = colors[(ci+1)%colors.length];
+        ctx.fillRect(-W,-H,W*2,H*2);
+        ctx.beginPath();
+        ctx.moveTo(-W,-H); ctx.lineTo(W,H);
+        ctx.moveTo(W,-H); ctx.lineTo(-W,H);
+        ctx.strokeStyle=colors[ci%colors.length];
+        ctx.lineWidth=Math.max(2,tile*0.06); ctx.stroke();
+        const sq = tile*0.18;
+        ctx.fillStyle=colors[ci%colors.length];
+        ctx.fillRect(-sq,-sq,sq*2,sq*2);
+        if (detail) {
+          ctx.fillStyle=colors[(ci+2)%colors.length];
+          ctx.fillRect(-sq*0.5,-sq*0.5,sq,sq);
+        }
+      } else {
+        const s = tile*0.14;
+        ctx.fillStyle=colors[(ci+2)%colors.length];
+        ctx.fillRect(-W*0.8,-s,W*1.6,s*2);
+        ctx.fillRect(-s,-H*0.8,s*2,H*1.6);
+        [[-W*0.55,-H*0.55],[W*0.55,-H*0.55],[-W*0.55,H*0.55],[W*0.55,H*0.55]].forEach(([dx,dy]) => {
+          ctx.fillStyle=colors[(ci+1)%colors.length];
+          ctx.fillRect(dx-s*0.7,dy-s*0.7,s*1.4,s*1.4);
+        });
+      }
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+
+function drawZellige(ctx, w, h, colors, tile, rot, cx) {
+  ctx.fillStyle = colors[colors.length-1]||colors[0];
+  ctx.fillRect(0,0,w,h);
+  const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
+  const detail = cx > 45;
+  const lw = Math.max(1.5, tile*0.03);
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const cx0 = cl*tile+tile/2, cy0 = r*tile+tile/2;
+      const ci = Math.abs(r+cl)%colors.length;
+      const R = tile*0.46;
+      const outerR = R, innerR = R*0.42;
+      const pts = 8;
+      ctx.save(); ctx.translate(cx0,cy0);
+      ctx.beginPath();
+      for (let p=0;p<pts*2;p++) {
+        const angle = (p/pts)*Math.PI - Math.PI/pts;
+        const r2 = p%2===0 ? outerR : innerR;
+        const x = Math.cos(angle)*r2, y = Math.sin(angle)*r2;
+        p===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+      }
+      ctx.closePath();
+      ctx.fillStyle=colors[ci%colors.length]; ctx.fill();
+      ctx.strokeStyle=colors[(ci+2)%colors.length];
+      ctx.lineWidth=lw*0.6; ctx.globalAlpha=0.4; ctx.stroke(); ctx.globalAlpha=1;
+      if (detail) {
+        ctx.beginPath();
+        for (let p=0;p<pts*2;p++) {
+          const angle = (p/pts)*Math.PI - Math.PI/pts;
+          const r2 = p%2===0 ? outerR*0.55 : innerR*0.55;
+          const x = Math.cos(angle)*r2, y = Math.sin(angle)*r2;
+          p===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+        }
+        ctx.closePath();
+        ctx.fillStyle=colors[(ci+1)%colors.length]; ctx.fill();
+      }
+      ctx.beginPath(); ctx.arc(0,0,tile*0.08,0,Math.PI*2);
+      ctx.fillStyle=colors[(ci+2)%colors.length]; ctx.fill();
+      const sq = tile*0.15;
+      [[0,-R*1.05],[0,R*1.05],[-R*1.05,0],[R*1.05,0]].forEach(([dx,dy]) => {
+        ctx.fillStyle=colors[(ci+1)%colors.length];
+        ctx.fillRect(dx-sq/2,dy-sq/2,sq,sq);
+      });
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+
+function drawBotanical(ctx, w, h, colors, tile, rot, cx) {
+  ctx.fillStyle = colors[colors.length-1] || colors[0];
+  ctx.fillRect(0, 0, w, h);
+  const cols = Math.ceil(w / tile) + 2;
+  const rows = Math.ceil(h / tile) + 2;
+  const leafCount = Math.max(2, Math.floor(cx / 18));
+  ctx.save();
+  ctx.translate(w/2, h/2);
+  ctx.rotate(rot * Math.PI / 180);
+  ctx.translate(-w/2, -h/2);
+  for (let r = -1; r < rows; r++) {
+    for (let c = -1; c < cols; c++) {
+      const offset = (r % 2 === 0) ? 0 : tile * 0.5;
+      const cx0 = c * tile + tile/2 + offset;
+      const cy0 = r * tile + tile/2;
+      const ci = (r * 3 + c) % colors.length;
+      const stemColor = colors[Math.abs(ci) % colors.length];
+      const leafColor = colors[Math.abs(ci + 1) % colors.length];
+      const leafColor2 = colors[Math.abs(ci + 2) % colors.length];
+      ctx.beginPath();
+      ctx.moveTo(cx0, cy0 + tile * 0.45);
+      ctx.bezierCurveTo(cx0, cy0 + tile * 0.2, cx0, cy0 - tile * 0.2, cx0, cy0 - tile * 0.45);
+      ctx.strokeStyle = stemColor;
+      ctx.lineWidth = Math.max(1, tile * 0.04);
+      ctx.stroke();
+      for (let l = 0; l < leafCount; l++) {
+        const t = (l + 0.5) / leafCount;
+        const ly = cy0 + tile * 0.45 - t * tile * 0.9;
+        const side = l % 2 === 0 ? 1 : -1;
+        const lw = tile * 0.22 * (0.7 + cx / 200);
+        const lh = tile * 0.12;
+        ctx.beginPath();
+        ctx.ellipse(cx0 + side * lw * 0.6, ly, lw, lh, side * 0.4, 0, Math.PI * 2);
+        ctx.fillStyle = l % 2 === 0 ? leafColor : leafColor2;
+        ctx.globalAlpha = 0.88;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+      const bloomR = tile * 0.1;
+      ctx.beginPath();
+      ctx.arc(cx0, cy0 - tile * 0.42, bloomR, 0, Math.PI * 2);
+      ctx.fillStyle = colors[Math.abs(ci + 2) % colors.length];
+      ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+
+function drawNdebele(ctx, w, h, colors, tile, rot, cx) {
+  ctx.fillStyle = colors[0];
+  ctx.fillRect(0,0,w,h);
+  const rows = Math.ceil(h/tile)+2;
+  const detail = cx > 40;
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    const y = r*tile;
+    const ci = Math.abs(r)%colors.length;
+    ctx.fillStyle = colors[ci%colors.length];
+    ctx.fillRect(0, y, w, tile*0.4);
+    ctx.fillStyle = colors[(ci+1)%colors.length];
+    ctx.fillRect(0, y+tile*0.4, w, tile*0.15);
+    const rW = tile*0.55, rH = tile*0.35;
+    const colCount = Math.ceil(w/tile)+2;
+    for (let cl=-1;cl<colCount;cl++) {
+      const rx = cl*tile + (r%2===0?0:tile*0.5);
+      ctx.fillStyle = colors[(ci+2+cl)%colors.length];
+      ctx.fillRect(rx, y+tile*0.55, rW, rH);
+      if (detail) {
+        ctx.fillStyle = colors[(ci+3)%colors.length];
+        ctx.fillRect(rx+rW*0.2, y+tile*0.6, rW*0.6, rH*0.55);
+      }
+    }
+    ctx.fillStyle = colors[(ci+3)%colors.length];
+    ctx.fillRect(0, y+tile*0.92, w, tile*0.08);
+  }
+  ctx.restore();
+}
+
+function drawTapa(ctx, w, h, colors, tile, rot, cx) {
+  const ground = colors[colors.length-1]||colors[0];
+  const ink    = colors[0];
+  ctx.fillStyle = ground;
+  ctx.fillRect(0,0,w,h);
+  const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
+  const detail = cx > 40;
+  const lw = Math.max(1.5, tile*0.03);
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    ctx.beginPath();
+    ctx.moveTo(-tile, r*tile+tile); ctx.lineTo(w+tile, r*tile+tile);
+    ctx.strokeStyle=ink; ctx.lineWidth=lw;
+    ctx.globalAlpha=0.3; ctx.stroke(); ctx.globalAlpha=1;
+  }
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const cx0 = cl*tile+tile/2, cy0 = r*tile+tile/2;
+      const ci  = Math.abs(r*3+cl)%colors.length;
+      const motifs = [''square'',''cross'',''diamond'',''triangle''];
+      const motif  = motifs[Math.abs(r*cols+cl)%motifs.length];
+      const m = tile*0.32;
+      ctx.strokeStyle = colors[ci%colors.length];
+      ctx.fillStyle   = colors[(ci+1)%colors.length];
+      ctx.lineWidth = lw;
+      ctx.save(); ctx.translate(cx0,cy0);
+      if (motif===''square'') {
+        ctx.strokeRect(-m,-m,m*2,m*2);
+        if (detail) ctx.strokeRect(-m*0.55,-m*0.55,m*1.1,m*1.1);
+      } else if (motif===''cross'') {
+        ctx.beginPath();
+        ctx.moveTo(-m,0); ctx.lineTo(m,0);
+        ctx.moveTo(0,-m); ctx.lineTo(0,m);
+        ctx.stroke();
+        if (detail) {
+          ctx.beginPath(); ctx.arc(0,0,m*0.2,0,Math.PI*2);
+          ctx.fillStyle=colors[ci%colors.length]; ctx.fill();
+        }
+      } else if (motif===''diamond'') {
+        ctx.beginPath();
+        ctx.moveTo(0,-m); ctx.lineTo(m,0); ctx.lineTo(0,m); ctx.lineTo(-m,0);
+        ctx.closePath(); ctx.stroke();
+      } else {
+        ctx.beginPath();
+        ctx.moveTo(0,-m); ctx.lineTo(m,m*0.8); ctx.lineTo(-m,m*0.8);
+        ctx.closePath(); ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+
+function drawOtomi(ctx, w, h, colors, tile, rot, cx) {
+  ctx.fillStyle = colors[colors.length-1] || colors[0];
+  ctx.fillRect(0,0,w,h);
+  const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const ox = (r%2===0)?0:tile*0.5;
+      const cx0 = cl*tile+tile/2+ox, cy0 = r*tile+tile/2;
+      const ci = Math.abs(r*cols+cl) % colors.length;
+      const motif = Math.abs(r*cols+cl) % 4;
+      const s = tile * 0.38;
+      ctx.save(); ctx.translate(cx0, cy0);
+      ctx.rotate((Math.abs(r+cl)%4) * Math.PI/2);
+      ctx.fillStyle = colors[ci%colors.length];
+      ctx.strokeStyle = colors[(ci+1)%colors.length];
+      ctx.lineWidth = Math.max(1, tile*0.025);
+      if (motif === 0) {
+        ctx.beginPath();
+        ctx.ellipse(0, 0, s*0.55, s*0.32, -0.3, 0, Math.PI*2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(-s*0.1, -s*0.18, s*0.35, s*0.18, 0.4, 0, Math.PI*2);
+        ctx.fillStyle = colors[(ci+1)%colors.length]; ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(s*0.5, 0); ctx.lineTo(s*0.82, -s*0.22); ctx.lineTo(s*0.82, s*0.22);
+        ctx.closePath(); ctx.fillStyle = colors[(ci+2)%colors.length]; ctx.fill();
+        ctx.beginPath(); ctx.arc(-s*0.38, -s*0.05, s*0.07, 0, Math.PI*2);
+        ctx.fillStyle = colors[(ci+2)%colors.length]; ctx.fill();
+      } else if (motif === 1) {
+        for (let p=0;p<5;p++) {
+          const a = (p/5)*Math.PI*2;
+          ctx.beginPath();
+          ctx.ellipse(Math.cos(a)*s*0.38, Math.sin(a)*s*0.38, s*0.22, s*0.14, a, 0, Math.PI*2);
+          ctx.fillStyle = colors[(ci+p%3)%colors.length]; ctx.fill();
+        }
+        ctx.beginPath(); ctx.arc(0,0,s*0.2,0,Math.PI*2);
+        ctx.fillStyle = colors[(ci+2)%colors.length]; ctx.fill();
+      } else if (motif === 2) {
+        ctx.beginPath();
+        ctx.moveTo(0,-s*0.55);
+        ctx.bezierCurveTo(s*0.35,-s*0.2, s*0.35,s*0.2, 0,s*0.55);
+        ctx.bezierCurveTo(-s*0.35,s*0.2, -s*0.35,-s*0.2, 0,-s*0.55);
+        ctx.fill();
+        ctx.beginPath(); ctx.moveTo(0,-s*0.55); ctx.lineTo(0,s*0.55);
+        ctx.strokeStyle = colors[(ci+1)%colors.length];
+        ctx.lineWidth = Math.max(0.8, tile*0.02); ctx.stroke();
+      } else {
+        ctx.beginPath();
+        ctx.ellipse(0, s*0.1, s*0.28, s*0.4, 0, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(0, -s*0.38, s*0.18, s*0.22, 0, 0, Math.PI*2);
+        ctx.fillStyle = colors[(ci+1)%colors.length]; ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(-s*0.08,-s*0.55); ctx.lineTo(-s*0.22,-s*0.78); ctx.lineTo(-s*0.08,-s*0.72);
+        ctx.moveTo(s*0.08,-s*0.55); ctx.lineTo(s*0.22,-s*0.78); ctx.lineTo(s*0.08,-s*0.72);
+        ctx.strokeStyle = colors[(ci+2)%colors.length]; ctx.lineWidth = Math.max(1.2, tile*0.03); ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+
+function drawPhulkari(ctx, w, h, colors, tile, rot, cx) {
+  ctx.fillStyle = colors[colors.length-1] || colors[0];
+  ctx.fillRect(0,0,w,h);
+  const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
+  const detail = cx > 40;
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const cx0 = cl*tile+tile/2, cy0 = r*tile+tile/2;
+      const ci = Math.abs(r+cl) % colors.length;
+      const sq = tile * 0.46;
+      ctx.save(); ctx.translate(cx0,cy0);
+      if ((r+cl)%2===0) {
+        ctx.fillStyle = colors[ci%colors.length];
+        ctx.fillRect(-sq,-sq,sq*2,sq*2);
+      }
+      ctx.beginPath();
+      ctx.moveTo(0,-sq*0.7); ctx.lineTo(sq*0.7,0); ctx.lineTo(0,sq*0.7); ctx.lineTo(-sq*0.7,0);
+      ctx.closePath();
+      ctx.strokeStyle = colors[(ci+1)%colors.length];
+      ctx.lineWidth = Math.max(1.5, tile*0.04); ctx.stroke();
+      const arm = sq*0.35;
+      [[0,-arm],[0,arm],[-arm,0],[arm,0]].forEach(([dx,dy]) => {
+        ctx.beginPath();
+        ctx.arc(dx,dy, Math.max(2,tile*0.06), 0, Math.PI*2);
+        ctx.fillStyle = colors[(ci+2)%colors.length]; ctx.fill();
+      });
+      if (detail) {
+        for (let p=0;p<8;p++) {
+          const a = (p/8)*Math.PI*2;
+          ctx.beginPath();
+          ctx.moveTo(0,0);
+          ctx.lineTo(Math.cos(a)*sq*0.28, Math.sin(a)*sq*0.28);
+          ctx.strokeStyle = colors[(ci+1+p%2)%colors.length];
+          ctx.lineWidth = Math.max(1,tile*0.025); ctx.stroke();
+        }
+      }
+      ctx.beginPath();
+      ctx.arc(0,0,Math.max(2,tile*0.1),0,Math.PI*2);
+      ctx.fillStyle = colors[(ci+2)%colors.length]; ctx.fill();
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+
+function drawAzulejo(ctx, w, h, colors, tile, rot, cx) {
+  const bg = colors[colors.length-1] || ''#f8f6f0'';
+  ctx.fillStyle = bg;
+  ctx.fillRect(0,0,w,h);
+  const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
+  const detail = cx > 40;
+  const lw = Math.max(1.5, tile*0.035);
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const cx0 = cl*tile+tile/2, cy0 = r*tile+tile/2;
+      const ci = Math.abs(r+cl) % colors.length;
+      const R = tile*0.46;
+      ctx.save(); ctx.translate(cx0,cy0);
+      ctx.beginPath(); ctx.arc(0,0,R,0,Math.PI*2);
+      ctx.strokeStyle = colors[ci%colors.length];
+      ctx.lineWidth = lw; ctx.stroke();
+      ctx.beginPath(); ctx.arc(0,0,R*0.62,0,Math.PI*2);
+      ctx.strokeStyle = colors[ci%colors.length];
+      ctx.lineWidth = lw*0.6; ctx.stroke();
+      for (let p=0;p<4;p++) {
+        const a = (p/4)*Math.PI*2;
+        ctx.beginPath();
+        ctx.arc(Math.cos(a)*R*0.35, Math.sin(a)*R*0.35, R*0.28, 0, Math.PI*2);
+        ctx.strokeStyle = colors[(ci+1)%colors.length];
+        ctx.lineWidth = lw*0.7; ctx.stroke();
+      }
+      [[0,-R],[R,0],[0,R],[-R,0]].forEach(([dx,dy]) => {
+        ctx.beginPath(); ctx.arc(dx,dy, Math.max(2,tile*0.065),0,Math.PI*2);
+        ctx.fillStyle = colors[(ci+2)%colors.length]; ctx.fill();
+      });
+      ctx.beginPath();
+      ctx.moveTo(-tile/2, 0); ctx.lineTo(0,-tile/2);
+      ctx.lineTo(tile/2,0); ctx.lineTo(0,tile/2); ctx.closePath();
+      ctx.strokeStyle = colors[(ci+1)%colors.length];
+      ctx.lineWidth = lw*0.5; ctx.globalAlpha=0.35; ctx.stroke(); ctx.globalAlpha=1;
+      if (detail) {
+        const innerR = R*0.22, outerR = R*0.38;
+        ctx.beginPath();
+        for (let p=0;p<16;p++) {
+          const a=(p/16)*Math.PI*2;
+          const r2=p%2===0?outerR:innerR;
+          ctx.lineTo(Math.cos(a)*r2, Math.sin(a)*r2);
+        }
+        ctx.closePath();
+        ctx.fillStyle = colors[ci%colors.length]; ctx.fill();
+      }
+      ctx.beginPath(); ctx.arc(0,0,Math.max(2,tile*0.08),0,Math.PI*2);
+      ctx.fillStyle = colors[(ci+2)%colors.length]; ctx.fill();
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+
+function drawQuatrefoil(ctx, w, h, colors, tile, rot, cx) {
+  ctx.fillStyle = colors[colors.length-1] || colors[0];
+  ctx.fillRect(0,0,w,h);
+  const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
+  const lw = Math.max(2, tile*0.045);
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const ox = (r%2===0)?0:tile*0.5;
+      const cx0 = cl*tile+tile/2+ox, cy0 = r*tile+tile/2;
+      const ci = Math.abs(r*cols+cl) % colors.length;
+      const rx = tile*0.44, ry = tile*0.52;
+      ctx.save(); ctx.translate(cx0,cy0);
+      ctx.beginPath();
+      ctx.moveTo(0,-ry);
+      ctx.bezierCurveTo(rx*0.6,-ry*0.8, rx,-ry*0.3, rx, 0);
+      ctx.bezierCurveTo(rx, ry*0.3, rx*0.6, ry*0.8, 0, ry);
+      ctx.bezierCurveTo(-rx*0.6,ry*0.8,-rx,ry*0.3,-rx,0);
+      ctx.bezierCurveTo(-rx,-ry*0.3,-rx*0.6,-ry*0.8,0,-ry);
+      ctx.closePath();
+      ctx.fillStyle = colors[ci%colors.length];
+      ctx.globalAlpha = 0.88; ctx.fill(); ctx.globalAlpha=1;
+      ctx.strokeStyle = colors[(ci+1)%colors.length];
+      ctx.lineWidth = lw; ctx.stroke();
+      if (cx > 35) {
+        const dotR = Math.max(1.5, tile*0.04);
+        const dotCount = 20;
+        for (let d=0;d<dotCount;d++) {
+          const a = (d/dotCount)*Math.PI*2;
+          const dx = Math.cos(a)*rx*0.72, dy = Math.sin(a)*ry*0.8;
+          ctx.beginPath(); ctx.arc(dx,dy,dotR,0,Math.PI*2);
+          ctx.fillStyle = colors[(ci+2)%colors.length];
+          ctx.globalAlpha=0.55; ctx.fill(); ctx.globalAlpha=1;
+        }
+      }
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+
+function drawTalavera(ctx, w, h, colors, tile, rot, cx) {
+  const bg = colors[colors.length-1] || ''#ffffff'';
+  ctx.fillStyle = bg;
+  ctx.fillRect(0,0,w,h);
+  const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
+  const detail = cx > 40;
+  const lw = Math.max(2, tile*0.045);
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const cx0 = cl*tile+tile/2, cy0 = r*tile+tile/2;
+      const ci = Math.abs(r+cl) % colors.length;
+      const R = tile*0.46;
+      ctx.save(); ctx.translate(cx0,cy0);
+      ctx.beginPath(); ctx.arc(0,0,R,0,Math.PI*2);
+      ctx.strokeStyle = colors[ci%colors.length]; ctx.lineWidth = lw; ctx.stroke();
+      const outerR = R*0.78, innerR = R*0.45;
+      ctx.beginPath();
+      for (let p=0;p<16;p++) {
+        const a = (p/16)*Math.PI*2 - Math.PI/16;
+        const r2 = p%2===0 ? outerR : innerR;
+        p===0 ? ctx.moveTo(Math.cos(a)*r2, Math.sin(a)*r2)
+              : ctx.lineTo(Math.cos(a)*r2, Math.sin(a)*r2);
+      }
+      ctx.closePath();
+      ctx.strokeStyle = colors[ci%colors.length]; ctx.lineWidth = lw; ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(-R,0); ctx.lineTo(R,0);
+      ctx.moveTo(0,-R); ctx.lineTo(0,R);
+      ctx.strokeStyle = colors[(ci+1)%colors.length];
+      ctx.lineWidth = Math.max(1.5, tile*0.04); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(-R*0.72,-R*0.72); ctx.lineTo(R*0.72,R*0.72);
+      ctx.moveTo(R*0.72,-R*0.72); ctx.lineTo(-R*0.72,R*0.72);
+      ctx.strokeStyle = colors[(ci+1)%colors.length];
+      ctx.lineWidth = Math.max(1,tile*0.025); ctx.globalAlpha=0.5; ctx.stroke(); ctx.globalAlpha=1;
+      [[0,-R*0.95],[R*0.95,0],[0,R*0.95],[-R*0.95,0]].forEach(([dx,dy]) => {
+        ctx.beginPath(); ctx.arc(dx,dy,Math.max(2,tile*0.07),0,Math.PI*2);
+        ctx.fillStyle = colors[(ci+2)%colors.length]; ctx.fill();
+      });
+      for (let p=0;p<4;p++) {
+        const a=(p/4)*Math.PI*2;
+        ctx.beginPath();
+        ctx.arc(Math.cos(a)*R*0.3, Math.sin(a)*R*0.3, R*0.22, 0, Math.PI*2);
+        ctx.strokeStyle = colors[ci%colors.length];
+        ctx.lineWidth = Math.max(1.2,tile*0.03); ctx.stroke();
+      }
+      ctx.beginPath(); ctx.arc(0,0,Math.max(3,tile*0.1),0,Math.PI*2);
+      ctx.fillStyle = colors[(ci+1)%colors.length]; ctx.fill();
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+
+function drawIkatDiamond(ctx, w, h, colors, tile, rot, cx) {
+  ctx.fillStyle = colors[0];
+  ctx.fillRect(0,0,w,h);
+  const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
+  const detail = cx > 35;
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const ox = (r%2===0)?0:tile*0.5;
+      const cx0 = cl*tile+tile/2+ox, cy0 = r*tile+tile/2;
+      const ci = Math.abs(r*cols+cl) % colors.length;
+      const H = tile*0.5, W = tile*0.46;
+      const isAlt = (r+cl)%2===0;
+      ctx.save(); ctx.translate(cx0,cy0);
+      ctx.beginPath();
+      ctx.moveTo(0,-H); ctx.lineTo(W,0); ctx.lineTo(0,H); ctx.lineTo(-W,0);
+      ctx.closePath();
+      ctx.fillStyle = colors[(ci+(isAlt?1:0))%colors.length];
+      ctx.fill();
+      const edgeCount = 10;
+      const jagged = (x1,y1,x2,y2,count,depth) => {
+        ctx.beginPath();
+        ctx.moveTo(x1,y1);
+        for (let i=1;i<=count;i++) {
+          const t=i/count;
+          const mx=(x1*(1-t)+x2*t), my=(y1*(1-t)+y2*t);
+          const nx=-(y2-y1)/Math.sqrt((x2-x1)**2+(y2-y1)**2);
+          const ny=(x2-x1)/Math.sqrt((x2-x1)**2+(y2-y1)**2);
+          const jitter = (i%2===0?1:-1)*depth;
+          ctx.lineTo(mx+nx*jitter, my+ny*jitter);
+        }
+        ctx.lineTo(x2,y2);
+      };
+      const jDepth = Math.max(2,tile*0.06);
+      ctx.fillStyle = colors[(ci+2)%colors.length];
+      ctx.globalAlpha=0.55;
+      jagged(0,-H, W,0, edgeCount, jDepth); ctx.lineTo(0,-H); ctx.closePath(); ctx.fill();
+      jagged(0,H, -W,0, edgeCount, jDepth); ctx.lineTo(0,H); ctx.closePath(); ctx.fill();
+      ctx.globalAlpha=1;
+      const sc = 0.55;
+      ctx.beginPath();
+      ctx.moveTo(0,-H*sc); ctx.lineTo(W*sc,0); ctx.lineTo(0,H*sc); ctx.lineTo(-W*sc,0);
+      ctx.closePath();
+      ctx.fillStyle = colors[(ci+1)%colors.length]; ctx.fill();
+      if (detail) {
+        const sc2 = 0.28;
+        ctx.beginPath();
+        ctx.moveTo(0,-H*sc2); ctx.lineTo(W*sc2,0); ctx.lineTo(0,H*sc2); ctx.lineTo(-W*sc2,0);
+        ctx.closePath();
+        ctx.fillStyle = colors[(ci+2)%colors.length]; ctx.fill();
+      }
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+
+/* ═══════════════════════════════════════════════
+   9 NEW CULTURAL DRAW FUNCTIONS
+   Adire · Kanga · Kente Strip · Andean · Greek Key
+   Hawaiian · Toile Scenic · Batik Tulis · Tartan
+═══════════════════════════════════════════════ */
+
+function drawAdire(ctx, w, h, colors, tile, rot, cx) {
+  // Yoruba adire — alternating oniko (concentric rings) and eleko (geometric cross) cells
+  ctx.fillStyle = colors[0];
+  ctx.fillRect(0,0,w,h);
+  const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
+  const detail = cx > 40;
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const cx0=cl*tile+tile/2, cy0=r*tile+tile/2;
+      const ci=Math.abs(r+cl)%colors.length;
+      const R=tile*0.44;
+      const isOniko=(r+cl)%2===0;
+      ctx.save(); ctx.translate(cx0,cy0);
+      if (isOniko) {
+        const rings=3+Math.floor(cx/25);
+        for (let ring=rings;ring>=0;ring--) {
+          ctx.beginPath(); ctx.arc(0,0,R*(ring/rings),0,Math.PI*2);
+          ctx.fillStyle=ring%2===0?colors[(ci+1)%colors.length]:colors[ci%colors.length];
+          ctx.fill();
+        }
+        if (detail) {
+          ctx.strokeStyle=colors[(ci+2)%colors.length];
+          ctx.lineWidth=Math.max(0.5,tile*0.015); ctx.globalAlpha=0.4;
+          ctx.beginPath(); ctx.moveTo(-R,0); ctx.lineTo(R,0); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(0,-R); ctx.lineTo(0,R); ctx.stroke();
+          ctx.globalAlpha=1;
+        }
+      } else {
+        const arm=R*0.86, aw=arm*0.26;
+        [[0,-1],[0,1],[1,0],[-1,0]].forEach(([dx,dy]) => {
+          ctx.beginPath();
+          ctx.moveTo(-dy*aw,-dx*aw); ctx.lineTo(dx*arm,dy*arm); ctx.lineTo(dy*aw,dx*aw);
+          ctx.closePath();
+          ctx.fillStyle=colors[(ci+1)%colors.length]; ctx.fill();
+        });
+        if (detail) {
+          const sq=tile*0.13;
+          [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx,sy]) => {
+            ctx.fillStyle=colors[(ci+2)%colors.length];
+            ctx.fillRect(sx*(R*0.52)-sq/2, sy*(R*0.52)-sq/2, sq, sq);
+          });
+        }
+        ctx.beginPath(); ctx.arc(0,0,tile*0.08,0,Math.PI*2);
+        ctx.fillStyle=colors[(ci+2)%colors.length]; ctx.fill();
+      }
+      ctx.strokeStyle=colors[ci%colors.length];
+      ctx.lineWidth=Math.max(0.5,tile*0.018); ctx.globalAlpha=0.18;
+      ctx.strokeRect(-tile/2+1,-tile/2+1,tile-2,tile-2); ctx.globalAlpha=1;
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+
+function drawKanga(ctx, w, h, colors, tile, rot, cx) {
+  // East African kanga — bold pindo border frame + geometric mji interior
+  ctx.fillStyle=colors[colors.length-1]||colors[0];
+  ctx.fillRect(0,0,w,h);
+  const cols=Math.ceil(w/tile)+2, rows=Math.ceil(h/tile)+2;
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const cx0=cl*tile+tile/2, cy0=r*tile+tile/2;
+      const ci=Math.abs(r+cl)%colors.length;
+      const m=tile*0.44, bw=tile*0.11;
+      ctx.save(); ctx.translate(cx0,cy0);
+      // Pindo border strips
+      ctx.fillStyle=colors[ci%colors.length];
+      ctx.fillRect(-m,-m,m*2,bw); ctx.fillRect(-m,m-bw,m*2,bw);
+      ctx.fillRect(-m,-m,bw,m*2); ctx.fillRect(m-bw,-m,bw,m*2);
+      // Corner accent squares
+      const cs=bw*1.15;
+      ctx.fillStyle=colors[(ci+2)%colors.length];
+      [[-m,-m],[m-cs,-m],[-m,m-cs],[m-cs,m-cs]].forEach(([dx,dy])=>ctx.fillRect(dx,dy,cs,cs));
+      // Interior medallion
+      const iR=m-bw*1.5;
+      if ((r+cl)%3!==0) {
+        const pts=8;
+        ctx.beginPath();
+        for (let p=0;p<pts*2;p++) {
+          const a=(p/pts)*Math.PI-Math.PI/pts, r2=p%2===0?iR:iR*0.44;
+          p===0?ctx.moveTo(Math.cos(a)*r2,Math.sin(a)*r2):ctx.lineTo(Math.cos(a)*r2,Math.sin(a)*r2);
+        }
+        ctx.closePath(); ctx.fillStyle=colors[(ci+1)%colors.length]; ctx.fill();
+      } else {
+        for (let p=0;p<4;p++) {
+          const a=(p/4)*Math.PI*2;
+          ctx.beginPath(); ctx.arc(Math.cos(a)*iR*0.48,Math.sin(a)*iR*0.48,iR*0.48,0,Math.PI*2);
+          ctx.fillStyle=colors[(ci+1)%colors.length]; ctx.fill();
+        }
+      }
+      ctx.beginPath(); ctx.arc(0,0,iR*0.24,0,Math.PI*2);
+      ctx.fillStyle=colors[(ci+2)%colors.length]; ctx.fill();
+      if (cx>35) {
+        const dR=Math.max(2,tile*0.045), bMid=m-bw/2;
+        [[0,-bMid],[0,bMid],[-bMid,0],[bMid,0]].forEach(([dx,dy]) => {
+          ctx.beginPath(); ctx.arc(dx,dy,dR,0,Math.PI*2);
+          ctx.fillStyle=colors[(ci+2)%colors.length]; ctx.fill();
+        });
+      }
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+
+function drawKenteStrip(ctx, w, h, colors, tile, rot, cx) {
+  // Kente strip weave — narrow warp strips with colored block sequences and weft inlay
+  ctx.fillStyle=colors[0]; ctx.fillRect(0,0,w,h);
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  const stripW=tile*0.26, blockH=tile*0.36;
+  const numStrips=Math.ceil(w/stripW)+4, numBlocks=Math.ceil(h/blockH)+4;
+  for (let s=-2;s<numStrips;s++) {
+    const sx=s*stripW;
+    for (let b=-2;b<numBlocks;b++) {
+      const by=b*blockH, bci=(Math.abs(s)+b)%colors.length;
+      ctx.fillStyle=colors[bci]; ctx.fillRect(sx,by,stripW-1,blockH);
+      if (cx>30 && b%2===0) {
+        ctx.fillStyle=colors[(bci+2)%colors.length]; ctx.globalAlpha=0.6;
+        ctx.fillRect(sx,by+blockH*0.33,stripW-1,blockH*0.17);
+        ctx.fillRect(sx,by+blockH*0.6,stripW-1,blockH*0.17);
+        ctx.globalAlpha=1;
+      }
+    }
+    // Asasia accent blocks at intervals
+    if (cx>50 && s%4===0) {
+      const ci=Math.abs(s)%colors.length;
+      for (let b=-2;b<numBlocks;b++) {
+        if (b%5===2) {
+          ctx.fillStyle=colors[(ci+4)%colors.length];
+          ctx.fillRect(sx+stripW*0.12,b*blockH+blockH*0.3,stripW*0.76,blockH*0.4);
+        }
+      }
+    }
+    // Strip seam
+    ctx.strokeStyle=colors[Math.abs(s+1)%colors.length];
+    ctx.lineWidth=Math.max(0.5,tile*0.01); ctx.globalAlpha=0.3;
+    ctx.beginPath(); ctx.moveTo(sx+stripW-1,-tile); ctx.lineTo(sx+stripW-1,h+tile); ctx.stroke();
+    ctx.globalAlpha=1;
+  }
+  ctx.restore();
+}
+
+function drawAndean(ctx, w, h, colors, tile, rot, cx) {
+  // Andean woven textile — stepped chakana crosses + zigzag accent bands
+  ctx.fillStyle=colors[0]; ctx.fillRect(0,0,w,h);
+  const cols=Math.ceil(w/tile)+2, rows=Math.ceil(h/tile)+2;
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const cx0=cl*tile+tile/2, cy0=r*tile+tile/2;
+      const ci=Math.abs(r*cols+cl)%colors.length;
+      const s=tile*0.44;
+      ctx.save(); ctx.translate(cx0,cy0);
+      if ((r+cl)%4===3) {
+        // Zigzag / lightning band
+        const peaks=6, zH=tile*0.42, zW=tile;
+        ctx.beginPath(); ctx.moveTo(-zW/2,0);
+        for (let z=0;z<peaks;z++) {
+          ctx.lineTo(-zW/2+(z/peaks)*zW+zW/(peaks*2), z%2===0?-zH*0.38:zH*0.38);
+        }
+        ctx.lineTo(zW/2,0); ctx.lineTo(zW/2,zH*0.14);
+        for (let z=peaks-1;z>=0;z--) {
+          ctx.lineTo(-zW/2+(z/peaks)*zW+zW/(peaks*2),(z%2===0?-zH*0.38:zH*0.38)+zH*0.14);
+        }
+        ctx.lineTo(-zW/2,zH*0.14); ctx.closePath();
+        ctx.fillStyle=colors[(ci+1)%colors.length]; ctx.fill();
+        ctx.beginPath(); ctx.moveTo(-zW/2,-zH*0.14);
+        for (let z=0;z<peaks;z++) {
+          ctx.lineTo(-zW/2+(z/peaks)*zW+zW/(peaks*2), z%2===0?-zH*0.52:zH*0.24);
+        }
+        ctx.lineTo(zW/2,-zH*0.14);
+        ctx.strokeStyle=colors[(ci+2)%colors.length];
+        ctx.lineWidth=Math.max(1.5,tile*0.035); ctx.stroke();
+      } else {
+        // Stepped chakana cross
+        const steps=Math.max(2,Math.floor(cx/30));
+        for (let step=steps;step>=0;step--) {
+          const d=s*(steps-step)/steps*0.95;
+          ctx.fillStyle=colors[(ci+step)%colors.length];
+          ctx.fillRect(-d*0.38,-d*0.38,d*0.76,d*0.76);
+          ctx.fillRect(-d*0.18,-d,d*0.36,d*0.62);
+          ctx.fillRect(-d*0.18,d*0.38,d*0.36,d*0.62);
+          ctx.fillRect(-d,-d*0.18,d*0.62,d*0.36);
+          ctx.fillRect(d*0.38,-d*0.18,d*0.62,d*0.36);
+        }
+        ctx.beginPath(); ctx.arc(0,0,tile*0.07,0,Math.PI*2);
+        ctx.fillStyle=colors[(ci+3)%colors.length]; ctx.fill();
+      }
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+
+function drawGreekKey(ctx, w, h, colors, tile, rot, cx) {
+  // Greek key / meander — interlocking right-angle hook spirals
+  const bg=colors[colors.length-1]||colors[0];
+  ctx.fillStyle=bg; ctx.fillRect(0,0,w,h);
+  const cols=Math.ceil(w/tile)+2, rows=Math.ceil(h/tile)+2;
+  const lw=Math.max(2,tile*0.11), u=tile/5;
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const x0=cl*tile, y0=r*tile;
+      const ci=Math.abs(r+cl)%colors.length;
+      const isAlt=(r+cl)%2===0;
+      ctx.save(); ctx.translate(x0,y0);
+      if (isAlt) ctx.transform(-1,0,0,-1,tile,tile);
+      ctx.fillStyle=colors[(ci+1)%colors.length]; ctx.globalAlpha=0.14;
+      ctx.fillRect(0,0,tile,tile); ctx.globalAlpha=1;
+      ctx.strokeStyle=colors[ci%colors.length];
+      ctx.lineWidth=lw; ctx.lineCap=''square''; ctx.lineJoin=''miter'';
+      ctx.beginPath();
+      ctx.moveTo(0,    u*1.5);
+      ctx.lineTo(0,    u*0.5);
+      ctx.lineTo(u*4,  u*0.5);
+      ctx.lineTo(u*4,  u*4);
+      ctx.lineTo(u,    u*4);
+      ctx.lineTo(u,    u*1.5);
+      ctx.lineTo(u*3,  u*1.5);
+      ctx.lineTo(u*3,  u*3);
+      ctx.lineTo(u*2,  u*3);
+      ctx.lineTo(u*2,  u*1.5);
+      ctx.moveTo(u*4,  u*1.5);
+      ctx.lineTo(tile, u*1.5);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+
+function drawHawaiian(ctx, w, h, colors, tile, rot, cx) {
+  // Hawaiian quilt — 8-fold radiating leaf/petal symmetry (breadfruit, kalo appliqué)
+  ctx.fillStyle=colors[colors.length-1]||colors[0];
+  ctx.fillRect(0,0,w,h);
+  const cols=Math.ceil(w/tile)+2, rows=Math.ceil(h/tile)+2;
+  const detail=cx>40;
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const ox=(r%2===0)?0:tile*0.5;
+      const cx0=cl*tile+tile/2+ox, cy0=r*tile+tile/2;
+      const ci=Math.abs(r*cols+cl)%colors.length;
+      const R=tile*0.44;
+      ctx.save(); ctx.translate(cx0,cy0);
+      for (let s=0;s<8;s++) {
+        ctx.save(); ctx.rotate((s/8)*Math.PI*2);
+        ctx.beginPath();
+        ctx.moveTo(0,0);
+        ctx.bezierCurveTo(-R*0.24,R*0.18,-R*0.3,R*0.58,0,R*0.94);
+        ctx.bezierCurveTo(R*0.3,R*0.58,R*0.24,R*0.18,0,0);
+        ctx.fillStyle=colors[ci%colors.length]; ctx.fill();
+        if (detail) {
+          ctx.beginPath();
+          ctx.moveTo(0,R*0.06);
+          ctx.bezierCurveTo(-R*0.1,R*0.36,-R*0.12,R*0.7,0,R*0.94);
+          ctx.bezierCurveTo(R*0.12,R*0.7,R*0.1,R*0.36,0,R*0.06);
+          ctx.fillStyle=colors[(ci+1)%colors.length]; ctx.globalAlpha=0.4; ctx.fill(); ctx.globalAlpha=1;
+        }
+        ctx.beginPath(); ctx.arc(0,R*0.9,tile*0.04,0,Math.PI*2);
+        ctx.fillStyle=colors[(ci+1)%colors.length]; ctx.fill();
+        ctx.restore();
+      }
+      ctx.beginPath(); ctx.arc(0,0,R*0.24,0,Math.PI*2);
+      ctx.fillStyle=colors[(ci+1)%colors.length]; ctx.fill();
+      ctx.beginPath(); ctx.arc(0,0,R*0.1,0,Math.PI*2);
+      ctx.fillStyle=colors[(ci+2)%colors.length]; ctx.fill();
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+
+function drawToileScenic(ctx, w, h, colors, tile, rot, cx) {
+  // Toile de Jouy — pastoral silhouette vignettes (tree, urn, figure, arch) in single ink
+  const bg=colors.length>2?colors[2]:''#f5f0e8'';
+  const ink=colors[0], ink2=colors[1]||colors[0];
+  ctx.fillStyle=bg; ctx.fillRect(0,0,w,h);
+  const cols=Math.ceil(w/tile)+2, rows=Math.ceil(h/tile)+2;
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  const scenes=[''tree'',''urn'',''figure'',''arch''];
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const ox=(r%2===0)?0:tile*0.5;
+      const cx0=cl*tile+tile/2+ox, cy0=r*tile+tile/2;
+      const scene=scenes[Math.abs(r*cols+cl)%scenes.length];
+      const s=tile*0.35;
+      const inkC=(r+cl)%2===0?ink:ink2;
+      ctx.save(); ctx.translate(cx0,cy0);
+      ctx.fillStyle=inkC; ctx.strokeStyle=inkC;
+      ctx.lineWidth=Math.max(0.6,tile*0.016);
+      if (scene===''tree'') {
+        ctx.fillRect(-s*0.07,0,s*0.14,s*0.52);
+        [0.75,0.95,1.05].forEach((sc,i)=>{
+          ctx.beginPath(); ctx.ellipse(0,-(s*0.28+i*s*0.14),s*sc*0.46,s*sc*0.35,0,0,Math.PI*2); ctx.fill();
+        });
+        ctx.globalAlpha=0.35; ctx.lineWidth=Math.max(0.4,tile*0.01);
+        ctx.beginPath(); ctx.moveTo(-s*0.5,s*0.52); ctx.lineTo(s*0.5,s*0.52); ctx.stroke();
+        ctx.globalAlpha=1;
+      } else if (scene===''urn'') {
+        ctx.beginPath();
+        ctx.moveTo(-s*0.26,s*0.5); ctx.lineTo(-s*0.36,s*0.32);
+        ctx.bezierCurveTo(-s*0.4,s*0.08,-s*0.3,-s*0.1,-s*0.2,-s*0.18);
+        ctx.bezierCurveTo(-s*0.34,-s*0.28,-s*0.26,-s*0.54,0,-s*0.58);
+        ctx.bezierCurveTo(s*0.26,-s*0.54,s*0.34,-s*0.28,s*0.2,-s*0.18);
+        ctx.bezierCurveTo(s*0.3,-s*0.1,s*0.4,s*0.08,s*0.36,s*0.32);
+        ctx.lineTo(s*0.26,s*0.5); ctx.closePath(); ctx.fill();
+        [-1,1].forEach(side=>{
+          ctx.beginPath(); ctx.arc(side*s*0.36,-s*0.1,s*0.13,side<0?Math.PI*0.5:Math.PI*1.5,side<0?Math.PI*1.5:Math.PI*0.5);
+          ctx.stroke();
+        });
+      } else if (scene===''figure'') {
+        ctx.beginPath(); ctx.arc(0,-s*0.56,s*0.13,0,Math.PI*2); ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(-s*0.09,-s*0.43); ctx.bezierCurveTo(-s*0.26,-s*0.08,-s*0.36,s*0.22,-s*0.24,s*0.55);
+        ctx.lineTo(s*0.24,s*0.55); ctx.bezierCurveTo(s*0.36,s*0.22,s*0.26,-s*0.08,s*0.09,-s*0.43);
+        ctx.closePath(); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(-s*0.07,-s*0.26);
+        ctx.bezierCurveTo(-s*0.36,-s*0.18,-s*0.44,s*0.12,-s*0.36,s*0.28);
+        ctx.lineWidth=Math.max(1.2,tile*0.024); ctx.stroke();
+      } else {
+        ctx.beginPath();
+        ctx.moveTo(-s*0.36,s*0.55); ctx.lineTo(-s*0.36,-s*0.08);
+        ctx.arc(0,-s*0.08,s*0.36,Math.PI,0);
+        ctx.lineTo(s*0.36,s*0.55); ctx.lineWidth=Math.max(1.5,tile*0.03); ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(-s*0.42,-s*0.4); ctx.lineTo(0,-s*0.72); ctx.lineTo(s*0.42,-s*0.4);
+        ctx.lineWidth=Math.max(1,tile*0.02); ctx.stroke();
+        ctx.globalAlpha=0.35; ctx.lineWidth=Math.max(0.5,tile*0.012);
+        [-s*0.18,0,s*0.18].forEach(dx=>{
+          ctx.beginPath(); ctx.moveTo(dx,-s*0.08); ctx.lineTo(dx,s*0.55); ctx.stroke();
+        });
+        ctx.globalAlpha=1;
+      }
+      // Delicate border
+      ctx.lineWidth=Math.max(0.4,tile*0.01); ctx.globalAlpha=0.18;
+      ctx.beginPath(); ctx.rect(-tile/2+3,-tile/2+3,tile-6,tile-6); ctx.stroke();
+      ctx.globalAlpha=1;
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+
+function drawBatikTulis(ctx, w, h, colors, tile, rot, cx) {
+  // Batik tulis — fine hand-drawn: kawung (4-ellipse lattice) + parang (S-knife) alternating
+  const bg=colors[colors.length-1]||colors[0];
+  ctx.fillStyle=bg; ctx.fillRect(0,0,w,h);
+  const cols=Math.ceil(w/tile)+2, rows=Math.ceil(h/tile)+2;
+  const detail=cx>35, lw=Math.max(0.8,tile*0.02);
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const cx0=cl*tile+tile/2, cy0=r*tile+tile/2;
+      const ci=Math.abs(r*cols+cl)%colors.length;
+      const R=tile*0.44;
+      ctx.save(); ctx.translate(cx0,cy0);
+      if ((r+cl)%2===0) {
+        // Kawung: 4 overlapping ellipses in compass-point formation
+        const er=R*0.5, ew=R*0.28;
+        [[0,-R*0.38,0],[R*0.38,0,Math.PI/2],[0,R*0.38,0],[-R*0.38,0,Math.PI/2]].forEach(([ex,ey,ang],i)=>{
+          ctx.beginPath(); ctx.ellipse(ex,ey,ew,er,ang,0,Math.PI*2);
+          ctx.fillStyle=colors[(ci+i)%colors.length]; ctx.globalAlpha=0.72; ctx.fill(); ctx.globalAlpha=1;
+          ctx.strokeStyle=colors[(ci+2)%colors.length]; ctx.lineWidth=lw; ctx.stroke();
+          if (detail) {
+            ctx.beginPath(); ctx.ellipse(ex,ey,ew*0.42,er*0.42,ang,0,Math.PI*2);
+            ctx.strokeStyle=colors[(ci+1)%colors.length]; ctx.lineWidth=lw*0.55; ctx.globalAlpha=0.45; ctx.stroke(); ctx.globalAlpha=1;
+          }
+        });
+        ctx.beginPath(); ctx.arc(0,0,R*0.12,0,Math.PI*2);
+        ctx.fillStyle=colors[(ci+3)%colors.length]; ctx.fill();
+      } else {
+        // Parang: flowing S-shaped knife motif
+        ctx.beginPath();
+        ctx.moveTo(-R*0.8,R*0.3);
+        ctx.bezierCurveTo(-R*0.35,R*0.62,R*0.35,-R*0.62,R*0.8,-R*0.3);
+        ctx.bezierCurveTo(R*0.92,-R*0.08,R*0.92,R*0.08,R*0.8,R*0.3);
+        ctx.bezierCurveTo(R*0.35,R*0.62,-R*0.35,-R*0.62,-R*0.8,-R*0.3);
+        ctx.bezierCurveTo(-R*0.92,-R*0.08,-R*0.92,R*0.08,-R*0.8,R*0.3);
+        ctx.closePath();
+        ctx.fillStyle=colors[(ci+1)%colors.length]; ctx.fill();
+        ctx.strokeStyle=colors[(ci+2)%colors.length]; ctx.lineWidth=lw; ctx.stroke();
+        if (detail) {
+          const n=Math.max(3,Math.floor(cx/18));
+          ctx.save();
+          ctx.beginPath();
+          ctx.moveTo(-R*0.8,R*0.3);
+          ctx.bezierCurveTo(-R*0.35,R*0.62,R*0.35,-R*0.62,R*0.8,-R*0.3);
+          ctx.bezierCurveTo(R*0.92,-R*0.08,R*0.92,R*0.08,R*0.8,R*0.3);
+          ctx.bezierCurveTo(R*0.35,R*0.62,-R*0.35,-R*0.62,-R*0.8,-R*0.3);
+          ctx.bezierCurveTo(-R*0.92,-R*0.08,-R*0.92,R*0.08,-R*0.8,R*0.3);
+          ctx.closePath(); ctx.clip();
+          ctx.strokeStyle=colors[(ci+2)%colors.length]; ctx.lineWidth=lw*0.45; ctx.globalAlpha=0.35;
+          for (let l=-n;l<=n;l++) {
+            ctx.beginPath(); ctx.moveTo(-R,l*R*0.2); ctx.lineTo(R,l*R*0.2); ctx.stroke();
+          }
+          ctx.globalAlpha=1; ctx.restore();
+        }
+        // Tendril curls at ends
+        ctx.beginPath(); ctx.arc(-R*0.76,R*0.26,R*0.1,0,Math.PI*1.6);
+        ctx.strokeStyle=colors[(ci+3)%colors.length]; ctx.lineWidth=lw*0.8; ctx.stroke();
+        ctx.beginPath(); ctx.arc(R*0.76,-R*0.26,R*0.1,Math.PI,-Math.PI*0.4);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+
+function drawTartan(ctx, w, h, colors, tile, rot, cx) {
+  // Tartan / plaid — warp + weft stripe crossing, weft drawn with multiply blend
+  ctx.fillStyle=colors[0]; ctx.fillRect(0,0,w,h);
+  const nc=colors.length, bw=tile*0.32;
+  const sett=[];
+  for (let i=0;i<nc;i++) {
+    sett.push({color:colors[i],w:bw*(i%2===0?1.4:0.75)});
+    if (i<nc-1) sett.push({color:colors[(i+1)%nc],w:bw*0.22});
+  }
+  const full=[...sett,...[...sett].reverse().slice(1)];
+  const settTotal=full.reduce((s,e)=>s+e.w,0);
+  const diag=Math.ceil(Math.sqrt(w*w+h*h));
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  // Warp stripes (vertical)
+  let x=-diag, si=0;
+  while (x<w+diag) {
+    const st=full[si%full.length];
+    ctx.fillStyle=st.color; ctx.fillRect(x,-diag,st.w,h+diag*2); x+=st.w; si++;
+  }
+  // Weft stripes (horizontal) with multiply blend
+  ctx.globalCompositeOperation=''multiply''; ctx.globalAlpha=0.62;
+  let y=-diag, ri=Math.floor(full.length*0.3);
+  while (y<h+diag) {
+    const st=full[ri%full.length];
+    ctx.fillStyle=st.color; ctx.fillRect(-diag,y,w+diag*2,st.w); y+=st.w; ri++;
+  }
+  ctx.globalAlpha=1; ctx.globalCompositeOperation=''source-over'';
+  // Overcheck lines at high complexity
+  if (cx>50) {
+    ctx.globalAlpha=0.2; ctx.fillStyle=colors[(nc-1)%nc];
+    let ox=-diag;
+    while (ox<w+diag) { ctx.fillRect(ox,-diag,1.5,h+diag*2); ox+=settTotal*0.48; }
+    let oy=-diag;
+    while (oy<h+diag) { ctx.fillRect(-diag,oy,w+diag*2,1.5); oy+=settTotal*0.48; }
+    ctx.globalAlpha=1;
+  }
+  ctx.restore();
+}
+
+/* ═══════════════════════════════════════════════
+   WATERMARK STAMP
+═══════════════════════════════════════════════ */
+function stampCanvas(canvas) {
+  const ctx = canvas.getContext(''2d'');
+  const w = canvas.width, h = canvas.height;
+  const fontSize = Math.max(6, Math.round(w * 0.007));
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0); // reset any DPR or rotation transform
+  ctx.font = `500 ${fontSize}px Arial, sans-serif`;
+  const text = ''cultureschool.org'';
+  const tw = ctx.measureText(text).width;
+  const pw = tw + 10, ph = fontSize + 7;
+  const px = w - pw - 4, py = h - ph - 4;
+  ctx.fillStyle = ''rgba(0,0,0,0.22)'';
+  ctx.beginPath();
+  if (ctx.roundRect) {
+    ctx.roundRect(px, py, pw, ph, ph / 2);
+  } else {
+    const r = ph / 2;
+    ctx.moveTo(px+r,py);ctx.lineTo(px+pw-r,py);ctx.quadraticCurveTo(px+pw,py,px+pw,py+r);
+    ctx.lineTo(px+pw,py+ph-r);ctx.quadraticCurveTo(px+pw,py+ph,px+pw-r,py+ph);
+    ctx.lineTo(px+r,py+ph);ctx.quadraticCurveTo(px,py+ph,px,py+ph-r);
+    ctx.lineTo(px,py+r);ctx.quadraticCurveTo(px,py,px+r,py);ctx.closePath();
+  }
+  ctx.fill();
+  ctx.fillStyle = ''rgba(255,255,255,0.82)'';
+  ctx.textAlign = ''right'';
+  ctx.textBaseline = ''middle'';
+  ctx.fillText(text, w - 9, h - ph / 2 - 4);
+  ctx.restore();
+}
+
+/* ═══════════════════════════════════════════════
+   RENDER HELPERS
+═══════════════════════════════════════════════ */
+
+
+function drawProductMockupLib(canvas, style, colors, productKey) {
+  const prod = ORDER_PRODUCTS[productKey];
+  if (!prod) return;
+  const ctx = canvas.getContext(''2d'');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  const [px, py, pw, ph] = prod.patRect;
+  const fn = DRAW_FN[style] || drawDiamond;
+  const photoImg = _libProdImgCache[productKey];
+  if (!photoImg || !photoImg.complete) {
+    ctx.save();
+    roundRect(ctx, px, py, pw, ph, 6); ctx.clip();
+    const tmp = document.createElement(''canvas'');
+    tmp.width = pw; tmp.height = ph;
+    fn(tmp.getContext(''2d''), pw, ph, colors, 28, 0, 60);
+    ctx.drawImage(tmp, px, py);
+    ctx.restore();
+    stampCanvas(canvas);
+    return;
+  }
+  const off = document.createElement(''canvas'');
+  off.width = W; off.height = H;
+  const oc = off.getContext(''2d'');
+  oc.fillStyle = ''#ffffff'';
+  oc.fillRect(0, 0, W, H);
+  const patTile = document.createElement(''canvas'');
+  patTile.width = pw; patTile.height = ph;
+  fn(patTile.getContext(''2d''), pw, ph, colors, 28, 0, 60);
+  oc.drawImage(patTile, px, py, pw, ph);
+  oc.globalCompositeOperation = ''multiply'';
+  oc.drawImage(photoImg, 0, 0, W, H);
+  oc.globalCompositeOperation = ''source-over'';
+  oc.globalCompositeOperation = ''destination-in'';
+  oc.drawImage(photoImg, 0, 0, W, H);
+  oc.globalCompositeOperation = ''source-over'';
+  ctx.drawImage(off, 0, 0);
+  stampCanvas(canvas);
+}
+
+function renderOrderCards(style, colors) {
+  const container = document.getElementById(''orderProdCards'');
+  if (!container) return;
+  container.innerHTML = Object.entries(ORDER_PRODUCTS).map(([key, prod]) => {
+    const isSel = key === _orderProduct;
+    const price = prod.price ? `$${prod.price}` : ''from $95'';
+    return `
+      <div class="pmodal-prod-card${isSel ? '' selected'' : ''''}"
+           onclick="selectOrderProduct(''${key}'',this)">
+        <div class="pmodal-prod-mockup">
+          <canvas id="op-${key}" width="210" height="150"></canvas>
+        </div>
+        <div class="pmodal-prod-name">${prod.label}</div>
+        <div class="pmodal-prod-price">${price}</div>
+      </div>`;
+  }).join('''');
+  requestAnimationFrame(() => {
+    Object.entries(ORDER_PRODUCTS).forEach(([key, prod]) => {
+      const c = document.getElementById(`op-${key}`);
+      if (c) drawProductMockupLib(c, style, colors, key);
+    });
+  });
+}
+
+function renderPatternToCanvas(canvas, style, colors, tileSize) {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const w = canvas.offsetWidth || 200;
+  const h = canvas.offsetHeight || 200;
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
+  const ctx = canvas.getContext(''2d'');
+  ctx.scale(dpr, dpr);
+  const fn = DRAW_FN[style] || drawDiamond;
+  fn(ctx, w, h, colors, tileSize, 0, 60);
+  stampCanvas(canvas);
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.arcTo(x + w, y, x + w, y + r, r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+  ctx.lineTo(x + r, y + h);
+  ctx.arcTo(x, y + h, x, y + h - r, r);
+  ctx.lineTo(x, y + r);
+  ctx.arcTo(x, y, x + r, y, r);
+  ctx.closePath();
+}
+
+/* ── State ── */
+let pvActiveStyle  = ''kente'';
+let pvOverlayAlpha = 0.45;
+let pvFormat       = ''portrait'';
+let pvTextPos      = ''below'';
+
+const PV_STYLES = [
+  ''kente'',''adinkra'',''adire'',''mudcloth'',''kuba'',''ndebele'',''kanga'',''kente-strip'',
+  ''batik'',''ikat'',''shibori'',''suzani'',''phulkari'',''andean'',''hawaiian'',''tapa'',
+  ''zellige'',''azulejo'',''talavera'',''greek-key'',''quatrefoil'',''asian'',
+  ''diamond'',''chevron'',''floral'',''paisley'',''botanical'',''vine'',''wildflower'',
+  ''tropical'',''frond'',''heritage'',''toile'',''batik-tulis'',''ikat-diamond'',
+];
+
+/* ── Init ── */
+(function pvInit() {
+  applyLoomParams();
+  buildStylePicker();
+  attachImageSlot();
+  attachOverlaySlider();
+  renderPattern();
+  watchPalette();
+  checkShareMode();
+})();
+
+/* ── Loom URL params ── */
+function applyLoomParams() {
+  const p = new URLSearchParams(location.search);
+
+  // Style
+  if (p.get(''style'')) pvActiveStyle = p.get(''style'');
+
+  // Text fields
+  const map = { names: ''.pv-title'', date: ''.pv-subtitle'', eyebrow: ''.pv-eyebrow'' };
+  for (const [key, sel] of Object.entries(map)) {
+    const val = p.get(key);
+    if (val) {
+      const el = document.querySelector(sel);
+      if (el) el.textContent = decodeURIComponent(val);
+    }
+  }
+
+  // Palette via CSS vars (Flourish sets these; loom can also set from URL)
+  const palKeys = [''p1'',''p2'',''p3'',''p4'',''p5''];
+  palKeys.forEach((k, i) => {
+    const hex = p.get(k) || p.get(''palette_'' + (i+1));
+    if (hex) document.documentElement.style.setProperty(''--palette-'' + (i+1), hex.startsWith(''#'') ? hex : ''#'' + hex);
+  });
+}
+
+/* ── Render pattern to canvas ── */
+function renderPattern() {
+  const canvas = document.getElementById(''patternCanvas'');
+  if (!canvas) return;
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const ctx = canvas.getContext(''2d'');
+  const colors = getPaletteColors();
+  const fn = DRAW_FN[pvActiveStyle] || drawDiamond;
+  fn(ctx, canvas.width, canvas.height, colors, 40, 0, 60);
+  updateOverlay();
+}
+
+/* ── Get palette colors from CSS vars ── */
+function getPaletteColors() {
+  const style = getComputedStyle(document.documentElement);
+  const colors = [];
+  for (let i = 1; i <= 5; i++) {
+    const v = style.getPropertyValue(''--palette-'' + i).trim() ||
+              style.getPropertyValue(''--p'' + i).trim();
+    if (v) colors.push(v);
+  }
+  return colors.length >= 2 ? colors : [''#1a1714'',''#c9a96e'',''#e6d9c8'',''#7a5c3a'',''#f0ebe0''];
+}
+
+/* ── Update overlay color from palette-1 ── */
+function updateOverlay() {
+  const el = document.getElementById(''pvOverlay'');
+  if (!el) return;
+  const style = getComputedStyle(document.documentElement);
+  const c = style.getPropertyValue(''--palette-1'').trim() || ''#1a1714'';
+  el.style.background = c;
+  el.style.opacity = pvOverlayAlpha;
+
+  // Also update palette strip
+  const segs = document.querySelectorAll(''.pv-strip-seg'');
+  for (let i = 0; i < 5; i++) {
+    const v = style.getPropertyValue(''--palette-'' + (i+1)).trim();
+    if (v && segs[i]) segs[i].style.background = v;
+  }
+}
+
+/* ── Watch for palette changes via MutationObserver ── */
+function watchPalette() {
+  const observer = new MutationObserver(() => {
+    renderPattern();
+  });
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: [''style''],
+  });
+  // Also watch body for class-level changes
+  observer.observe(document.body, { attributes: true, attributeFilter: [''style''] });
+
+  // Redraw on resize
+  let _resizeTimer;
+  window.addEventListener(''resize'', () => {
+    clearTimeout(_resizeTimer);
+    _resizeTimer = setTimeout(renderPattern, 150);
+  });
+}
+
+/* ── Build style picker ── */
+function buildStylePicker() {
+  const container = document.getElementById(''pvStyleScroll'');
+  if (!container) return;
+  const colors = getPaletteColors();
+
+  PV_STYLES.forEach(style => {
+    const chip = document.createElement(''div'');
+    chip.className = ''pv-style-chip'' + (style === pvActiveStyle ? '' active'' : '''');
+    chip.dataset.style = style;
+
+    // Mini canvas preview
+    const mini = document.createElement(''canvas'');
+    mini.width = 40; mini.height = 40;
+    mini.style.borderRadius = ''6px'';
+    try {
+      const fn = DRAW_FN[style] || drawDiamond;
+      fn(mini.getContext(''2d''), 40, 40, colors, 12, 0, 60);
+    } catch(e) { /* skip bad renders */ }
+
+    const label = document.createElement(''div'');
+    label.className = ''pv-chip-label'';
+    label.textContent = style;
+
+    chip.appendChild(mini);
+    chip.appendChild(label);
+    chip.addEventListener(''click'', () => pvSetStyle(style));
+    container.appendChild(chip);
+  });
+}
+
+function pvSetStyle(style) {
+  pvActiveStyle = style;
+  renderPattern();
+  // Update picker UI
+  document.querySelectorAll(''.pv-style-chip'').forEach(c => {
+    c.classList.toggle(''active'', c.dataset.style === style);
+  });
+  // Refresh mini previews with current palette colors
+  const colors = getPaletteColors();
+  document.querySelectorAll(''.pv-style-chip'').forEach(chip => {
+    const mini = chip.querySelector(''canvas'');
+    if (!mini) return;
+    const fn = DRAW_FN[chip.dataset.style] || drawDiamond;
+    try { fn(mini.getContext(''2d''), 40, 40, colors, 12, 0, 60); } catch(e) {}
+  });
+}
+
+/* ── Image slot: drag/drop and click to upload ── */
+function attachImageSlot() {
+  const slot = document.getElementById(''pvImgSlot'');
+  const placeholder = document.getElementById(''pvPlaceholder'');
+  const img = document.getElementById(''pvImg'');
+  const fileInput = document.getElementById(''pvFileInput'');
+
+  if (!slot) return;
+
+  function loadFile(file) {
+    if (!file || !file.type.startsWith(''image/'')) return;
+    const url = URL.createObjectURL(file);
+    img.src = url;
+    img.style.display = ''block'';
+    placeholder.style.display = ''none'';
+    slot.classList.add(''pv-has-image'');
+  }
+
+  slot.addEventListener(''click'', () => fileInput.click());
+  fileInput.addEventListener(''change'', e => loadFile(e.target.files?.[0]));
+
+  slot.addEventListener(''dragover'', e => { e.preventDefault(); slot.style.borderColor = ''rgba(201,169,110,.6)''; });
+  slot.addEventListener(''dragleave'', () => { slot.style.borderColor = ''''; });
+  slot.addEventListener(''drop'', e => {
+    e.preventDefault(); slot.style.borderColor = '''';
+    const file = e.dataTransfer?.files?.[0];
+    if (file) loadFile(file);
+  });
+}
+
+/* ── Overlay slider ── */
+function attachOverlaySlider() {
+  const slider = document.getElementById(''pvOverlaySlider'');
+  const val = document.getElementById(''pvOverlayVal'');
+  if (!slider) return;
+  slider.addEventListener(''input'', () => {
+    pvOverlayAlpha = parseInt(slider.value) / 100;
+    if (val) val.textContent = slider.value + ''%'';
+    updateOverlay();
+  });
+}
+
+/* ── Format toggle ── */
+function pvSetFormat(format, btn) {
+  pvFormat = format;
+  const slot = document.getElementById(''pvImgSlot'');
+  if (slot) slot.classList.toggle(''pv-square'', format === ''square'');
+  document.querySelectorAll(''.pv-toggle[data-format]'').forEach(b =>
+    b.classList.toggle(''active'', b.dataset.format === format));
+}
+
+/* ── Text position toggle ── */
+function pvSetTextPos(pos, btn) {
+  pvTextPos = pos;
+  const textBlock = document.getElementById(''pvTextBlock'');
+  const slot = document.getElementById(''pvImgSlot'');
+  if (textBlock) textBlock.classList.toggle(''pv-text-over'', pos === ''over'');
+  if (slot && pos === ''over'') slot.style.position = ''relative'';
+  document.querySelectorAll(''.pv-toggle[data-pos]'').forEach(b =>
+    b.classList.toggle(''active'', b.dataset.pos === pos));
+}
+
+/* ── Share mode: hide workspace ── */
+function checkShareMode() {
+  const p = new URLSearchParams(location.search);
+  if (p.get(''share'') === ''1'' || p.get(''board_id'')) {
+    document.body.classList.add(''pv-share-mode'');
+  }
+}$JS$
+)
+ON CONFLICT (key) DO UPDATE SET
+  viewer_name     = EXCLUDED.viewer_name,
+  description     = EXCLUDED.description,
+  template_type   = EXCLUDED.template_type,
+  occasion_tag    = EXCLUDED.occasion_tag,
+  archetype       = EXCLUDED.archetype,
+  feels           = EXCLUDED.feels,
+  palette_enabled = EXCLUDED.palette_enabled,
+  is_active       = EXCLUDED.is_active,
+  is_listed       = EXCLUDED.is_listed,
+  html            = EXCLUDED.html,
+  css             = EXCLUDED.css,
+  js              = EXCLUDED.js;
+
+-- Verify
+SELECT key, viewer_name, template_type, palette_enabled, is_active
+FROM public.viewers
+WHERE key = 'coco-canvas-pattern';
