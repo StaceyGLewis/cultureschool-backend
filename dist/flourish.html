@@ -1167,6 +1167,49 @@ body::after {
   border-color: var(--ws-accent) !important;
 }
 
+/* ── PATTERN VISUAL PICKER ── */
+.pat-pick-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
+  max-height: 190px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(139,92,246,.2) transparent;
+  margin-bottom: 8px;
+}
+.pat-pick-card {
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: border-color .18s, transform .14s;
+  position: relative;
+  background: rgba(255,255,255,.04);
+}
+.pat-pick-card:hover { border-color: rgba(200,160,80,.5); transform: scale(1.05); }
+.pat-pick-card.selected { border-color: var(--ws-accent); box-shadow: 0 0 0 1px var(--ws-accent); }
+.pat-pick-card canvas { display: block; width: 100%; height: 52px; }
+.pat-pick-name {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: rgba(0,0,0,.65);
+  font-size: 5.5px; color: rgba(255,255,255,.85);
+  text-align: center; padding: 2px 3px;
+  letter-spacing: .06em; text-transform: uppercase;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-family: 'DM Sans', sans-serif;
+}
+.pat-selected-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 9px; border-radius: 8px;
+  border: 1px solid var(--ws-border);
+  background: rgba(200,160,80,.06);
+  margin-bottom: 8px;
+}
+.pat-selected-canvas { border-radius: 6px; flex-shrink: 0; }
+.pat-selected-name { font-size: .7rem; font-weight: 600; color: var(--ws-ink); }
+.pat-selected-meta { font-size: .58rem; color: var(--ws-ink-soft); opacity: .7; margin-top: 1px; }
+
 </style>
 </head>
 <body class="edit-mode">
@@ -1498,6 +1541,51 @@ body::after {
         <button class="ws-btn outline" onclick="document.getElementById('notes').value=''" style="font-size:.7rem;padding:0 8px;" title="Clear">✕</button>
       </div>
       <div id="copyStatus" style="font-size:.62rem;color:var(--ws-accent);margin-top:6px;display:none;letter-spacing:.06em;">Generating…</div>
+    </div>
+
+    <!-- PATTERN SKIN -->
+    <div class="ps">
+      <div class="ps-label">✦ Pattern Skin</div>
+
+      <!-- Visual pattern tile grid -->
+      <div id="patternVisualGrid" class="pat-pick-grid">
+        <div style="grid-column:1/-1;font-size:.58rem;color:var(--ws-ink-soft);padding:6px 0;opacity:.5;">Loading patterns…</div>
+      </div>
+
+      <!-- Search -->
+      <input
+        id="patternSkinSearch"
+        type="text"
+        placeholder="Search by name, origin, style…"
+        oninput="searchPatterns(this.value)"
+        autocomplete="off"
+        style="width:100%;padding:7px 10px;border-radius:8px;margin-bottom:4px;
+               background:var(--ws-surface);border:1px solid var(--ws-border);
+               color:var(--ws-ink);font-size:.75rem;outline:none;box-sizing:border-box;"
+      >
+      <div id="patternSkinResults" style="display:none;max-height:130px;overflow-y:auto;
+        background:var(--ws-surface);border:1px solid var(--ws-border);border-radius:8px;
+        margin-bottom:8px;font-size:.72rem;"></div>
+
+      <input id="patternSkinCode" type="hidden">
+
+      <!-- Selected pattern preview -->
+      <div id="patternSelectedRow" class="pat-selected-row" style="display:none;">
+        <canvas id="patternSelectedCanvas" class="pat-selected-canvas" width="40" height="40"></canvas>
+        <div>
+          <div id="patternSelectedName" class="pat-selected-name"></div>
+          <div id="patternSelectedMeta" class="pat-selected-meta"></div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:6px;">
+        <button class="ws-btn primary" id="applySkinBtn" onclick="applyPatternSkin()"
+          style="flex:1;font-size:.7rem;">✦ Apply Pattern</button>
+        <button class="ws-btn outline" onclick="resetPatternSkin()"
+          style="font-size:.7rem;padding:0 10px;" title="Reset">↺</button>
+      </div>
+      <div id="skinStatus" style="font-size:.62rem;color:var(--ws-accent);margin-top:6px;display:none;letter-spacing:.06em;"></div>
+      <div id="skinInfo" style="font-size:.65rem;color:var(--ws-ink-soft);margin-top:8px;line-height:1.55;display:none;"></div>
     </div>
 
     <!-- CREATOR EMAIL -->
@@ -1845,6 +1933,7 @@ document.addEventListener("DOMContentLoaded", () => {
   loadTemplateBar();
   loadSceneLibrary();
   loomInit();
+  loadWorkspacePatterns();
 });
 
 function dismissEmptyHintOnce() {
@@ -2376,7 +2465,7 @@ Return only the copy itself — no preamble, no explanation, no quotes around it
   status.textContent = 'Generating…';
 
   try {
-    const res = await fetch('https://cultureschool-backend.onrender.com/api/anthropic', {
+    const res = await fetch('/.netlify/functions/anthropic-proxy', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -2389,6 +2478,35 @@ Return only the copy itself — no preamble, no explanation, no quotes around it
     const text = data?.content?.[0]?.text?.trim() || '';
     if (!text) throw new Error('Empty response');
     box.value = box.value.trim() ? box.value.trim() + '\n\n' + text : text;
+
+    // Auto-apply to template
+    const root = document.getElementById('viewerMount');
+    if (target === 'headline') {
+      const inp = document.getElementById('heroInputTitle');
+      if (inp) { inp.value = text; }
+      if (root) {
+        const el = root.querySelector('[data-coco-title],[data-loom="headline"],#heroTitle,.hero-title,[data-editable="title"],h1,[contenteditable="true"]');
+        if (el) { el.textContent = text; el.dispatchEvent(new Event('input', {bubbles:true})); }
+      }
+    } else if (target === 'subheader') {
+      const inp = document.getElementById('heroInputSubtitle');
+      if (inp) { inp.value = text; }
+      if (root) {
+        const el = root.querySelector('[data-coco-subtitle],[data-loom="eyebrow"],[data-loom="subheader"],#heroSubtitle,.hero-subtitle,p.subtitle,[data-editable="subtitle"],h2');
+        if (el) { el.textContent = text; el.dispatchEvent(new Event('input', {bubbles:true})); }
+      }
+    } else if (target === 'body' || target === 'story') {
+      if (root) {
+        const els = root.querySelectorAll('[data-coco-body],[data-loom="message"],.coco-caption,[contenteditable="true"]');
+        // skip title/subtitle slots, pick first body-like one
+        const el = Array.from(els).find(e =>
+          !e.matches('[data-coco-title],[data-coco-subtitle],h1,h2') && e.textContent.length < 500
+        );
+        if (el) { el.textContent = text; el.dispatchEvent(new Event('input', {bubbles:true})); }
+      }
+    }
+    if (typeof scheduleAutosave === 'function') scheduleAutosave();
+
     showToast('Copy generated ✦');
     status.style.display = 'none';
   } catch(err) {
@@ -2408,6 +2526,256 @@ function copyNotesToClipboard() {
 }
 
 // Keep generateNote as alias for backward compatibility
+
+// ── Pattern Skin ─────────────────────────────────────────────────────────────
+
+let _selectedPattern = null;
+const _originalCSSVars = {};
+let _activeSkin = null;
+
+/* Load workspace-enabled patterns as visual tiles */
+async function loadWorkspacePatterns() {
+  const grid = document.getElementById('patternVisualGrid');
+  if (!grid) return;
+  try {
+    // workspace_enabled=true controls which patterns appear — no is_public filter
+    // so curated patterns show regardless of their public status
+    const { data, error } = await supa
+      .from('patterns')
+      .select('id, code, name, style, colors, heritage_origin, occasion')
+      .eq('workspace_enabled', true)
+      .order('grab_count', { ascending: false })
+      .limit(40);
+    if (error) {
+      console.error('[WorkspacePatterns] Supabase error:', error);
+      grid.innerHTML = `<div style="grid-column:1/-1;font-size:.58rem;color:var(--ws-ink-soft);padding:6px 0;opacity:.5;">Error: ${error.message || error.code || 'check console'}</div>`;
+      return;
+    }
+    if (!data?.length) {
+      grid.innerHTML = `<div style="grid-column:1/-1;font-size:.58rem;color:var(--ws-ink-soft);padding:6px 0;opacity:.5;">No patterns found — UPDATE patterns SET workspace_enabled=true WHERE code='your-code'</div>`;
+      return;
+    }
+    grid.innerHTML = '';
+    data.forEach(p => {
+      const card = document.createElement('div');
+      card.className = 'pat-pick-card';
+      card.dataset.code = p.code;
+      card.title = `${p.name}${p.heritage_origin ? ' · ' + p.heritage_origin : ''}`;
+      const canvas = document.createElement('canvas');
+      canvas.width = 56; canvas.height = 52;
+      const colors = (Array.isArray(p.colors) && p.colors.length >= 3)
+        ? p.colors : ['#1a1208','#8b6a3a','#c9a96e','#e8d5a8','#faf6ef'];
+      if (typeof drawPattern === 'function') drawPattern(canvas, p.style || 'diamond', colors);
+      card.appendChild(canvas);
+      const label = document.createElement('div');
+      label.className = 'pat-pick-name';
+      label.textContent = p.name;
+      card.appendChild(label);
+      card.onclick = () => {
+        document.querySelectorAll('.pat-pick-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        _selectPatternFull(p);
+      };
+      grid.appendChild(card);
+    });
+  } catch(err) {
+    grid.innerHTML = `<div style="grid-column:1/-1;font-size:.58rem;color:var(--ws-ink-soft);padding:6px 0;opacity:.5;">Could not load patterns</div>`;
+  }
+}
+
+function _selectPatternFull(p) {
+  _selectedPattern = p;
+  document.getElementById('patternSkinCode').value = p.code || p.id;
+  document.getElementById('patternSkinSearch').value = p.name;
+  document.getElementById('patternSkinResults').style.display = 'none';
+  const row = document.getElementById('patternSelectedRow');
+  const canvas = document.getElementById('patternSelectedCanvas');
+  const nameEl = document.getElementById('patternSelectedName');
+  const metaEl = document.getElementById('patternSelectedMeta');
+  if (canvas && typeof drawPattern === 'function') {
+    const colors = (Array.isArray(p.colors) && p.colors.length >= 3)
+      ? p.colors : ['#1a1208','#8b6a3a','#c9a96e','#e8d5a8','#faf6ef'];
+    drawPattern(canvas, p.style || 'diamond', colors);
+  }
+  if (nameEl) nameEl.textContent = p.name;
+  if (metaEl) metaEl.textContent = [p.heritage_origin, p.occasion].filter(Boolean).join(' · ');
+  if (row) row.style.display = 'flex';
+}
+
+async function searchPatterns(q) {
+  const results = document.getElementById('patternSkinResults');
+  if (!q || q.length < 2) { results.style.display = 'none'; return; }
+  try {
+    const { data, error } = await supa
+      .from('patterns')
+      .select('id, code, name, style, colors, heritage_origin, occasion')
+      .or(`name.ilike.%${q}%,palette_name.ilike.%${q}%,heritage_origin.ilike.%${q}%,style.ilike.%${q}%`)
+      .eq('workspace_enabled', true)
+      .limit(10);
+    if (error || !data?.length) {
+      results.style.display = 'block';
+      results.innerHTML = `<div style="padding:10px 12px;opacity:.5;font-size:.72rem;">No patterns found</div>`;
+      return;
+    }
+    results.style.display = 'block';
+    results.innerHTML = data.map(p => {
+      const safe = (p.name||'').replace(/'/g,"\\'");
+      return `<div onclick="selectPatternFromSearch('${p.code}','${safe}')"
+        style="padding:8px 10px;cursor:pointer;border-bottom:1px solid var(--ws-border);display:flex;gap:8px;align-items:center;"
+        onmouseover="this.style.background='rgba(200,160,80,.1)'"
+        onmouseout="this.style.background=''">
+        <canvas width="28" height="28" style="border-radius:4px;flex-shrink:0;" id="src-${p.code}"></canvas>
+        <div>
+          <div style="font-size:.72rem;font-weight:600;">${p.name}</div>
+          ${p.heritage_origin ? `<div style="font-size:.6rem;opacity:.5;">${p.heritage_origin}${p.occasion?' · '+p.occasion:''}</div>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+    // Render mini canvases in results
+    data.forEach(p => {
+      const c = document.getElementById(`src-${p.code}`);
+      if (c && typeof drawPattern === 'function') {
+        const colors = (Array.isArray(p.colors) && p.colors.length >= 3)
+          ? p.colors : ['#1a1208','#8b6a3a','#c9a96e','#e8d5a8','#faf6ef'];
+        drawPattern(c, p.style || 'diamond', colors);
+      }
+    });
+    window._searchResultPatterns = data;
+  } catch(err) { results.style.display = 'none'; }
+}
+
+function selectPatternFromSearch(code, name) {
+  const p = (window._searchResultPatterns || []).find(x => x.code === code);
+  document.getElementById('patternSkinResults').style.display = 'none';
+  document.querySelectorAll('.pat-pick-card').forEach(c => c.classList.remove('selected'));
+  const card = document.querySelector(`.pat-pick-card[data-code="${code}"]`);
+  if (card) card.classList.add('selected');
+  if (p) _selectPatternFull(p);
+  else { document.getElementById('patternSkinCode').value = code; document.getElementById('patternSkinSearch').value = name; }
+}
+
+function selectPattern(code, name) { selectPatternFromSearch(code, name); }
+
+async function applyPatternSkin() {
+  const code   = document.getElementById('patternSkinCode')?.value?.trim();
+  const btn    = document.getElementById('applySkinBtn');
+  const status = document.getElementById('skinStatus');
+  const info   = document.getElementById('skinInfo');
+
+  if (!code) { showToast('Select a pattern first'); return; }
+
+  btn.classList.add('is-loading'); btn.textContent = '…';
+  status.style.display = 'block'; status.textContent = 'Generating pattern…';
+
+  try {
+    // 1. Fetch palette CSS vars + copy from skin-pattern function
+    const res = await fetch('/.netlify/functions/skin-pattern', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        pattern_code: _selectedPattern?.code || null,
+        pattern_id:   _selectedPattern?.code ? null : (_selectedPattern?.id || code),
+        template_key: window.currentTemplateKey || ''
+      })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    const { css, copy, pattern } = data;
+
+    // 2. Save originals for reset
+    const root = document.documentElement;
+    if (!_originalCSSVars.__saved) {
+      Object.keys(css).forEach(v => { _originalCSSVars[v] = getComputedStyle(root).getPropertyValue(v).trim(); });
+      _originalCSSVars.__saved = true;
+    }
+
+    // 3. Apply palette CSS vars
+    const mount = document.getElementById('viewerMount');
+    Object.entries(css).forEach(([v, val]) => {
+      root.style.setProperty(v, val);
+      if (mount) mount.style.setProperty(v, val);
+    });
+
+    // 4. Generate the actual pattern canvas using drawPattern() already in this file
+    const tileSize = 280;
+    const offCanvas = document.createElement('canvas');
+    offCanvas.width = tileSize; offCanvas.height = tileSize;
+    const patColors = (Array.isArray(pattern.colors) && pattern.colors.length >= 3)
+      ? pattern.colors
+      : (_selectedPattern?.colors?.length >= 3 ? _selectedPattern.colors
+          : ['#1a1208','#8b6a3a','#c9a96e','#e8d5a8','#faf6ef']);
+    const patStyle = pattern.style || _selectedPattern?.style || 'diamond';
+    if (typeof drawPattern === 'function') drawPattern(offCanvas, patStyle, patColors);
+    const patternDataUrl = offCanvas.toDataURL('image/png');
+
+    // 5. Apply pattern as repeating background — bakes into viewer_html on save
+    if (mount) {
+      mount.style.backgroundImage = `url(${patternDataUrl})`;
+      mount.style.backgroundSize  = `${Math.round(tileSize * 0.65)}px`;
+      mount.style.backgroundRepeat = 'repeat';
+      mount.style.backgroundPosition = 'top left';
+    }
+
+    // 6. Track active skin for metadata
+    _activeSkin = { pattern_code: code, pattern_name: pattern.name, pattern_style: patStyle };
+
+    // 7. Fill copy panel
+    if (copy) {
+      const notes = document.getElementById('notes');
+      if (notes) notes.value = [
+        copy.headline  && `Headline: ${copy.headline}`,
+        copy.subheader && `Subheader: ${copy.subheader}`,
+        copy.story     && `Story: ${copy.story}`,
+      ].filter(Boolean).join('\n\n');
+    }
+
+    if (pattern) {
+      info.style.display = 'block';
+      info.innerHTML = `<strong>${pattern.name}</strong>${pattern.heritage_origin ? ' · ' + pattern.heritage_origin : ''}<br><span style="opacity:.6">${pattern.occasion || ''}</span>`;
+    }
+
+    // 8. Auto-save so the pattern is persisted
+    scheduleAutosave();
+
+    status.style.display = 'none';
+    showToast(`✦ ${pattern?.name || code} applied`);
+  } catch (err) {
+    console.error('[Pattern Skin]', err);
+    status.textContent = 'Pattern not found — try another';
+    showToast('Skin failed');
+  } finally {
+    btn.classList.remove('is-loading');
+    btn.textContent = '✦ Apply Pattern';
+  }
+}
+
+function resetPatternSkin() {
+  const root  = document.documentElement;
+  const mount = document.getElementById('viewerMount');
+  if (_originalCSSVars.__saved) {
+    Object.entries(_originalCSSVars).forEach(([v, val]) => {
+      if (v === '__saved') return;
+      root.style.setProperty(v, val);
+      if (mount) mount.style.setProperty(v, val);
+    });
+  }
+  if (mount) {
+    mount.style.removeProperty('background-image');
+    mount.style.removeProperty('background-size');
+    mount.style.removeProperty('background-repeat');
+    mount.style.removeProperty('background-position');
+  }
+  _activeSkin = null; _selectedPattern = null;
+  document.getElementById('skinInfo').style.display = 'none';
+  const row = document.getElementById('patternSelectedRow');
+  if (row) row.style.display = 'none';
+  document.getElementById('patternSkinSearch').value = '';
+  document.getElementById('patternSkinCode').value = '';
+  document.querySelectorAll('.pat-pick-card').forEach(c => c.classList.remove('selected'));
+  scheduleAutosave();
+  showToast('Pattern removed ↺');
+}
+
 function generateNote(type) { generateAICopy(); }
 
 window.openProductExpander = function() {
