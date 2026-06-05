@@ -2376,7 +2376,7 @@ Return only the copy itself — no preamble, no explanation, no quotes around it
   status.textContent = 'Generating…';
 
   try {
-    const res = await fetch('/.netlify/functions/anthropic-proxy', {
+    const res = await fetch('https://cultureschool-backend.onrender.com/api/anthropic', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

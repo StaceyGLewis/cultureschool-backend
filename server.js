@@ -2498,6 +2498,27 @@ app.get('/api/scrape-product', async (req, res) => {
   }
 });
 
+// ── Anthropic proxy ──────────────────────────────────────────────────────────
+app.post('/api/anthropic', cors({ origin: true }), async (req, res) => {
+  const key = process.env.ANTHROPIC_API_KEY;
+  if (!key) return res.status(500).json({ error: 'ANTHROPIC_API_KEY not configured' });
+  try {
+    const upstream = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type':      'application/json',
+        'x-api-key':         key,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify(req.body),
+    });
+    const data = await upstream.json();
+    res.status(upstream.status).json(data);
+  } catch (err) {
+    res.status(502).json({ error: err.message });
+  }
+});
+
 // WebSocket + Express listener
 const PORT = process.env.PORT || 5055;
 server.listen(PORT, () => {
