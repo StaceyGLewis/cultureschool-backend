@@ -2,13 +2,19 @@
   publish   = "dist"
   functions = "netlify/functions"
 
+# ---------- REDIRECTS ----------
 
-  [[redirects]]
+[[redirects]]
   from = "/api/anthropic"
   to   = "/.netlify/functions/anthropic-proxy"
   status = 200
 
-  [[redirects]]
+[[redirects]]
+  from = "/api/anthropic-proxy"
+  to   = "/.netlify/functions/anthropic-proxy"
+  status = 200
+
+[[redirects]]
   from = "/api/unsplash-proxy"
   to   = "/.netlify/functions/unsplash-proxy"
   status = 200
@@ -17,62 +23,10 @@
   from = "/api/pixabay-proxy"
   to   = "/.netlify/functions/pixabay-proxy"
   status = 200
-  
-/b/:slug   /pages/seaport-viewer?slug=:slug   200
-/board/:id /pages/seaport-viewer?board=:id    200
-[build]
-  publish = "dist"
-
-[[headers]]
-  for = "/*.js"
-  [headers.values]
-  Cache-Control = "public, max-age=31536000, immutable"
-
-[[headers]]
-  for = "/*.css"
-  [headers.values]
-  Cache-Control = "public, max-age=31536000, immutable"
-
-[[headers]]
-  for = "/.netlify/images*"
-  [headers.values]
-  Cache-Control = "public, max-age=31536000, immutable"
-
-[[headers]]
-  for = "/*"
-  [headers.values]
-  Cache-Control = "public, max-age=300" # HTML kept short
-/*
-  [[headers]]
-for = "/*"
-[headers.values]
-Content-Security-Policy = "frame-ancestors 'self' https://www.cultureschool.org https://cultureschool.org"
-[[headers]]
-  for = "/admin/*"
-  [headers.values]
-    Basic-Auth = "coco:letmein"
-    X-Robots-Tag = "noindex, nofollow"
-    [[headers]]
-  for = "/coco-admin/*"
-  [headers.values]
-    Basic-Auth = "coco:letmein"
-    X-Robots-Tag = "noindex, nofollow"
-  for = "/event-collector/*"
-  [headers.values]
-    Basic-Auth = "coco:letmein"
-    X-Robots-Tag = "noindex, nofollow"
-  for = "/coco-admin-editor/*"[build]
-  publish = "dist"
-  functions = "netlify/functions"
 
 [[redirects]]
   from = "/api/pexels-proxy"
   to   = "/.netlify/functions/pexels-proxy"
-  status = 200
-
-[[redirects]]
-  from = "/api/pixabay-proxy"
-  to   = "/.netlify/functions/pixabay-proxy"
   status = 200
 
 [[redirects]]
@@ -86,6 +40,7 @@ Content-Security-Policy = "frame-ancestors 'self' https://www.cultureschool.org 
   status = 200
 
 # ---------- CACHING ----------
+
 [[headers]]
   for = "/*.js"
   [headers.values]
@@ -106,23 +61,16 @@ Content-Security-Policy = "frame-ancestors 'self' https://www.cultureschool.org 
   [headers.values]
     Cache-Control = "public, max-age=300"
 
-# ---------- SECURITY + VOICE (CRITICAL) ----------
+# ---------- SECURITY ----------
+
 [[headers]]
   for = "/*"
   [headers.values]
-    # Allow embedding
-    Content-Security-Policy = """
-      default-src 'self' https:;
-      script-src 'self' https: 'unsafe-inline';
-      style-src 'self' https: 'unsafe-inline';
-      img-src 'self' https: data:;
-      connect-src 'self' https://cultureschool-backend.onrender.com https:;
-      media-src 'self' https://cultureschool-backend.onrender.com blob:;
-      frame-ancestors 'self' https://www.cultureschool.org https://cultureschool.org;
-    """
+    Content-Security-Policy = "default-src 'self' https:; script-src 'self' https: 'unsafe-inline'; style-src 'self' https: 'unsafe-inline'; img-src 'self' https: data:; connect-src 'self' https://cultureschool-backend.onrender.com https:; media-src 'self' https://cultureschool-backend.onrender.com blob:; frame-ancestors 'self' https://www.cultureschool.org https://cultureschool.org;"
     Permissions-Policy = "autoplay=*, microphone=*"
 
 # ---------- ADMIN LOCKDOWN ----------
+
 [[headers]]
   for = "/admin/*"
   [headers.values]
@@ -133,23 +81,20 @@ Content-Security-Policy = "frame-ancestors 'self' https://www.cultureschool.org 
   for = "/coco-admin/*"
   [headers.values]
     Basic-Auth = "coco:letmein"
-    X
+    X-Robots-Tag = "noindex, nofollow"
 
+[[headers]]
+  for = "/event-collector/*"
   [headers.values]
     Basic-Auth = "coco:letmein"
     X-Robots-Tag = "noindex, nofollow"
 
-[[[headers]]
-  for = "/*"
+[[headers]]
+  for = "/coco-admin-editor/*"
   [headers.values]
-    Permissions-Policy = "microphone=*, autoplay=*"
-    Content-Security-Policy = """
-      default-src 'self' https:;
-      connect-src 'self' https:;
-      img-src 'self' https: blob: data:;
-      media-src 'self' https: blob:;
-      frame-ancestors 'self' https://cultureschool.org https://www.cultureschool.org;
-    """
+    Basic-Auth = "coco:letmein"
+    X-Robots-Tag = "noindex, nofollow"
+
 [[headers]]
   for = "/api/health/*"
   [headers.values]
