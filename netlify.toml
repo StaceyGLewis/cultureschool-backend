@@ -16,6 +16,16 @@
 # ---------- REDIRECTS ----------
 
 [[redirects]]
+  from = "https://coco-color-lab.cultureschool.org/*"
+  to   = "/color-lab"
+  status = 200
+
+[[redirects]]
+  from = "https://coco-color-lab.cultureschool.org"
+  to   = "/color-lab"
+  status = 200
+
+[[redirects]]
   from = "/api/anthropic"
   to   = "/.netlify/functions/anthropic-proxy"
   status = 200
