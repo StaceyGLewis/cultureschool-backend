@@ -116,6 +116,7 @@ const ALLOWED_ORIGINS = [
   'https://rustic-market-viewer.netlify.app',
   'https://holiday-notebook-shoppe.netlify.app',
   'https://showcase-viewer.netlify.app',
+  'https://showcase-viewer.cultureschool.org',
   'https://theme-viewer.netlify.app'
 ];
 
@@ -1864,6 +1865,8 @@ app.get("/api/geocode", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch geocode data" });
   }
 });
+
+require('./routes/export-mp4')(app);
 
 module.exports = app;
 

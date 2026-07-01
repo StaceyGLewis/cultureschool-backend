@@ -372,6 +372,12 @@ entrypoint = "./functions/host-image/index.ts"
 # Make it public (no JWT required)
 verify_jwt = false
 
+[functions.notify-creator]
+# Called by a Database Webhook on collector_reactions INSERT — the webhook
+# isn't a logged-in user, so JWT verification must be off or it 401s before
+# the function runs.
+verify_jwt = false
+
 # Optional: only include if you actually have this file
 # import_map = "./functions/mother-seed/deno.json"
 
