@@ -18,6 +18,7 @@
   "dependencies": {
     "@mozilla/readability": "^0.6.0",
     "@sendgrid/mail": "^8.1.5",
+    "@sparticuz/chromium": "^133.0.0",
     "@supabase/supabase-js": "^2.75.0",
     "ai": "^5.0.22",
     "autoprefixer": "^10.4.21",

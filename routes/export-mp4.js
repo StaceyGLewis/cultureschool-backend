@@ -6,10 +6,10 @@
  *
  * Body: { board_id: string, duration_seconds?: number (1–30, default 8) }
  *
- * Requires on the Render host:
- *   - chromium   (apt-get install -y chromium)
- *   - ffmpeg     (already installed — confirmed via /api/test-ffmpeg)
- *   - npm pkg:   puppeteer-core
+ * Requires:
+ *   - @sparticuz/chromium  (npm pkg — self-extracts to /tmp at runtime)
+ *   - puppeteer-core       (npm pkg)
+ *   - ffmpeg               (already on Render)
  *
  * Typical response time: ~15-30s. Client should set a 60s timeout.
  * Frontend call: POST https://cultureschool-backend.onrender.com/api/export-mp4
@@ -26,57 +26,27 @@ const { v4: uuidv4 } = require('uuid');
 const VIEWER_BASE   = 'https://showcase-viewer.cultureschool.org';
 const DEFAULT_SECS  = 8;
 const MAX_SECS      = 30;
-const CAPTURE_FPS   = 12;           // CDP frames-per-second; 12 is smooth enough
+const CAPTURE_FPS   = 12;
 const WIDTH         = 1280;
 const HEIGHT        = 720;
 
-// ── locate Chromium on Render (Debian/Ubuntu) ─────────────────────────────────
-function chromiumPath() {
-  const candidates = [
-    process.env.CHROMIUM_PATH,
-    '/usr/bin/chromium',
-    '/usr/bin/chromium-browser',
-    '/usr/bin/google-chrome-stable',
-    '/usr/bin/google-chrome',
-  ].filter(Boolean);
-
-  for (const p of candidates) {
-    if (fs.existsSync(p)) return p;
-  }
-  return null;
-}
-
 // ── record the page via CDP screencast → JPEG frames on disk ─────────────────
 async function captureFrames(url, durationSecs, framesDir) {
-  let puppeteer;
-  try {
-    puppeteer = require('puppeteer-core');
-  } catch {
-    throw new Error(
-      'puppeteer-core is not installed. Add it: npm install puppeteer-core'
-    );
-  }
+  const puppeteer  = require('puppeteer-core');
+  const chromium   = require('@sparticuz/chromium');
 
-  const execPath = chromiumPath();
-  if (!execPath) {
-    throw new Error(
-      'Chromium not found. Add it to the Render build command: ' +
-      'apt-get install -y chromium && npm ci'
-    );
-  }
+  // sparticuz/chromium sets its own recommended args; merge ours in
+  const args = [
+    ...chromium.args,
+    '--disable-web-security',
+    '--autoplay-policy=no-user-gesture-required',
+    `--window-size=${WIDTH},${HEIGHT}`,
+  ];
 
   const browser = await puppeteer.launch({
-    executablePath: execPath,
-    headless: 'new',
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--disable-gpu',
-      '--disable-web-security',
-      '--autoplay-policy=no-user-gesture-required',
-      `--window-size=${WIDTH},${HEIGHT}`,
-    ],
+    executablePath: await chromium.executablePath(),
+    headless:       chromium.headless,
+    args,
   });
 
   let frameIndex = 0;
