@@ -3793,33 +3793,14 @@ function closeModal() {
 
 async function loadPatterns() {
   try {
-    // ── Patterns + auth fired in parallel — never blocks on auth ─
-    const [patternsResult, sessionResult] = await Promise.all([
-      sb.from('patterns')
-        .select('id, name, style, colors, palette_name, description, tags, occasion, created_at, code, palette_story, heritage_name, heritage_origin, heritage_region, heritage_era, heritage_meaning, heritage_technique, heritage_significance, heritage_tags')
-        .eq('is_public', true)
-        .limit(1000),
-      Promise.race([
-        sb.auth.getSession(),
-        new Promise(resolve => setTimeout(() => resolve({ data: { session: null } }), 3000))
-      ]).catch(() => ({ data: { session: null } }))
-    ]);
+    // ── Fetch patterns immediately — no auth blocking ──────────
+    const { data, error } = await sb
+      .from('patterns')
+      .select('id, name, style, colors, palette_name, description, tags, occasion, created_at, code, palette_story, heritage_name, heritage_origin, heritage_region, heritage_era, heritage_meaning, heritage_technique, heritage_significance, heritage_tags')
+      .eq('is_public', true)
+      .limit(1000);
 
-    const { data, error } = patternsResult;
     if (error) throw error;
-
-    // Subscriber check — 3s timeout prevents stale session from hanging the page
-    let _initIsSubscriber = false;
-    try {
-      const session = sessionResult?.data?.session;
-      if (session?.user) {
-        const { data: uRow } = await sb.from('users')
-          .select('is_subscriber')
-          .eq('email', session.user.email.toLowerCase())
-          .maybeSingle();
-        _initIsSubscriber = !!(uRow?.is_subscriber);
-      }
-    } catch(_) {}
 
     function shuffleArray(arr) {
       for (let i = arr.length - 1; i > 0; i--) {
@@ -3853,12 +3834,11 @@ async function loadPatterns() {
       return result;
     }
 
-    allPatterns = balanceByStyle(data || []);
-
+    const allData = balanceByStyle(data || []);
     const grid = document.getElementById('patternGrid');
 
     if (!data || !data.length) {
-      grid.innerHTML = `<div class="state-msg">
+      if (grid) grid.innerHTML = `<div class="state-msg">
         <span class="icon">CoCo</span>
         No public patterns yet — create the first one.
       </div>`;
@@ -3868,7 +3848,22 @@ async function loadPatterns() {
     _allPatterns = data;
     window._allPatterns = data;
     buildPatternFilters(data);
-    await initPatternLibrary(data, _initIsSubscriber);
+    renderPatternSections(data);   // renders immediately — no auth wait
+
+    // ── Subscriber check AFTER render — non-blocking ───────────
+    let isSubscriber = false;
+    try {
+      const { data: { session } } = await sb.auth.getSession();
+      if (session?.user) {
+        const { data: uRow } = await sb.from('users')
+          .select('is_subscriber')
+          .eq('email', session.user.email.toLowerCase())
+          .maybeSingle();
+        isSubscriber = !!(uRow?.is_subscriber);
+      }
+    } catch (_) {}
+
+    await initPatternLibrary(data, isSubscriber);
     checkIncomingPalette();
 
   } catch(e) {
@@ -4134,7 +4129,7 @@ function blurredPatternCardHtml(row, i) {
 
 async function initPatternLibrary(data, isSubscriber) {
   const FREE_STYLES = ['kente', 'zellige', 'shibori', 'mudcloth', 'ikat', 'adinkra'];
-  if (isSubscriber) { renderGrid(data); return; }
+  if (isSubscriber) { return; }  // renderPatternSections already rendered all patterns
   const seen = new Set();
   const freePatterns = [];
   for (const style of FREE_STYLES) {
