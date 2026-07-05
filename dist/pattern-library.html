@@ -3799,14 +3799,27 @@ async function loadPatterns() {
         .select('id, name, style, colors, palette_name, description, tags, occasion, created_at, code, palette_story, heritage_name, heritage_origin, heritage_region, heritage_era, heritage_meaning, heritage_technique, heritage_significance, heritage_tags')
         .eq('is_public', true)
         .limit(1000),
-      sb.auth.getSession().catch(() => ({ data: { session: null } }))
+      Promise.race([
+        sb.auth.getSession(),
+        new Promise(resolve => setTimeout(() => resolve({ data: { session: null } }), 3000))
+      ]).catch(() => ({ data: { session: null } }))
     ]);
 
     const { data, error } = patternsResult;
     if (error) throw error;
 
-    // Gate disabled — show all public patterns to everyone
-    let _initIsSubscriber = true;
+    // Subscriber check — 3s timeout prevents stale session from hanging the page
+    let _initIsSubscriber = false;
+    try {
+      const session = sessionResult?.data?.session;
+      if (session?.user) {
+        const { data: uRow } = await sb.from('users')
+          .select('is_subscriber')
+          .eq('email', session.user.email.toLowerCase())
+          .maybeSingle();
+        _initIsSubscriber = !!(uRow?.is_subscriber);
+      }
+    } catch(_) {}
 
     function shuffleArray(arr) {
       for (let i = arr.length - 1; i > 0; i--) {
@@ -4120,8 +4133,6 @@ function blurredPatternCardHtml(row, i) {
 }
 
 async function initPatternLibrary(data, isSubscriber) {
-  renderGrid(data); return;
-  // Gate disabled — subscriber check below is preserved for when gate is re-enabled
   const FREE_STYLES = ['kente', 'zellige', 'shibori', 'mudcloth', 'ikat', 'adinkra'];
   if (isSubscriber) { renderGrid(data); return; }
   const seen = new Set();
