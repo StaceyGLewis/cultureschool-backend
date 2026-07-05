@@ -1,0 +1,4192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pattern Library — CoCo by CultureSchool</title>
+<meta name="description" content="Textile traditions from every corner of the world. Grab one. Make something.">
+
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pinyon+Script&family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg:      #faf6f0;
+  --surface: #ffffff;
+  --ink:     #1e1810;
+  --ink-soft:#5a4a38;
+  --muted:   #9a8a78;
+  --line:    #e8ddd0;
+  --gold:    #c8a050;
+  --gold-dk: #8a6820;
+  --gold-lt: #f5ead8;
+  --script:  'Pinyon Script', cursive;
+  --serif:   'DM Serif Display', Georgia, serif;
+  --sans:    'DM Sans', system-ui, sans-serif;
+  --ease:    cubic-bezier(.22,.61,.36,1);
+  --radius:  16px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--sans);
+  background: #0e0b08;
+  color: var(--ink);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Grain */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 9999;
+  pointer-events: none; opacity: .022;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 256px;
+}
+
+/* ── TOPBAR ── */
+.topbar {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(14,11,8,.9);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  padding: 0 clamp(16px,4vw,40px);
+  height: 58px;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+}
+.topbar-logo {
+  font-family: var(--script);
+  font-size: 1.8rem;
+  color: rgba(240,224,192,.9);
+  text-decoration: none;
+  letter-spacing: .02em;
+  line-height: 1;
+}
+.topbar-back {
+  font: 600 .72rem/1 var(--sans);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.45);
+  text-decoration: none;
+  transition: color .18s;
+}
+.topbar-back:hover { color: var(--gold); }
+
+/* ── MAIN ── */
+main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: clamp(32px, 5vw, 64px) clamp(16px, 4vw, 40px);
+  width: 100%;
+}
+
+/* ── LIBRARY HEADER ── */
+.lib-header {
+  width: 100%;
+  margin: 0 0 clamp(28px,4vw,48px);
+  text-align: center;
+  padding-bottom: clamp(20px,3vw,32px);
+  border-bottom: 1px solid rgba(255,255,255,.07);
+}
+.lib-eyebrow {
+  font: 700 .65rem/1 var(--sans);
+  letter-spacing: .28em; text-transform: uppercase;
+  color: var(--gold); opacity: .85; margin-bottom: 14px;
+}
+.lib-title {
+  font-family: 'DM Serif Display', var(--serif);
+  font-size: clamp(2.4rem, 6vw, 4rem);
+  font-style: italic; font-weight: 400;
+  color: #fff; line-height: 1.0; margin-bottom: 10px;
+}
+.lib-title em { color: var(--gold-lt); }
+.lib-sub {
+  font: 400 .88rem/1.6 var(--sans);
+  color: rgba(255,255,255,.4);
+  max-width: 420px; margin: 0 auto;
+}
+
+/* ── FILTER CHIPS ── */
+/* filter bar — multi-dim chips */
+.lib-filter-bar { width: 100%; margin: 0 0 28px; display: flex; flex-direction: column; gap: 12px; }
+.lib-filter-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.lib-filter-label { font: 700 .55rem/1 var(--sans); letter-spacing: .2em; text-transform: uppercase; color: rgba(255,255,255,.25); flex-shrink: 0; min-width: 64px; }
+.lib-filter-chips { display: flex; gap: 7px; flex-wrap: wrap; flex: 1; }
+.lib-chip { padding: 8px 18px; border-radius: 100px; border: 1.5px solid rgba(255,255,255,.2); background: rgba(14,11,8,.55); font: 600 .65rem/1 var(--sans); letter-spacing: .08em; color: rgba(255,255,255,.72); cursor: pointer; backdrop-filter: blur(14px); transition: all .22s; white-space: nowrap; }
+.lib-chip:hover { border-color: rgba(200,160,80,.5); color: #fff; }
+.lib-chip.active { background: rgba(200,160,80,.18); border-color: var(--gold); color: var(--gold-lt); }
+.lib-sort-wrap { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.lib-sort-label { font: 600 .55rem/1 var(--sans); letter-spacing: .16em; text-transform: uppercase; color: rgba(255,255,255,.25); }
+.lib-sort { background: rgba(14,11,8,.55); border: 1.5px solid rgba(255,255,255,.18); border-radius: 100px; padding: 7px 14px; font: 600 .65rem/1 var(--sans); color: rgba(255,255,255,.65); cursor: pointer; backdrop-filter: blur(14px); outline: none; appearance: none; }
+/* collection sections */
+.lib-section { width: 100%; margin: 0 0 52px; }
+.lib-section-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,.07); }
+.lib-section-label { font: 700 .6rem/1 var(--sans); letter-spacing: .24em; text-transform: uppercase; color: var(--gold); margin-bottom: 4px; }
+.lib-section-title { font-family: 'DM Serif Display', var(--serif); font-size: clamp(1.4rem,3vw,2rem); font-weight: 400; font-style: italic; color: #fff; line-height: 1.1; }
+.lib-section-count { font: 400 .68rem/1 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.25); }
+#filterChips { display: none; } /* replaced by lib-filter-bar */
+
+/* ── SEARCH ── */
+.search-wrap { width: 100%; margin: 0 0 20px; position: relative; }
+.search-wrap svg { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); pointer-events: none; color: rgba(200,160,80,.55); }
+#patternSearch { width: 100%; padding: 14px 16px 14px 46px; border: 1.5px solid rgba(255,255,255,.14); border-radius: 14px; background: rgba(14,11,8,.62); backdrop-filter: blur(20px); font: italic 400 1rem/1 'DM Serif Display',serif; color: rgba(255,255,255,.88); outline: none; transition: border-color .25s; }
+#patternSearch::placeholder { color: rgba(255,255,255,.28); font-style: italic; }
+#patternSearch:focus { border-color: rgba(200,160,80,.5); }
+.search-clear { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,.1); border: none; border-radius: 999px; width: 22px; height: 22px; font: 600 .75rem/1 var(--sans); color: rgba(255,255,255,.5); cursor: pointer; display: none; align-items: center; justify-content: center; }
+.search-clear.visible { display: flex; }
+.search-clear:hover { background: rgba(200,160,80,.2); color: #fff; }
+
+/* ── PATTERN GRID ── */
+.pattern-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: clamp(14px,1.8vw,20px);
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Skeleton */
+.skeleton {
+  background: rgba(255,255,255,.06);
+  outline: 1px solid rgba(200,160,80,.1);
+  border-radius: 14px;
+  height: 300px;
+  animation: pulse 1.4s ease infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .55; }
+}
+
+/* ── PATTERN CARD ── */
+.pcard {
+  background: #1a1410;
+  border: none;
+  outline: 1px solid rgba(200,160,80,.18);
+  border-radius: 14px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform .2s var(--ease), box-shadow .2s, border-color .2s;
+  animation: fadeUp .35s var(--ease) both;
+}
+.pcard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 40px rgba(0,0,0,.5);
+  outline-color: rgba(200,160,80,.65);
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.pcard-canvas {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  background: #2a2018;
+}
+.pcard-strip {
+  display: flex;
+  height: 6px;
+}
+.pcard-strip div { flex: 1; }
+.pcard-body { padding: 12px 14px 14px; background: #1a1410; }
+.pcard-style {
+  display: inline-block;
+  font: 700 .6rem/1 var(--sans);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--gold-dk);
+  margin-bottom: 6px;
+}
+.pcard-code {
+  font: 700 9px 'DM Sans', sans-serif;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: #c9a96e;
+  margin-bottom: 4px;
+  opacity: .85;
+}
+.pmodal-code {
+  font: 700 10px 'DM Sans', sans-serif;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: #c9a96e;
+  margin-bottom: 6px;
+  cursor: pointer;
+  user-select: all;
+}
+.pmodal-code:hover { opacity: .7; }
+.pcard-name {
+  font-family: 'DM Serif Display', var(--serif);
+  font-style: italic; font-weight: 400;
+  font-size: .95rem; line-height: 1.25;
+  color: #fff; margin-bottom: 4px;
+}
+.pcard-palette {
+  font: italic 400 .7rem/1.3 'Cormorant Garamond', serif;
+  color: rgba(255,255,255,.42);
+  margin-bottom: 8px;
+}
+.pcard-story {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-style: italic;
+  font-size: .78rem;
+  color: rgba(255,255,255,.38);
+  line-height: 1.55;
+  margin-bottom: 6px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.pcard-desc {
+  font: 400 .7rem/1.45 var(--sans);
+  color: rgba(255,255,255,.32);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.pcard-tags {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+.pcard-tag {
+  font: 600 .58rem/1 var(--sans);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  background: var(--gold-lt);
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+
+/* ── MODAL ── */
+.pmodal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(10,8,4,.55);
+  z-index: 300;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  backdrop-filter: blur(4px);
+}
+.pmodal-overlay.open { display: flex; }
+
+.pmodal {
+  background: var(--surface);
+  border-radius: 20px;
+  max-width: 860px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+.pmodal-close {
+  position: absolute;
+  top: 14px; right: 16px;
+  background: var(--gold-lt);
+  border: none;
+  border-radius: 999px;
+  width: 32px; height: 32px;
+  font: 600 1.1rem/1 var(--sans);
+  color: var(--ink-soft);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .18s, color .18s;
+  z-index: 10;
+}
+.pmodal-close:hover { background: var(--gold); color: #fff; }
+
+.pmodal-inner {
+  padding: clamp(20px, 4vw, 36px);
+}
+
+.pmodal-preview-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+#modalCanvas {
+  display: block;
+  width: 100%;
+  max-width: 420px;
+  aspect-ratio: 1;
+  border-radius: 12px;
+  background: var(--line);
+}
+
+.pmodal-strip {
+  display: flex;
+  height: 36px;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 20px;
+  max-width: 420px;
+}
+.pmodal-strip div { flex: 1; }
+
+.pmodal-style {
+  font: 700 .65rem/1 var(--sans);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--gold-dk);
+  margin-bottom: 6px;
+}
+.pmodal-name {
+  font-family: var(--serif);
+  font-size: clamp(1.4rem, 4vw, 2rem);
+  color: var(--ink);
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+.pmodal-palette {
+  font: 400 .82rem/1 var(--sans);
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+.pmodal-desc {
+  font: 400 .88rem/1.6 var(--sans);
+  color: var(--ink-soft);
+  margin-bottom: 16px;
+}
+.pmodal-story {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-style: italic;
+  font-size: .98rem;
+  color: rgba(26,18,8,.55);
+  line-height: 1.65;
+  margin: 8px 0 16px;
+  padding: 0 2px;
+}
+.pmodal-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+.pmodal-tag {
+  font: 600 .62rem/1 var(--sans);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  background: var(--gold-lt);
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+/* Mockups */
+.pmodal-mockups {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 28px;
+}
+.pmodal-mockup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.pmodal-mockup canvas {
+  display: block;
+  background: var(--line);
+  border-radius: 8px;
+}
+.pmodal-mockup-label {
+  font: 600 .6rem/1 var(--sans);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* CTA */
+.pmodal-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 28px;
+  background: linear-gradient(135deg, #c8a050, #a07830);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font: 700 .78rem/1 var(--sans);
+  letter-spacing: .10em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(200,160,80,.28);
+  transition: filter .18s, transform .12s;
+  width: 100%;
+  text-align: center;
+}
+.pmodal-cta:hover { filter: brightness(1.08); transform: translateY(-1px); }
+
+/* ── ORDER PRINTS ── */
+.pmodal-order-wrap {
+  margin-top: 16px;
+  padding: 16px;
+  background: var(--gold-lt);
+  border-radius: 14px;
+}
+.pmodal-order-label {
+  font: 700 .6rem/1 var(--sans);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--gold-dk);
+  margin-bottom: 10px;
+}
+.pmodal-order-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.order-pill {
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(160,120,48,.25);
+  background: var(--surface);
+  font: 600 .62rem/1 var(--sans);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  color: var(--ink-soft);
+  transition: all .18s;
+  white-space: nowrap;
+}
+.order-pill:hover { border-color: var(--gold); color: var(--gold-dk); }
+.order-pill.active { background: var(--gold); border-color: var(--gold); color: #fff; }
+.pmodal-order-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 12px 20px;
+  background: var(--ink);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font: 700 .75rem/1 var(--sans);
+  letter-spacing: .10em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: opacity .18s;
+}
+.pmodal-order-btn:hover { opacity: .85; }
+
+/* ── TOAST ── */
+#toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(0);
+  background: var(--ink);
+  color: #fff;
+  font: 600 .8rem/1 var(--sans);
+  padding: 12px 20px;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.2);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .25s ease, transform .25s ease;
+  white-space: nowrap;
+  z-index: 10000;
+}
+#toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-6px);
+}
+
+/* ── EMPTY / ERROR ── */
+.state-msg {
+  text-align: center;
+  color: var(--muted);
+  font-size: .9rem;
+  padding: 80px 0;
+  grid-column: 1 / -1;
+}
+.state-msg .icon {
+  font-family: var(--script);
+  font-size: 2.4rem;
+  color: var(--gold);
+  display: block;
+  margin-bottom: 12px;
+}
+
+/* ── FOOTER ── */
+footer {
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--muted);
+  font-size: .72rem;
+  letter-spacing: .06em;
+}
+footer a { color: var(--gold-dk); text-decoration: none; font-weight: 600; }
+
+/* ── Order product cards ─────────────────────────────────────── */
+.pmodal-prod-cards{
+  display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:14px;
+}
+.pmodal-prod-card{
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  cursor:pointer;flex:1;min-width:100px;max-width:156px;
+}
+.pmodal-prod-mockup{
+  position:relative;width:100%;padding-bottom:71.4%;
+  background:var(--gold-lt);border-radius:10px;overflow:hidden;
+  border:2.5px solid transparent;transition:border-color .18s,box-shadow .18s;
+}
+.pmodal-prod-mockup canvas{position:absolute;inset:0;width:100%;height:100%;}
+.pmodal-prod-mockup img{
+  position:absolute;inset:0;width:100%;height:100%;
+  object-fit:contain;z-index:2;
+}
+.pmodal-prod-card.selected .pmodal-prod-mockup{
+  border-color:var(--gold);box-shadow:0 0 0 3px rgba(200,160,80,.18);
+}
+.pmodal-prod-card:hover .pmodal-prod-mockup{border-color:rgba(200,160,80,.4);}
+.pmodal-prod-name{
+  font:700 .6rem/1 var(--sans);letter-spacing:.08em;
+  text-transform:uppercase;color:var(--ink-soft);text-align:center;
+}
+
+
+/* ── Incoming palette banner ─────────────────────────────────── */
+.palette-banner {
+  display: none;
+  width: 100%;
+  background: #1a1208;
+  border-bottom: 1px solid rgba(201,169,110,.2);
+  padding: 12px clamp(16px,4vw,40px);
+  margin-bottom: 16px;
+}
+.palette-banner.visible { display: block; }
+.pb-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  max-width: 1200px;
+  margin: 0 auto;
+  flex-wrap: wrap;
+}
+.pb-label {
+  font: 700 .62rem/1 var(--sans);
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: rgba(201,169,110,.6);
+  margin-right: 8px;
+}
+.pb-name {
+  font-family: 'DM Serif Display', serif;
+  font-style: italic;
+  font-size: 1rem;
+  color: #faf6ef;
+  margin-right: 12px;
+}
+.pb-swatches {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+}
+.pb-clear {
+  font: 600 .62rem/1 var(--sans);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: rgba(201,169,110,.55);
+  background: none;
+  border: 1px solid rgba(201,169,110,.2);
+  border-radius: 999px;
+  padding: 6px 14px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color .2s, border-color .2s;
+}
+.pb-clear:hover { color: var(--gold); border-color: rgba(201,169,110,.5); }
+
+/* ── Download button ─────────────────────────────────────────── */
+.pmodal-dl-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin-top: 8px;
+  padding: 12px 20px;
+  background: transparent;
+  color: rgba(200,160,80,.72);
+  border: 1px solid rgba(200,160,80,.28);
+  border-radius: 12px;
+  font: 600 .72rem/1 var(--sans);
+  letter-spacing: .10em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color .18s, border-color .18s, background .18s;
+}
+.pmodal-dl-btn:hover {
+  color: var(--gold);
+  border-color: rgba(200,160,80,.5);
+  background: rgba(200,160,80,.05);
+}
+
+/* ── HERITAGE SECTION ── */
+.pmodal-heritage{margin:16px 0;border:1px solid rgba(201,169,110,.2);border-radius:14px;overflow:hidden}
+.heritage-toggle{width:100%;display:flex;align-items:center;gap:10px;padding:14px 16px;background:rgba(201,169,110,.06);border:none;cursor:pointer;text-align:left;font-family:'Jost',sans-serif;font-size:.68rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink);transition:background .18s}
+.heritage-toggle:hover{background:rgba(201,169,110,.12)}
+.heritage-toggle-icon{color:var(--gold);flex-shrink:0;font-size:.8rem}
+.heritage-toggle span:nth-child(2){flex:1}
+.heritage-chevron{font-size:.6rem;opacity:.5;transition:transform .25s;flex-shrink:0}
+.heritage-chevron.open{transform:rotate(180deg)}
+.heritage-body{padding:18px 18px 20px;background:#fff}
+.heritage-meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.heritage-meta-pill{font-family:'Jost',sans-serif;font-size:.55rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:4px 10px;border-radius:99px;background:rgba(201,169,110,.1);color:var(--gold-dk)}
+.heritage-meaning{font-family:'Cormorant Garamond',serif;font-size:.98rem;line-height:1.72;color:var(--ink);margin-bottom:4px}
+.heritage-divider{height:1px;background:rgba(201,169,110,.15);margin:14px 0}
+.heritage-label{font-family:'Jost',sans-serif;font-size:.55rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:rgba(26,18,8,.38);margin-bottom:7px}
+.heritage-technique,.heritage-significance{font-family:'Cormorant Garamond',serif;font-size:.92rem;line-height:1.7;color:rgba(26,18,8,.7)}
+.heritage-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:14px}
+.heritage-tag{font-family:'Jost',sans-serif;font-size:.5rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;border-radius:99px;background:rgba(26,18,8,.05);color:rgba(26,18,8,.45)}
+.gate-blur{position:absolute;inset:0;z-index:10;backdrop-filter:blur(4px);background:linear-gradient(to bottom,rgba(253,249,243,0) 0%,rgba(253,249,243,.96) 35%);pointer-events:none;}
+.gate-card{position:absolute;bottom:0;left:50%;transform:translateX(-50%);z-index:20;width:min(480px,90vw);background:#faf6ef;border-radius:20px;border:1px solid rgba(201,169,110,.25);padding:32px 28px 36px;text-align:center;box-shadow:0 8px 40px rgba(26,18,8,.1);}
+.gate-eyebrow{font-size:.58rem;font-weight:600;letter-spacing:.4em;text-transform:uppercase;color:var(--gold);margin-bottom:10px;}
+.gate-title{font-family:'Cormorant Garamond',serif;font-weight:400;font-size:1.5rem;line-height:1.15;color:var(--ink);margin-bottom:10px;}
+.gate-sub{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:.9rem;line-height:1.6;color:rgba(26,18,8,.5);margin-bottom:22px;}
+.gate-btn{display:inline-block;font-family:'Jost',sans-serif;font-size:.65rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--ink);background:linear-gradient(135deg,var(--gold-lt),var(--gold));padding:13px 28px;border-radius:99px;text-decoration:none;transition:transform .2s,box-shadow .2s;}
+.gate-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(201,169,110,.35);}
+.gate-already{font-size:.6rem;font-family:'Jost',sans-serif;color:rgba(26,18,8,.4);margin-top:14px;}
+.gate-recheck{background:none;border:none;color:var(--gold-dk);font-size:.6rem;font-family:'Jost',sans-serif;cursor:pointer;text-decoration:underline;padding:0;}
+
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a class="topbar-logo" href="https://cococreate.cultureschool.org">CoCo</a>
+  <a class="topbar-back" href="https://coco-palettes.cultureschool.org">← Palette Library</a>
+</header>
+
+<main>
+  <div class="lib-header">
+    <div class="lib-eyebrow">◈ The CoCo Pattern Library</div>
+    <div class="lib-title">Patterns rooted in culture</div>
+    <div class="lib-sub" id="libSub">Textile traditions from every corner of the world. Grab one. Make something.</div>
+  </div>
+
+  <div class="search-wrap">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input id="patternSearch" type="search" placeholder="Search by name, style, or occasion…" autocomplete="off" aria-label="Search patterns">
+    <button class="search-clear" id="searchClear" aria-label="Clear search" onclick="clearSearch()">✕</button>
+  </div>
+
+  <div id="filterChips" role="group" aria-label="Filter by occasion"></div>
+
+  <div id="palette-banner" class="palette-banner" aria-live="polite" role="status"></div>
+
+  <div class="pattern-grid" id="patternGrid">
+    <!-- skeleton loaders -->
+    <div class="skeleton"></div>
+    <div class="skeleton" style="animation-delay:.1s"></div>
+    <div class="skeleton" style="animation-delay:.2s"></div>
+    <div class="skeleton" style="animation-delay:.3s"></div>
+    <div class="skeleton" style="animation-delay:.4s"></div>
+    <div class="skeleton" style="animation-delay:.5s"></div>
+  </div>
+  </div>
+</main>
+
+<!-- Detail modal -->
+<div class="pmodal-overlay" id="pmodal" role="dialog" aria-modal="true" aria-label="Pattern detail">
+  <div class="pmodal">
+    <button class="pmodal-close" onclick="closeModal()" aria-label="Close">×</button>
+    <div class="pmodal-inner">
+      <div class="pmodal-preview-wrap">
+        <canvas id="modalCanvas" width="420" height="420"></canvas>
+      </div>
+      <div class="pmodal-strip" id="modalStrip"></div>
+      <div class="pmodal-style" id="modalStyle"></div>
+      <div class="pmodal-code" id="modalCode" title="Click to copy" style="display:none"></div>
+      <div class="pmodal-name" id="modalName"></div>
+      <div class="pmodal-palette" id="modalPalette"></div>
+      <div class="pmodal-desc" id="modalDesc"></div>
+      <div class="pmodal-tags" id="modalTags"></div>
+      <p class="pmodal-story" id="modalStory"></p>
+
+      <!-- Heritage section -->
+      <div class="pmodal-heritage" id="modalHeritage" style="display:none">
+        <button class="heritage-toggle" id="heritageToggle" onclick="toggleHeritage()">
+          <span class="heritage-toggle-icon">✦</span>
+          <span id="heritageToggleLabel">About this pattern tradition</span>
+          <span class="heritage-chevron" id="heritageChevron">▼</span>
+        </button>
+        <div class="heritage-body" id="heritageBody" style="display:none">
+          <div class="heritage-meta" id="heritageMeta"></div>
+          <p class="heritage-meaning" id="heritageMeaning"></p>
+          <div class="heritage-divider"></div>
+          <p class="heritage-label">Technique</p>
+          <p class="heritage-technique" id="heritageTechnique"></p>
+          <div class="heritage-divider"></div>
+          <p class="heritage-label">Cultural significance</p>
+          <p class="heritage-significance" id="heritageSignificance"></p>
+          <div class="heritage-tags" id="heritageTags"></div>
+        </div>
+      </div>
+
+      <div class="pmodal-order-wrap">
+        <div class="pmodal-order-label">◆ Order Prints — choose a product</div>
+        <div class="pmodal-prod-cards" id="orderProdCards"></div>
+        <button class="pmodal-order-btn" onclick="patternOrderNow()">Order this pattern →</button>
+      </div>
+
+      <a class="pmodal-cta" id="modalCta" href="#" target="_blank" rel="noopener"
+         style="margin-top:10px;">
+        Customize in Pattern Generator →
+      </a>
+      <button class="pmodal-dl-btn" onclick="downloadPatternPreview()">↓ Download preview PNG</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<footer>
+  <a href="https://cococreate.cultureschool.org">CoCo by CultureSchool</a> — textile patterns from every corner of the world
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onerror="document.getElementById('patternGrid').innerHTML='<div class=\'state-msg\' style=\'color:rgba(255,255,255,.5)\'>Could not load page scripts — please refresh.<br><small style=\'opacity:.5\'>CDN failed</small></div>'"></script>
+<script>
+/* ═══════════════════════════════════════════════
+   SUPABASE INIT
+═══════════════════════════════════════════════ */
+const SUPABASE_URL = 'https://qwulthvbwujfehgdegtn.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3dWx0aHZid3VqZmVoZ2RlZ3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQyMDcxODIsImV4cCI6MjA1OTc4MzE4Mn0.t9n4eZng6d0jggiPNK-J_DByvEE2L9tqy5Xh_1-TSoQ';
+if (!window.supabase) { throw new Error('Supabase CDN failed to load — check network/CSP'); }
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const PATTERN_HERITAGE = {"adinkra": {"name": "Adinkra", "origin": "Akan people, Ghana & Côte d'Ivoire", "region": "West Africa", "era": "Pre-colonial, documented from 19th century", "meaning": "Adinkra are visual symbols that represent concepts, aphorisms, and the wisdom of the Akan people. Originally stamped on cloth worn at funerals and spiritual ceremonies, each symbol carries a specific meaning — Sankofa means 'return and get it,' Gye Nyame means 'except God.' There are over 100 symbols, each a complete philosophical statement.", "technique": "Traditionally, symbols are carved into calabash gourds and stamped onto fabric using natural dye made from badie tree bark. The word adinkra means 'goodbye' or 'farewell' in Twi.", "cultural_significance": "Adinkra cloth was originally worn only by Asante royalty and spiritual leaders. Today it signals cultural pride and connection to Ghanaian identity across the diaspora.", "tags": ["akan", "ghana", "west-africa", "symbolic", "stamped"]}, "adire": {"name": "Adire", "origin": "Yoruba people, Southwest Nigeria", "region": "West Africa", "era": "Pre-colonial, widespread from early 20th century", "meaning": "Adire means 'tied and dyed' in Yoruba. It is a resist-dyeing tradition using indigo that produces geometric and organic patterns with deep cultural meaning. Two main forms exist: Adire Eleko (paste resist) and Adire Oniko (tie-dye).", "technique": "Adire Eleko uses cassava starch paste applied by hand or through metal stencils to create patterns before indigo dyeing. Adire Oniko ties, stitches, or wraps fabric to create resist patterns. The deep indigo blue is extracted from Lonchocarpus cyanescens leaves.", "cultural_significance": "Adire was traditionally made and traded by Yoruba women and was central to their economic independence. The town of Abeokuta in Ogun State remains its spiritual home. Each pattern carries a name and story.", "tags": ["yoruba", "nigeria", "indigo", "resist-dye", "west-africa"]}, "andean": {"name": "Andean Textile Tradition", "origin": "Quechua, Aymara, and indigenous Andean peoples, Peru, Bolivia, Ecuador", "region": "South America", "era": "Pre-Columbian, over 5,000 years of continuous practice", "meaning": "Andean textiles are among the oldest and most technically complex in the world. Geometric patterns called tocapu carried encoded information — social status, lineage, geographic origin. In Inca society, textiles were more valuable than gold.", "technique": "Woven on backstrap looms using wool from alpaca, llama, and vicuña. The warp-faced weave creates dense geometric patterns. Natural dyes from cochineal (red), indigo (blue), and native plants produce the characteristic saturated palette.", "cultural_significance": "Andean weaving is a living tradition. In communities across Peru and Bolivia, textile patterns identify which village a person is from, their family lineage, and their ceremonial role. The weaving itself is considered a sacred act.", "tags": ["inca", "quechua", "peru", "bolivia", "pre-columbian", "woven"]}, "asian": {"name": "East Asian Geometric Tradition", "origin": "China, Japan, Korea", "region": "East Asia", "era": "Ancient, 3,000+ years of documented practice", "meaning": "East Asian geometric textile traditions encompass cloud patterns, wave patterns, and lattice designs that carry symbolic meaning. The fret pattern represents longevity. Wave patterns symbolize water and regeneration. Cloud motifs indicate heaven and good fortune.", "technique": "Woven into silk using complex jacquard-style looms in China, brocaded into Korean hanbok silk, and stenciled or woven into Japanese kimono fabric. Patterns are often asymmetrical, suggesting natural flow rather than rigid geometry.", "cultural_significance": "Specific patterns were restricted to imperial use in China and Japan. Dragon and phoenix motifs could only be worn by the emperor and empress. Today these patterns carry the weight of millennia of artistic refinement.", "tags": ["china", "japan", "korea", "silk", "imperial", "east-asia"]}, "batik": {"name": "Batik", "origin": "Java, Indonesia", "region": "Southeast Asia", "era": "Ancient roots, refined from 17th century Javanese courts", "meaning": "Batik is a wax-resist dyeing technique that produces intricate patterns with deep cultural meaning. Different regions of Java have distinct batik traditions — Yogyakarta batik uses cream and brown tones associated with royal courts; Pekalongan batik shows Chinese and Dutch colonial influence through vibrant florals.", "technique": "Hot wax is applied to fabric using a canting (a small copper pen) for hand-drawn batik (batik tulis) or a copper stamp (cap) for printed batik. The fabric is then dyed, wax removed, and the process repeated for each color.", "cultural_significance": "UNESCO recognized Indonesian batik as Intangible Cultural Heritage in 2009. In Java, specific batik patterns are worn at weddings, funerals, and ceremonies. The parang pattern — a diagonal knife motif — was historically reserved for Javanese royalty.", "tags": ["java", "indonesia", "wax-resist", "unesco", "southeast-asia"]}, "batik-tulis": {"name": "Batik Tulis", "origin": "Java, Indonesia — highest form of hand-drawn batik", "region": "Southeast Asia", "era": "Refined in Javanese royal courts from 17th century", "meaning": "Batik Tulis (written batik) is the most prestigious and labor-intensive form of batik. Each piece is entirely hand-drawn using a canting tool. A single cloth can take months to complete. No two pieces are identical.", "technique": "A craftsperson traces patterns freehand onto fabric using a canting — a small copper cup with a narrow spout — filled with hot wax. The finest batik tulis makers work on both sides of the fabric simultaneously to ensure the pattern penetrates fully.", "cultural_significance": "Batik tulis is considered a meditation and a spiritual practice in Javanese culture. The maker's emotional state is believed to transfer into the cloth. A master batik tulis artisan commands deep respect as both artist and keeper of cultural memory.", "tags": ["java", "indonesia", "hand-drawn", "luxury", "southeast-asia", "unesco"]}, "chevron": {"name": "Chevron", "origin": "Universal — appears across West African kente, Native American weaving, European heraldry", "region": "Global", "era": "Ancient — one of humanity's oldest geometric forms", "meaning": "The chevron — a V-shape or inverted V — is one of the most universal patterns in human textile history, appearing independently across cultures. In West African kente it represents royalty and achievement. In Native American tradition it symbolizes mountains and the sky. In Ndebele beadwork it defines geometric boundaries.", "technique": "Woven diagonally into fabric structure or printed as a repeating geometric. In traditional hand weaving the chevron emerges from the warp and weft angle rather than being printed on.", "cultural_significance": "The chevron's universality makes it a bridge pattern — it appears in virtually every textile tradition on earth, each giving it distinct local meaning. At CultureSchool we render it through the lens of the palette's specific cultural origin.", "tags": ["universal", "geometric", "woven", "global"]}, "diamond": {"name": "Diamond Pattern", "origin": "Universal — Kente Ghana, Andean weaving, Ikat Central Asia, Celtic weaving", "region": "Global", "era": "Ancient", "meaning": "The diamond or lozenge shape is one of the most ancient geometric forms in textile history, found independently across every weaving tradition. In Kente weaving it represents the eye of God. In Andean textiles it represents the agricultural fields of the Andes. In Celtic and Nordic traditions it represents fertility and protection.", "technique": "Created through diagonal warp-weft intersections in hand weaving. In printed textiles it is constructed as a repeating geometric grid rotated 45 degrees.", "cultural_significance": "Like the chevron, the diamond's universality is its power. It is simultaneously specific to dozens of cultural traditions and globally recognizable as a symbol of value and protection.", "tags": ["universal", "geometric", "woven", "global"]}, "floral": {"name": "Floral Pattern Traditions", "origin": "Persia, Ottoman Empire, India, China, Europe", "region": "Global", "era": "Ancient — Persian garden carpet tradition from 500 BCE", "meaning": "Floral textile patterns originate in the Persian concept of the garden as paradise — the word paradise itself comes from the Persian pairidaeza, meaning walled garden. Ottoman floral patterns represented the tulip as a symbol of God. Indian chintz florals were so coveted in 17th century Europe that France and England banned their import to protect domestic textile industries.", "technique": "Woven into Persian and Turkish carpets using Turkish and Persian knotting techniques. Printed onto Indian cotton using woodblock printing. Embroidered onto Chinese silk using satin stitch. Each tradition produces a distinct floral aesthetic.", "cultural_significance": "Floral patterns are the most traded textile motif in history. The Silk Road spread Persian floral designs from China to Europe. Indian chintz florals transformed European fashion in the 17th and 18th centuries.", "tags": ["persian", "ottoman", "india", "china", "global", "garden"]}, "frond": {"name": "Tropical Frond", "origin": "Caribbean, Pacific Islands, West Africa", "region": "Tropical regions globally", "era": "Pre-colonial through present", "meaning": "The palm frond and tropical leaf motif appears across cultures that share tropical geography. In Caribbean tradition it represents abundance and resilience. In Pacific Island bark cloth (tapa) it marks ceremonial occasions. In West African kanga it signals connection to the natural world.", "technique": "Printed onto cotton using woodblock or screen printing. In Pacific Island traditions, designs are beaten into bark cloth using carved wooden beaters.", "cultural_significance": "Tropical frond patterns are deeply diaspora patterns — they connect communities whose ancestors were displaced from tropical homelands to their geographic and cultural roots.", "tags": ["caribbean", "pacific", "tropical", "diaspora", "botanical"]}, "greek-key": {"name": "Greek Key / Meander", "origin": "Ancient Greece, also appears in Aztec, Chinese, and African traditions", "region": "Mediterranean and global", "era": "Ancient — Greek pottery from 700 BCE, continuous use", "meaning": "The Greek key or meander pattern — a continuous line that folds back on itself — represents the eternal flow of the river Meander in Turkey. In ancient Greece it symbolized infinity, unity, and the bond between people. Remarkably similar patterns appear independently in Aztec stonework, Chinese bronzeware, and Ndebele beadwork.", "technique": "Originally carved into pottery and stonework, translated into woven textile borders, embroidered trim, and printed repeat patterns.", "cultural_significance": "The Greek key's appearance across disconnected civilizations suggests it emerges from something fundamental in human visual perception. At CultureSchool it is rendered through specific cultural color palettes to ground it in a particular heritage.", "tags": ["ancient-greece", "mediterranean", "geometric", "universal", "border"]}, "hawaiian-quilt": {"name": "Hawaiian Quilt", "origin": "Native Hawaiian tradition, developed from missionary-introduced quilting", "region": "Hawaii, Pacific", "era": "Early 19th century, continuous evolution", "meaning": "Hawaiian quilts feature bold, symmetrical appliqué designs cut from a single folded piece of fabric — typically depicting native plants, flowers, and ocean forms. Each quilt design is considered the intellectual property of its maker and traditionally should not be copied without permission.", "technique": "A large piece of fabric is folded into eighths and a design is cut freehand, then unfolded to reveal a perfectly symmetrical eight-pointed pattern. The design is appliquéd onto a contrasting background and quilted with fine echo stitching that follows every curve.", "cultural_significance": "Hawaiian quilts were traditionally made as gifts for significant life events — birth, marriage, death. They were believed to carry the mana (spiritual power) of the maker. Some families still have quilts made over a century ago as sacred heirlooms.", "tags": ["hawaii", "pacific", "applique", "quilting", "indigenous"]}, "ikat": {"name": "Ikat", "origin": "Central Asia (Uzbekistan), Southeast Asia (Indonesia), India, Central America", "region": "Global — one of the most widespread textile traditions", "era": "Ancient — documented from 7th century CE, likely much older", "meaning": "Ikat (from the Malay word mengikat, 'to tie') is a resist-dyeing technique where yarns are dyed before weaving. The slight misalignment of dyed yarns as they are woven creates the characteristic blurred, feathered edges that distinguish ikat from all other textile traditions.", "technique": "Bundles of yarn are tied in specific patterns, then dyed. The tied sections resist the dye. After dyeing, the ties are removed and the yarns are woven — the pattern emerges from the pre-dyed thread. Double ikat, where both warp and weft yarns are resist-dyed, is among the most technically demanding textile arts in the world.", "cultural_significance": "Uzbek ikat robes (khalat) were gifts of honor from rulers to subjects. In Bali, double ikat fabric called Geringsing is produced only in one village, Tenganan, and is believed to have protective magical properties. In Guatemala, ikat huipil garments identify a woman's village and social status.", "tags": ["uzbekistan", "indonesia", "india", "central-america", "resist-dye", "woven"]}, "kanga": {"name": "Kanga", "origin": "East African coast — Kenya, Tanzania, Zanzibar", "region": "East Africa", "era": "Mid-19th century, Zanzibar", "meaning": "The kanga is a brightly colored cotton cloth printed with bold borders, a central design, and most distinctively, a Swahili proverb (jina) printed across the bottom. The proverb gives the kanga its meaning — Kangas are chosen, gifted, and worn specifically for the message they carry. A woman might wrap a kanga with a pointed proverb around her waist to send a message to her husband or co-wife without saying a word.", "technique": "Screen-printed on cotton in bold geometric and floral designs with a characteristic triple border. The Swahili proverb is integral to the design, not an addition.", "cultural_significance": "Kangas are one of East Africa's most important social communication tools. They are given at birth, marriage, and death. The right kanga proverb can express what cannot be spoken aloud. At CultureSchool we render the geometric and border traditions of kanga without appropriating specific proverbs.", "tags": ["swahili", "kenya", "tanzania", "zanzibar", "east-africa", "proverb"]}, "kashmir": {"name": "Kashmir Paisley / Kashmiri Shawl", "origin": "Kashmir Valley, India", "region": "South Asia", "era": "Mughal period, 15th century — peak production 17th–19th century", "meaning": "The paisley — called buta or boteh in Kashmir — is a teardrop-shaped motif representing a bent cypress tree, a mango, or a flame depending on the tradition. Kashmiri shawls woven with this motif were among the most coveted luxury objects in the world for 400 years, exported to Mughal courts, Persian shahs, Napoleonic Europe, and Victorian England.", "technique": "Woven on handlooms using the twill tapestry technique (kani weave) using Pashmina wool from the Changthangi goat, found only in the high Ladakhi plateau at altitudes above 14,000 feet. A single shawl could take a master weaver three years to complete.", "cultural_significance": "Kashmiri shawls were so influential that they triggered the industrialization of European textiles — Jacquard invented the punch-card loom specifically to replicate their complex patterns. The word paisley comes from the Scottish town of Paisley, which mass-produced copies in the 19th century. The original Kashmiri tradition is now endangered.", "tags": ["kashmir", "india", "paisley", "mughal", "pashmina", "south-asia"]}, "kente": {"name": "Kente", "origin": "Akan and Ewe people, Ghana and Togo", "region": "West Africa", "era": "Pre-colonial — Asante tradition documented from 17th century", "meaning": "Kente cloth is woven in narrow strips (roughly 4 inches wide) that are sewn together to create larger garments. Each color and pattern combination carries specific meaning — gold represents royalty and wealth, green represents growth and renewal, black represents maturation and spiritual strength. No two traditional kente patterns are identical — each is named and carries a specific meaning.", "technique": "Woven on a horizontal strip loom using silk or cotton. The weaver creates patterns by manipulating the heddle — lifting specific warp threads to create geometric designs. The strips are then sewn edge to edge. Strip weaving is both a technical skill and an art form passed from master to apprentice over decades.", "cultural_significance": "Kente was originally worn exclusively by Asante royalty. Today it is worn across the African diaspora as a symbol of pride and connection to African heritage — at graduations, ceremonies, and celebrations. At CultureSchool, kente is our most frequently requested pattern tradition.", "tags": ["akan", "asante", "ewe", "ghana", "togo", "west-africa", "royalty", "strip-weave"]}, "kuba": {"name": "Kuba Cloth", "origin": "Kuba Kingdom, Democratic Republic of Congo", "region": "Central Africa", "era": "Pre-colonial — Kuba Kingdom established circa 1600 CE", "meaning": "Kuba cloth is made from raffia palm fiber and features intricately cut and embroidered geometric patterns. The Kuba Kingdom was renowned for its artistic sophistication — Kuba textiles, masks, and cups were among the most complex art objects in pre-colonial Africa. Picasso and the Cubists were directly influenced by Kuba geometric forms when they encountered them in Paris ethnographic collections.", "technique": "Woven from raffia palm fiber on a fixed-heddle loom, then cut-pile embroidery (like velvet) is applied using a small blade to create raised geometric patterns. Some Kuba cloth incorporates dyed sections for color contrast. The geometric vocabulary is highly codified — patterns are named and specific combinations carry meaning.", "cultural_significance": "The Kuba King (Nyim) was considered divine, and Kuba cloth was inseparable from royal power. Specific patterns were owned by the king and could not be used without permission. The influence of Kuba geometry on Western modern art is one of the most documented cases of African art transforming global aesthetics.", "tags": ["kuba", "congo", "central-africa", "raffia", "geometric", "royalty"]}, "mudcloth": {"name": "Mudcloth / Bògòlanfini", "origin": "Bamana people, Mali", "region": "West Africa", "era": "Pre-colonial — documented from at least 12th century", "meaning": "Bògòlanfini means 'earth cloth' in Bambara — bògo (earth/mud), lan (with), fini (cloth). The cloth is dyed using fermented mud and the symbols painted onto it carry specific meanings related to Bamana history, spirituality, and identity. Each pattern is a visual language that can be read by those who know its meanings.", "technique": "Cotton is woven on a narrow strip loom. The fabric is soaked in a solution of leaves from the n'gallama tree, which turns the cotton yellow. Patterns are then painted with river mud using a metal tool — the mud reacts with the tannins to turn black. The background is then bleached away, leaving the painted pattern.", "cultural_significance": "Mudcloth was traditionally worn by hunters for spiritual protection during the hunt. It was also worn by women after childbirth and by circumcised young men during initiation ceremonies. The pattern vocabulary includes hunting symbols, spiritual protection symbols, and markers of specific historical events. In the 1970s, mudcloth was adopted as a symbol of Pan-African identity.", "tags": ["bamana", "mali", "west-africa", "mud-dye", "symbolic", "hunting"]}, "ndebele": {"name": "Ndebele", "origin": "Ndebele people, South Africa and Zimbabwe", "region": "Southern Africa", "era": "Pre-colonial — widespread from 19th century as resistance art", "meaning": "Ndebele geometric art is among the most visually striking in the world — bold primary colors, hard edges, and complex geometric forms painted on house walls and beaded onto jewelry and garments. The tradition emerged partly as a form of cultural resistance during South African colonialism and apartheid. While outsiders could not read the Ndebele language, the visual language of geometric pattern kept cultural identity alive.", "technique": "Women are the primary practitioners of Ndebele wall painting and beadwork. Paintings are made freehand using the fingers and pieces of sponge, with designs renewed each year. Beadwork uses glass seed beads in complex geometric patterns, with colors and forms carrying specific meanings about the wearer's status and life stage.", "cultural_significance": "Ndebele art is a women's tradition and a form of power. During apartheid, when many aspects of cultural life were suppressed, Ndebele women maintained their geometric visual tradition on their home walls. The art form is now internationally recognized — Ndebele patterns have influenced architecture, graphic design, and fashion globally, including by designers like Gianni Versace and Missoni.", "tags": ["ndebele", "south-africa", "zimbabwe", "southern-africa", "beadwork", "geometric", "resistance"]}, "paisley": {"name": "Paisley", "origin": "Kashmir, India — via Persia, adopted worldwide", "region": "South Asia, global", "era": "Mughal period, 15th century — named for Scottish town in 19th century", "meaning": "See Kashmir Paisley entry. The paisley motif traveled from Kashmir to Persia to Europe via trade routes. The name 'paisley' was given by the Victorians after the Scottish town that mass-produced copies of Kashmiri shawls. Today paisley is global, appearing in Armenian textiles, Welsh wool, American bandanas, and contemporary fashion.", "technique": "Originally a Kashmiri kani weave motif, paisley has been adapted into every textile technique — block printing in India, jacquard weaving in Europe, screen printing globally.", "cultural_significance": "The paisley's journey from sacred Kashmiri court textile to American bandana to global fashion symbol is one of the most complete stories of pattern migration in textile history.", "tags": ["kashmir", "india", "persia", "global", "paisley", "south-asia"]}, "shibori": {"name": "Shibori", "origin": "Japan", "region": "East Asia", "era": "8th century CE — formalized in Edo period (17th–19th century)", "meaning": "Shibori encompasses several Japanese resist-dyeing techniques that produce organic, non-repeating patterns. The word comes from the verb shiboru, 'to wring, squeeze, press.' Unlike Western tie-dye, shibori is a highly refined art form with specific named techniques, each producing a distinct visual result.", "technique": "The six main shibori techniques are: itajime (clamped between resist blocks), arashi (wrapped around a pole), kumo (pleated and bound), ne-maki (bound at intervals), miura (looped with a hook), and ori nui (stitched and gathered). Each technique produces a unique pattern. Indigo is the traditional dye — Japan developed its own indigo cultivation and dyeing culture over 1,000 years.", "cultural_significance": "Shibori indigo textiles were the everyday fabric of Edo period Japan — worn by farmers, artisans, and merchants. Different shibori patterns were associated with different regions and craft guilds. The practice nearly died out in the 20th century before being revived by textile artists in Japan and internationally.", "tags": ["japan", "indigo", "resist-dye", "east-asia", "edo-period"]}, "suzani": {"name": "Suzani", "origin": "Uzbekistan, Tajikistan, Kazakhstan — the Silk Road cities", "region": "Central Asia", "era": "Pre-Islamic roots — documented form from 15th century Timurid period", "meaning": "Suzani means 'needle' in Persian (suzan). These large embroidered textiles were made by brides and their female relatives in the months and years before a wedding. Each piece was a collaborative work — women of different generations contributing sections according to their skill. The completed suzani was presented to the groom's family as part of the bride's dowry and hung in the bridal chamber.", "technique": "Chain stitch and laid work embroidery on cotton or silk ground fabric. Bold floral and solar disc (shams) motifs are the characteristic forms. The embroidery is done in silk thread in saturated colors — the design is typically drawn in outline on the ground fabric by a master designer (kalamkash) and filled in by the embroiderers.", "cultural_significance": "Suzanis are both art objects and biographical documents — the different hands of multiple women are visible in the slightly varying stitch quality across a single piece. The solar disc motif is believed to represent the sun as a symbol of fertility and divine blessing for the new couple.", "tags": ["uzbekistan", "central-asia", "silk-road", "embroidery", "wedding", "bridal"]}, "tartan": {"name": "Tartan", "origin": "Scottish Highlands, Scotland", "region": "Northern Europe", "era": "16th century documented — clan associations formalized in 19th century", "meaning": "Tartan is a pattern of intersecting horizontal and vertical bands in multiple colors, woven in a twill structure. Each Scottish clan has one or more registered tartans. The pattern is defined by its sett — the sequence of colors and thread counts that determines the design. Wearing your clan's tartan is an assertion of lineage and belonging.", "technique": "Woven in a 2/2 twill on a four-shaft loom. The same sequence of colored threads is used in both warp and weft, creating the characteristic diagonal twill line visible in all directions. Traditionally woven in wool — the Scottish wool industry and tartan are inseparable.", "cultural_significance": "After the Jacobite rising of 1745, the British government banned Highland dress including tartan for 35 years. The ban was lifted in 1782, and tartan became a symbol of Scottish resistance and identity. Today there are over 7,000 registered tartans — clans, corporations, sports teams, and nations have all claimed the form.", "tags": ["scottish", "celtic", "highland", "clan", "northern-europe", "woven"]}, "toile": {"name": "Toile de Jouy", "origin": "Jouy-en-Josas, France — originally from India", "region": "Europe, South Asia", "era": "18th century — Oberkampf factory established 1760", "meaning": "Toile de Jouy depicts pastoral and narrative scenes — shepherds, rural idylls, classical mythology, exotic landscapes — in a single color on a cream or white ground. The scenes tell stories. The original Indian chintz prints that inspired toile depicted flora, fauna, and narrative — European manufacturers adapted this into their own cultural imagery.", "technique": "Engraved copper plate printing, later replaced by roller printing. A single color (traditionally red, blue, or black) is printed on undyed cotton or linen. The fineness of engraving allows for detailed figurative illustration at textile scale.", "cultural_significance": "Toile de Jouy was the first industrially produced decorative fabric in France. At CultureSchool, we reclaim the toile format for cultural storytelling — depicting scenes from African, Caribbean, and diaspora life in the same narrative tradition but centered on our own stories.", "tags": ["french", "european", "narrative", "pastoral", "colonial", "printed"]}, "tropical": {"name": "Tropical Print Tradition", "origin": "Hawaii, Caribbean, West Africa — converging in mid-20th century", "region": "Tropical regions globally", "era": "Modern form: 1930s–1950s", "meaning": "The tropical print as a genre emerged from the collision of Hawaiian shirt culture, Caribbean carnival costume traditions, and West African kanga printing in the mid-20th century. Bold botanicals, birds of paradise, hibiscus, and abstract organic forms became a shared visual language of warmth, abundance, and leisure.", "technique": "Screen or roller printed on lightweight cotton or rayon. The characteristic tropical print uses saturated colors on a solid ground, with organic botanical forms rendered in high contrast.", "cultural_significance": "For diaspora communities, tropical prints are not just aesthetic — they are geographic and cultural memory. A Jamaican hibiscus, a Nigerian palm, a Hawaiian ti leaf are each specific botanical references to particular landscapes and homelands.", "tags": ["hawaii", "caribbean", "west-africa", "botanical", "diaspora", "modern"]}, "wildflower": {"name": "Wildflower Print", "origin": "European botanical illustration tradition, Arts & Crafts movement", "region": "Europe, global", "era": "William Morris Arts & Crafts movement, 1860s–1900s", "meaning": "The wildflower print tradition draws from the English Arts & Crafts movement's rejection of industrial production in favor of handcraft and natural forms. William Morris based his designs on direct observation of English hedgerows and gardens. The tradition has been adapted by every major decorative arts tradition since.", "technique": "Originally woodblock printed by hand on cotton and linen. Later adapted to roller printing and screen printing. The characteristic form uses asymmetric, naturalistic botanical forms with overlapping leaves and stems.", "cultural_significance": "At CultureSchool, wildflower prints are rendered through specific cultural color palettes — an English wildflower form filtered through a Jamaican Mango palette or a Harlem to Lagos palette becomes something entirely new: familiar form, specific cultural color language.", "tags": ["arts-crafts", "botanical", "william-morris", "european", "naturalistic"]}, "zellige": {"name": "Zellige", "origin": "Morocco — Fes is the spiritual center", "region": "North Africa, Andalusia", "era": "10th century CE — peak sophistication in Marinid period 13th–15th century", "meaning": "Zellige (from the Arabic zillij, 'small polished stone') is the art of hand-cut ceramic mosaic tile arranged into complex geometric patterns. The geometric vocabulary of zellige is drawn from Islamic geometric tradition — infinite repeating patterns that suggest the infinite nature of God. No figure is depicted; the geometry itself is the expression of the divine.", "technique": "Tiles are first fired as flat slabs, then hand-cut into geometric shapes using a special pick hammer (menqach). A master zellige artist can produce dozens of precisely cut shapes. The pieces are assembled face-down in a geometric pattern, then grouted from behind. A single room installation can contain millions of individual pieces.", "cultural_significance": "The major Islamic monuments of Morocco — the Alhambra's Andalusian cousin traditions, the Bou Inania madrasa in Fes, the Hassan II Mosque in Casablanca — use zellige as their visual centerpiece. Master zellige craftspeople (maallem) train for decades and are considered national cultural treasures. The craft is on UNESCO's endangered heritage list.", "tags": ["morocco", "north-africa", "islamic", "geometric", "ceramic", "andalusia", "unesco"]}, "grid": {"name": "Grid / Checked Pattern", "origin": "Universal — appears in every textile tradition globally", "region": "Global", "era": "Ancient — among the first patterns producible on a loom", "meaning": "The grid or checked pattern is the most fundamental woven structure — the direct visual expression of warp meeting weft. In West African tradition, check patterns appear in kente and kanga. In South Asian tradition, madras check is associated with Tamil Nadu. In European tradition, gingham is an everyday cloth with working-class associations.", "technique": "Created by alternating two or more colored threads in both warp and weft on a loom. The simplest weave structure produces a plain weave check. More complex threading produces twill-based checks like tartan.", "cultural_significance": "The grid's ubiquity makes it a canvas — at CultureSchool it is rendered in specific cultural palette colors, transforming a universal structure into a culturally specific expression.", "tags": ["universal", "geometric", "woven", "global", "fundamental"]}, "cintemani": {"name": "Çintamani", "origin": "Ottoman Empire, originally from Buddhist art via Silk Road", "region": "Central Asia, Ottoman Turkey", "era": "Buddhist origins ancient — Ottoman textile use from 15th century", "meaning": "The çintamani is a pattern of three circles arranged in a triangle, sometimes combined with wavy tiger stripe lines. In Buddhist tradition the three circles (cintamani) represent the Three Jewels of Buddhism. In Ottoman Turkey it was adopted as a symbol of imperial power — representing the spotted pattern of leopard and tiger pelts that denoted royalty.", "technique": "Woven into silk velvet and brocade in Ottoman imperial workshops (the nakkaşhane) in Istanbul and Bursa. The pattern was also used in Iznik ceramic tiles and architectural decoration.", "cultural_significance": "The çintamani was the exclusive property of the Ottoman sultan. Garments featuring this pattern could only be worn by the sultan or gifted by him. The pattern's journey from Buddhist sacred symbol to Ottoman imperial mark to globally recognized decorative motif is a complete story of the Silk Road as a highway of cultural exchange.", "tags": ["ottoman", "turkish", "buddhist", "silk-road", "imperial", "central-asia"]}, "heritage": {"name": "Heritage Pattern", "origin": "CultureSchool original — drawing from multiple traditions", "region": "Global diaspora", "era": "Contemporary", "meaning": "Heritage patterns at CultureSchool are original compositions that draw from multiple cultural textile traditions simultaneously — honoring the way diaspora culture itself combines and transforms inherited visual languages into something new.", "technique": "Generated using CultureSchool's pattern engine, combining geometric vocabularies from multiple traditions in response to a specific cultural palette.", "cultural_significance": "The heritage pattern is CultureSchool's most personal category — it represents the reality of diaspora experience, where cultural identity is never single-source but always a synthesis of multiple lineages.", "tags": ["diaspora", "original", "multicultural", "contemporary", "cultureSchool"]}};
+
+
+/* ═══════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════ */
+let _allPatterns = [];
+let _activeOccasion = '';
+let _searchQuery   = '';
+let _activePattern = null;
+let _orderProduct  = 'pillow';
+let _incomingPalette = null;
+
+const ORDER_PRODUCTS = {
+  pillow: {
+    label:'Pillow 22×22',
+    url:'https://cultureschool.org/products/coco-print-22-x-22-pillow',
+    img:'https://cdn.shopify.com/s/files/1/0673/3637/2387/files/square_22_x_22_pillow_mockup.png?v=1777999891',
+    patRect:[30,30,140,140],
+  },
+  tote: {
+    label:'Tote Bag',
+    url:'https://cultureschool.org/products/coco-print-tote',
+    img:'https://cdn.shopify.com/s/files/1/0673/3637/2387/files/extra_large_rectangular_tote_bag_mockup_floating_on_a_blank__2_-removebg-preview.png?v=1777999364',
+    patRect:[35,20,130,130],
+  },
+  sheets: {
+    label:'Sheet Set',
+    url:'https://cultureschool.org/products/coco-print-sheet-set',
+    img:'https://cdn.shopify.com/s/files/1/0673/3637/2387/files/Folded_Sheet_Set_Mock_Up.png?v=1778003351',
+    patRect:[15,8,180,95],
+  },
+};
+
+const _libProdImgCache = {};
+function preloadLibProductImages() {
+  Object.entries(ORDER_PRODUCTS).forEach(([key, prod]) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => { _libProdImgCache[key] = img; };
+    img.src = prod.img;
+  });
+}
+
+function selectOrderProduct(key, el) {
+  _orderProduct = key;
+  document.querySelectorAll('.pmodal-prod-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function patternOrderNow() {
+  const row = _activePattern;
+  if (!row) return;
+  const prod   = ORDER_PRODUCTS[_orderProduct] || ORDER_PRODUCTS.pillow;
+  const colors = (row.colors || []).join(',');
+  const url    = new URL(prod.url);
+  url.searchParams.set('pattern_id',   row.id   || '');
+  url.searchParams.set('pattern',      row.style || '');
+  url.searchParams.set('colors',       colors);
+  const fullName = [row.palette_name, row.name].filter(Boolean).join(' — ');
+  url.searchParams.set('name',         fullName);
+  window.open(url.toString(), '_blank');
+}
+const _renderQueue = []; // {canvas, style, colors, tileSize}
+let _renderScheduled = false;
+
+/* ═══════════════════════════════════════════════
+   DRAW FUNCTION MAP
+═══════════════════════════════════════════════ */
+const DRAW_FN = {
+  diamond:          drawDiamond,
+  chevron:          drawChevron,
+  grid:             drawGrid,
+  kente:            drawKente,
+  ikat:             drawIkat,
+  frond:            drawFrond,
+  toile:            drawToile,
+  wildflower:       drawWildflower,
+  tropical:         drawTropical,
+  vine:             drawVine,
+  heritage:         drawHeritage,
+  batik:            drawBatik,
+  'batik+ikat':     drawBatik,
+  floral:           drawFloral,
+  'paisley+floral': drawPaisley,
+  adinkra:          drawAdinkra,
+  mudcloth:         drawMudcloth,
+  asian:            drawAsianLattice,
+  shibori:          drawShibori,
+  suzani:           drawSuzani,
+  cintemani:        drawCintemani,
+  paisley:          drawPaisley,
+  kuba:             drawKuba,
+  zellige:          drawZellige,
+  botanical:        drawBotanical,
+  ndebele:          drawNdebele,
+  tapa:             drawTapa,
+  otomi:            drawOtomi,
+  phulkari:         drawPhulkari,
+  azulejo:          drawAzulejo,
+  quatrefoil:       drawQuatrefoil,
+  talavera:         drawTalavera,
+  'ikat diamond':   drawIkatDiamond,
+  'ikat-diamond':   drawIkatDiamond,
+  'asian lattice':  drawAsianLattice,
+  scatter:          drawWildflower,
+  // ── New cultural styles ──────────────────────
+  adire:            drawAdire,
+  kanga:            drawKanga,
+  'kente-strip':    drawKenteStrip,
+  kentestrip:       drawKenteStrip,
+  andean:           drawAndean,
+  'greek-key':      drawGreekKey,
+  greekkey:         drawGreekKey,
+  meander:          drawGreekKey,
+  hawaiian:         drawHawaiian,
+  'toile-scenic':   drawToileScenic,
+  toilescenic:      drawToileScenic,
+  'batik-tulis':    drawBatikTulis,
+  batiktulis:       drawBatikTulis,
+  tartan:           drawTartan,
+  plaid:            drawTartan,
+};
+
+/* ═══════════════════════════════════════════════
+   DRAW FUNCTIONS (verbatim from coco_pattern_generator_v3.html)
+═══════════════════════════════════════════════ */
+
+function drawDiamond(ctx, w, h, colors, tile, rot, cx) {
+  const bg = colors[colors.length-1] || colors[0];
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, w, h);
+
+  const cols = Math.ceil(w / tile) + 2;
+  const rows = Math.ceil(h / tile) + 2;
+  const half = tile / 2;
+  const inner = half * (0.3 + cx * 0.004);
+  const dotR  = Math.max(2, tile * 0.06);
+
+  ctx.save();
+  ctx.translate(w/2, h/2);
+  ctx.rotate(rot * Math.PI / 180);
+  ctx.translate(-w/2, -h/2);
+
+  for (let r = -1; r < rows; r++) {
+    for (let c = -1; c < cols; c++) {
+      const offset = (r % 2 === 0) ? 0 : half;
+      const x = c * tile + offset;
+      const y = r * tile;
+      const ci = (r * cols + c) % colors.length;
+
+      // Outer diamond
+      ctx.beginPath();
+      ctx.moveTo(x + half, y);
+      ctx.lineTo(x + tile, y + half);
+      ctx.lineTo(x + half, y + tile);
+      ctx.lineTo(x, y + half);
+      ctx.closePath();
+      ctx.fillStyle = colors[ci % colors.length];
+      ctx.fill();
+
+      // Inner diamond
+      ctx.beginPath();
+      ctx.moveTo(x + half, y + half - inner);
+      ctx.lineTo(x + half + inner, y + half);
+      ctx.lineTo(x + half, y + half + inner);
+      ctx.lineTo(x + half - inner, y + half);
+      ctx.closePath();
+      ctx.fillStyle = colors[(ci + 1) % colors.length];
+      ctx.fill();
+
+      // Center dot
+      if (cx > 30) {
+        ctx.beginPath();
+        ctx.arc(x + half, y + half, dotR, 0, Math.PI * 2);
+        ctx.fillStyle = colors[(ci + 2) % colors.length];
+        ctx.fill();
+      }
+    }
+  }
+  ctx.restore();
+}
+
+function drawChevron(ctx, w, h, colors, tile, rot, cx) {
+  ctx.fillStyle = colors[colors.length-1] || colors[0];
+  ctx.fillRect(0, 0, w, h);
+
+  const stripeH = tile / 2;
+  const stripes = Math.ceil(h / stripeH) + 4;
+  const detail = Math.max(1, Math.floor(cx / 25));
+
+  ctx.save();
+  ctx.translate(w/2, h/2);
+  ctx.rotate(rot * Math.PI / 180);
+  ctx.translate(-w/2, -h/2);
+
+  for (let i = -2; i < stripes; i++) {
+    const y = i * stripeH;
+    const ci = i % colors.length;
+    const amplitude = tile * 0.6;
+
+    ctx.beginPath();
+    ctx.moveTo(-tile, y + stripeH);
+    // Zigzag top
+    for (let x = -tile; x <= w + tile; x += tile) {
+      const peak = (Math.floor((x + tile) / tile) % 2 === 0);
+      ctx.lineTo(x, peak ? y : y + amplitude * 0.7);
+    }
+    // Zigzag bottom
+    for (let x = w + tile; x >= -tile; x -= tile) {
+      const peak = (Math.floor((x + tile) / tile) % 2 === 0);
+      ctx.lineTo(x, (peak ? y : y + amplitude * 0.7) + stripeH);
+    }
+    ctx.closePath();
+    ctx.fillStyle = colors[Math.abs(ci) % colors.length];
+    ctx.fill();
+
+    // Detail lines
+    if (detail > 1 && cx > 50) {
+      ctx.strokeStyle = colors[(Math.abs(ci) + 1) % colors.length];
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = 0.3;
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+  }
+  ctx.restore();
+}
+
+function drawGrid(ctx, w, h, colors, tile, rot, cx) {
+  const bg = colors[0];
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, w, h);
+
+  const cols = Math.ceil(w / tile) + 2;
+  const rows = Math.ceil(h / tile) + 2;
+  const gap = Math.max(1, tile * 0.04);
+  const inner = tile - gap * 2;
+  const dotR = tile * 0.08;
+
+  ctx.save();
+  ctx.translate(w/2, h/2);
+  ctx.rotate(rot * Math.PI / 180);
+  ctx.translate(-w/2, -h/2);
+
+  for (let r = -1; r < rows; r++) {
+    for (let c = -1; c < cols; c++) {
+      const x = c * tile + gap;
+      const y = r * tile + gap;
+      const ci = (r + c) % colors.length;
+
+      // Main cell
+      ctx.fillStyle = colors[Math.abs(ci) % colors.length];
+      ctx.fillRect(x, y, inner, inner);
+
+      // Inner accent square
+      if (cx > 40) {
+        const inset = inner * 0.18;
+        ctx.fillStyle = colors[Math.abs(ci + 1) % colors.length];
+        ctx.globalAlpha = 0.55;
+        ctx.fillRect(x + inset, y + inset, inner - inset*2, inner - inset*2);
+        ctx.globalAlpha = 1;
+      }
+
+      // Corner dots
+      if (cx > 65) {
+        ctx.fillStyle = colors[Math.abs(ci + 2) % colors.length];
+        [0, inner].forEach(dx => [0, inner].forEach(dy => {
+          ctx.beginPath();
+          ctx.arc(x + dx, y + dy, dotR, 0, Math.PI * 2);
+          ctx.fill();
+        }));
+      }
+    }
+  }
+  ctx.restore();
+}
+
+function drawKente(ctx, w, h, colors, tile, rot, cx) {
+  ctx.fillStyle = colors[0];
+  ctx.fillRect(0, 0, w, h);
+
+  const stripeW = Math.max(4, Math.floor(tile / 5));
+  const bands = Math.ceil(h / tile) + 2;
+  const detail = cx > 50;
+
+  ctx.save();
+  ctx.translate(w/2, h/2);
+  ctx.rotate(rot * Math.PI / 180);
+  ctx.translate(-w/2, -h/2);
+
+  for (let b = -1; b < bands; b++) {
+    const y = b * tile;
+    const bandH = tile;
+
+    // Horizontal bands
+    for (let sub = 0; sub < 5; sub++) {
+      const sy = y + sub * (bandH / 5);
+      const sh = bandH / 5;
+      ctx.fillStyle = colors[(b * 5 + sub) % colors.length];
+      ctx.fillRect(0, sy, w, sh);
+
+      // Vertical stripes within band
+      if (detail) {
+        const stripeCount = Math.ceil(w / (stripeW * 3));
+        for (let s = 0; s < stripeCount; s++) {
+          ctx.fillStyle = colors[(b + s + sub + 2) % colors.length];
+          ctx.globalAlpha = 0.45;
+          ctx.fillRect(s * stripeW * 3, sy, stripeW, sh);
+          ctx.globalAlpha = 1;
+        }
+      }
+    }
+
+    // Vertical accent columns
+    const colCount = Math.ceil(w / tile);
+    for (let col = 0; col < colCount; col++) {
+      const cx0 = col * tile + tile/2;
+      // Small accent square
+      const sq = tile * 0.18;
+      ctx.fillStyle = colors[(b + col + 1) % colors.length];
+      ctx.fillRect(cx0 - sq/2, y + bandH/2 - sq/2, sq, sq);
+      if (cx > 40) {
+        const sq2 = sq * 0.5;
+        ctx.fillStyle = colors[(b + col + 3) % colors.length];
+        ctx.fillRect(cx0 - sq2/2, y + bandH/2 - sq2/2, sq2, sq2);
+      }
+    }
+  }
+  ctx.restore();
+}
+
+function drawIkat(ctx, w, h, colors, tile, rot, cx) {
+  ctx.fillStyle = colors[colors.length-1] || colors[0];
+  ctx.fillRect(0, 0, w, h);
+
+  const cols = Math.ceil(w / tile) + 2;
+  const rows = Math.ceil(h / tile) + 2;
+  const rings = Math.max(2, Math.floor(cx / 20));
+
+  ctx.save();
+  ctx.translate(w/2, h/2);
+  ctx.rotate(rot * Math.PI / 180);
+  ctx.translate(-w/2, -h/2);
+
+  for (let r = -1; r < rows; r++) {
+    for (let c = -1; c < cols; c++) {
+      const offset = (r % 2 === 0) ? 0 : tile * 0.5;
+      const x = c * tile + tile/2 + offset;
+      const y = r * tile + tile/2;
+      const ci = (r * 2 + c) % colors.length;
+      const rx = tile * 0.42;
+      const ry = tile * 0.26;
+
+      // Concentric ikat ellipses
+      for (let ring = rings; ring >= 0; ring--) {
+        const frac = ring / rings;
+        const erx = rx * frac;
+        const ery = ry * frac;
+        if (erx < 1) continue;
+
+        ctx.beginPath();
+        ctx.ellipse(x, y, erx, ery, 0, 0, Math.PI * 2);
+        ctx.fillStyle = colors[Math.abs(ci + ring) % colors.length];
+        ctx.globalAlpha = ring === 0 ? 1 : 0.82;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+
+      // Corner quarter-ellipses
+      [[0,0],[tile,0],[0,tile],[tile,tile]].forEach(([dx,dy]) => {
+        const cx0 = c * tile + offset + dx;
+        const cy0 = r * tile + dy;
+        ctx.beginPath();
+        ctx.ellipse(cx0, cy0, rx * 0.42, ry * 0.42, 0, 0, Math.PI * 2);
+        ctx.fillStyle = colors[Math.abs(ci + 1) % colors.length];
+        ctx.globalAlpha = 0.5;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      });
+    }
+  }
+  ctx.restore();
+}
+
+function drawFrond(ctx, w, h, colors, tile, rot, cx) {
+  // Sweeping palm fronds — serrated, dramatic
+  ctx.fillStyle = colors[colors.length-1] || colors[0];
+  ctx.fillRect(0,0,w,h);
+  const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
+  const leafLayers = Math.max(2, Math.floor(cx/20));
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const ox = (r%2===0)?0:tile*0.5;
+      const cx0 = cl*tile+tile/2+ox, cy0 = r*tile+tile*0.88;
+      const ci = Math.abs(r*cols+cl)%colors.length;
+      // Draw multiple frond layers per tile, each slightly offset/scaled
+      for (let layer=0;layer<leafLayers;layer++) {
+        const frac = (layer+1)/leafLayers;
+        const spread = tile*0.52*frac;
+        const height = tile*0.9*frac;
+        const lci = (ci+layer)%colors.length;
+        const sides = 7 + Math.floor(cx/14); // serration count
+        // Left frond
+        ctx.beginPath();
+        ctx.moveTo(cx0, cy0);
+        for (let i=0;i<=sides;i++) {
+          const t = i/sides;
+          const lx = cx0 - spread*(1-t*0.3)*Math.sin(t*Math.PI*0.5+0.2);
+          const ly = cy0 - height*t;
+          const serr = (i%2===0)?tile*0.06:0;
+          ctx.lineTo(lx-serr, ly);
+        }
+        ctx.lineTo(cx0, cy0-height*0.1);
+        ctx.closePath();
+        ctx.fillStyle = colors[lci];
+        ctx.globalAlpha = 0.7+layer*0.1;
+        ctx.fill();
+        // Right frond (mirror)
+        ctx.beginPath();
+        ctx.moveTo(cx0, cy0);
+        for (let i=0;i<=sides;i++) {
+          const t = i/sides;
+          const lx = cx0 + spread*(1-t*0.3)*Math.sin(t*Math.PI*0.5+0.2);
+          const ly = cy0 - height*t;
+          const serr = (i%2===0)?tile*0.06:0;
+          ctx.lineTo(lx+serr, ly);
+        }
+        ctx.lineTo(cx0, cy0-height*0.1);
+        ctx.closePath();
+        ctx.fillStyle = colors[(lci+1)%colors.length];
+        ctx.globalAlpha = 0.65+layer*0.1;
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      // Central spine
+      ctx.beginPath();
+      ctx.moveTo(cx0, cy0);
+      ctx.bezierCurveTo(cx0, cy0-tile*0.3, cx0-tile*0.04, cy0-tile*0.65, cx0, cy0-tile*0.92);
+      ctx.strokeStyle = colors[(ci+2)%colors.length];
+      ctx.lineWidth = Math.max(1,tile*0.03);
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+
+function drawToile(ctx, w, h, colors, tile, rot, cx) {
+  // Engraved-look botanical — one or two colors, detailed line work
+  const bg = colors.length>2 ? colors[2] : '#f5f0e8';
+  const ink = colors[0];
+  const ink2 = colors[1]||colors[0];
+  ctx.fillStyle = bg;
+  ctx.fillRect(0,0,w,h);
+  const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
+  const detail = Math.max(3, Math.floor(cx/10));
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const ox = (r%2===0)?0:tile*0.5;
+      const cx0 = cl*tile+tile/2+ox, cy0 = r*tile+tile/2;
+      const ci = (r+cl)%2;
+      const strokeC = ci===0?ink:ink2;
+      ctx.strokeStyle = strokeC;
+      ctx.fillStyle = strokeC;
+      ctx.lineWidth = Math.max(0.6,tile*0.018);
+      // Stem
+      ctx.beginPath();
+      ctx.moveTo(cx0, cy0+tile*0.45);
+      ctx.bezierCurveTo(cx0-tile*0.05, cy0+tile*0.2, cx0+tile*0.05, cy0-tile*0.2, cx0, cy0-tile*0.44);
+      ctx.stroke();
+      // Flower head
+      const petalR = tile*0.14;
+      const petals = 5+Math.floor(cx/20);
+      for (let p=0;p<petals;p++) {
+        const angle = (p/petals)*Math.PI*2;
+        const px = cx0+Math.cos(angle)*petalR*1.5;
+        const py = cy0-tile*0.44+Math.sin(angle)*petalR*1.5;
+        ctx.beginPath();
+        ctx.ellipse(px,py,petalR,petalR*0.55,angle,0,Math.PI*2);
+        ctx.stroke();
+      }
+      // Center dot
+      ctx.beginPath();
+      ctx.arc(cx0,cy0-tile*0.44,tile*0.045,0,Math.PI*2);
+      ctx.fill();
+      // Side leaves — engraved style
+      for (let l=0;l<detail;l++) {
+        const t = (l+1)/(detail+1);
+        const ly = cy0+tile*0.4 - t*tile*0.8;
+        const side = l%2===0?1:-1;
+        const llen = tile*0.2*(0.6+t*0.8);
+        ctx.beginPath();
+        ctx.moveTo(cx0, ly);
+        ctx.bezierCurveTo(cx0+side*llen*0.5, ly-tile*0.06, cx0+side*llen, ly+tile*0.02, cx0+side*llen, ly+tile*0.04);
+        ctx.stroke();
+        // Leaf outline
+        ctx.beginPath();
+        ctx.moveTo(cx0, ly);
+        ctx.bezierCurveTo(cx0+side*llen*0.5, ly+tile*0.06, cx0+side*llen, ly+tile*0.03, cx0+side*llen, ly+tile*0.04);
+        ctx.stroke();
+      }
+    }
+  }
+  ctx.restore();
+}
+
+function drawWildflower(ctx, w, h, colors, tile, rot, cx) {
+  ctx.fillStyle = colors[colors.length-1]||colors[0];
+  ctx.fillRect(0,0,w,h);
+  function seededRand(seed) {
+    let s = seed;
+    return function() { s=(s*16807+0)%2147483647; return (s-1)/2147483646; };
+  }
+  const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
+  const motifCount = Math.max(2, Math.floor(cx/15));
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const rand = seededRand(r*1000+cl*37+13);
+      const basex = cl*tile, basey = r*tile;
+      for (let m=0;m<motifCount;m++) {
+        const mx = basex + rand()*tile;
+        const my = basey + rand()*tile;
+        // r2 is the base radius — minimum 6px, scales with tile
+        // multiply by 3.5 so motifs are actually visible at any tile size
+        const scale = 0.5 + rand()*0.9;
+        const r2 = Math.max(6, tile * 0.18 * scale);
+        const angle = rand()*Math.PI*2;
+        const ci = Math.floor(rand()*colors.length) % colors.length;
+        const type = Math.floor(rand()*2.99); // 0=daisy 1=stem+leaf 2=bud, never 3
+        ctx.save();
+        ctx.translate(mx, my); ctx.rotate(angle);
+        if (type < 1) {
+          // Daisy — petals around center
+          const petals = 5 + Math.floor(rand()*4);
+          for (let p=0;p<petals;p++) {
+            const pa = (p/petals)*Math.PI*2;
+            ctx.beginPath();
+            ctx.ellipse(
+              Math.cos(pa)*r2*1.5, Math.sin(pa)*r2*1.5,
+              r2*0.7, r2*0.35, pa, 0, Math.PI*2
+            );
+            ctx.fillStyle = colors[ci%colors.length];
+            ctx.globalAlpha = 0.9;
+            ctx.fill();
+          }
+          ctx.beginPath();
+          ctx.arc(0, 0, r2*0.55, 0, Math.PI*2);
+          ctx.fillStyle = colors[(ci+1)%colors.length];
+          ctx.globalAlpha = 1;
+          ctx.fill();
+        } else if (type < 2) {
+          // Stem + leaf pair
+          const stemLen = r2*2.8;
+          ctx.beginPath();
+          ctx.moveTo(0, stemLen); ctx.lineTo(0, -stemLen);
+          ctx.strokeStyle = colors[ci%colors.length];
+          ctx.lineWidth = Math.max(1.5, r2*0.22);
+          ctx.globalAlpha = 0.9;
+          ctx.stroke();
+          // Two leaves, one each side
+          [-1, 1].forEach((side, i) => {
+            ctx.beginPath();
+            ctx.ellipse(side*r2*1.3, 0, r2*1.2, r2*0.5, side*0.4, 0, Math.PI*2);
+            ctx.fillStyle = colors[(ci+1+i)%colors.length];
+            ctx.globalAlpha = 0.82;
+            ctx.fill();
+          });
+          // Top bud
+          ctx.beginPath();
+          ctx.ellipse(0, -stemLen*0.85, r2*0.45, r2*0.7, 0, 0, Math.PI*2);
+          ctx.fillStyle = colors[(ci+2)%colors.length];
+          ctx.globalAlpha = 0.9;
+          ctx.fill();
+        } else {
+          // Bud — outer + inner ellipse
+          ctx.beginPath();
+          ctx.ellipse(0, 0, r2, r2*1.6, 0, 0, Math.PI*2);
+          ctx.fillStyle = colors[ci%colors.length];
+          ctx.globalAlpha = 0.88;
+          ctx.fill();
+          ctx.beginPath();
+          ctx.ellipse(0, -r2*0.2, r2*0.55, r2*0.9, 0, 0, Math.PI*2);
+          ctx.fillStyle = colors[(ci+1)%colors.length];
+          ctx.globalAlpha = 0.75;
+          ctx.fill();
+          // Sepal lines
+          for (let s=-1;s<=1;s++) {
+            ctx.beginPath();
+            ctx.moveTo(0, r2*0.6);
+            ctx.lineTo(s*r2*0.5, r2*1.4);
+            ctx.strokeStyle = colors[(ci+2)%colors.length];
+            ctx.lineWidth = Math.max(1, r2*0.12);
+            ctx.globalAlpha = 0.6;
+            ctx.stroke();
+          }
+        }
+        ctx.globalAlpha = 1;
+        ctx.restore();
+      }
+    }
+  }
+  ctx.restore();
+}
+
+function drawTropical(ctx, w, h, colors, tile, rot, cx) {
+  // Oversized tropical leaves — dramatic negative space, large scale
+  ctx.fillStyle = colors[colors.length-1]||colors[0];
+  ctx.fillRect(0,0,w,h);
+  const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
+  const splits = Math.max(0, Math.floor((cx-30)/20)); // leaf splits at cx>30
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const ox = (r%2===0)?0:tile*0.5;
+      const cx0 = cl*tile+tile/2+ox, cy0 = r*tile+tile/2;
+      const ci = Math.abs(r*cols+cl)%colors.length;
+      const lw = tile*0.46, lh = tile*0.82;
+      // Main leaf shape — broad tropical
+      const angles = [[-0.6,lw,lh],[0,lw*0.7,lh],[0.6,lw,lh]];
+      angles.forEach(([ang,rw,rh],i) => {
+        ctx.save();
+        ctx.translate(cx0,cy0); ctx.rotate(ang);
+        ctx.beginPath();
+        ctx.moveTo(0,rh*0.5);
+        ctx.bezierCurveTo(-rw*1.1,rh*0.2,-rw*0.9,-rh*0.3,-rw*0.1,-rh*0.5);
+        ctx.bezierCurveTo(0,-rh*0.52,0,-rh*0.52,rw*0.1,-rh*0.5);
+        ctx.bezierCurveTo(rw*0.9,-rh*0.3,rw*1.1,rh*0.2,0,rh*0.5);
+        ctx.fillStyle = colors[(ci+i)%colors.length];
+        ctx.globalAlpha = i===1?0.9:0.75;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        // Midrib
+        ctx.beginPath();
+        ctx.moveTo(0,rh*0.5); ctx.lineTo(0,-rh*0.5);
+        ctx.strokeStyle = colors[(ci+2)%colors.length];
+        ctx.lineWidth = Math.max(0.8,tile*0.022);
+        ctx.stroke();
+        // Splits/cuts at high complexity
+        if (splits>0) {
+          for (let s=1;s<=splits;s++) {
+            const t = s/(splits+1);
+            const sy = rh*0.5 - t*rh;
+            const sw = rw*(1-t*0.6)*0.9;
+            ctx.beginPath();
+            ctx.moveTo(-sw,sy); ctx.lineTo(-sw*0.2,sy);
+            ctx.moveTo(sw,sy); ctx.lineTo(sw*0.2,sy);
+            ctx.strokeStyle = colors[(ci+3)%colors.length];
+            ctx.lineWidth = Math.max(0.6,tile*0.015);
+            ctx.globalAlpha=0.55; ctx.stroke(); ctx.globalAlpha=1;
+          }
+        }
+        ctx.restore();
+      });
+    }
+  }
+  ctx.restore();
+}
+
+function drawVine(ctx, w, h, colors, tile, rot, cx) {
+  // Continuous flowing vine — sinuous stems, leaves branching off
+  ctx.fillStyle = colors[colors.length-1]||colors[0];
+  ctx.fillRect(0,0,w,h);
+  const rows = Math.ceil(h/tile)+2;
+  const leafPairs = Math.max(2, Math.floor(cx/15));
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    const y0 = r*tile+tile/2;
+    const ci = Math.abs(r)%colors.length;
+    // Main vine — horizontal sinuous wave across full width
+    const amp = tile*0.28;
+    ctx.beginPath();
+    ctx.moveTo(-tile, y0);
+    for (let x=-tile; x<=w+tile; x+=8) {
+      const vy = y0 + Math.sin((x/(tile*0.8))*Math.PI*2)*amp;
+      ctx.lineTo(x,vy);
+    }
+    ctx.strokeStyle = colors[ci%colors.length];
+    ctx.lineWidth = Math.max(1.5,tile*0.04);
+    ctx.stroke();
+    // Leaves along the vine
+    for (let lp=0; lp<leafPairs; lp++) {
+      const t = lp/leafPairs;
+      const vx = -tile + t*(w+tile*2);
+      const vy = y0 + Math.sin((vx/(tile*0.8))*Math.PI*2)*amp;
+      const tangent = Math.atan2(
+        Math.cos((vx/(tile*0.8))*Math.PI*2)*amp*(Math.PI*2/(tile*0.8)),
+        1
+      );
+      [1,-1].forEach(side => {
+        ctx.save();
+        ctx.translate(vx,vy);
+        ctx.rotate(tangent + side*Math.PI*0.4);
+        const llen = tile*(0.18+0.14*(lp%3)/2);
+        const lw2  = tile*0.08;
+        ctx.beginPath();
+        ctx.moveTo(0,0);
+        ctx.bezierCurveTo(llen*0.3,-lw2,llen*0.7,-lw2*0.5,llen,0);
+        ctx.bezierCurveTo(llen*0.7,lw2,llen*0.3,lw2,0,0);
+        ctx.fillStyle = colors[(ci+1+lp)%colors.length];
+        ctx.globalAlpha = 0.82; ctx.fill(); ctx.globalAlpha=1;
+        // Leaf vein
+        ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(llen,0);
+        ctx.strokeStyle = colors[(ci+2)%colors.length];
+        ctx.lineWidth = Math.max(0.5,tile*0.012);
+        ctx.globalAlpha=0.5; ctx.stroke(); ctx.globalAlpha=1;
+        ctx.restore();
+      });
+    }
+    // Berries/buds at intervals
+    if (cx>45) {
+      for (let b=0;b<Math.floor(leafPairs/2);b++) {
+        const t2 = (b+0.5)/Math.floor(leafPairs/2);
+        const bx = -tile+t2*(w+tile*2);
+        const by = y0+Math.sin((bx/(tile*0.8))*Math.PI*2)*amp;
+        ctx.beginPath();
+        ctx.arc(bx,by,tile*0.045,0,Math.PI*2);
+        ctx.fillStyle = colors[(ci+3)%colors.length];
+        ctx.fill();
+      }
+    }
+  }
+  ctx.restore();
+}
+
+function drawHeritage(ctx, w, h, colors, tile, rot, cx) {
+  // West African / Caribbean heritage botanical — bold outlines, geometric leaf shapes
+  ctx.fillStyle = colors[colors.length-1]||colors[0];
+  ctx.fillRect(0,0,w,h);
+  const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
+  const detail = cx>50;
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const ox = (r%2===0)?0:tile*0.5;
+      const cx0 = cl*tile+tile/2+ox, cy0 = r*tile+tile/2;
+      const ci = Math.abs(r*cols+cl)%colors.length;
+      const h2 = tile*0.42, w2 = tile*0.28;
+      // Central diamond motif
+      ctx.beginPath();
+      ctx.moveTo(cx0,cy0-h2);
+      ctx.lineTo(cx0+w2,cy0);
+      ctx.lineTo(cx0,cy0+h2);
+      ctx.lineTo(cx0-w2,cy0);
+      ctx.closePath();
+      ctx.fillStyle = colors[ci%colors.length];
+      ctx.fill();
+      // Inner diamond
+      const sc = 0.55;
+      ctx.beginPath();
+      ctx.moveTo(cx0,cy0-h2*sc);
+      ctx.lineTo(cx0+w2*sc,cy0);
+      ctx.lineTo(cx0,cy0+h2*sc);
+      ctx.lineTo(cx0-w2*sc,cy0);
+      ctx.closePath();
+      ctx.fillStyle = colors[(ci+1)%colors.length];
+      ctx.fill();
+      // Geometric leaf arms — 4 directions
+      [[0,-1],[0,1],[1,0],[-1,0]].forEach(([dx,dy],i) => {
+        const arm = tile*0.48;
+        const lx = cx0+dx*w2, ly = cy0+dy*h2;
+        const ex = cx0+dx*arm*0.85, ey = cy0+dy*arm*0.85;
+        ctx.beginPath();
+        ctx.moveTo(lx,ly);
+        // Bold angular leaf shape
+        const perp = tile*0.13;
+        ctx.lineTo(lx+dy*perp,ly+dx*perp);
+        ctx.lineTo(ex,ey);
+        ctx.lineTo(lx-dy*perp,ly-dx*perp);
+        ctx.closePath();
+        ctx.fillStyle = colors[(ci+2+i)%colors.length];
+        ctx.globalAlpha = 0.8;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        if (detail) {
+          // Bold outline
+          ctx.strokeStyle = colors[(ci+1)%colors.length];
+          ctx.lineWidth = Math.max(1,tile*0.025);
+          ctx.stroke();
+        }
+      });
+      // Center accent dot
+      ctx.beginPath();
+      ctx.arc(cx0,cy0,tile*0.07,0,Math.PI*2);
+      ctx.fillStyle = colors[(ci+3)%colors.length];
+      ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+
+function drawBatik(ctx, w, h, colors, tile, rot, cx) {
+  // True batik — bold outlined motifs, flat fills, wax-resist character
+  const ground = colors[colors.length-1]||colors[0];
+  ctx.fillStyle = ground;
+  ctx.fillRect(0,0,w,h);
+
+  const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
+  const outline = Math.max(2, tile*0.045); // thick wax-resist outline
+  const motifs = ['flower','circle-diamond','starburst'];
+  const dots = cx > 35; // scatter dots appear at higher complexity
+
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const ox = (r%2===0)?0:tile*0.5;
+      const cx0 = cl*tile+tile/2+ox, cy0 = r*tile+tile/2;
+      const ci = Math.abs(r*cols+cl)%colors.length;
+      const motif = motifs[Math.abs(r*cols+cl)%motifs.length];
+      const fill1 = colors[ci%colors.length];
+      const fill2 = colors[(ci+1)%colors.length];
+      const fill3 = colors[(ci+2)%colors.length];
+      const R = tile*0.38;
+
+      ctx.save();
+      ctx.translate(cx0, cy0);
+
+      if (motif === 'flower') {
+        // 4 bold filled petals
+        for (let p=0;p<4;p++) {
+          const angle = (p/4)*Math.PI*2;
+          ctx.save();
+          ctx.rotate(angle);
+          ctx.beginPath();
+          ctx.ellipse(0, -R*0.55, R*0.32, R*0.48, 0, 0, Math.PI*2);
+          ctx.fillStyle = fill1;
+          ctx.fill();
+          ctx.strokeStyle = ground;
+          ctx.lineWidth = outline;
+          ctx.stroke();
+          ctx.restore();
+        }
+        // Center circle
+        ctx.beginPath();
+        ctx.arc(0, 0, R*0.28, 0, Math.PI*2);
+        ctx.fillStyle = fill2;
+        ctx.fill();
+        ctx.strokeStyle = ground;
+        ctx.lineWidth = outline;
+        ctx.stroke();
+        // Inner center dot
+        ctx.beginPath();
+        ctx.arc(0, 0, R*0.12, 0, Math.PI*2);
+        ctx.fillStyle = fill3;
+        ctx.fill();
+
+      } else if (motif === 'circle-diamond') {
+        // Circle with 4 pointed petals filling the corners
+        ctx.beginPath();
+        ctx.moveTo(0, -R);
+        ctx.bezierCurveTo(R*0.5,-R*0.5, R*0.5,R*0.5, 0,R);
+        ctx.bezierCurveTo(-R*0.5,R*0.5, -R*0.5,-R*0.5, 0,-R);
+        ctx.fillStyle = fill1;
+        ctx.fill();
+        ctx.strokeStyle = ground;
+        ctx.lineWidth = outline;
+        ctx.stroke();
+        // 4 petal cuts into the circle
+        for (let p=0;p<4;p++) {
+          const pa = (p/4)*Math.PI*2 + Math.PI/4;
+          ctx.save();
+          ctx.rotate(pa);
+          ctx.beginPath();
+          ctx.ellipse(0, -R*0.58, R*0.22, R*0.38, 0, 0, Math.PI*2);
+          ctx.fillStyle = fill2;
+          ctx.fill();
+          ctx.strokeStyle = ground;
+          ctx.lineWidth = outline*0.7;
+          ctx.stroke();
+          ctx.restore();
+        }
+        // Inner circle
+        ctx.beginPath();
+        ctx.arc(0, 0, R*0.22, 0, Math.PI*2);
+        ctx.fillStyle = fill3;
+        ctx.fill();
+        ctx.strokeStyle = ground;
+        ctx.lineWidth = outline*0.7;
+        ctx.stroke();
+
+      } else {
+        // Starburst
+        const points = 6 + Math.floor(cx/25);
+        for (let p=0;p<points;p++) {
+          const pa = (p/points)*Math.PI*2;
+          ctx.save();
+          ctx.rotate(pa);
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.bezierCurveTo(-R*0.22, -R*0.3, -R*0.18, -R*0.7, 0, -R*0.82);
+          ctx.bezierCurveTo(R*0.18, -R*0.7, R*0.22, -R*0.3, 0, 0);
+          ctx.fillStyle = p%2===0 ? fill1 : fill2;
+          ctx.fill();
+          ctx.strokeStyle = ground;
+          ctx.lineWidth = outline*0.8;
+          ctx.stroke();
+          ctx.restore();
+        }
+        // Center
+        ctx.beginPath();
+        ctx.arc(0, 0, R*0.2, 0, Math.PI*2);
+        ctx.fillStyle = fill3;
+        ctx.fill();
+        ctx.strokeStyle = ground;
+        ctx.lineWidth = outline*0.7;
+        ctx.stroke();
+      }
+
+      ctx.restore();
+
+      // Dot scatter between motifs — classic batik filler
+      if (dots) {
+        const dotR = Math.max(2, tile*0.04);
+        const dotPositions = [
+          [cx0+tile*0.35, cy0+tile*0.35],
+          [cx0-tile*0.35, cy0+tile*0.35],
+          [cx0+tile*0.35, cy0-tile*0.35],
+          [cx0-tile*0.35, cy0-tile*0.35],
+        ];
+        dotPositions.forEach(([dx,dy]) => {
+          ctx.beginPath();
+          ctx.arc(dx, dy, dotR, 0, Math.PI*2);
+          ctx.fillStyle = colors[(ci+2)%colors.length];
+          ctx.globalAlpha = 0.75; ctx.fill(); ctx.globalAlpha = 1;
+        });
+      }
+    }
+  }
+  ctx.restore();
+}
+
+function drawFloral(ctx, w, h, colors, tile, rot, cx) {
+  // Formal damask-style floral — symmetrical 6-petal blooms with layered detail
+  ctx.fillStyle = colors[colors.length-1]||colors[0];
+  ctx.fillRect(0,0,w,h);
+  const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
+  const petalLayers = Math.max(1, Math.floor(cx/30));
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const ox = (r%2===0)?0:tile*0.5;
+      const cx0 = cl*tile+tile/2+ox, cy0 = r*tile+tile/2;
+      const ci = Math.abs(r*cols+cl)%colors.length;
+      const petals = 6;
+      const baseR = tile*0.34;
+      // Draw petal layers from outside in
+      for (let layer=0; layer<=petalLayers; layer++) {
+        const frac = 1 - layer/(petalLayers+1);
+        const pr = baseR*frac;
+        const petalW = pr*0.55, petalH = pr*0.28;
+        const offset = layer%2===0 ? 0 : Math.PI/petals;
+        for (let p=0; p<petals; p++) {
+          const angle = (p/petals)*Math.PI*2 + offset;
+          const px = cx0 + Math.cos(angle)*pr*0.7;
+          const py = cy0 + Math.sin(angle)*pr*0.7;
+          ctx.beginPath();
+          ctx.ellipse(px, py, petalW, petalH, angle, 0, Math.PI*2);
+          ctx.fillStyle = colors[(ci+layer)%colors.length];
+          ctx.globalAlpha = 0.85;
+          ctx.fill();
+          ctx.globalAlpha = 1;
+        }
+      }
+      // Center stamen cluster
+      const stamens = 8 + Math.floor(cx/15);
+      for (let s=0; s<stamens; s++) {
+        const sa = (s/stamens)*Math.PI*2;
+        const sr = tile*0.08;
+        ctx.beginPath();
+        ctx.arc(cx0+Math.cos(sa)*sr, cy0+Math.sin(sa)*sr, tile*0.025, 0, Math.PI*2);
+        ctx.fillStyle = colors[(ci+2)%colors.length];
+        ctx.fill();
+      }
+      // Center dot
+      ctx.beginPath();
+      ctx.arc(cx0, cy0, tile*0.07, 0, Math.PI*2);
+      ctx.fillStyle = colors[(ci+1)%colors.length];
+      ctx.fill();
+      // Connecting stems to next tile
+      if (cx > 50) {
+        [[cx0,cy0-tile/2],[cx0,cy0+tile/2],[cx0-tile/2,cy0],[cx0+tile/2,cy0]].forEach(([tx,ty]) => {
+          ctx.beginPath();
+          ctx.moveTo(cx0, cy0);
+          ctx.bezierCurveTo(cx0, (cy0+ty)/2, tx, (cy0+ty)/2, tx, ty);
+          ctx.strokeStyle = colors[(ci+3)%colors.length];
+          ctx.lineWidth = Math.max(0.8, tile*0.02);
+          ctx.globalAlpha = 0.4; ctx.stroke(); ctx.globalAlpha = 1;
+        });
+      }
+    }
+  }
+  ctx.restore();
+}
+
+function drawAdinkra(ctx, w, h, colors, tile, rot, cx) {
+  // Ghanaian Adinkra — Gye Nyame + Sankofa + Dwennimmen inspired geometric symbols
+  ctx.fillStyle = colors[colors.length-1]||colors[0];
+  ctx.fillRect(0,0,w,h);
+  const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
+  const symbols = ['gye','sankofa','dwennimmen','funtunfunefu','nkyinkyim'];
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const ox = (r%2===0)?0:tile*0.5;
+      const cx0 = cl*tile+tile/2+ox, cy0 = r*tile+tile/2;
+      const ci = Math.abs(r*cols+cl)%colors.length;
+      const sym = symbols[(Math.abs(r*cols+cl))%symbols.length];
+      const ink = colors[ci%colors.length];
+      const bg2 = colors[(ci+1)%colors.length];
+      const R = tile*0.38;
+      ctx.strokeStyle = ink;
+      ctx.fillStyle = bg2;
+      ctx.lineWidth = Math.max(1.2, tile*0.03);
+      ctx.save();
+      ctx.translate(cx0, cy0);
+      if (sym === 'gye') {
+        // Gye Nyame — "except God" — concentric rings with cross
+        for (let i=3;i>=1;i--) {
+          ctx.beginPath();
+          ctx.arc(0, 0, R*(i/3), 0, Math.PI*2);
+          ctx.strokeStyle = ink; ctx.stroke();
+        }
+        ctx.beginPath();
+        ctx.moveTo(-R,0); ctx.lineTo(R,0);
+        ctx.moveTo(0,-R); ctx.lineTo(0,R);
+        ctx.stroke();
+        ctx.beginPath(); ctx.arc(0,0,R*0.18,0,Math.PI*2);
+        ctx.fillStyle=ink; ctx.fill();
+      } else if (sym === 'sankofa') {
+        // Sankofa — heart shape with backward bird implication (two arcs)
+        ctx.beginPath();
+        ctx.arc(-R*0.38, -R*0.18, R*0.38, Math.PI*0.1, Math.PI*1.1);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(R*0.38, -R*0.18, R*0.38, Math.PI*0, Math.PI*1.0);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(-R*0.72, -R*0.1);
+        ctx.bezierCurveTo(-R*0.4, R*0.6, R*0.4, R*0.6, R*0.72, -R*0.1);
+        ctx.stroke();
+        ctx.beginPath(); ctx.arc(0, R*0.28, R*0.14, 0, Math.PI*2);
+        ctx.fillStyle=ink; ctx.fill();
+      } else if (sym === 'dwennimmen') {
+        // Ram's horns — 4 spirals
+        [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx,sy]) => {
+          ctx.beginPath();
+          ctx.arc(sx*R*0.36, sy*R*0.36, R*0.3, 0, Math.PI*1.5*Math.sign(sx*sy)*-1);
+          ctx.stroke();
+        });
+        ctx.beginPath(); ctx.arc(0,0,R*0.15,0,Math.PI*2);
+        ctx.fillStyle=ink; ctx.fill();
+      } else if (sym === 'funtunfunefu') {
+        // Two-headed crocodile — two overlapping circles with dividing line
+        ctx.beginPath(); ctx.arc(-R*0.28,0,R*0.36,0,Math.PI*2); ctx.stroke();
+        ctx.beginPath(); ctx.arc(R*0.28,0,R*0.36,0,Math.PI*2); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0,-R*0.4); ctx.lineTo(0,R*0.4); ctx.stroke();
+        ctx.beginPath(); ctx.arc(0,0,R*0.14,0,Math.PI*2);
+        ctx.fillStyle=ink; ctx.fill();
+      } else {
+        // Nkyinkyim — adaptation — zigzag S-curve
+        ctx.beginPath();
+        ctx.moveTo(-R,-R*0.5);
+        ctx.bezierCurveTo(-R*0.3,R*0.1, R*0.3,-R*0.1, R,R*0.5);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(-R,R*0.5);
+        ctx.bezierCurveTo(-R*0.3,-R*0.1, R*0.3,R*0.1, R,-R*0.5);
+        ctx.stroke();
+        // Corner dots
+        [[-R,-R*0.5],[R,R*0.5],[-R,R*0.5],[R,-R*0.5]].forEach(([px,py]) => {
+          ctx.beginPath(); ctx.arc(px,py,R*0.1,0,Math.PI*2);
+          ctx.fillStyle=ink; ctx.fill();
+        });
+      }
+      // Separator lines between tiles (classic adinkra stamped grid)
+      if (cx > 30) {
+        ctx.strokeStyle = colors[(ci+2)%colors.length];
+        ctx.lineWidth = Math.max(0.5, tile*0.015);
+        ctx.globalAlpha = 0.3;
+        ctx.beginPath();
+        ctx.moveTo(-tile/2, tile/2); ctx.lineTo(tile/2, tile/2);
+        ctx.moveTo(tile/2, -tile/2); ctx.lineTo(tile/2, tile/2);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+
+function drawMudcloth(ctx, w, h, colors, tile, rot, cx) {
+  // West African bogolan mudcloth — bold geometric marks on earthy ground
+  ctx.fillStyle = colors[0];
+  ctx.fillRect(0,0,w,h);
+  const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
+  const motifs = ['cross','square','zigzag','bars','diamond'];
+  const detail = cx > 50;
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const ox = 0; // mudcloth is strict grid
+      const cx0 = cl*tile+tile/2, cy0 = r*tile+tile/2;
+      const ci = Math.abs(r*cols+cl)%colors.length;
+      const motif = motifs[(Math.abs(r*2+cl))%motifs.length];
+      const ink = colors[(ci+1)%colors.length];
+      const mark = tile*0.36;
+      const lw = Math.max(2, tile*0.05);
+      ctx.fillStyle = ink;
+      ctx.strokeStyle = ink;
+      ctx.lineWidth = lw;
+      if (motif === 'cross') {
+        ctx.fillRect(cx0-lw/2, cy0-mark, lw, mark*2);
+        ctx.fillRect(cx0-mark, cy0-lw/2, mark*2, lw);
+        if (detail) {
+          ctx.fillRect(cx0-mark*0.6, cy0-mark*0.6, mark*0.5, mark*0.5);
+          ctx.fillRect(cx0+mark*0.1, cy0-mark*0.6, mark*0.5, mark*0.5);
+          ctx.fillRect(cx0-mark*0.6, cy0+mark*0.1, mark*0.5, mark*0.5);
+          ctx.fillRect(cx0+mark*0.1, cy0+mark*0.1, mark*0.5, mark*0.5);
+        }
+      } else if (motif === 'square') {
+        ctx.strokeRect(cx0-mark, cy0-mark, mark*2, mark*2);
+        if (detail) ctx.strokeRect(cx0-mark*0.55, cy0-mark*0.55, mark*1.1, mark*1.1);
+        ctx.fillRect(cx0-lw, cy0-lw, lw*2, lw*2);
+      } else if (motif === 'zigzag') {
+        ctx.beginPath();
+        ctx.moveTo(cx0-mark, cy0-mark*0.5);
+        for (let z=0;z<4;z++) {
+          const zx = cx0-mark + z*(mark*0.5);
+          ctx.lineTo(zx+mark*0.25, cy0+(z%2===0?mark*0.5:-mark*0.5));
+        }
+        ctx.lineWidth = lw*1.2; ctx.stroke(); ctx.lineWidth = lw;
+        if (detail) {
+          ctx.beginPath();
+          ctx.moveTo(cx0-mark, cy0);
+          for (let z=0;z<4;z++) {
+            const zx = cx0-mark + z*(mark*0.5);
+            ctx.lineTo(zx+mark*0.25, cy0+(z%2===0?mark*0.35:-mark*0.35));
+          }
+          ctx.globalAlpha=0.4; ctx.stroke(); ctx.globalAlpha=1;
+        }
+      } else if (motif === 'bars') {
+        const barCount = 3 + Math.floor(cx/25);
+        for (let b=0;b<barCount;b++) {
+          const bx = cx0-mark + b*(mark*2/(barCount-1));
+          ctx.fillRect(bx-lw*0.4, cy0-mark, lw*0.8, mark*2);
+        }
+      } else {
+        // Diamond
+        ctx.beginPath();
+        ctx.moveTo(cx0, cy0-mark);
+        ctx.lineTo(cx0+mark, cy0);
+        ctx.lineTo(cx0, cy0+mark);
+        ctx.lineTo(cx0-mark, cy0);
+        ctx.closePath(); ctx.stroke();
+        if (detail) {
+          ctx.fillRect(cx0-lw*0.5, cy0-lw*0.5, lw, lw);
+        }
+        // Corner marks
+        [[0,-1],[0,1],[1,0],[-1,0]].forEach(([dx,dy]) => {
+          ctx.fillRect(cx0+dx*mark*0.55-lw*0.4, cy0+dy*mark*0.55-lw*0.4, lw*0.8, lw*0.8);
+        });
+      }
+      // Horizontal grid separator
+      ctx.globalAlpha = 0.25;
+      ctx.fillStyle = colors[(ci+2)%colors.length];
+      ctx.fillRect(cl*tile+ox-tile/2, r*tile+tile-lw/2, tile, lw*0.5);
+      ctx.globalAlpha = 1;
+    }
+  }
+  ctx.restore();
+}
+
+function drawAsianLattice(ctx, w, h, colors, tile, rot, cx) {
+  // East Asian fretwork — interlocking squares, chrysanthemum centers, swastika fret
+  ctx.fillStyle = colors[colors.length-1]||colors[0];
+  ctx.fillRect(0,0,w,h);
+  const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
+  const detail = cx > 40;
+  const extraDetail = cx > 70;
+  const lw = Math.max(1, tile*0.025);
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const ox = 0;
+      const cx0 = cl*tile+tile/2, cy0 = r*tile+tile/2;
+      const ci = Math.abs(r+cl)%colors.length;
+      const ink = colors[ci%colors.length];
+      const accent = colors[(ci+1)%colors.length];
+      const fill2 = colors[(ci+2)%colors.length];
+      const m = tile*0.42; // half-size
+      ctx.strokeStyle = ink;
+      ctx.lineWidth = lw;
+      // Outer square frame
+      ctx.strokeRect(cx0-m, cy0-m, m*2, m*2);
+      // Inner rotated square (like a diamond inside)
+      ctx.beginPath();
+      ctx.moveTo(cx0, cy0-m);
+      ctx.lineTo(cx0+m, cy0);
+      ctx.lineTo(cx0, cy0+m);
+      ctx.lineTo(cx0-m, cy0);
+      ctx.closePath();
+      ctx.strokeStyle = accent;
+      ctx.stroke();
+      // Corner connecting fret lines
+      ctx.strokeStyle = ink;
+      const fret = m*0.5;
+      [[cx0-m,cy0-m],[cx0+m,cy0-m],[cx0-m,cy0+m],[cx0+m,cy0+m]].forEach(([fx,fy]) => {
+        const sx = fx===cx0-m ? 1 : -1;
+        const sy = fy===cy0-m ? 1 : -1;
+        ctx.beginPath();
+        ctx.moveTo(fx, fy);
+        ctx.lineTo(fx+sx*fret, fy);
+        ctx.lineTo(fx+sx*fret, fy+sy*fret);
+        ctx.stroke();
+      });
+      // Chrysanthemum center
+      if (detail) {
+        const petalR = m*0.26;
+        const petalCount = 8 + Math.floor(cx/18);
+        for (let p=0;p<petalCount;p++) {
+          const pa = (p/petalCount)*Math.PI*2;
+          ctx.beginPath();
+          ctx.ellipse(
+            cx0+Math.cos(pa)*petalR*1.2,
+            cy0+Math.sin(pa)*petalR*1.2,
+            petalR*0.45, petalR*0.22, pa, 0, Math.PI*2
+          );
+          ctx.fillStyle = p%2===0 ? accent : fill2;
+          ctx.globalAlpha = 0.8; ctx.fill(); ctx.globalAlpha = 1;
+        }
+        ctx.beginPath();
+        ctx.arc(cx0, cy0, petalR*0.4, 0, Math.PI*2);
+        ctx.fillStyle = ink; ctx.fill();
+      }
+      // Mid-edge connectors
+      if (extraDetail) {
+        ctx.strokeStyle = fill2;
+        ctx.lineWidth = lw*0.7;
+        [[cx0-m,cy0],[cx0+m,cy0],[cx0,cy0-m],[cx0,cy0+m]].forEach(([mx2,my2]) => {
+          ctx.beginPath();
+          ctx.arc(mx2, my2, m*0.12, 0, Math.PI*2);
+          ctx.fillStyle = fill2; ctx.fill();
+        });
+        ctx.lineWidth = lw;
+      }
+    }
+  }
+  ctx.restore();
+}
+
+function drawShibori(ctx, w, h, colors, tile, rot, cx) {
+  const ground = colors[0];
+  const ring1  = colors[1] || colors[0];
+  const ring2  = colors[2] || ring1;
+  ctx.fillStyle = ground;
+  ctx.fillRect(0,0,w,h);
+  const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
+  const rings = Math.max(3, Math.floor(cx/15));
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const ox = (r%2===0)?0:tile*0.5;
+      const cx0 = cl*tile+tile/2+ox, cy0 = r*tile+tile/2;
+      const isAlt = (r+cl)%2===0;
+      const rx = tile*(isAlt?0.46:0.38), ry = tile*(isAlt?0.28:0.44);
+      for (let ring=rings;ring>=1;ring--) {
+        const frac = ring/rings;
+        ctx.beginPath();
+        ctx.ellipse(cx0, cy0, rx*frac, ry*frac, isAlt?0.2:-0.2, 0, Math.PI*2);
+        ctx.strokeStyle = ring%2===0 ? ring1 : ring2;
+        ctx.lineWidth = Math.max(0.6, tile*0.022);
+        ctx.globalAlpha = 0.45 + frac*0.45;
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+      ctx.beginPath();
+      ctx.arc(cx0, cy0, Math.max(1.5, tile*0.04), 0, Math.PI*2);
+      ctx.fillStyle = ring2; ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+
+function drawSuzani(ctx, w, h, colors, tile, rot, cx) {
+  ctx.fillStyle = colors[colors.length-1]||colors[0];
+  ctx.fillRect(0,0,w,h);
+  const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
+  const petalCount = 8 + Math.floor(cx/18);
+  const detail = cx > 45;
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const ox = (r%2===0)?0:tile*0.5;
+      const cx0 = cl*tile+tile/2+ox, cy0 = r*tile+tile/2;
+      const ci = Math.abs(r*cols+cl)%colors.length;
+      const R = tile*0.42;
+      ctx.save(); ctx.translate(cx0,cy0);
+      for (let p=0;p<petalCount;p++) {
+        const angle = (p/petalCount)*Math.PI*2;
+        ctx.beginPath();
+        ctx.moveTo(0,0);
+        ctx.lineTo(Math.cos(angle)*R, Math.sin(angle)*R);
+        ctx.strokeStyle = colors[ci%colors.length];
+        ctx.lineWidth = Math.max(1, tile*0.025);
+        ctx.globalAlpha = 0.35; ctx.stroke(); ctx.globalAlpha = 1;
+      }
+      for (let p=0;p<petalCount;p++) {
+        const angle = (p/petalCount)*Math.PI*2;
+        const px = Math.cos(angle)*R*0.65, py = Math.sin(angle)*R*0.65;
+        ctx.beginPath();
+        ctx.ellipse(px, py, tile*0.13, tile*0.07, angle, 0, Math.PI*2);
+        ctx.fillStyle = colors[(ci+p%3)%colors.length];
+        ctx.globalAlpha = 0.88; ctx.fill(); ctx.globalAlpha=1;
+      }
+      ctx.beginPath();
+      ctx.arc(0,0,R*0.32,0,Math.PI*2);
+      ctx.strokeStyle = colors[(ci+1)%colors.length];
+      ctx.lineWidth = Math.max(1.5, tile*0.035); ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(0,0,tile*0.1,0,Math.PI*2);
+      ctx.fillStyle = colors[(ci+2)%colors.length]; ctx.fill();
+      if (detail) {
+        const ic = Math.floor(petalCount/2);
+        for (let p=0;p<ic;p++) {
+          const angle = (p/ic)*Math.PI*2 + Math.PI/ic;
+          const px = Math.cos(angle)*R*0.35, py = Math.sin(angle)*R*0.35;
+          ctx.beginPath();
+          ctx.ellipse(px,py,tile*0.07,tile*0.04,angle,0,Math.PI*2);
+          ctx.fillStyle=colors[(ci+2)%colors.length];
+          ctx.globalAlpha=0.7; ctx.fill(); ctx.globalAlpha=1;
+        }
+      }
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+
+function drawCintemani(ctx, w, h, colors, tile, rot, cx) {
+  ctx.fillStyle = colors[colors.length-1]||colors[0];
+  ctx.fillRect(0,0,w,h);
+  const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
+  const detail = cx > 40;
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const ox = (r%2===0)?0:tile*0.5;
+      const cx0 = cl*tile+tile/2+ox, cy0 = r*tile+tile/2;
+      const ci = Math.abs(r*cols+cl)%colors.length;
+      ctx.save(); ctx.translate(cx0,cy0);
+      const dotR = Math.max(3, tile*0.1);
+      const dotPositions = [[-tile*0.2,-tile*0.22],[tile*0.2,-tile*0.22],[0,-tile*0.06]];
+      dotPositions.forEach(([dx,dy],i) => {
+        ctx.beginPath();
+        ctx.arc(dx, dy, dotR, 0, Math.PI*2);
+        ctx.fillStyle = colors[(ci+i)%colors.length]; ctx.fill();
+        if (detail) {
+          ctx.beginPath();
+          ctx.arc(dx, dy, dotR*0.45, 0, Math.PI*2);
+          ctx.fillStyle = colors[(ci+i+2)%colors.length]; ctx.fill();
+        }
+      });
+      const waveY1 = tile*0.18, waveY2 = tile*0.33, amp = tile*0.08;
+      [waveY1, waveY2].forEach((wy, wi) => {
+        ctx.beginPath();
+        ctx.moveTo(-tile/2, wy);
+        for (let x=-tile/2; x<=tile/2; x+=4) {
+          ctx.lineTo(x, wy + Math.sin((x/tile)*Math.PI*2)*amp);
+        }
+        ctx.strokeStyle = colors[(ci+1+wi)%colors.length];
+        ctx.lineWidth = Math.max(1.5, tile*0.03); ctx.stroke();
+      });
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+
+function drawPaisley(ctx, w, h, colors, tile, rot, cx) {
+  ctx.fillStyle = colors[colors.length-1]||colors[0];
+  ctx.fillRect(0,0,w,h);
+  const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
+  const detail = cx > 35;
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const ox = (r%2===0)?0:tile*0.5;
+      const cx0 = cl*tile+tile/2+ox, cy0 = r*tile+tile/2;
+      const ci = Math.abs(r*cols+cl)%colors.length;
+      const isFlipped = (r+cl)%2===0;
+      const H = tile*0.44, W = tile*0.28;
+      ctx.save(); ctx.translate(cx0,cy0);
+      if (isFlipped) ctx.scale(1,-1);
+      ctx.beginPath();
+      ctx.moveTo(0,H*0.5);
+      ctx.bezierCurveTo(-W*1.1,H*0.2,-W*1.0,-H*0.4,-W*0.1,-H*0.5);
+      ctx.bezierCurveTo(0,-H*0.52,0,-H*0.52,W*0.1,-H*0.5);
+      ctx.bezierCurveTo(W*1.0,-H*0.4,W*1.1,H*0.2,0,H*0.5);
+      ctx.fillStyle = colors[ci%colors.length]; ctx.fill();
+      const sc = 0.6;
+      ctx.beginPath();
+      ctx.moveTo(0,H*0.5*sc);
+      ctx.bezierCurveTo(-W*1.1*sc,H*0.2*sc,-W*1.0*sc,-H*0.4*sc,-W*0.1*sc,-H*0.5*sc);
+      ctx.bezierCurveTo(0,-H*0.52*sc,0,-H*0.52*sc,W*0.1*sc,-H*0.5*sc);
+      ctx.bezierCurveTo(W*1.0*sc,-H*0.4*sc,W*1.1*sc,H*0.2*sc,0,H*0.5*sc);
+      ctx.fillStyle = colors[(ci+1)%colors.length]; ctx.fill();
+      ctx.beginPath();
+      ctx.arc(W*0.25,-H*0.48,tile*0.07,0,Math.PI*1.5);
+      ctx.strokeStyle=colors[(ci+2)%colors.length];
+      ctx.lineWidth=Math.max(1,tile*0.025); ctx.stroke();
+      if (detail) {
+        ctx.beginPath(); ctx.arc(0,-H*0.1,tile*0.06,0,Math.PI*2);
+        ctx.fillStyle=colors[(ci+2)%colors.length]; ctx.fill();
+      }
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+
+function drawKuba(ctx, w, h, colors, tile, rot, cx) {
+  ctx.fillStyle = colors[0];
+  ctx.fillRect(0,0,w,h);
+  const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
+  const detail = cx > 40;
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const ox = (r%2===0)?0:tile*0.5;
+      const cx0 = cl*tile+tile/2+ox, cy0 = r*tile+tile/2;
+      const ci = Math.abs(r*cols+cl)%colors.length;
+      const H = tile*0.48, W = tile*0.48;
+      const isAlt = (r+cl)%2===0;
+      ctx.save(); ctx.translate(cx0,cy0);
+      if (!isAlt) {
+        ctx.fillStyle = colors[(ci+1)%colors.length];
+        ctx.fillRect(-W,-H,W*2,H*2);
+        ctx.beginPath();
+        ctx.moveTo(-W,-H); ctx.lineTo(W,H);
+        ctx.moveTo(W,-H); ctx.lineTo(-W,H);
+        ctx.strokeStyle=colors[ci%colors.length];
+        ctx.lineWidth=Math.max(2,tile*0.06); ctx.stroke();
+        const sq = tile*0.18;
+        ctx.fillStyle=colors[ci%colors.length];
+        ctx.fillRect(-sq,-sq,sq*2,sq*2);
+        if (detail) {
+          ctx.fillStyle=colors[(ci+2)%colors.length];
+          ctx.fillRect(-sq*0.5,-sq*0.5,sq,sq);
+        }
+      } else {
+        const s = tile*0.14;
+        ctx.fillStyle=colors[(ci+2)%colors.length];
+        ctx.fillRect(-W*0.8,-s,W*1.6,s*2);
+        ctx.fillRect(-s,-H*0.8,s*2,H*1.6);
+        [[-W*0.55,-H*0.55],[W*0.55,-H*0.55],[-W*0.55,H*0.55],[W*0.55,H*0.55]].forEach(([dx,dy]) => {
+          ctx.fillStyle=colors[(ci+1)%colors.length];
+          ctx.fillRect(dx-s*0.7,dy-s*0.7,s*1.4,s*1.4);
+        });
+      }
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+
+function drawZellige(ctx, w, h, colors, tile, rot, cx) {
+  ctx.fillStyle = colors[colors.length-1]||colors[0];
+  ctx.fillRect(0,0,w,h);
+  const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
+  const detail = cx > 45;
+  const lw = Math.max(1.5, tile*0.03);
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const cx0 = cl*tile+tile/2, cy0 = r*tile+tile/2;
+      const ci = Math.abs(r+cl)%colors.length;
+      const R = tile*0.46;
+      const outerR = R, innerR = R*0.42;
+      const pts = 8;
+      ctx.save(); ctx.translate(cx0,cy0);
+      ctx.beginPath();
+      for (let p=0;p<pts*2;p++) {
+        const angle = (p/pts)*Math.PI - Math.PI/pts;
+        const r2 = p%2===0 ? outerR : innerR;
+        const x = Math.cos(angle)*r2, y = Math.sin(angle)*r2;
+        p===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+      }
+      ctx.closePath();
+      ctx.fillStyle=colors[ci%colors.length]; ctx.fill();
+      ctx.strokeStyle=colors[(ci+2)%colors.length];
+      ctx.lineWidth=lw*0.6; ctx.globalAlpha=0.4; ctx.stroke(); ctx.globalAlpha=1;
+      if (detail) {
+        ctx.beginPath();
+        for (let p=0;p<pts*2;p++) {
+          const angle = (p/pts)*Math.PI - Math.PI/pts;
+          const r2 = p%2===0 ? outerR*0.55 : innerR*0.55;
+          const x = Math.cos(angle)*r2, y = Math.sin(angle)*r2;
+          p===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+        }
+        ctx.closePath();
+        ctx.fillStyle=colors[(ci+1)%colors.length]; ctx.fill();
+      }
+      ctx.beginPath(); ctx.arc(0,0,tile*0.08,0,Math.PI*2);
+      ctx.fillStyle=colors[(ci+2)%colors.length]; ctx.fill();
+      const sq = tile*0.15;
+      [[0,-R*1.05],[0,R*1.05],[-R*1.05,0],[R*1.05,0]].forEach(([dx,dy]) => {
+        ctx.fillStyle=colors[(ci+1)%colors.length];
+        ctx.fillRect(dx-sq/2,dy-sq/2,sq,sq);
+      });
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+
+function drawBotanical(ctx, w, h, colors, tile, rot, cx) {
+  ctx.fillStyle = colors[colors.length-1] || colors[0];
+  ctx.fillRect(0, 0, w, h);
+  const cols = Math.ceil(w / tile) + 2;
+  const rows = Math.ceil(h / tile) + 2;
+  const leafCount = Math.max(2, Math.floor(cx / 18));
+  ctx.save();
+  ctx.translate(w/2, h/2);
+  ctx.rotate(rot * Math.PI / 180);
+  ctx.translate(-w/2, -h/2);
+  for (let r = -1; r < rows; r++) {
+    for (let c = -1; c < cols; c++) {
+      const offset = (r % 2 === 0) ? 0 : tile * 0.5;
+      const cx0 = c * tile + tile/2 + offset;
+      const cy0 = r * tile + tile/2;
+      const ci = (r * 3 + c) % colors.length;
+      const stemColor = colors[Math.abs(ci) % colors.length];
+      const leafColor = colors[Math.abs(ci + 1) % colors.length];
+      const leafColor2 = colors[Math.abs(ci + 2) % colors.length];
+      ctx.beginPath();
+      ctx.moveTo(cx0, cy0 + tile * 0.45);
+      ctx.bezierCurveTo(cx0, cy0 + tile * 0.2, cx0, cy0 - tile * 0.2, cx0, cy0 - tile * 0.45);
+      ctx.strokeStyle = stemColor;
+      ctx.lineWidth = Math.max(1, tile * 0.04);
+      ctx.stroke();
+      for (let l = 0; l < leafCount; l++) {
+        const t = (l + 0.5) / leafCount;
+        const ly = cy0 + tile * 0.45 - t * tile * 0.9;
+        const side = l % 2 === 0 ? 1 : -1;
+        const lw = tile * 0.22 * (0.7 + cx / 200);
+        const lh = tile * 0.12;
+        ctx.beginPath();
+        ctx.ellipse(cx0 + side * lw * 0.6, ly, lw, lh, side * 0.4, 0, Math.PI * 2);
+        ctx.fillStyle = l % 2 === 0 ? leafColor : leafColor2;
+        ctx.globalAlpha = 0.88;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+      const bloomR = tile * 0.1;
+      ctx.beginPath();
+      ctx.arc(cx0, cy0 - tile * 0.42, bloomR, 0, Math.PI * 2);
+      ctx.fillStyle = colors[Math.abs(ci + 2) % colors.length];
+      ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+
+function drawNdebele(ctx, w, h, colors, tile, rot, cx) {
+  ctx.fillStyle = colors[0];
+  ctx.fillRect(0,0,w,h);
+  const rows = Math.ceil(h/tile)+2;
+  const detail = cx > 40;
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    const y = r*tile;
+    const ci = Math.abs(r)%colors.length;
+    ctx.fillStyle = colors[ci%colors.length];
+    ctx.fillRect(0, y, w, tile*0.4);
+    ctx.fillStyle = colors[(ci+1)%colors.length];
+    ctx.fillRect(0, y+tile*0.4, w, tile*0.15);
+    const rW = tile*0.55, rH = tile*0.35;
+    const colCount = Math.ceil(w/tile)+2;
+    for (let cl=-1;cl<colCount;cl++) {
+      const rx = cl*tile + (r%2===0?0:tile*0.5);
+      ctx.fillStyle = colors[(ci+2+cl)%colors.length];
+      ctx.fillRect(rx, y+tile*0.55, rW, rH);
+      if (detail) {
+        ctx.fillStyle = colors[(ci+3)%colors.length];
+        ctx.fillRect(rx+rW*0.2, y+tile*0.6, rW*0.6, rH*0.55);
+      }
+    }
+    ctx.fillStyle = colors[(ci+3)%colors.length];
+    ctx.fillRect(0, y+tile*0.92, w, tile*0.08);
+  }
+  ctx.restore();
+}
+
+function drawTapa(ctx, w, h, colors, tile, rot, cx) {
+  const ground = colors[colors.length-1]||colors[0];
+  const ink    = colors[0];
+  ctx.fillStyle = ground;
+  ctx.fillRect(0,0,w,h);
+  const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
+  const detail = cx > 40;
+  const lw = Math.max(1.5, tile*0.03);
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    ctx.beginPath();
+    ctx.moveTo(-tile, r*tile+tile); ctx.lineTo(w+tile, r*tile+tile);
+    ctx.strokeStyle=ink; ctx.lineWidth=lw;
+    ctx.globalAlpha=0.3; ctx.stroke(); ctx.globalAlpha=1;
+  }
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const cx0 = cl*tile+tile/2, cy0 = r*tile+tile/2;
+      const ci  = Math.abs(r*3+cl)%colors.length;
+      const motifs = ['square','cross','diamond','triangle'];
+      const motif  = motifs[Math.abs(r*cols+cl)%motifs.length];
+      const m = tile*0.32;
+      ctx.strokeStyle = colors[ci%colors.length];
+      ctx.fillStyle   = colors[(ci+1)%colors.length];
+      ctx.lineWidth = lw;
+      ctx.save(); ctx.translate(cx0,cy0);
+      if (motif==='square') {
+        ctx.strokeRect(-m,-m,m*2,m*2);
+        if (detail) ctx.strokeRect(-m*0.55,-m*0.55,m*1.1,m*1.1);
+      } else if (motif==='cross') {
+        ctx.beginPath();
+        ctx.moveTo(-m,0); ctx.lineTo(m,0);
+        ctx.moveTo(0,-m); ctx.lineTo(0,m);
+        ctx.stroke();
+        if (detail) {
+          ctx.beginPath(); ctx.arc(0,0,m*0.2,0,Math.PI*2);
+          ctx.fillStyle=colors[ci%colors.length]; ctx.fill();
+        }
+      } else if (motif==='diamond') {
+        ctx.beginPath();
+        ctx.moveTo(0,-m); ctx.lineTo(m,0); ctx.lineTo(0,m); ctx.lineTo(-m,0);
+        ctx.closePath(); ctx.stroke();
+      } else {
+        ctx.beginPath();
+        ctx.moveTo(0,-m); ctx.lineTo(m,m*0.8); ctx.lineTo(-m,m*0.8);
+        ctx.closePath(); ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+
+function drawOtomi(ctx, w, h, colors, tile, rot, cx) {
+  ctx.fillStyle = colors[colors.length-1] || colors[0];
+  ctx.fillRect(0,0,w,h);
+  const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const ox = (r%2===0)?0:tile*0.5;
+      const cx0 = cl*tile+tile/2+ox, cy0 = r*tile+tile/2;
+      const ci = Math.abs(r*cols+cl) % colors.length;
+      const motif = Math.abs(r*cols+cl) % 4;
+      const s = tile * 0.38;
+      ctx.save(); ctx.translate(cx0, cy0);
+      ctx.rotate((Math.abs(r+cl)%4) * Math.PI/2);
+      ctx.fillStyle = colors[ci%colors.length];
+      ctx.strokeStyle = colors[(ci+1)%colors.length];
+      ctx.lineWidth = Math.max(1, tile*0.025);
+      if (motif === 0) {
+        ctx.beginPath();
+        ctx.ellipse(0, 0, s*0.55, s*0.32, -0.3, 0, Math.PI*2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(-s*0.1, -s*0.18, s*0.35, s*0.18, 0.4, 0, Math.PI*2);
+        ctx.fillStyle = colors[(ci+1)%colors.length]; ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(s*0.5, 0); ctx.lineTo(s*0.82, -s*0.22); ctx.lineTo(s*0.82, s*0.22);
+        ctx.closePath(); ctx.fillStyle = colors[(ci+2)%colors.length]; ctx.fill();
+        ctx.beginPath(); ctx.arc(-s*0.38, -s*0.05, s*0.07, 0, Math.PI*2);
+        ctx.fillStyle = colors[(ci+2)%colors.length]; ctx.fill();
+      } else if (motif === 1) {
+        for (let p=0;p<5;p++) {
+          const a = (p/5)*Math.PI*2;
+          ctx.beginPath();
+          ctx.ellipse(Math.cos(a)*s*0.38, Math.sin(a)*s*0.38, s*0.22, s*0.14, a, 0, Math.PI*2);
+          ctx.fillStyle = colors[(ci+p%3)%colors.length]; ctx.fill();
+        }
+        ctx.beginPath(); ctx.arc(0,0,s*0.2,0,Math.PI*2);
+        ctx.fillStyle = colors[(ci+2)%colors.length]; ctx.fill();
+      } else if (motif === 2) {
+        ctx.beginPath();
+        ctx.moveTo(0,-s*0.55);
+        ctx.bezierCurveTo(s*0.35,-s*0.2, s*0.35,s*0.2, 0,s*0.55);
+        ctx.bezierCurveTo(-s*0.35,s*0.2, -s*0.35,-s*0.2, 0,-s*0.55);
+        ctx.fill();
+        ctx.beginPath(); ctx.moveTo(0,-s*0.55); ctx.lineTo(0,s*0.55);
+        ctx.strokeStyle = colors[(ci+1)%colors.length];
+        ctx.lineWidth = Math.max(0.8, tile*0.02); ctx.stroke();
+      } else {
+        ctx.beginPath();
+        ctx.ellipse(0, s*0.1, s*0.28, s*0.4, 0, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(0, -s*0.38, s*0.18, s*0.22, 0, 0, Math.PI*2);
+        ctx.fillStyle = colors[(ci+1)%colors.length]; ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(-s*0.08,-s*0.55); ctx.lineTo(-s*0.22,-s*0.78); ctx.lineTo(-s*0.08,-s*0.72);
+        ctx.moveTo(s*0.08,-s*0.55); ctx.lineTo(s*0.22,-s*0.78); ctx.lineTo(s*0.08,-s*0.72);
+        ctx.strokeStyle = colors[(ci+2)%colors.length]; ctx.lineWidth = Math.max(1.2, tile*0.03); ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+
+function drawPhulkari(ctx, w, h, colors, tile, rot, cx) {
+  ctx.fillStyle = colors[colors.length-1] || colors[0];
+  ctx.fillRect(0,0,w,h);
+  const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
+  const detail = cx > 40;
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const cx0 = cl*tile+tile/2, cy0 = r*tile+tile/2;
+      const ci = Math.abs(r+cl) % colors.length;
+      const sq = tile * 0.46;
+      ctx.save(); ctx.translate(cx0,cy0);
+      if ((r+cl)%2===0) {
+        ctx.fillStyle = colors[ci%colors.length];
+        ctx.fillRect(-sq,-sq,sq*2,sq*2);
+      }
+      ctx.beginPath();
+      ctx.moveTo(0,-sq*0.7); ctx.lineTo(sq*0.7,0); ctx.lineTo(0,sq*0.7); ctx.lineTo(-sq*0.7,0);
+      ctx.closePath();
+      ctx.strokeStyle = colors[(ci+1)%colors.length];
+      ctx.lineWidth = Math.max(1.5, tile*0.04); ctx.stroke();
+      const arm = sq*0.35;
+      [[0,-arm],[0,arm],[-arm,0],[arm,0]].forEach(([dx,dy]) => {
+        ctx.beginPath();
+        ctx.arc(dx,dy, Math.max(2,tile*0.06), 0, Math.PI*2);
+        ctx.fillStyle = colors[(ci+2)%colors.length]; ctx.fill();
+      });
+      if (detail) {
+        for (let p=0;p<8;p++) {
+          const a = (p/8)*Math.PI*2;
+          ctx.beginPath();
+          ctx.moveTo(0,0);
+          ctx.lineTo(Math.cos(a)*sq*0.28, Math.sin(a)*sq*0.28);
+          ctx.strokeStyle = colors[(ci+1+p%2)%colors.length];
+          ctx.lineWidth = Math.max(1,tile*0.025); ctx.stroke();
+        }
+      }
+      ctx.beginPath();
+      ctx.arc(0,0,Math.max(2,tile*0.1),0,Math.PI*2);
+      ctx.fillStyle = colors[(ci+2)%colors.length]; ctx.fill();
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+
+function drawAzulejo(ctx, w, h, colors, tile, rot, cx) {
+  const bg = colors[colors.length-1] || '#f8f6f0';
+  ctx.fillStyle = bg;
+  ctx.fillRect(0,0,w,h);
+  const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
+  const detail = cx > 40;
+  const lw = Math.max(1.5, tile*0.035);
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const cx0 = cl*tile+tile/2, cy0 = r*tile+tile/2;
+      const ci = Math.abs(r+cl) % colors.length;
+      const R = tile*0.46;
+      ctx.save(); ctx.translate(cx0,cy0);
+      ctx.beginPath(); ctx.arc(0,0,R,0,Math.PI*2);
+      ctx.strokeStyle = colors[ci%colors.length];
+      ctx.lineWidth = lw; ctx.stroke();
+      ctx.beginPath(); ctx.arc(0,0,R*0.62,0,Math.PI*2);
+      ctx.strokeStyle = colors[ci%colors.length];
+      ctx.lineWidth = lw*0.6; ctx.stroke();
+      for (let p=0;p<4;p++) {
+        const a = (p/4)*Math.PI*2;
+        ctx.beginPath();
+        ctx.arc(Math.cos(a)*R*0.35, Math.sin(a)*R*0.35, R*0.28, 0, Math.PI*2);
+        ctx.strokeStyle = colors[(ci+1)%colors.length];
+        ctx.lineWidth = lw*0.7; ctx.stroke();
+      }
+      [[0,-R],[R,0],[0,R],[-R,0]].forEach(([dx,dy]) => {
+        ctx.beginPath(); ctx.arc(dx,dy, Math.max(2,tile*0.065),0,Math.PI*2);
+        ctx.fillStyle = colors[(ci+2)%colors.length]; ctx.fill();
+      });
+      ctx.beginPath();
+      ctx.moveTo(-tile/2, 0); ctx.lineTo(0,-tile/2);
+      ctx.lineTo(tile/2,0); ctx.lineTo(0,tile/2); ctx.closePath();
+      ctx.strokeStyle = colors[(ci+1)%colors.length];
+      ctx.lineWidth = lw*0.5; ctx.globalAlpha=0.35; ctx.stroke(); ctx.globalAlpha=1;
+      if (detail) {
+        const innerR = R*0.22, outerR = R*0.38;
+        ctx.beginPath();
+        for (let p=0;p<16;p++) {
+          const a=(p/16)*Math.PI*2;
+          const r2=p%2===0?outerR:innerR;
+          ctx.lineTo(Math.cos(a)*r2, Math.sin(a)*r2);
+        }
+        ctx.closePath();
+        ctx.fillStyle = colors[ci%colors.length]; ctx.fill();
+      }
+      ctx.beginPath(); ctx.arc(0,0,Math.max(2,tile*0.08),0,Math.PI*2);
+      ctx.fillStyle = colors[(ci+2)%colors.length]; ctx.fill();
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+
+function drawQuatrefoil(ctx, w, h, colors, tile, rot, cx) {
+  ctx.fillStyle = colors[colors.length-1] || colors[0];
+  ctx.fillRect(0,0,w,h);
+  const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
+  const lw = Math.max(2, tile*0.045);
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const ox = (r%2===0)?0:tile*0.5;
+      const cx0 = cl*tile+tile/2+ox, cy0 = r*tile+tile/2;
+      const ci = Math.abs(r*cols+cl) % colors.length;
+      const rx = tile*0.44, ry = tile*0.52;
+      ctx.save(); ctx.translate(cx0,cy0);
+      ctx.beginPath();
+      ctx.moveTo(0,-ry);
+      ctx.bezierCurveTo(rx*0.6,-ry*0.8, rx,-ry*0.3, rx, 0);
+      ctx.bezierCurveTo(rx, ry*0.3, rx*0.6, ry*0.8, 0, ry);
+      ctx.bezierCurveTo(-rx*0.6,ry*0.8,-rx,ry*0.3,-rx,0);
+      ctx.bezierCurveTo(-rx,-ry*0.3,-rx*0.6,-ry*0.8,0,-ry);
+      ctx.closePath();
+      ctx.fillStyle = colors[ci%colors.length];
+      ctx.globalAlpha = 0.88; ctx.fill(); ctx.globalAlpha=1;
+      ctx.strokeStyle = colors[(ci+1)%colors.length];
+      ctx.lineWidth = lw; ctx.stroke();
+      if (cx > 35) {
+        const dotR = Math.max(1.5, tile*0.04);
+        const dotCount = 20;
+        for (let d=0;d<dotCount;d++) {
+          const a = (d/dotCount)*Math.PI*2;
+          const dx = Math.cos(a)*rx*0.72, dy = Math.sin(a)*ry*0.8;
+          ctx.beginPath(); ctx.arc(dx,dy,dotR,0,Math.PI*2);
+          ctx.fillStyle = colors[(ci+2)%colors.length];
+          ctx.globalAlpha=0.55; ctx.fill(); ctx.globalAlpha=1;
+        }
+      }
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+
+function drawTalavera(ctx, w, h, colors, tile, rot, cx) {
+  const bg = colors[colors.length-1] || '#ffffff';
+  ctx.fillStyle = bg;
+  ctx.fillRect(0,0,w,h);
+  const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
+  const detail = cx > 40;
+  const lw = Math.max(2, tile*0.045);
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const cx0 = cl*tile+tile/2, cy0 = r*tile+tile/2;
+      const ci = Math.abs(r+cl) % colors.length;
+      const R = tile*0.46;
+      ctx.save(); ctx.translate(cx0,cy0);
+      ctx.beginPath(); ctx.arc(0,0,R,0,Math.PI*2);
+      ctx.strokeStyle = colors[ci%colors.length]; ctx.lineWidth = lw; ctx.stroke();
+      const outerR = R*0.78, innerR = R*0.45;
+      ctx.beginPath();
+      for (let p=0;p<16;p++) {
+        const a = (p/16)*Math.PI*2 - Math.PI/16;
+        const r2 = p%2===0 ? outerR : innerR;
+        p===0 ? ctx.moveTo(Math.cos(a)*r2, Math.sin(a)*r2)
+              : ctx.lineTo(Math.cos(a)*r2, Math.sin(a)*r2);
+      }
+      ctx.closePath();
+      ctx.strokeStyle = colors[ci%colors.length]; ctx.lineWidth = lw; ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(-R,0); ctx.lineTo(R,0);
+      ctx.moveTo(0,-R); ctx.lineTo(0,R);
+      ctx.strokeStyle = colors[(ci+1)%colors.length];
+      ctx.lineWidth = Math.max(1.5, tile*0.04); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(-R*0.72,-R*0.72); ctx.lineTo(R*0.72,R*0.72);
+      ctx.moveTo(R*0.72,-R*0.72); ctx.lineTo(-R*0.72,R*0.72);
+      ctx.strokeStyle = colors[(ci+1)%colors.length];
+      ctx.lineWidth = Math.max(1,tile*0.025); ctx.globalAlpha=0.5; ctx.stroke(); ctx.globalAlpha=1;
+      [[0,-R*0.95],[R*0.95,0],[0,R*0.95],[-R*0.95,0]].forEach(([dx,dy]) => {
+        ctx.beginPath(); ctx.arc(dx,dy,Math.max(2,tile*0.07),0,Math.PI*2);
+        ctx.fillStyle = colors[(ci+2)%colors.length]; ctx.fill();
+      });
+      for (let p=0;p<4;p++) {
+        const a=(p/4)*Math.PI*2;
+        ctx.beginPath();
+        ctx.arc(Math.cos(a)*R*0.3, Math.sin(a)*R*0.3, R*0.22, 0, Math.PI*2);
+        ctx.strokeStyle = colors[ci%colors.length];
+        ctx.lineWidth = Math.max(1.2,tile*0.03); ctx.stroke();
+      }
+      ctx.beginPath(); ctx.arc(0,0,Math.max(3,tile*0.1),0,Math.PI*2);
+      ctx.fillStyle = colors[(ci+1)%colors.length]; ctx.fill();
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+
+function drawIkatDiamond(ctx, w, h, colors, tile, rot, cx) {
+  ctx.fillStyle = colors[0];
+  ctx.fillRect(0,0,w,h);
+  const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
+  const detail = cx > 35;
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const ox = (r%2===0)?0:tile*0.5;
+      const cx0 = cl*tile+tile/2+ox, cy0 = r*tile+tile/2;
+      const ci = Math.abs(r*cols+cl) % colors.length;
+      const H = tile*0.5, W = tile*0.46;
+      const isAlt = (r+cl)%2===0;
+      ctx.save(); ctx.translate(cx0,cy0);
+      ctx.beginPath();
+      ctx.moveTo(0,-H); ctx.lineTo(W,0); ctx.lineTo(0,H); ctx.lineTo(-W,0);
+      ctx.closePath();
+      ctx.fillStyle = colors[(ci+(isAlt?1:0))%colors.length];
+      ctx.fill();
+      const edgeCount = 10;
+      const jagged = (x1,y1,x2,y2,count,depth) => {
+        ctx.beginPath();
+        ctx.moveTo(x1,y1);
+        for (let i=1;i<=count;i++) {
+          const t=i/count;
+          const mx=(x1*(1-t)+x2*t), my=(y1*(1-t)+y2*t);
+          const nx=-(y2-y1)/Math.sqrt((x2-x1)**2+(y2-y1)**2);
+          const ny=(x2-x1)/Math.sqrt((x2-x1)**2+(y2-y1)**2);
+          const jitter = (i%2===0?1:-1)*depth;
+          ctx.lineTo(mx+nx*jitter, my+ny*jitter);
+        }
+        ctx.lineTo(x2,y2);
+      };
+      const jDepth = Math.max(2,tile*0.06);
+      ctx.fillStyle = colors[(ci+2)%colors.length];
+      ctx.globalAlpha=0.55;
+      jagged(0,-H, W,0, edgeCount, jDepth); ctx.lineTo(0,-H); ctx.closePath(); ctx.fill();
+      jagged(0,H, -W,0, edgeCount, jDepth); ctx.lineTo(0,H); ctx.closePath(); ctx.fill();
+      ctx.globalAlpha=1;
+      const sc = 0.55;
+      ctx.beginPath();
+      ctx.moveTo(0,-H*sc); ctx.lineTo(W*sc,0); ctx.lineTo(0,H*sc); ctx.lineTo(-W*sc,0);
+      ctx.closePath();
+      ctx.fillStyle = colors[(ci+1)%colors.length]; ctx.fill();
+      if (detail) {
+        const sc2 = 0.28;
+        ctx.beginPath();
+        ctx.moveTo(0,-H*sc2); ctx.lineTo(W*sc2,0); ctx.lineTo(0,H*sc2); ctx.lineTo(-W*sc2,0);
+        ctx.closePath();
+        ctx.fillStyle = colors[(ci+2)%colors.length]; ctx.fill();
+      }
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+
+/* ═══════════════════════════════════════════════
+   9 NEW CULTURAL DRAW FUNCTIONS
+   Adire · Kanga · Kente Strip · Andean · Greek Key
+   Hawaiian · Toile Scenic · Batik Tulis · Tartan
+═══════════════════════════════════════════════ */
+
+function drawAdire(ctx, w, h, colors, tile, rot, cx) {
+  // Yoruba adire — alternating oniko (concentric rings) and eleko (geometric cross) cells
+  ctx.fillStyle = colors[0];
+  ctx.fillRect(0,0,w,h);
+  const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
+  const detail = cx > 40;
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const cx0=cl*tile+tile/2, cy0=r*tile+tile/2;
+      const ci=Math.abs(r+cl)%colors.length;
+      const R=tile*0.44;
+      const isOniko=(r+cl)%2===0;
+      ctx.save(); ctx.translate(cx0,cy0);
+      if (isOniko) {
+        const rings=3+Math.floor(cx/25);
+        for (let ring=rings;ring>=0;ring--) {
+          ctx.beginPath(); ctx.arc(0,0,R*(ring/rings),0,Math.PI*2);
+          ctx.fillStyle=ring%2===0?colors[(ci+1)%colors.length]:colors[ci%colors.length];
+          ctx.fill();
+        }
+        if (detail) {
+          ctx.strokeStyle=colors[(ci+2)%colors.length];
+          ctx.lineWidth=Math.max(0.5,tile*0.015); ctx.globalAlpha=0.4;
+          ctx.beginPath(); ctx.moveTo(-R,0); ctx.lineTo(R,0); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(0,-R); ctx.lineTo(0,R); ctx.stroke();
+          ctx.globalAlpha=1;
+        }
+      } else {
+        const arm=R*0.86, aw=arm*0.26;
+        [[0,-1],[0,1],[1,0],[-1,0]].forEach(([dx,dy]) => {
+          ctx.beginPath();
+          ctx.moveTo(-dy*aw,-dx*aw); ctx.lineTo(dx*arm,dy*arm); ctx.lineTo(dy*aw,dx*aw);
+          ctx.closePath();
+          ctx.fillStyle=colors[(ci+1)%colors.length]; ctx.fill();
+        });
+        if (detail) {
+          const sq=tile*0.13;
+          [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx,sy]) => {
+            ctx.fillStyle=colors[(ci+2)%colors.length];
+            ctx.fillRect(sx*(R*0.52)-sq/2, sy*(R*0.52)-sq/2, sq, sq);
+          });
+        }
+        ctx.beginPath(); ctx.arc(0,0,tile*0.08,0,Math.PI*2);
+        ctx.fillStyle=colors[(ci+2)%colors.length]; ctx.fill();
+      }
+      ctx.strokeStyle=colors[ci%colors.length];
+      ctx.lineWidth=Math.max(0.5,tile*0.018); ctx.globalAlpha=0.18;
+      ctx.strokeRect(-tile/2+1,-tile/2+1,tile-2,tile-2); ctx.globalAlpha=1;
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+
+function drawKanga(ctx, w, h, colors, tile, rot, cx) {
+  // East African kanga — bold pindo border frame + geometric mji interior
+  ctx.fillStyle=colors[colors.length-1]||colors[0];
+  ctx.fillRect(0,0,w,h);
+  const cols=Math.ceil(w/tile)+2, rows=Math.ceil(h/tile)+2;
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const cx0=cl*tile+tile/2, cy0=r*tile+tile/2;
+      const ci=Math.abs(r+cl)%colors.length;
+      const m=tile*0.44, bw=tile*0.11;
+      ctx.save(); ctx.translate(cx0,cy0);
+      // Pindo border strips
+      ctx.fillStyle=colors[ci%colors.length];
+      ctx.fillRect(-m,-m,m*2,bw); ctx.fillRect(-m,m-bw,m*2,bw);
+      ctx.fillRect(-m,-m,bw,m*2); ctx.fillRect(m-bw,-m,bw,m*2);
+      // Corner accent squares
+      const cs=bw*1.15;
+      ctx.fillStyle=colors[(ci+2)%colors.length];
+      [[-m,-m],[m-cs,-m],[-m,m-cs],[m-cs,m-cs]].forEach(([dx,dy])=>ctx.fillRect(dx,dy,cs,cs));
+      // Interior medallion
+      const iR=m-bw*1.5;
+      if ((r+cl)%3!==0) {
+        const pts=8;
+        ctx.beginPath();
+        for (let p=0;p<pts*2;p++) {
+          const a=(p/pts)*Math.PI-Math.PI/pts, r2=p%2===0?iR:iR*0.44;
+          p===0?ctx.moveTo(Math.cos(a)*r2,Math.sin(a)*r2):ctx.lineTo(Math.cos(a)*r2,Math.sin(a)*r2);
+        }
+        ctx.closePath(); ctx.fillStyle=colors[(ci+1)%colors.length]; ctx.fill();
+      } else {
+        for (let p=0;p<4;p++) {
+          const a=(p/4)*Math.PI*2;
+          ctx.beginPath(); ctx.arc(Math.cos(a)*iR*0.48,Math.sin(a)*iR*0.48,iR*0.48,0,Math.PI*2);
+          ctx.fillStyle=colors[(ci+1)%colors.length]; ctx.fill();
+        }
+      }
+      ctx.beginPath(); ctx.arc(0,0,iR*0.24,0,Math.PI*2);
+      ctx.fillStyle=colors[(ci+2)%colors.length]; ctx.fill();
+      if (cx>35) {
+        const dR=Math.max(2,tile*0.045), bMid=m-bw/2;
+        [[0,-bMid],[0,bMid],[-bMid,0],[bMid,0]].forEach(([dx,dy]) => {
+          ctx.beginPath(); ctx.arc(dx,dy,dR,0,Math.PI*2);
+          ctx.fillStyle=colors[(ci+2)%colors.length]; ctx.fill();
+        });
+      }
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+
+function drawKenteStrip(ctx, w, h, colors, tile, rot, cx) {
+  // Kente strip weave — narrow warp strips with colored block sequences and weft inlay
+  ctx.fillStyle=colors[0]; ctx.fillRect(0,0,w,h);
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  const stripW=tile*0.26, blockH=tile*0.36;
+  const numStrips=Math.ceil(w/stripW)+4, numBlocks=Math.ceil(h/blockH)+4;
+  for (let s=-2;s<numStrips;s++) {
+    const sx=s*stripW;
+    for (let b=-2;b<numBlocks;b++) {
+      const by=b*blockH, bci=(Math.abs(s)+b)%colors.length;
+      ctx.fillStyle=colors[bci]; ctx.fillRect(sx,by,stripW-1,blockH);
+      if (cx>30 && b%2===0) {
+        ctx.fillStyle=colors[(bci+2)%colors.length]; ctx.globalAlpha=0.6;
+        ctx.fillRect(sx,by+blockH*0.33,stripW-1,blockH*0.17);
+        ctx.fillRect(sx,by+blockH*0.6,stripW-1,blockH*0.17);
+        ctx.globalAlpha=1;
+      }
+    }
+    // Asasia accent blocks at intervals
+    if (cx>50 && s%4===0) {
+      const ci=Math.abs(s)%colors.length;
+      for (let b=-2;b<numBlocks;b++) {
+        if (b%5===2) {
+          ctx.fillStyle=colors[(ci+4)%colors.length];
+          ctx.fillRect(sx+stripW*0.12,b*blockH+blockH*0.3,stripW*0.76,blockH*0.4);
+        }
+      }
+    }
+    // Strip seam
+    ctx.strokeStyle=colors[Math.abs(s+1)%colors.length];
+    ctx.lineWidth=Math.max(0.5,tile*0.01); ctx.globalAlpha=0.3;
+    ctx.beginPath(); ctx.moveTo(sx+stripW-1,-tile); ctx.lineTo(sx+stripW-1,h+tile); ctx.stroke();
+    ctx.globalAlpha=1;
+  }
+  ctx.restore();
+}
+
+function drawAndean(ctx, w, h, colors, tile, rot, cx) {
+  // Andean woven textile — stepped chakana crosses + zigzag accent bands
+  ctx.fillStyle=colors[0]; ctx.fillRect(0,0,w,h);
+  const cols=Math.ceil(w/tile)+2, rows=Math.ceil(h/tile)+2;
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const cx0=cl*tile+tile/2, cy0=r*tile+tile/2;
+      const ci=Math.abs(r*cols+cl)%colors.length;
+      const s=tile*0.44;
+      ctx.save(); ctx.translate(cx0,cy0);
+      if ((r+cl)%4===3) {
+        // Zigzag / lightning band
+        const peaks=6, zH=tile*0.42, zW=tile;
+        ctx.beginPath(); ctx.moveTo(-zW/2,0);
+        for (let z=0;z<peaks;z++) {
+          ctx.lineTo(-zW/2+(z/peaks)*zW+zW/(peaks*2), z%2===0?-zH*0.38:zH*0.38);
+        }
+        ctx.lineTo(zW/2,0); ctx.lineTo(zW/2,zH*0.14);
+        for (let z=peaks-1;z>=0;z--) {
+          ctx.lineTo(-zW/2+(z/peaks)*zW+zW/(peaks*2),(z%2===0?-zH*0.38:zH*0.38)+zH*0.14);
+        }
+        ctx.lineTo(-zW/2,zH*0.14); ctx.closePath();
+        ctx.fillStyle=colors[(ci+1)%colors.length]; ctx.fill();
+        ctx.beginPath(); ctx.moveTo(-zW/2,-zH*0.14);
+        for (let z=0;z<peaks;z++) {
+          ctx.lineTo(-zW/2+(z/peaks)*zW+zW/(peaks*2), z%2===0?-zH*0.52:zH*0.24);
+        }
+        ctx.lineTo(zW/2,-zH*0.14);
+        ctx.strokeStyle=colors[(ci+2)%colors.length];
+        ctx.lineWidth=Math.max(1.5,tile*0.035); ctx.stroke();
+      } else {
+        // Stepped chakana cross
+        const steps=Math.max(2,Math.floor(cx/30));
+        for (let step=steps;step>=0;step--) {
+          const d=s*(steps-step)/steps*0.95;
+          ctx.fillStyle=colors[(ci+step)%colors.length];
+          ctx.fillRect(-d*0.38,-d*0.38,d*0.76,d*0.76);
+          ctx.fillRect(-d*0.18,-d,d*0.36,d*0.62);
+          ctx.fillRect(-d*0.18,d*0.38,d*0.36,d*0.62);
+          ctx.fillRect(-d,-d*0.18,d*0.62,d*0.36);
+          ctx.fillRect(d*0.38,-d*0.18,d*0.62,d*0.36);
+        }
+        ctx.beginPath(); ctx.arc(0,0,tile*0.07,0,Math.PI*2);
+        ctx.fillStyle=colors[(ci+3)%colors.length]; ctx.fill();
+      }
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+
+function drawGreekKey(ctx, w, h, colors, tile, rot, cx) {
+  // Greek key / meander — interlocking right-angle hook spirals
+  const bg=colors[colors.length-1]||colors[0];
+  ctx.fillStyle=bg; ctx.fillRect(0,0,w,h);
+  const cols=Math.ceil(w/tile)+2, rows=Math.ceil(h/tile)+2;
+  const lw=Math.max(2,tile*0.11), u=tile/5;
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const x0=cl*tile, y0=r*tile;
+      const ci=Math.abs(r+cl)%colors.length;
+      const isAlt=(r+cl)%2===0;
+      ctx.save(); ctx.translate(x0,y0);
+      if (isAlt) ctx.transform(-1,0,0,-1,tile,tile);
+      ctx.fillStyle=colors[(ci+1)%colors.length]; ctx.globalAlpha=0.14;
+      ctx.fillRect(0,0,tile,tile); ctx.globalAlpha=1;
+      ctx.strokeStyle=colors[ci%colors.length];
+      ctx.lineWidth=lw; ctx.lineCap='square'; ctx.lineJoin='miter';
+      ctx.beginPath();
+      ctx.moveTo(0,    u*1.5);
+      ctx.lineTo(0,    u*0.5);
+      ctx.lineTo(u*4,  u*0.5);
+      ctx.lineTo(u*4,  u*4);
+      ctx.lineTo(u,    u*4);
+      ctx.lineTo(u,    u*1.5);
+      ctx.lineTo(u*3,  u*1.5);
+      ctx.lineTo(u*3,  u*3);
+      ctx.lineTo(u*2,  u*3);
+      ctx.lineTo(u*2,  u*1.5);
+      ctx.moveTo(u*4,  u*1.5);
+      ctx.lineTo(tile, u*1.5);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+
+function drawHawaiian(ctx, w, h, colors, tile, rot, cx) {
+  // Hawaiian quilt — 8-fold radiating leaf/petal symmetry (breadfruit, kalo appliqué)
+  ctx.fillStyle=colors[colors.length-1]||colors[0];
+  ctx.fillRect(0,0,w,h);
+  const cols=Math.ceil(w/tile)+2, rows=Math.ceil(h/tile)+2;
+  const detail=cx>40;
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const ox=(r%2===0)?0:tile*0.5;
+      const cx0=cl*tile+tile/2+ox, cy0=r*tile+tile/2;
+      const ci=Math.abs(r*cols+cl)%colors.length;
+      const R=tile*0.44;
+      ctx.save(); ctx.translate(cx0,cy0);
+      for (let s=0;s<8;s++) {
+        ctx.save(); ctx.rotate((s/8)*Math.PI*2);
+        ctx.beginPath();
+        ctx.moveTo(0,0);
+        ctx.bezierCurveTo(-R*0.24,R*0.18,-R*0.3,R*0.58,0,R*0.94);
+        ctx.bezierCurveTo(R*0.3,R*0.58,R*0.24,R*0.18,0,0);
+        ctx.fillStyle=colors[ci%colors.length]; ctx.fill();
+        if (detail) {
+          ctx.beginPath();
+          ctx.moveTo(0,R*0.06);
+          ctx.bezierCurveTo(-R*0.1,R*0.36,-R*0.12,R*0.7,0,R*0.94);
+          ctx.bezierCurveTo(R*0.12,R*0.7,R*0.1,R*0.36,0,R*0.06);
+          ctx.fillStyle=colors[(ci+1)%colors.length]; ctx.globalAlpha=0.4; ctx.fill(); ctx.globalAlpha=1;
+        }
+        ctx.beginPath(); ctx.arc(0,R*0.9,tile*0.04,0,Math.PI*2);
+        ctx.fillStyle=colors[(ci+1)%colors.length]; ctx.fill();
+        ctx.restore();
+      }
+      ctx.beginPath(); ctx.arc(0,0,R*0.24,0,Math.PI*2);
+      ctx.fillStyle=colors[(ci+1)%colors.length]; ctx.fill();
+      ctx.beginPath(); ctx.arc(0,0,R*0.1,0,Math.PI*2);
+      ctx.fillStyle=colors[(ci+2)%colors.length]; ctx.fill();
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+
+function drawToileScenic(ctx, w, h, colors, tile, rot, cx) {
+  // Toile de Jouy — pastoral silhouette vignettes (tree, urn, figure, arch) in single ink
+  const bg=colors.length>2?colors[2]:'#f5f0e8';
+  const ink=colors[0], ink2=colors[1]||colors[0];
+  ctx.fillStyle=bg; ctx.fillRect(0,0,w,h);
+  const cols=Math.ceil(w/tile)+2, rows=Math.ceil(h/tile)+2;
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  const scenes=['tree','urn','figure','arch'];
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const ox=(r%2===0)?0:tile*0.5;
+      const cx0=cl*tile+tile/2+ox, cy0=r*tile+tile/2;
+      const scene=scenes[Math.abs(r*cols+cl)%scenes.length];
+      const s=tile*0.35;
+      const inkC=(r+cl)%2===0?ink:ink2;
+      ctx.save(); ctx.translate(cx0,cy0);
+      ctx.fillStyle=inkC; ctx.strokeStyle=inkC;
+      ctx.lineWidth=Math.max(0.6,tile*0.016);
+      if (scene==='tree') {
+        ctx.fillRect(-s*0.07,0,s*0.14,s*0.52);
+        [0.75,0.95,1.05].forEach((sc,i)=>{
+          ctx.beginPath(); ctx.ellipse(0,-(s*0.28+i*s*0.14),s*sc*0.46,s*sc*0.35,0,0,Math.PI*2); ctx.fill();
+        });
+        ctx.globalAlpha=0.35; ctx.lineWidth=Math.max(0.4,tile*0.01);
+        ctx.beginPath(); ctx.moveTo(-s*0.5,s*0.52); ctx.lineTo(s*0.5,s*0.52); ctx.stroke();
+        ctx.globalAlpha=1;
+      } else if (scene==='urn') {
+        ctx.beginPath();
+        ctx.moveTo(-s*0.26,s*0.5); ctx.lineTo(-s*0.36,s*0.32);
+        ctx.bezierCurveTo(-s*0.4,s*0.08,-s*0.3,-s*0.1,-s*0.2,-s*0.18);
+        ctx.bezierCurveTo(-s*0.34,-s*0.28,-s*0.26,-s*0.54,0,-s*0.58);
+        ctx.bezierCurveTo(s*0.26,-s*0.54,s*0.34,-s*0.28,s*0.2,-s*0.18);
+        ctx.bezierCurveTo(s*0.3,-s*0.1,s*0.4,s*0.08,s*0.36,s*0.32);
+        ctx.lineTo(s*0.26,s*0.5); ctx.closePath(); ctx.fill();
+        [-1,1].forEach(side=>{
+          ctx.beginPath(); ctx.arc(side*s*0.36,-s*0.1,s*0.13,side<0?Math.PI*0.5:Math.PI*1.5,side<0?Math.PI*1.5:Math.PI*0.5);
+          ctx.stroke();
+        });
+      } else if (scene==='figure') {
+        ctx.beginPath(); ctx.arc(0,-s*0.56,s*0.13,0,Math.PI*2); ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(-s*0.09,-s*0.43); ctx.bezierCurveTo(-s*0.26,-s*0.08,-s*0.36,s*0.22,-s*0.24,s*0.55);
+        ctx.lineTo(s*0.24,s*0.55); ctx.bezierCurveTo(s*0.36,s*0.22,s*0.26,-s*0.08,s*0.09,-s*0.43);
+        ctx.closePath(); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(-s*0.07,-s*0.26);
+        ctx.bezierCurveTo(-s*0.36,-s*0.18,-s*0.44,s*0.12,-s*0.36,s*0.28);
+        ctx.lineWidth=Math.max(1.2,tile*0.024); ctx.stroke();
+      } else {
+        ctx.beginPath();
+        ctx.moveTo(-s*0.36,s*0.55); ctx.lineTo(-s*0.36,-s*0.08);
+        ctx.arc(0,-s*0.08,s*0.36,Math.PI,0);
+        ctx.lineTo(s*0.36,s*0.55); ctx.lineWidth=Math.max(1.5,tile*0.03); ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(-s*0.42,-s*0.4); ctx.lineTo(0,-s*0.72); ctx.lineTo(s*0.42,-s*0.4);
+        ctx.lineWidth=Math.max(1,tile*0.02); ctx.stroke();
+        ctx.globalAlpha=0.35; ctx.lineWidth=Math.max(0.5,tile*0.012);
+        [-s*0.18,0,s*0.18].forEach(dx=>{
+          ctx.beginPath(); ctx.moveTo(dx,-s*0.08); ctx.lineTo(dx,s*0.55); ctx.stroke();
+        });
+        ctx.globalAlpha=1;
+      }
+      // Delicate border
+      ctx.lineWidth=Math.max(0.4,tile*0.01); ctx.globalAlpha=0.18;
+      ctx.beginPath(); ctx.rect(-tile/2+3,-tile/2+3,tile-6,tile-6); ctx.stroke();
+      ctx.globalAlpha=1;
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+
+function drawBatikTulis(ctx, w, h, colors, tile, rot, cx) {
+  // Batik tulis — fine hand-drawn: kawung (4-ellipse lattice) + parang (S-knife) alternating
+  const bg=colors[colors.length-1]||colors[0];
+  ctx.fillStyle=bg; ctx.fillRect(0,0,w,h);
+  const cols=Math.ceil(w/tile)+2, rows=Math.ceil(h/tile)+2;
+  const detail=cx>35, lw=Math.max(0.8,tile*0.02);
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    for (let cl=-1;cl<cols;cl++) {
+      const cx0=cl*tile+tile/2, cy0=r*tile+tile/2;
+      const ci=Math.abs(r*cols+cl)%colors.length;
+      const R=tile*0.44;
+      ctx.save(); ctx.translate(cx0,cy0);
+      if ((r+cl)%2===0) {
+        // Kawung: 4 overlapping ellipses in compass-point formation
+        const er=R*0.5, ew=R*0.28;
+        [[0,-R*0.38,0],[R*0.38,0,Math.PI/2],[0,R*0.38,0],[-R*0.38,0,Math.PI/2]].forEach(([ex,ey,ang],i)=>{
+          ctx.beginPath(); ctx.ellipse(ex,ey,ew,er,ang,0,Math.PI*2);
+          ctx.fillStyle=colors[(ci+i)%colors.length]; ctx.globalAlpha=0.72; ctx.fill(); ctx.globalAlpha=1;
+          ctx.strokeStyle=colors[(ci+2)%colors.length]; ctx.lineWidth=lw; ctx.stroke();
+          if (detail) {
+            ctx.beginPath(); ctx.ellipse(ex,ey,ew*0.42,er*0.42,ang,0,Math.PI*2);
+            ctx.strokeStyle=colors[(ci+1)%colors.length]; ctx.lineWidth=lw*0.55; ctx.globalAlpha=0.45; ctx.stroke(); ctx.globalAlpha=1;
+          }
+        });
+        ctx.beginPath(); ctx.arc(0,0,R*0.12,0,Math.PI*2);
+        ctx.fillStyle=colors[(ci+3)%colors.length]; ctx.fill();
+      } else {
+        // Parang: flowing S-shaped knife motif
+        ctx.beginPath();
+        ctx.moveTo(-R*0.8,R*0.3);
+        ctx.bezierCurveTo(-R*0.35,R*0.62,R*0.35,-R*0.62,R*0.8,-R*0.3);
+        ctx.bezierCurveTo(R*0.92,-R*0.08,R*0.92,R*0.08,R*0.8,R*0.3);
+        ctx.bezierCurveTo(R*0.35,R*0.62,-R*0.35,-R*0.62,-R*0.8,-R*0.3);
+        ctx.bezierCurveTo(-R*0.92,-R*0.08,-R*0.92,R*0.08,-R*0.8,R*0.3);
+        ctx.closePath();
+        ctx.fillStyle=colors[(ci+1)%colors.length]; ctx.fill();
+        ctx.strokeStyle=colors[(ci+2)%colors.length]; ctx.lineWidth=lw; ctx.stroke();
+        if (detail) {
+          const n=Math.max(3,Math.floor(cx/18));
+          ctx.save();
+          ctx.beginPath();
+          ctx.moveTo(-R*0.8,R*0.3);
+          ctx.bezierCurveTo(-R*0.35,R*0.62,R*0.35,-R*0.62,R*0.8,-R*0.3);
+          ctx.bezierCurveTo(R*0.92,-R*0.08,R*0.92,R*0.08,R*0.8,R*0.3);
+          ctx.bezierCurveTo(R*0.35,R*0.62,-R*0.35,-R*0.62,-R*0.8,-R*0.3);
+          ctx.bezierCurveTo(-R*0.92,-R*0.08,-R*0.92,R*0.08,-R*0.8,R*0.3);
+          ctx.closePath(); ctx.clip();
+          ctx.strokeStyle=colors[(ci+2)%colors.length]; ctx.lineWidth=lw*0.45; ctx.globalAlpha=0.35;
+          for (let l=-n;l<=n;l++) {
+            ctx.beginPath(); ctx.moveTo(-R,l*R*0.2); ctx.lineTo(R,l*R*0.2); ctx.stroke();
+          }
+          ctx.globalAlpha=1; ctx.restore();
+        }
+        // Tendril curls at ends
+        ctx.beginPath(); ctx.arc(-R*0.76,R*0.26,R*0.1,0,Math.PI*1.6);
+        ctx.strokeStyle=colors[(ci+3)%colors.length]; ctx.lineWidth=lw*0.8; ctx.stroke();
+        ctx.beginPath(); ctx.arc(R*0.76,-R*0.26,R*0.1,Math.PI,-Math.PI*0.4);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+
+function drawTartan(ctx, w, h, colors, tile, rot, cx) {
+  // Tartan / plaid — warp + weft stripe crossing, weft drawn with multiply blend
+  ctx.fillStyle=colors[0]; ctx.fillRect(0,0,w,h);
+  const nc=colors.length, bw=tile*0.32;
+  const sett=[];
+  for (let i=0;i<nc;i++) {
+    sett.push({color:colors[i],w:bw*(i%2===0?1.4:0.75)});
+    if (i<nc-1) sett.push({color:colors[(i+1)%nc],w:bw*0.22});
+  }
+  const full=[...sett,...[...sett].reverse().slice(1)];
+  const settTotal=full.reduce((s,e)=>s+e.w,0);
+  const diag=Math.ceil(Math.sqrt(w*w+h*h));
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  // Warp stripes (vertical)
+  let x=-diag, si=0;
+  while (x<w+diag) {
+    const st=full[si%full.length];
+    ctx.fillStyle=st.color; ctx.fillRect(x,-diag,st.w,h+diag*2); x+=st.w; si++;
+  }
+  // Weft stripes (horizontal) with multiply blend
+  ctx.globalCompositeOperation='multiply'; ctx.globalAlpha=0.62;
+  let y=-diag, ri=Math.floor(full.length*0.3);
+  while (y<h+diag) {
+    const st=full[ri%full.length];
+    ctx.fillStyle=st.color; ctx.fillRect(-diag,y,w+diag*2,st.w); y+=st.w; ri++;
+  }
+  ctx.globalAlpha=1; ctx.globalCompositeOperation='source-over';
+  // Overcheck lines at high complexity
+  if (cx>50) {
+    ctx.globalAlpha=0.2; ctx.fillStyle=colors[(nc-1)%nc];
+    let ox=-diag;
+    while (ox<w+diag) { ctx.fillRect(ox,-diag,1.5,h+diag*2); ox+=settTotal*0.48; }
+    let oy=-diag;
+    while (oy<h+diag) { ctx.fillRect(-diag,oy,w+diag*2,1.5); oy+=settTotal*0.48; }
+    ctx.globalAlpha=1;
+  }
+  ctx.restore();
+}
+
+/* ═══════════════════════════════════════════════
+   WATERMARK STAMP
+═══════════════════════════════════════════════ */
+function stampCanvas(canvas) {
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  const fontSize = Math.max(6, Math.round(w * 0.007));
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0); // reset any DPR or rotation transform
+  ctx.font = `500 ${fontSize}px Arial, sans-serif`;
+  const text = 'cultureschool.org';
+  const tw = ctx.measureText(text).width;
+  const pw = tw + 10, ph = fontSize + 7;
+  const px = w - pw - 4, py = h - ph - 4;
+  ctx.fillStyle = 'rgba(0,0,0,0.22)';
+  ctx.beginPath();
+  if (ctx.roundRect) {
+    ctx.roundRect(px, py, pw, ph, ph / 2);
+  } else {
+    const r = ph / 2;
+    ctx.moveTo(px+r,py);ctx.lineTo(px+pw-r,py);ctx.quadraticCurveTo(px+pw,py,px+pw,py+r);
+    ctx.lineTo(px+pw,py+ph-r);ctx.quadraticCurveTo(px+pw,py+ph,px+pw-r,py+ph);
+    ctx.lineTo(px+r,py+ph);ctx.quadraticCurveTo(px,py+ph,px,py+ph-r);
+    ctx.lineTo(px,py+r);ctx.quadraticCurveTo(px,py,px+r,py);ctx.closePath();
+  }
+  ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.82)';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, w - 9, h - ph / 2 - 4);
+  ctx.restore();
+}
+
+/* ═══════════════════════════════════════════════
+   RENDER HELPERS
+═══════════════════════════════════════════════ */
+
+
+function drawProductMockupLib(canvas, style, colors, productKey) {
+  const prod = ORDER_PRODUCTS[productKey];
+  if (!prod) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  const [px, py, pw, ph] = prod.patRect;
+  const fn = DRAW_FN[style] || drawDiamond;
+  const photoImg = _libProdImgCache[productKey];
+  if (!photoImg || !photoImg.complete) {
+    ctx.save();
+    roundRect(ctx, px, py, pw, ph, 6); ctx.clip();
+    const tmp = document.createElement('canvas');
+    tmp.width = pw; tmp.height = ph;
+    fn(tmp.getContext('2d'), pw, ph, colors, 28, 0, 60);
+    ctx.drawImage(tmp, px, py);
+    ctx.restore();
+    stampCanvas(canvas);
+    return;
+  }
+  const off = document.createElement('canvas');
+  off.width = W; off.height = H;
+  const oc = off.getContext('2d');
+  oc.fillStyle = '#ffffff';
+  oc.fillRect(0, 0, W, H);
+  const patTile = document.createElement('canvas');
+  patTile.width = pw; patTile.height = ph;
+  fn(patTile.getContext('2d'), pw, ph, colors, 28, 0, 60);
+  oc.drawImage(patTile, px, py, pw, ph);
+  oc.globalCompositeOperation = 'multiply';
+  oc.drawImage(photoImg, 0, 0, W, H);
+  oc.globalCompositeOperation = 'source-over';
+  oc.globalCompositeOperation = 'destination-in';
+  oc.drawImage(photoImg, 0, 0, W, H);
+  oc.globalCompositeOperation = 'source-over';
+  ctx.drawImage(off, 0, 0);
+  stampCanvas(canvas);
+}
+
+function renderOrderCards(style, colors) {
+  const container = document.getElementById('orderProdCards');
+  if (!container) return;
+  container.innerHTML = Object.entries(ORDER_PRODUCTS).map(([key, prod]) => {
+    const isSel = key === _orderProduct;
+    return `
+      <div class="pmodal-prod-card${isSel ? ' selected' : ''}"
+           onclick="selectOrderProduct('${key}',this)">
+        <div class="pmodal-prod-mockup">
+          <canvas id="op-${key}" width="210" height="150"></canvas>
+        </div>
+        <div class="pmodal-prod-name">${prod.label}</div>
+      </div>`;
+  }).join('');
+  requestAnimationFrame(() => {
+    Object.entries(ORDER_PRODUCTS).forEach(([key, prod]) => {
+      const c = document.getElementById(`op-${key}`);
+      if (c) drawProductMockupLib(c, style, colors, key);
+    });
+  });
+}
+
+function renderPatternToCanvas(canvas, style, colors, tileSize) {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const w = canvas.offsetWidth || 200;
+  const h = canvas.offsetHeight || 200;
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  const fn = DRAW_FN[style] || drawDiamond;
+  fn(ctx, w, h, colors, tileSize, 0, 60);
+  stampCanvas(canvas);
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.arcTo(x + w, y, x + w, y + r, r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+  ctx.lineTo(x + r, y + h);
+  ctx.arcTo(x, y + h, x, y + h - r, r);
+  ctx.lineTo(x, y + r);
+  ctx.arcTo(x, y, x + r, y, r);
+  ctx.closePath();
+}
+
+/* ═══════════════════════════════════════════════
+   PRODUCT MOCKUP RENDERERS
+═══════════════════════════════════════════════ */
+
+function drawMockupTableRunner(canvas, style, colors) {
+  const W = canvas.width, H = canvas.height;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, W, H);
+
+  const off = document.createElement('canvas');
+  off.width = W * 2; off.height = H * 2;
+  const ofctx = off.getContext('2d');
+  const fn = DRAW_FN[style] || drawDiamond;
+  fn(ofctx, W * 2, H * 2, colors, 32, 0, 60);
+
+  const pad = 8, r = 18;
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,.18)'; ctx.shadowBlur = 12; ctx.shadowOffsetY = 4;
+  roundRect(ctx, pad, pad, W - pad*2, H - pad*2, r);
+  ctx.clip(); ctx.shadowColor = 'transparent';
+  ctx.drawImage(off, 0, 0, W, H);
+  const grad = ctx.createLinearGradient(pad, 0, W-pad, 0);
+  grad.addColorStop(0, 'rgba(0,0,0,.12)');
+  grad.addColorStop(.15, 'rgba(0,0,0,0)');
+  grad.addColorStop(.85, 'rgba(0,0,0,0)');
+  grad.addColorStop(1, 'rgba(0,0,0,.12)');
+  ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
+  ctx.restore();
+  stampCanvas(canvas);
+}
+
+function drawMockupPillow(canvas, style, colors) {
+  const W = canvas.width, H = canvas.height;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, W, H);
+  const off = document.createElement('canvas');
+  off.width = W; off.height = H;
+  const fn = DRAW_FN[style] || drawDiamond;
+  fn(off.getContext('2d'), W, H, colors, 28, 0, 60);
+
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,.2)'; ctx.shadowBlur = 10; ctx.shadowOffsetY = 4;
+  roundRect(ctx, 6, 6, W-12, H-12, 14);
+  ctx.clip(); ctx.shadowColor = 'transparent';
+  ctx.drawImage(off, 0, 0);
+  ctx.beginPath(); ctx.arc(W/2, H/2, 8, 0, Math.PI*2);
+  ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.restore();
+  stampCanvas(canvas);
+}
+
+function drawMockupTote(canvas, style, colors) {
+  const W = canvas.width, H = canvas.height;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, W, H);
+  const off = document.createElement('canvas');
+  const bh = H * 0.72, bw = W * 0.84;
+  const bx = (W - bw) / 2, by = H - bh - 8;
+  off.width = bw; off.height = bh;
+  const fn = DRAW_FN[style] || drawDiamond;
+  fn(off.getContext('2d'), bw, bh, colors, 28, 0, 60);
+
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,.18)'; ctx.shadowBlur = 8; ctx.shadowOffsetY = 3;
+  roundRect(ctx, bx, by, bw, bh, 8);
+  ctx.clip(); ctx.shadowColor = 'transparent';
+  ctx.drawImage(off, bx, by);
+  ctx.restore();
+
+  ctx.strokeStyle = 'rgba(80,60,30,.55)'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.arc(bx + bw * 0.3, by + 2, 22, Math.PI, 0); ctx.stroke();
+  ctx.beginPath(); ctx.arc(bx + bw * 0.7, by + 2, 22, Math.PI, 0); ctx.stroke();
+  stampCanvas(canvas);
+}
+
+/* ═══════════════════════════════════════════════
+   LAZY RENDER QUEUE
+═══════════════════════════════════════════════ */
+
+function scheduleRenders() {
+  if (_renderScheduled) return;
+  _renderScheduled = true;
+  const ric = window.requestIdleCallback || ((cb) => setTimeout(cb, 16));
+  function flush() {
+    const batch = _renderQueue.splice(0, 30);
+    if (!batch.length) { _renderScheduled = false; return; }
+    batch.forEach(({ canvas, style, colors, tileSize }) => {
+      try { renderPatternToCanvas(canvas, style, colors, tileSize); } catch(e) {}
+    });
+    ric(flush);
+  }
+  ric(flush);
+}
+
+function queueCanvasRender(canvas, style, colors, tileSize) {
+  _renderQueue.push({ canvas, style, colors, tileSize });
+  scheduleRenders();
+}
+
+/* ═══════════════════════════════════════════════
+   CARD HTML
+═══════════════════════════════════════════════ */
+
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ══ KNOWN COLLECTIONS ══ */
+const KNOWN_COLLECTIONS = {
+  'mv-wedding':    { name: 'MV Wedding',      eyebrow: 'American Coastal · Martha’s Vineyard' },
+  'pride':         { name: 'Pride',           eyebrow: 'LGBTQ+ Pride' },
+  'pan-african':   { name: 'Pan-African',     eyebrow: 'African Diaspora' },
+  'caribbean':     { name: 'Caribbean',       eyebrow: 'Caribbean Heritage' },
+  'native-nations':{ name: 'Native Nations',  eyebrow: 'Indigenous Heritage' },
+  'gullah-geechee':{ name: 'Gullah Geechee',  eyebrow: 'Sea Islands, Carolina Coast' },
+  'latin-america': { name: 'Latin America',   eyebrow: 'Latin American Heritage' },
+};
+window._patFilters={};window._patSort='created_at';
+function buildPatternFilters(patterns){
+  const bar=document.getElementById('libFilterBar');if(!bar)return;
+  const occasions={},styles={};
+  patterns.forEach(p=>{if(p.occasion)occasions[p.occasion]=(occasions[p.occasion]||0)+1;if(p.style)styles[p.style]=(styles[p.style]||0)+1;});
+  const occOrder=['celebration','wedding','evening','spiritual','lifestyle','home','everyday'];
+  const occChips=occOrder.filter(o=>occasions[o]).map(o=>`<button class="lib-chip" data-dim="occasion" data-val="${o}" onclick="setPatFilter('occasion','${o}',this)">${o.charAt(0).toUpperCase()+o.slice(1)}<span style="opacity:.4;font-size:.6em;"> ${occasions[o]}</span></button>`).join('');
+  const styleChips=Object.keys(styles).sort().map(s=>`<button class="lib-chip" data-dim="style" data-val="${s}" onclick="setPatFilter('style','${s}',this)">${s.charAt(0).toUpperCase()+s.slice(1)}<span style="opacity:.4;font-size:.6em;"> ${styles[s]}</span></button>`).join('');
+  bar.innerHTML=(occChips?`<div class="lib-filter-row"><span class="lib-filter-label">Occasion</span><div class="lib-filter-chips">${occChips}</div></div>`:'')+(styleChips?`<div class="lib-filter-row"><span class="lib-filter-label">Style</span><div class="lib-filter-chips">${styleChips}</div><div class="lib-sort-wrap"><span class="lib-sort-label">Sort</span><select class="lib-sort" onchange="window._patSort=this.value;applyPatFilters()"><option value="created_at">Newest</option><option value="name">A–Z</option></select></div></div>`:'');
+}
+function setPatFilter(dim,val,btn){
+  if(window._patFilters[dim]===val){delete window._patFilters[dim];btn&&btn.classList.remove('active');}
+  else{window._patFilters[dim]=val;document.querySelectorAll('.lib-chip[data-dim="'+dim+'"]').forEach(b=>b.classList.remove('active'));btn&&btn.classList.add('active');}
+  applyPatFilters();
+}
+function applyPatFilters(){
+  const q=(document.getElementById('patternSearch')?.value||'').toLowerCase();
+  const f=window._patFilters||{},sort=window._patSort||'created_at',all=window._allPatterns||[];
+  let filtered=all.filter(p=>{
+    if(f.occasion&&(p.occasion||'').toLowerCase()!==f.occasion)return false;
+    if(f.style&&(p.style||'').toLowerCase()!==f.style)return false;
+    if(!q)return true;
+    return [p.name,p.style,p.occasion,p.palette_name,p.description,p.heritage_name].concat(Array.isArray(p.tags)?p.tags:[]).some(v=>v&&v.toLowerCase().includes(q));
+  });
+  if(sort==='name')filtered.sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+  else filtered.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+  renderPatternSections(filtered);
+}
+function renderPatternSections(patterns){
+  const container=document.getElementById('libSections');
+  if(!container){renderGrid(patterns);return;}
+  if(!patterns.length){container.innerHTML='<div class="pattern-grid"><div class="state-msg" style="grid-column:1/-1;color:rgba(255,255,255,.4);">No patterns match that filter.</div></div>';return;}
+  const inCol=new Set(),sections=[];
+  Object.entries(KNOWN_COLLECTIONS).forEach(([key,meta])=>{
+    const grp=patterns.filter(p=>Array.isArray(p.tags)&&p.tags.includes(key));
+    if(!grp.length)return;grp.forEach(p=>inCol.add(p.id));sections.push({meta,grp});
+  });
+  const rest=patterns.filter(p=>!inCol.has(p.id));
+  let html='';
+  sections.forEach(({meta,grp})=>{html+=`<div class="lib-section"><div class="lib-section-head"><div><div class="lib-section-label">${escHtml(meta.eyebrow)}</div><div class="lib-section-title">${escHtml(meta.name)}</div></div><div class="lib-section-count">${grp.length} pattern${grp.length!==1?'s':''}</div></div><div class="pattern-grid">${grp.map((p,i)=>patternCardHtml(p,i)).join('')}</div></div>`;});
+  if(rest.length)html+=`<div class="lib-section"><div class="lib-section-head"><div><div class="lib-section-label">The Full Library</div><div class="lib-section-title">All patterns</div></div><div class="lib-section-count">${rest.length} patterns</div></div><div class="pattern-grid">${rest.map((p,i)=>patternCardHtml(p,i)).join('')}</div></div>`;
+  container.innerHTML=html;
+  requestAnimationFrame(()=>{patterns.forEach((p,i)=>{const cv=document.getElementById('pcanvas-'+i);if(cv)drawPatternCard(cv,p.style,p.colors);});});
+}
+
+function patternCardHtml(row, i) {
+  const colors = row.colors || ['#c8a050','#5a4a38','#faf6f0'];
+  const stripSwatches = colors.slice(0,6).map(c =>
+    `<div style="background:${escHtml(c)};"></div>`
+  ).join('');
+  const tags = Array.isArray(row.tags) ? row.tags.slice(0,3) : [];
+  const tagHtml = tags.map(t =>
+    `<span class="pcard-tag">${escHtml(t)}</span>`
+  ).join('');
+
+  return `
+    <div class="pcard" data-idx="${i}" onclick="openModal(${i})"
+      style="animation-delay:${Math.min(i,30)*30}ms"
+      role="button" tabindex="0"
+      aria-label="${escHtml(row.name)} pattern"
+      onkeydown="if(event.key==='Enter'||event.key===' ')openModal(${i})">
+      <canvas class="pcard-canvas" id="pcanvas-${i}" width="400" height="400"
+        aria-hidden="true"></canvas>
+      <div class="pcard-strip">${stripSwatches}</div>
+      <div class="pcard-body">
+        ${row.style ? `<div class="pcard-style">${escHtml(row.style)}</div>` : ''}
+        ${row.code ? `<div class="pcard-code">${escHtml(row.code)}</div>` : ''}
+        <div class="pcard-name">${escHtml(row.name)}</div>
+        ${row.palette_name ? `<div class="pcard-palette">${escHtml(row.palette_name)}</div>` : ''}
+        ${row.palette_story ? `<div class="pcard-story">${escHtml(row.palette_story)}</div>` : ''}
+        ${row.description ? `<div class="pcard-desc">${escHtml(row.description)}</div>` : ''}
+        ${tagHtml ? `<div class="pcard-tags">${tagHtml}</div>` : ''}
+      </div>
+    </div>
+  `;
+}
+
+/* ═══════════════════════════════════════════════
+   GRID RENDER
+═══════════════════════════════════════════════ */
+
+function renderGrid(patterns) {
+  const grid = document.getElementById('patternGrid');
+  if (!grid) return;
+
+  if (!patterns || !patterns.length) {
+    grid.innerHTML = `<div class="state-msg">
+      <span class="icon">CoCo</span>
+      No patterns match that filter.
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = patterns.map((p, i) => patternCardHtml(p, i)).join('');
+
+  // Queue canvas renders after DOM is ready
+  requestAnimationFrame(() => {
+    patterns.forEach((p, i) => {
+      const canvas = document.getElementById(`pcanvas-${i}`);
+      if (!canvas) return;
+      const colors = (_incomingPalette && _incomingPalette.colors) || p.colors || ['#c8a050','#5a4a38','#faf6f0'];
+      queueCanvasRender(canvas, p.style || 'diamond', colors, 40);
+    });
+  });
+}
+
+/* ═══════════════════════════════════════════════
+   FILTER CHIPS
+═══════════════════════════════════════════════ */
+
+function buildChips(patterns) {
+  const occasions = {};
+  patterns.forEach(p => {
+    if (p.occasion) occasions[p.occasion] = (occasions[p.occasion] || 0) + 1;
+  });
+  const order = ['celebration','wedding','evening','spiritual','lifestyle','home','everyday'];
+  const labels = {
+    celebration: 'Celebration',
+    wedding:     'Wedding',
+    evening:     'Evening',
+    spiritual:   'Ritual',
+    lifestyle:   'Lifestyle',
+    home:        'Home',
+    everyday:    'Everyday'
+  };
+  const chips = document.getElementById('filterChips');
+  if (!chips) return;
+  const sorted = order.filter(o => occasions[o]);
+  chips.innerHTML = sorted.map(occ => `
+    <button class="chip-btn" onclick="setOccasionFilter('${occ}', this)"
+      aria-pressed="false">
+      ${escHtml(labels[occ] || occ)}
+      <span style="color:var(--muted);font-weight:400;">${occasions[occ]}</span>
+    </button>
+  `).join('');
+}
+
+function setOccasionFilter(occasion, el) {
+  const prev = _activeOccasion;
+  _activeOccasion = (prev === occasion) ? '' : occasion;
+  document.querySelectorAll('.chip-btn').forEach(b => {
+    b.classList.remove('chip-active');
+    b.setAttribute('aria-pressed', 'false');
+  });
+  if (_activeOccasion && el) {
+    el.classList.add('chip-active');
+    el.setAttribute('aria-pressed', 'true');
+  }
+  filterAndRender();
+}
+
+function getFilteredPatterns() {
+  let results = _allPatterns;
+  if (_activeOccasion) {
+    results = results.filter(p => (p.occasion || '').toLowerCase() === _activeOccasion.toLowerCase());
+  }
+  if (_searchQuery) {
+    const q = _searchQuery.toLowerCase();
+    results = results.filter(p => {
+      const haystack = [
+        p.name, p.style, p.occasion, p.palette_name, p.description,
+        ...(Array.isArray(p.tags) ? p.tags : [])
+      ].filter(Boolean).join(' ').toLowerCase();
+      return haystack.includes(q);
+    });
+  }
+  return results;
+}
+
+function filterAndRender() {
+  const filtered = getFilteredPatterns();
+  renderGrid(filtered);
+  const sub = document.getElementById('libSub');
+  if (sub) {
+    const active = _activeOccasion || _searchQuery;
+    sub.textContent = active
+      ? `${filtered.length} pattern${filtered.length !== 1 ? 's' : ''} found`
+      : 'Textile traditions from every corner of the world. Grab one. Make something.';
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   MODAL
+═══════════════════════════════════════════════ */
+
+function openModal(idx) {
+  // idx is position in the currently visible (filtered) grid
+  // We need to look up by data-idx from the rendered grid
+  const grid = document.getElementById('patternGrid');
+  const card = grid.querySelector(`[data-idx="${idx}"]`);
+  if (!card) return;
+
+  // Find the pattern in the filtered set
+  const filtered = getFilteredPatterns();
+  const row = filtered[idx];
+  if (!row) return;
+  _activePattern = row;
+
+  const colors = row.colors || ['#c8a050','#5a4a38','#faf6f0'];
+  const style  = row.style || 'diamond';
+
+  // Strip
+  const strip = document.getElementById('modalStrip');
+  strip.innerHTML = colors.slice(0,5).map(c =>
+    `<div style="background:${escHtml(c)};"></div>`
+  ).join('');
+
+  // Text fields
+  document.getElementById('modalStyle').textContent   = row.style   || '';
+  document.getElementById('modalName').textContent    = row.name    || 'Untitled Pattern';
+  const codeEl = document.getElementById('modalCode');
+  if (row.code) {
+    codeEl.textContent = row.code;
+    codeEl.style.display = '';
+    codeEl.onclick = () => { navigator.clipboard.writeText(row.code); codeEl.textContent = 'copied!'; setTimeout(() => { codeEl.textContent = row.code; }, 1200); };
+  } else {
+    codeEl.style.display = 'none';
+  }
+  document.getElementById('modalPalette').textContent = row.palette_name ? `Palette: ${row.palette_name}` : '';
+  document.getElementById('modalDesc').textContent    = row.description || '';
+
+  const tags = Array.isArray(row.tags) ? row.tags : [];
+  document.getElementById('modalTags').innerHTML = tags.map(t =>
+    `<span class="pmodal-tag">${escHtml(t)}</span>`
+  ).join('');
+  if (row.occasion) {
+    document.getElementById('modalTags').innerHTML +=
+      `<span class="pmodal-tag" style="background:var(--gold);color:#fff;">${escHtml(row.occasion)}</span>`;
+  }
+
+  // Palette story
+  const storyEl = document.getElementById('modalStory');
+  if (storyEl) storyEl.textContent = row.palette_story || '';
+
+  // Heritage section
+  // Use live heritage data from Supabase if available, fall back to embedded JSON
+  const h = (row.heritage_name ? {
+    name:                 row.heritage_name,
+    origin:               row.heritage_origin,
+    region:               row.heritage_region,
+    era:                  row.heritage_era,
+    meaning:              row.heritage_meaning,
+    technique:            row.heritage_technique,
+    cultural_significance:row.heritage_significance,
+    tags:                 Array.isArray(row.heritage_tags) ? row.heritage_tags : [],
+  } : null) || PATTERN_HERITAGE[style] || PATTERN_HERITAGE[row.style];
+  const heritageWrap = document.getElementById('modalHeritage');
+  if (h) {
+    heritageWrap.style.display = 'block';
+    document.getElementById('heritageToggleLabel').textContent = 'About ' + h.name;
+    // Meta pills
+    document.getElementById('heritageMeta').innerHTML = [
+      h.origin, h.region, h.era
+    ].filter(Boolean).map(v =>
+      `<span class="heritage-meta-pill">${escHtml(v)}</span>`
+    ).join('');
+    document.getElementById('heritageMeaning').textContent     = h.meaning || '';
+    document.getElementById('heritageTechnique').textContent   = h.technique || '';
+    document.getElementById('heritageSignificance').textContent= h.cultural_significance || '';
+    document.getElementById('heritageTags').innerHTML = (h.tags || []).map(t =>
+      `<span class="heritage-tag">${escHtml(t)}</span>`
+    ).join('');
+    // Reset toggle state
+    document.getElementById('heritageBody').style.display = 'none';
+    document.getElementById('heritageChevron').classList.remove('open');
+  } else {
+    heritageWrap.style.display = 'none';
+  }
+
+  // CTA link
+  const ctaColors = colors.join(',');
+  const ctaUrl = `https://coco-pattern-generator.netlify.app?style=${encodeURIComponent(style)}&colors=${encodeURIComponent(ctaColors)}&name=${encodeURIComponent(row.name||'')}&palette=${encodeURIComponent(row.palette_name||'')}`;
+  document.getElementById('modalCta').href = ctaUrl;
+
+  // Show modal first so canvas has dimensions
+  document.getElementById('pmodal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  // Render large preview
+  requestAnimationFrame(() => {
+    const mc = document.getElementById('modalCanvas');
+    const sz = Math.min(mc.offsetWidth || 420, 420);
+    mc.width = sz;
+    mc.height = sz;
+    const mctx = mc.getContext('2d');
+    const fn = DRAW_FN[style] || drawDiamond;
+    fn(mctx, sz, sz, colors, 56, 0, 60);
+    stampCanvas(mc);
+
+    // Order product mockups with real Shopify photos
+    renderOrderCards(style, colors);
+  });
+}
+
+
+function toggleHeritage() {
+  const body    = document.getElementById('heritageBody');
+  const chevron = document.getElementById('heritageChevron');
+  const isOpen  = body.style.display !== 'none';
+  body.style.display    = isOpen ? 'none' : 'block';
+  chevron.classList.toggle('open', !isOpen);
+}
+
+function closeModal() {
+  document.getElementById('pmodal').classList.remove('open');
+  document.body.style.overflow = '';
+  _activePattern = null;
+}
+
+/* ═══════════════════════════════════════════════
+   SUPABASE LOAD
+═══════════════════════════════════════════════ */
+
+async function loadPatterns() {
+  try {
+    // ── Patterns + auth fired in parallel — never blocks on auth ─
+    const [patternsResult, sessionResult] = await Promise.all([
+      sb.from('patterns')
+        .select('id, name, style, colors, palette_name, description, tags, occasion, created_at, code, palette_story, heritage_name, heritage_origin, heritage_region, heritage_era, heritage_meaning, heritage_technique, heritage_significance, heritage_tags')
+        .eq('is_public', true)
+        .limit(1000),
+      sb.auth.getSession().catch(() => ({ data: { session: null } }))
+    ]);
+
+    const { data, error } = patternsResult;
+    if (error) throw error;
+
+    // Gate disabled — show all public patterns to everyone
+    let _initIsSubscriber = true;
+
+    function shuffleArray(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function balanceByStyle(patterns) {
+      const byStyle = {};
+      patterns.forEach(p => {
+        if (!byStyle[p.style]) byStyle[p.style] = [];
+        byStyle[p.style].push(p);
+      });
+      Object.values(byStyle).forEach(arr => shuffleArray(arr));
+      const styleKeys = Object.keys(byStyle);
+      const result = [];
+      let added = true;
+      const indices = {};
+      styleKeys.forEach(k => indices[k] = 0);
+      while (added) {
+        added = false;
+        for (const k of styleKeys) {
+          if (indices[k] < byStyle[k].length) {
+            result.push(byStyle[k][indices[k]++]);
+            added = true;
+          }
+        }
+      }
+      return result;
+    }
+
+    allPatterns = balanceByStyle(data || []);
+
+    const grid = document.getElementById('patternGrid');
+
+    if (!data || !data.length) {
+      grid.innerHTML = `<div class="state-msg">
+        <span class="icon">CoCo</span>
+        No public patterns yet — create the first one.
+      </div>`;
+      return;
+    }
+
+    _allPatterns = data;
+    window._allPatterns = data;
+    buildPatternFilters(data);
+    await initPatternLibrary(data, _initIsSubscriber);
+    checkIncomingPalette();
+
+  } catch(e) {
+    console.error('[patterns]', e);
+    const grid = document.getElementById('patternGrid');
+    if (grid) grid.innerHTML = `<div class="state-msg">
+      <span class="icon">CoCo</span>
+      Could not load patterns. Check your connection.
+    </div>`;
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════════ */
+
+let _toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+/* ═══════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════ */
+
+// Close modal on overlay click
+document.getElementById('pmodal').addEventListener('click', e => {
+  if (e.target === document.getElementById('pmodal')) closeModal();
+});
+
+// Close modal on Escape
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && document.getElementById('pmodal').classList.contains('open')) {
+    closeModal();
+  }
+});
+
+// Search
+let _searchDebounce;
+document.getElementById('patternSearch').addEventListener('input', e => {
+  _searchQuery = e.target.value.trim();
+  const clearBtn = document.getElementById('searchClear');
+  if (clearBtn) clearBtn.classList.toggle('visible', _searchQuery.length > 0);
+  clearTimeout(_searchDebounce);
+  _searchDebounce = setTimeout(filterAndRender, 200);
+});
+
+function clearSearch() {
+  _searchQuery = '';
+  const input = document.getElementById('patternSearch');
+  if (input) input.value = '';
+  const clearBtn = document.getElementById('searchClear');
+  if (clearBtn) clearBtn.classList.remove('visible');
+  filterAndRender();
+}
+
+preloadLibProductImages();
+loadPatterns();
+
+/* ── Incoming palette handoff (from start-with-photo) ──────────── */
+
+function checkIncomingPalette() {
+  const params = new URLSearchParams(window.location.search);
+  const raw    = params.get('palette');
+  const name   = params.get('name') || 'Your palette';
+  if (!raw) return;
+  const colors = raw.split(',').map(c => c.trim()).filter(c => /^#[0-9a-fA-F]{6}$/.test(c));
+  if (colors.length < 3) return;
+  _incomingPalette = { colors, name };
+  showPaletteBanner(_incomingPalette);
+  filterAndRender();
+}
+
+function showPaletteBanner(palette) {
+  const banner = document.getElementById('palette-banner');
+  if (!banner) return;
+  const swatches = palette.colors.map(c =>
+    `<span style="background:${c};width:18px;height:18px;border-radius:50%;display:inline-block;flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,.25)" title="${c}"></span>`
+  ).join('');
+  banner.innerHTML = `
+    <div class="pb-inner">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span class="pb-label">Showing patterns in</span>
+        <span class="pb-name">${palette.name}</span>
+        <div class="pb-swatches">${swatches}</div>
+      </div>
+      <button class="pb-clear" onclick="clearIncomingPalette()">Show all palettes ✕</button>
+    </div>`;
+  banner.classList.add('visible');
+}
+
+function clearIncomingPalette() {
+  _incomingPalette = null;
+  const banner = document.getElementById('palette-banner');
+  if (banner) banner.classList.remove('visible');
+  filterAndRender();
+  window.history.replaceState({}, '', window.location.pathname);
+}
+
+/* ── Download pattern preview PNG ──────────────────────────────── */
+function downloadPatternPreview() {
+  if (!_activePattern) return;
+  const row      = _activePattern;
+  const colors   = row.colors || ['#c8a050', '#5a4a38', '#faf6f0'];
+  const style    = row.style  || 'diamond';
+  const eyebrow  = style.toUpperCase().replace(/-/g, ' ') + ' PATTERN';
+  const patName  = row.name         || 'Pattern';
+  const palName  = row.palette_name || '';
+
+  const W = 1200, H = 1200;
+  const out = document.createElement('canvas');
+  out.width = W; out.height = H;
+  const ctx = out.getContext('2d');
+
+  // Background
+  ctx.fillStyle = '#1a1208';
+  ctx.fillRect(0, 0, W, H);
+
+  // Gold accent stripe
+  ctx.fillStyle = '#c9a96e';
+  ctx.fillRect(0, 0, W, 4);
+
+  // Style eyebrow
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.font = '600 20px Arial, sans-serif';
+  ctx.fillStyle = 'rgba(201,169,110,.72)';
+  ctx.fillText(eyebrow, W / 2, 50);
+
+  // Pattern name — large italic
+  ctx.font = 'italic 300 68px Georgia, serif';
+  ctx.fillStyle = '#faf6ef';
+  ctx.fillText(patName, W / 2, 84);
+
+  // Palette name — subtle
+  let swatchY = 162;
+  if (palName) {
+    ctx.font = '300 26px Arial, sans-serif';
+    ctx.fillStyle = 'rgba(250,246,239,.45)';
+    ctx.fillText('Palette: ' + palName, W / 2, 164);
+    swatchY = 208;
+  }
+
+  // Color swatch strip
+  const swatchH = 42, pad = 80;
+  const sw = (W - pad * 2) / colors.length;
+  colors.forEach((hex, i) => {
+    ctx.fillStyle = hex;
+    roundRect(ctx, pad + i * sw + 2, swatchY, sw - 4, swatchH, 6);
+    ctx.fill();
+  });
+
+  // High-res pattern tile
+  const patSize = 840;
+  const patX = (W - patSize) / 2;
+  const patY = swatchY + swatchH + 32;
+  const tile = document.createElement('canvas');
+  tile.width = patSize; tile.height = patSize;
+  const fn = DRAW_FN[style] || drawDiamond;
+  fn(tile.getContext('2d'), patSize, patSize, colors, Math.round(patSize / 8), 0, 80);
+
+  ctx.save();
+  roundRect(ctx, patX, patY, patSize, patSize, 18);
+  ctx.clip();
+  ctx.drawImage(tile, patX, patY);
+  ctx.restore();
+
+  // Watermark
+  ctx.font = '500 22px Arial, sans-serif';
+  ctx.fillStyle = 'rgba(201,169,110,.5)';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText('cultureschool.org', W / 2, H - 28);
+
+  out.toBlob(blob => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${patName.replace(/\s+/g, '-').toLowerCase()}-${style}-preview.png`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    showToast('Preview downloaded ↓');
+  }, 'image/png');
+}
+
+async function getSubscriberStatus() {
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session?.user) return { email: null, isSubscriber: false };
+    const { data } = await sb.from('users')
+      .select('is_subscriber')
+      .eq('email', session.user.email.toLowerCase())
+      .maybeSingle();
+    return { email: session.user.email, isSubscriber: !!(data?.is_subscriber) };
+  } catch(e) { return { email: null, isSubscriber: false }; }
+}
+
+async function recheckSubscriber() {
+  const email = await promptEmailGate();
+  if (!email) return;
+  const { error } = await sb.auth.signInWithOtp({
+    email: email.toLowerCase().trim(),
+    options: { emailRedirectTo: window.location.href }
+  });
+  if (error) {
+    showToast('Could not send sign-in link — try again');
+  } else {
+    showToast('✦ Check your email for a sign-in link');
+  }
+}
+
+function promptEmailGate() {
+  return new Promise(resolve => {
+    const scrim = document.createElement('div');
+    scrim.style.cssText = 'position:fixed;inset:0;background:rgba(26,18,8,.75);z-index:9000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)';
+    scrim.innerHTML = `<div style="background:#fff;border-radius:20px;padding:32px 28px;width:min(420px,92vw);text-align:center;border:1px solid var(--line,#e8ddd0);">
+      <p style="font-size:.6rem;font-weight:700;letter-spacing:.35em;text-transform:uppercase;color:var(--gold,#c8a050);margin-bottom:10px;">✦ Sign in</p>
+      <p style="font-family:'Cormorant Garamond',serif;font-size:1.2rem;color:var(--ink,#1e1810);margin-bottom:6px;">Welcome back</p>
+      <p style="font-size:.82rem;color:var(--muted,#9a8a78);margin-bottom:20px;">Enter the email linked to your CultureSchool membership.</p>
+      <input id="__gateEmail" type="email" placeholder="your@email.com"
+        style="width:100%;padding:12px 16px;border:1.5px solid var(--line,#e8ddd0);border-radius:10px;font-size:.9rem;outline:none;margin-bottom:12px;background:var(--bg,#faf6f0);box-sizing:border-box;">
+      <button onclick="window.__gateResolve(document.getElementById('__gateEmail').value.trim())"
+        style="width:100%;padding:13px;background:linear-gradient(135deg,#e8d5a8,#c8a050);border:none;border-radius:99px;font:700 .65rem/1 'Jost',sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#1e1810;cursor:pointer;">Sign in →</button>
+      <button onclick="window.__gateResolve(null)"
+        style="margin-top:10px;background:none;border:none;font:.65rem/1 'Jost',sans-serif;color:var(--muted,#9a8a78);cursor:pointer;display:block;width:100%;">Cancel</button>
+    </div>`;
+        window.__gateResolve = async val => {
+      scrim.remove(); delete window.__gateResolve;
+      if (!val || !val.includes('@')) { resolve(null); return; }
+      const email = val.toLowerCase().trim();
+      const { error } = await sb.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: window.location.href }
+      });
+      if (error) {
+        showToast('Could not send sign-in link — try again');
+      } else {
+        showToast('✦ Check your email for a sign-in link');
+      }
+      resolve(null);
+    };
+    document.body.appendChild(scrim);
+    setTimeout(() => document.getElementById('__gateEmail')?.focus(), 80);
+  });
+}
+
+function blurredPatternCardHtml(row, i) {
+  const colors = row.colors || ['#c8a050','#5a4a38','#faf6f0'];
+  const strip = colors.slice(0,6).map(c => `<div style="background:${escHtml(c)};"></div>`).join('');
+  return `
+    <div class="pcard" style="cursor:default;" aria-hidden="true">
+      <canvas class="pcard-canvas" id="pcanvas-blur-${i}" width="400" height="400"></canvas>
+      <div class="pcard-strip">${strip}</div>
+      <div class="pcard-body">
+        ${row.style ? `<div class="pcard-style">${escHtml(row.style)}</div>` : ''}
+        <div class="pcard-name">${escHtml(row.name)}</div>
+      </div>
+    </div>`;
+}
+
+async function initPatternLibrary(data, isSubscriber) {
+  renderGrid(data); return;
+  // Gate disabled — subscriber check below is preserved for when gate is re-enabled
+  const FREE_STYLES = ['kente', 'zellige', 'shibori', 'mudcloth', 'ikat', 'adinkra'];
+  if (isSubscriber) { renderGrid(data); return; }
+  const seen = new Set();
+  const freePatterns = [];
+  for (const style of FREE_STYLES) {
+    const p = data.find(x => x.style === style);
+    if (p && !seen.has(p.id)) { freePatterns.push(p); seen.add(p.id); }
+  }
+  for (const p of data) {
+    if (freePatterns.length >= 6) break;
+    if (!seen.has(p.id)) { freePatterns.push(p); seen.add(p.id); }
+  }
+  const blurredPatterns = data.filter(p => !seen.has(p.id)).slice(0, 8);
+  const remaining = data.length - freePatterns.length;
+  _allPatterns = freePatterns;
+  renderGrid(freePatterns);
+  if (remaining > 0) {
+    const gateEl = document.createElement('div');
+    gateEl.id = 'patternGate';
+    gateEl.style.cssText = 'position:relative;padding-bottom:240px;width:100%;max-width:1200px;margin:16px auto 0;';
+    gateEl.innerHTML = `
+      <div class="pattern-grid" style="opacity:.28;filter:blur(5px);pointer-events:none;user-select:none;">
+        ${blurredPatterns.map((p, i) => blurredPatternCardHtml(p, i)).join('')}
+      </div>
+      <div class="gate-blur"></div>
+      <div class="gate-card">
+        <p class="gate-eyebrow">✦ Members only</p>
+        <h3 class="gate-title">8,000+ patterns. Every tradition.</h3>
+        <p class="gate-sub">Kente, Zellige, Ndebele, Shibori, Adire, Suzani — every pattern has a cultural heritage story. Unlock the full archive with a CultureSchool membership.</p>
+        <a href="https://cultureschool.org/collections/membership" class="gate-btn">Become a member →</a>
+        <p class="gate-already">Already a member? <button onclick="recheckSubscriber()" class="gate-recheck">Sign in →</button></p>
+      </div>`;
+    document.querySelector('main').appendChild(gateEl);
+    requestAnimationFrame(() => {
+      blurredPatterns.forEach((p, i) => {
+        const c = document.getElementById(`pcanvas-blur-${i}`);
+        if (!c) return;
+        const colors = (_incomingPalette && _incomingPalette.colors) || p.colors || ['#c8a050','#5a4a38','#faf6f0'];
+        queueCanvasRender(c, p.style || 'diamond', colors, 40);
+      });
+    });
+  }
+}
+
+// ── Re-check subscription when magic link returns ──
+sb.auth.onAuthStateChange(async (event, session) => {
+  if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user) {
+    // Signed in after page load (magic link return) — lift gate if showing
+    try {
+      const { data: uRow } = await sb.from('users')
+        .select('is_subscriber')
+        .eq('email', session.user.email.toLowerCase())
+        .maybeSingle();
+      if (uRow?.is_subscriber) {
+        const gate = document.getElementById('patternGate');
+        if (gate) gate.remove();
+        const allData = window._allPatterns || [];
+        if (allData.length) {
+          _allPatterns = allData;
+          renderGrid(allData);
+        }
+      }
+    } catch(_) {}
+  }
+});
+</script>
+</body>
+</html>
