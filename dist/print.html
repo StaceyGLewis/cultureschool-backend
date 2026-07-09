@@ -4742,7 +4742,7 @@ function runScatter() {
       '<p class="mm-sub">Tap one — you can change it any time.</p>' +
       '<div class="mm-grid-2" id="mmDesignGrid"></div>';
     var grid = document.getElementById('mmDesignGrid');
-    var tmpls = window.STUDIO_TEMPLATES || [];
+    var tmpls = STUDIO_TEMPLATES || [];
     for (var i = 0; i < tmpls.length; i++) {
       (function(t) {
         var lbl = TMPL_NAMES[t.id] || { name: t.name, desc: t.desc };
@@ -4775,7 +4775,7 @@ function runScatter() {
   }
 
   function fillPalettes() {
-    var palettes = window.allPalettes || [];
+    var palettes = allPalettes || [];
     if (!palettes.length) { setTimeout(fillPalettes, 700); return; }
     var grid = document.getElementById('mmPalGrid');
     if (!grid) return;
@@ -4944,24 +4944,21 @@ function runScatter() {
     var ctx = canvas.getContext('2d');
     var W = canvas.width, H = canvas.height;
     ctx.fillStyle = '#f8f5f0'; ctx.fillRect(0, 0, W, H);
-    var cW = window.canvasW || 600, cH = window.canvasH || 600;
+    var cW = canvasW || 600, cH = canvasH || 600;
     ctx.save();
     ctx.scale(W / cW, H / cH);
     try { await window.renderCompositionToCtx(ctx); } catch (e) {}
     ctx.restore();
   }
 
-  window._mmDownload = async function () {
-    var origFmt = window.exportFmt, origScale = window.pngScale, origTile = window.tileExport;
-    window.exportFmt = 'png'; window.pngScale = 2; window.tileExport = '1x1';
-    try { if (window.doExport) await window.doExport(); }
-    finally { window.exportFmt = origFmt; window.pngScale = origScale; window.tileExport = origTile; }
+  window._mmDownload = function () {
+    if (typeof doExport === 'function') doExport();
   };
 
   window._mmSewPanel = function () { if (_prod) cutSewExport(); };
 
   async function cutSewExport() {
-    var preset = (window.PRODUCT_PRESETS || {})[_prod] || { w: 18, h: 18 };
+    var preset = (PRODUCT_PRESETS || {})[_prod] || { w: 18, h: 18 };
     var dpi = 150;
     var PW = Math.round(preset.w * dpi);
     var PH = Math.round(preset.h * dpi);
@@ -4978,7 +4975,7 @@ function runScatter() {
 
     ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, TW, TH);
 
-    var cW = window.canvasW || 600, cH = window.canvasH || 600;
+    var cW = canvasW || 600, cH = canvasH || 600;
     ctx.save();
     ctx.translate(marg, marg);
     ctx.scale(PW / cW, PH / cH);
