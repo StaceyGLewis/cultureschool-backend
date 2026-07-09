@@ -46,6 +46,16 @@
   status = 200
 
 [[redirects]]
+  from = "https://coco-print-studio.cultureschool.org/*"
+  to   = "/print"
+  status = 200
+
+[[redirects]]
+  from = "https://coco-print-studio.cultureschool.org"
+  to   = "/print"
+  status = 200
+
+[[redirects]]
   from = "/api/anthropic"
   to   = "/.netlify/functions/anthropic-proxy"
   status = 200
