@@ -4660,6 +4660,30 @@ function runScatter() {
   color: #9e8e7a; font-size: .9rem; text-align: center; padding: 30px;
   font-family: 'DM Sans', sans-serif; grid-column: 1 / -1;
 }
+
+/* ── Live preview column ─────────────────── */
+.mm-layout {
+  flex: 1; display: flex; overflow: hidden;
+}
+.mm-steps-col {
+  flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0;
+}
+.mm-preview-col {
+  width: 260px; flex-shrink: 0; border-left: 1.5px solid #e0d9d0;
+  background: #ece8e0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; padding: 24px 18px; gap: 10px;
+}
+.mm-live-canvas {
+  border-radius: 12px; box-shadow: 0 6px 24px rgba(0,0,0,.13);
+  display: block; max-width: 100%; background: #f8f5f0;
+}
+.mm-live-label {
+  font-size: .7rem; color: #9e8e7a; font-family: 'DM Sans', sans-serif;
+  text-align: center; line-height: 1.5;
+}
+@media (max-width: 680px) {
+  .mm-preview-col { display: none; }
+}
 </style>
 
 <div id="makeModeOverlay">
@@ -4668,11 +4692,20 @@ function runScatter() {
     <div class="mm-dots" id="mmDots"></div>
     <button class="mm-exit-link" onclick="window.closeMakeMode()">Pro Studio →</button>
   </div>
-  <div class="mm-body" id="mmBody"></div>
-  <div class="mm-footer" id="mmFooter">
-    <button class="mm-btn-nav mm-btn-back" id="mmBtnBack" onclick="window._mmBack()">← Back</button>
-    <span class="mm-footer-spacer" id="mmSkipSlot"></span>
-    <button class="mm-btn-nav mm-btn-next" id="mmBtnNext" onclick="window._mmNext()">Next →</button>
+  <div class="mm-layout">
+    <div class="mm-steps-col">
+      <div class="mm-body" id="mmBody"></div>
+      <div class="mm-footer" id="mmFooter">
+        <button class="mm-btn-nav mm-btn-back" id="mmBtnBack" onclick="window._mmBack()">← Back</button>
+        <span class="mm-footer-spacer" id="mmSkipSlot"></span>
+        <button class="mm-btn-nav mm-btn-next" id="mmBtnNext" onclick="window._mmNext()">Next →</button>
+      </div>
+    </div>
+    <div class="mm-preview-col">
+      <div class="mm-live-label" style="font-weight:700;color:#b8ad9f;text-transform:uppercase;letter-spacing:.08em;">Your design</div>
+      <canvas id="mmLiveCanvas" class="mm-live-canvas" width="220" height="220"></canvas>
+      <div class="mm-live-label">Updates as you choose</div>
+    </div>
   </div>
 </div>
 
@@ -4742,6 +4775,7 @@ function runScatter() {
     else if (n === 3) step3(body);
     else if (n === 4) step4(body);
     else if (n === 5) step5(body);
+    schedulePreview(400);
   }
 
   /* Step 1 – Pick a design */
@@ -4767,6 +4801,8 @@ function runScatter() {
           for (var j = 0; j < cards.length; j++) cards[j].classList.remove('mm-on');
           card.classList.add('mm-on');
           document.getElementById('mmBtnNext').disabled = false;
+          schedulePreview(600);   // placeholder shapes visible immediately
+          schedulePreview(3000);  // second pass catches loaded images
         };
         grid.appendChild(card);
       })(tmpls[i]);
@@ -4808,6 +4844,7 @@ function runScatter() {
           for (var j = 0; j < cards.length; j++) cards[j].classList.remove('mm-on');
           card.classList.add('mm-on');
           document.getElementById('mmBtnNext').disabled = false;
+          schedulePreview(300);
         };
         grid.appendChild(card);
       })(list[i]);
@@ -4880,7 +4917,7 @@ function runScatter() {
     if (minEl) { minEl.value = mn; minEl.dispatchEvent(new Event('input')); }
     if (maxEl) { maxEl.value = mx; maxEl.dispatchEvent(new Event('input')); }
     if (cntEl) { cntEl.value = 22; cntEl.dispatchEvent(new Event('input')); }
-    setTimeout(function () { if (window.runScatter) window.runScatter(); }, 120);
+    setTimeout(function () { if (window.runScatter) { window.runScatter(); schedulePreview(500); } }, 120);
   }
 
   /* Step 4 – What are you making? */
@@ -4905,6 +4942,7 @@ function runScatter() {
           for (var j = 0; j < cards.length; j++) cards[j].classList.remove('mm-on');
           card.classList.add('mm-on');
           document.getElementById('mmBtnNext').disabled = false;
+          schedulePreview(200);
         };
         grid.appendChild(card);
       })(PRODUCTS[i]);
@@ -5070,14 +5108,39 @@ function runScatter() {
     goTo(1);
   }
 
+  /* Live preview — re-renders the studio canvas into the side panel */
+  var _mmRefreshTimer = null;
+  async function refreshMmLivePreview() {
+    var canvas = document.getElementById('mmLiveCanvas');
+    if (!canvas) return;
+    var ctx = canvas.getContext('2d');
+    var W = canvas.width, H = canvas.height;
+    ctx.fillStyle = '#f8f5f0'; ctx.fillRect(0, 0, W, H);
+    var _st = window.getStudioState ? window.getStudioState() : {};
+    var cW = _st.canvasW || 600, cH = _st.canvasH || 600;
+    ctx.save(); ctx.scale(W / cW, H / cH);
+    try { await window.renderCompositionToCtx(ctx); } catch (e) {}
+    ctx.restore();
+  }
+  /* Debounced refresh — coalesces rapid choices into one render */
+  function schedulePreview(delay) {
+    clearTimeout(_mmRefreshTimer);
+    _mmRefreshTimer = setTimeout(refreshMmLivePreview, delay || 350);
+  }
+
+  var _mmPollInterval = null;
+
   window.openMakeMode = function () {
     var ov = document.getElementById('makeModeOverlay');
     if (ov) { ov.classList.add('mm-open'); goTo(_step); }
+    schedulePreview(500);
+    if (!_mmPollInterval) _mmPollInterval = setInterval(refreshMmLivePreview, 4000);
   };
 
   window.closeMakeMode = function () {
     var ov = document.getElementById('makeModeOverlay');
     if (ov) ov.classList.remove('mm-open');
+    clearInterval(_mmPollInterval); _mmPollInterval = null;
   };
 
   function init() {
