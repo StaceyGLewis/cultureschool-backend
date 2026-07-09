@@ -192,7 +192,7 @@
     .ws-btn:hover{background:var(--ws-sur);color:var(--ws-ink)}
 
     /* canvas */
-    #ws-canvas{position:fixed;top:66px;left:10px;right:calc(var(--panel-w) + 20px);bottom:10px;border-radius:13px;overflow:hidden;background:#0d0b1a;box-shadow:0 0 0 1px rgba(201,169,110,.15),0 24px 70px rgba(0,0,0,.6),0 0 50px var(--ws-glow);z-index:10}
+    #ws-canvas{position:fixed;top:66px;left:10px;right:calc(var(--panel-w) + 20px);bottom:10px;border-radius:13px;overflow:hidden;background:#0d0b1a;box-shadow:0 0 0 1px rgba(201,169,110,.15),0 24px 70px rgba(0,0,0,.6),0 0 50px var(--ws-glow);z-index:10;transition:right .25s cubic-bezier(.4,0,.2,1)}
 
     /* hero inside canvas */
     #hero{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0d0b1a;overflow:hidden;cursor:default;gap:14px;text-align:center;padding:24px}
@@ -211,7 +211,7 @@
     #photoProduct.show{display:block;animation:fadeIn .3s var(--ease)}
 
     /* right panel */
-    #ws-panel{position:fixed;top:66px;right:10px;width:var(--panel-w);bottom:10px;border-radius:13px;overflow:hidden;overflow-y:auto;scrollbar-width:none;background:var(--ws-hud);backdrop-filter:blur(24px) saturate(160%);border:1px solid var(--ws-bdr);box-shadow:0 8px 40px rgba(0,0,0,.4);z-index:10}
+    #ws-panel{position:fixed;top:66px;right:10px;width:var(--panel-w);bottom:10px;border-radius:13px;overflow:hidden;overflow-y:auto;scrollbar-width:none;background:var(--ws-hud);backdrop-filter:blur(24px) saturate(160%);border:1px solid var(--ws-bdr);box-shadow:0 8px 40px rgba(0,0,0,.4);z-index:10;transition:transform .25s cubic-bezier(.4,0,.2,1)}
     #ws-panel::-webkit-scrollbar{display:none}
     .ws-ps{padding:14px 14px 13px;border-bottom:1px solid var(--ws-bdr)}
     .ws-ps:last-child{border-bottom:none}
@@ -240,11 +240,33 @@
     .fbc-search-btn{width:100%;padding:8px 12px;border-radius:8px;margin:4px 0 0;background:var(--ws-sur);border:1px solid var(--ws-bdr);color:rgba(240,238,248,.78);font:600 .64rem 'DM Sans',sans-serif;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:all .16s}
     .fbc-search-btn:hover{background:rgba(201,169,110,.1);border-color:var(--ws-acc);color:var(--ws-ink)}
 
+    /* workspace mode switcher */
+    .ws-suite{display:flex;align-items:center;gap:2px;background:rgba(255,255,255,.06);border:1px solid var(--ws-bdr);border-radius:20px;padding:3px}
+    .ws-suite-btn{padding:4px 12px;border-radius:16px;border:none;background:transparent;color:var(--ws-soft);font:600 .64rem 'DM Sans',sans-serif;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:all .16s;text-decoration:none;white-space:nowrap}
+    .ws-suite-btn.active{background:var(--ws-acc);color:#1a1208}
+    .ws-suite-btn:not(.active):hover{background:rgba(255,255,255,.08);color:var(--ws-ink)}
+
+    /* panel toggle tab */
+    #panel-toggle{position:fixed;top:50%;right:calc(var(--panel-w) + 11px);transform:translateY(-50%);z-index:50;width:26px;height:56px;background:rgba(201,169,110,.14);backdrop-filter:blur(12px);border:1px solid rgba(201,169,110,.4);border-radius:13px;color:var(--ws-acc);font-size:13px;letter-spacing:0;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;transition:right .25s cubic-bezier(.4,0,.2,1),color .15s,border-color .15s,background .15s,box-shadow .15s;line-height:1;box-shadow:0 2px 14px rgba(201,169,110,.18)}
+    #panel-toggle:hover{color:var(--ws-ink);border-color:var(--ws-acc);background:rgba(201,169,110,.26);box-shadow:0 4px 20px rgba(201,169,110,.32)}
+    body.panel-hidden #panel-toggle{right:14px}
+    body.panel-hidden #ws-panel{transform:translateX(calc(var(--panel-w) + 20px))}
+    body.panel-hidden #ws-canvas{right:42px}
+
+    /* origin photo in mockup section */
+    .msec-origin{display:none;align-items:center;gap:14px;margin-bottom:22px;padding:12px 16px;background:rgba(255,255,255,.04);border:1px solid var(--ws-bdr);border-radius:13px;width:fit-content;max-width:100%}
+    .msec-origin.show{display:flex}
+    .msec-origin-photo{width:80px;height:80px;object-fit:cover;border-radius:9px;border:1px solid rgba(201,169,110,.22);flex-shrink:0}
+    .msec-origin-meta{display:flex;flex-direction:column;gap:3px}
+    .msec-origin-label{font-size:.58rem;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:rgba(201,169,110,.6)}
+    .msec-origin-arrow{font-size:.8rem;color:rgba(240,238,248,.25);margin:0 2px}
+
     /* mobile */
     @media(max-width:760px){
       :root{--panel-w:0px}
       #ws-panel{display:none}
       #ws-canvas{right:10px}
+      #panel-toggle{display:none}
     }
   </style>
 </head>
@@ -253,7 +275,12 @@
 <div id="toast" role="status" aria-live="polite"></div>
 
 <header id="ws-bar">
-  <span class="ws-brand">CoCo · <em>Color Lab</em></span>
+  <a href="https://cococreate.cultureschool.org" class="ws-brand" style="text-decoration:none;">CoCo</a>
+  <div class="ws-sep"></div>
+  <nav class="ws-suite" aria-label="CoCo workspace">
+    <span class="ws-suite-btn active" aria-current="page">Color Lab</span>
+    <a id="flourishSuiteLink" href="https://flourish-ultimate.cultureschool.org/" class="ws-suite-btn">Flourish</a>
+  </nav>
   <div class="ws-sep"></div>
   <span id="ws-palette-name" class="ws-name">No palette yet</span>
   <div class="ws-gap"></div>
@@ -292,6 +319,13 @@
 
   <!-- ── PALETTE + PRODUCTS ── -->
   <section id="mockupSection" aria-live="polite" aria-label="Your palette on products">
+    <div class="msec-origin" id="msecOrigin" aria-hidden="true">
+      <img id="msecOriginPhoto" class="msec-origin-photo" alt="">
+      <span class="msec-origin-arrow">→</span>
+      <div class="msec-origin-meta">
+        <span class="msec-origin-label">Your photo on these products</span>
+      </div>
+    </div>
     <div class="msec-meta">
       <p class="msec-eyebrow">Your palette</p>
       <p class="msec-name" id="paletteName"></p>
@@ -413,7 +447,7 @@
     <div class="msec-actions" id="msecActions">
       <a href="#" id="mockBtnShop" class="msec-btn-primary">Shop this palette →</a>
       <a href="https://coco-patterns-library.cultureschool.org/" id="mockBtnPatterns" class="msec-btn-ghost">More patterns</a>
-      <a href="#" id="mockBtnCreate" class="msec-btn-ghost">Design an invite</a>
+      <a href="#" id="mockBtnCreate" class="msec-btn-ghost">Open in Flourish →</a>
       <button class="msec-btn-ghost" onclick="downloadPalettePreview()" title="Download watermarked preview">⬇ Save preview</button>
       <button id="btnSaveExtracted" class="msec-btn-ghost" onclick="saveExtractedPalette()">♥ Save palette</button>
     </div>
@@ -472,6 +506,8 @@
   </div>
 
 </aside>
+
+<button id="panel-toggle" onclick="togglePanel()" aria-label="Toggle side panel" title="Toggle panel">›</button>
 </main>
 
 <a href="https://coco-concierge.cultureschool.org/" class="coco-orb" aria-label="Ask the CoCo Concierge" title="Ask the Concierge">
@@ -846,6 +882,9 @@ function showPalette(dataUrl,colors,filename){
   document.getElementById('paletteName').textContent=name;
   const wsName=document.getElementById('ws-palette-name');if(wsName)wsName.textContent=name;
   _lastColors=colors;
+  const originEl=document.getElementById('msecOrigin');
+  const originPhoto=document.getElementById('msecOriginPhoto');
+  if(originEl&&originPhoto&&dataUrl){originPhoto.src=dataUrl;originEl.classList.add('show');originEl.removeAttribute('aria-hidden');}
 
   // Canvas swatches (large)
   document.getElementById('mockupSwatches').innerHTML=colors.map((hex,i)=>`
@@ -859,7 +898,9 @@ function showPalette(dataUrl,colors,filename){
     ? 'https://color-stories.cultureschool.org/?id=' + encodeURIComponent(_closestPaletteId)
     : 'https://color-stories.cultureschool.org/?palette=' + cp + '&name=' + np;
   document.getElementById('mockBtnPatterns').href='https://coco-patterns-library.cultureschool.org/?palette='+cp+'&name='+np;
-  document.getElementById('mockBtnCreate').href='https://cococreate.cultureschool.org/?palette='+cp+'&name='+np+'&intent=host';
+  const flourishHref='https://flourish-ultimate.cultureschool.org/?palette='+cp+'&name='+np+'&intent=host&source=color-lab';
+  document.getElementById('mockBtnCreate').href=flourishHref;
+  const flourishSuiteLink=document.getElementById('flourishSuiteLink');if(flourishSuiteLink)flourishSuiteLink.href=flourishHref;
 
   // ── Reveal + populate the workspace panel ──
   ['ws-panel-actions','ws-panel-infer','ws-panel-similar'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='';});
@@ -926,6 +967,7 @@ function resetUpload(){
   document.getElementById('stripActions').style.display='';
   document.getElementById('fileInput').value='';
   const wsName=document.getElementById('ws-palette-name');if(wsName)wsName.textContent='No palette yet';
+  const originEl=document.getElementById('msecOrigin');if(originEl){originEl.classList.remove('show');originEl.setAttribute('aria-hidden','true');}
   _lastColors=null;_lastPhotoDataUrl=null;_pendingRedraw=null;_closestPaletteId=null;_closestPaletteName='';
 }
 
@@ -1123,13 +1165,20 @@ const PHOTO_PRODUCTS=[
   {id:'photo-lumbar',name:'Lumbar Cushion',label:'Lumbar Cushion',size:'20″ × 12″',price:'from $38',aspect:20/12,minRes:{w:3000,h:1800},productKey:'4532:20x12:52',hint:'Panoramic photos and wide landscapes'},
   {id:'photo-tote',name:'Tote Bag',label:'Tote Bag',size:'15″ × 15″',price:'from $32',aspect:1,minRes:{w:2250,h:2250},productKey:'tote:15x15:38',hint:'Great for any photo'},
 ];
-function showPhotoProduct(){
+async function showPhotoProduct(){
   if(!_lastColors){showToast('Upload a photo first');return;}
+  const{isSubscriber}=await getSubscriberStatus();
+  if(!isSubscriber){showToast('Members only — unlock to print on products');recheckSubscriber();return;}
   const section=document.getElementById('photoProduct');section.classList.add('show');
   _selectedPhotoProduct='photo-cushion-22';
   buildPhotoTabs();buildStylePicker();renderPhotoPreview();renderBackPreview();
   document.getElementById('ppPriceTag').textContent=PHOTO_PRODUCTS[0].price;
   checkPhotoRes(PHOTO_PRODUCTS[0]);
+}
+function togglePanel(){
+  document.body.classList.toggle('panel-hidden');
+  const btn=document.getElementById('panel-toggle');
+  if(btn)btn.textContent=document.body.classList.contains('panel-hidden')?'‹':'›';
 }
 function closePhotoProduct(){document.getElementById('photoProduct').classList.remove('show');}
 function buildPhotoTabs(){
@@ -1263,7 +1312,7 @@ function restoreFullActions(){
   actionsEl.innerHTML=`
     <a href="${_closestPaletteId?'https://color-stories.cultureschool.org/?id='+encodeURIComponent(_closestPaletteId):'https://color-stories.cultureschool.org/?palette='+cp+'&name='+np}" id="mockBtnShop" class="msec-btn-primary">Shop this palette →</a>
     <a href="https://coco-patterns-library.cultureschool.org/?palette=${cp}&name=${np}" id="mockBtnPatterns" class="msec-btn-ghost">More patterns</a>
-    <a href="https://cococreate.cultureschool.org/?palette=${cp}&name=${np}&intent=host" id="mockBtnCreate" class="msec-btn-ghost">Design an invite</a>
+    <a href="https://cococreate.cultureschool.org/?palette=${cp}&name=${np}&intent=host&source=color-lab" id="mockBtnCreate" class="msec-btn-ghost">Open in Flourish →</a>
     <button class="msec-btn-ghost" onclick="downloadPalettePreview()" title="Download watermarked preview">⬇ Save preview</button>
     <button id="btnSaveExtracted" class="msec-btn-ghost" onclick="saveExtractedPalette()">♥ Save palette</button>`;
 }
@@ -1278,8 +1327,7 @@ async function checkAndGateActions(){
       <a href="https://cultureschool.org/collections/membership" style="display:inline-block;font:.62rem/1 'DM Sans',sans-serif;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:#1a1208;background:linear-gradient(135deg,var(--gold-lt),var(--gold));padding:11px 22px;border-radius:99px;text-decoration:none;">Unlock for $18/month →</a>
       <p style="margin-top:12px;font:.58rem/1 'DM Sans',sans-serif;color:rgba(240,238,248,.4);">Already a member? <button onclick="recheckSubscriber()" style="background:none;border:none;color:var(--gold-lt);font:.58rem/1 'DM Sans',sans-serif;cursor:pointer;text-decoration:underline;padding:0;">Sign in →</button></p>
     </div>
-    <a href="https://coco-patterns-library.cultureschool.org/?palette=${cp}&name=${np}" class="msec-btn-ghost">More patterns</a>
-    <button class="msec-btn-ghost" onclick="downloadPalettePreview()" title="Download watermarked preview">⬇ Save preview</button>`;
+    <a href="https://coco-patterns-library.cultureschool.org/?palette=${cp}&name=${np}" class="msec-btn-ghost">More patterns</a>`;
 }
 </script>
 </body>

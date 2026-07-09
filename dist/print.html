@@ -1073,6 +1073,12 @@ let _dragState = null;
 let repeatMode = false;
 let tileExport = '1x1';
 
+// Expose statics and a live-state getter for Make Mode (const/let are NOT on window)
+window.getStudioState = function() {
+  return { allPalettes: allPalettes, canvasW: canvasW, canvasH: canvasH,
+           exportFmt: exportFmt, pngScale: pngScale, tileExport: tileExport };
+};
+
 // ── Organic shapes library ────────────────────────────────
 const SHAPES = [
   { id:'blob1', label:'Blob', path:'M50,20 C75,5 95,25 90,50 C85,75 70,90 50,85 C30,80 10,65 15,45 C20,25 35,30 50,20Z' },
@@ -3243,6 +3249,7 @@ const STUDIO_TEMPLATES = [
     ]
   },
 ];
+window.STUDIO_TEMPLATES = STUDIO_TEMPLATES;
 
 // ── Template UI ───────────────────────────────────────────────────────────────
 function renderTemplatesList() {
@@ -3846,6 +3853,7 @@ const PRODUCT_PRESETS = {
   napkin:    { label:'Napkin 20×20″',  w:20, h:20,  dpiMin:150, dpiIdeal:300 },
   yardage:   { label:'Yardage 56″w',   w:56, h:56,  dpiMin:150, dpiIdeal:150 },
 };
+window.PRODUCT_PRESETS = PRODUCT_PRESETS;
 
 let _activeProduct = null;
 
@@ -4742,7 +4750,8 @@ function runScatter() {
       '<p class="mm-sub">Tap one — you can change it any time.</p>' +
       '<div class="mm-grid-2" id="mmDesignGrid"></div>';
     var grid = document.getElementById('mmDesignGrid');
-    var tmpls = STUDIO_TEMPLATES || [];
+    var tmpls = window.STUDIO_TEMPLATES || [];
+    if (!tmpls.length) { setTimeout(function(){ step1(body); }, 400); return; }
     for (var i = 0; i < tmpls.length; i++) {
       (function(t) {
         var lbl = TMPL_NAMES[t.id] || { name: t.name, desc: t.desc };
@@ -4775,7 +4784,7 @@ function runScatter() {
   }
 
   function fillPalettes() {
-    var palettes = allPalettes || [];
+    var palettes = (window.getStudioState ? window.getStudioState().allPalettes : null) || [];
     if (!palettes.length) { setTimeout(fillPalettes, 700); return; }
     var grid = document.getElementById('mmPalGrid');
     if (!grid) return;
@@ -4944,7 +4953,8 @@ function runScatter() {
     var ctx = canvas.getContext('2d');
     var W = canvas.width, H = canvas.height;
     ctx.fillStyle = '#f8f5f0'; ctx.fillRect(0, 0, W, H);
-    var cW = canvasW || 600, cH = canvasH || 600;
+    var _st = window.getStudioState ? window.getStudioState() : {};
+    var cW = _st.canvasW || 600, cH = _st.canvasH || 600;
     ctx.save();
     ctx.scale(W / cW, H / cH);
     try { await window.renderCompositionToCtx(ctx); } catch (e) {}
@@ -4952,13 +4962,16 @@ function runScatter() {
   }
 
   window._mmDownload = function () {
+    // doExport() reads exportFmt/pngScale/tileExport from its own let scope — defaults
+    // are already png/2×/1×1, which is correct for Make Mode. Just call it directly.
     if (typeof doExport === 'function') doExport();
   };
 
   window._mmSewPanel = function () { if (_prod) cutSewExport(); };
 
   async function cutSewExport() {
-    var preset = (PRODUCT_PRESETS || {})[_prod] || { w: 18, h: 18 };
+    var _st2 = window.getStudioState ? window.getStudioState() : {};
+    var preset = (window.PRODUCT_PRESETS || {})[_prod] || { w: 18, h: 18 };
     var dpi = 150;
     var PW = Math.round(preset.w * dpi);
     var PH = Math.round(preset.h * dpi);
@@ -4975,7 +4988,7 @@ function runScatter() {
 
     ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, TW, TH);
 
-    var cW = canvasW || 600, cH = canvasH || 600;
+    var cW = _st2.canvasW || 600, cH = _st2.canvasH || 600;
     ctx.save();
     ctx.translate(marg, marg);
     ctx.scale(PW / cW, PH / cH);
