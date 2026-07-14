@@ -1,0 +1,208 @@
+
+
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CultureSchool Atlas — Editorial Admin</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@300;400;600;700&display=swap');
+:root{--green:#105305;--green-dk:#0a3803;--gold:#a9832f;--red:#9b2226;--amber:#b06a00;
+--cream:#faf8f4;--off:#f3efe6;--ink:#1a1a1a;--muted:#8a887f;--rule:#e6dfd0;--sans:'Jost',Arial,sans-serif;--serif:'Cormorant Garamond',Georgia,serif}
+*{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:14px}
+header{background:#fff;border-bottom:1px solid var(--rule);padding:14px 22px;display:flex;align-items:center;gap:18px;position:sticky;top:0;z-index:10}
+h1{font-family:var(--serif);font-size:24px;margin:0;font-weight:600}
+.stats{display:flex;gap:16px;margin-left:auto;font-size:12px;color:var(--muted)}
+.stats b{color:var(--ink);font-size:15px;display:block}
+.bar{padding:12px 22px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:var(--off);border-bottom:1px solid var(--rule)}
+.bar input,.bar select{padding:7px 10px;border:1px solid var(--rule);border-radius:7px;font-family:var(--sans);background:#fff}
+.bar input[type=search]{min-width:200px}
+.chip{padding:5px 11px;border-radius:99px;border:1px solid var(--rule);background:#fff;cursor:pointer;font-size:12px;font-weight:600}
+.chip.on{background:var(--green);color:#fff;border-color:var(--green)}
+main{padding:18px 22px 60px;max-width:1300px}
+.row{background:#fff;border:1px solid var(--rule);border-radius:12px;margin-bottom:10px;overflow:hidden}
+.rhead{display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer}
+.rhead:hover{background:#fcfaf6}
+.nm{font-family:var(--serif);font-size:19px;font-weight:600;flex:1}
+.nm small{font-family:var(--sans);font-size:11px;color:var(--muted);font-weight:400;margin-left:8px}
+.tag{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:5px}
+.t-general{background:#e8f0e6;color:var(--green)} .t-context_required{background:#fbeedb;color:var(--amber)}
+.t-restricted{background:#f7e0e0;color:var(--red)} .t-sacred_private{background:#3a1010;color:#fff}
+.s-draft{background:#eee;color:#666} .s-researched{background:#e3ecf5;color:#2e4870}
+.s-reviewed{background:#fbeedb;color:var(--amber)} .s-published{background:#e8f0e6;color:var(--green)}
+.motif{background:#f0f0f0;color:#888}
+.body{display:none;padding:0 16px 16px;border-top:1px solid var(--rule)}
+.row.open .body{display:block}
+label{display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--gold);margin:14px 0 5px}
+textarea,input.f,select.f{width:100%;padding:9px 11px;border:1px solid var(--rule);border-radius:7px;font-family:var(--sans);font-size:13.5px;line-height:1.55;background:#fff}
+textarea{min-height:64px;resize:vertical}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.acts{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;align-items:center}
+button{padding:9px 16px;border-radius:8px;border:0;font-family:var(--sans);font-weight:600;font-size:13px;cursor:pointer}
+.b-save{background:var(--green);color:#fff}.b-save:hover{background:var(--green-dk)}
+.b-pub{background:var(--gold);color:#fff}
+.b-un{background:#fff;color:var(--muted);border:1px solid var(--rule)}
+.dis{background:#fdf6e8;border:1px solid #e8dfca;border-radius:9px;padding:11px 13px;margin-top:8px;font-size:13px}
+.dis b{color:var(--red)}
+.msg{margin-left:auto;font-size:12px;font-weight:600}
+.msg.ok{color:var(--green)}.msg.err{color:var(--red)}
+.empty{padding:60px 20px;text-align:center;color:var(--muted);font-family:var(--serif);font-style:italic;font-size:18px}
+.gate{max-width:400px;margin:80px auto;background:#fff;padding:28px;border:1px solid var(--rule);border-radius:14px;text-align:center}
+</style></head><body>
+
+<div id="gate" class="gate" style="display:none">
+  <h1 style="margin-bottom:6px">Atlas Admin</h1>
+  <p style="color:var(--muted);font-size:13px">Sign in with your admin email.</p>
+  <input class="f" id="em" type="email" placeholder="you@example.com" style="margin:12px 0">
+  <button class="b-save" id="signin" style="width:100%">Send magic link</button>
+  <div class="msg" id="gmsg" style="margin-top:10px"></div>
+</div>
+
+<div id="app" style="display:none">
+<header>
+  <h1>Atlas <span style="color:var(--gold)">Admin</span></h1>
+  <div class="stats" id="stats"></div>
+</header>
+<div class="bar">
+  <input type="search" id="q" placeholder="Search name, origin, context…">
+  <select id="fstatus"><option value="">All statuses</option><option>draft</option><option>researched</option><option>reviewed</option><option>published</option></select>
+  <select id="fsens"><option value="">All sensitivity</option><option>general</option><option>context_required</option><option>restricted</option><option>sacred_private</option></select>
+  <button class="chip" id="ftrad">Traditions only</button>
+  <button class="chip" id="fpri">⚠ Priority</button>
+  <span class="msg" id="msg"></span>
+</div>
+<main id="list"><div class="empty">Loading…</div></main>
+</div>
+
+<script>
+const URL_='https://qwulthvbwujfehgdegtn.supabase.co';
+const KEY_='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3dWx0aHZid3VqZmVoZ2RlZ3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQyMDcxODIsImV4cCI6MjA1OTc4MzE4Mn0.t9n4eZng6d0jggiPNK-J_DByvEE2L9tqy5Xh_1-TSoQ';
+const sb = window.supabase.createClient(URL_, KEY_);
+let ROWS=[], DIS={}, F={q:'',status:'',sens:'',trad:false,pri:false};
+
+const esc = s => (s??'').toString().replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function flash(el,t,ok=true){ el.textContent=t; el.className='msg '+(ok?'ok':'err'); setTimeout(()=>el.textContent='',2500); }
+
+async function load(){
+  const {data:e,error} = await sb.from('cs_atlas_entries').select('*').order('sensitivity_level',{ascending:false}).order('name');
+  if(error){ document.getElementById('list').innerHTML='<div class="empty">'+esc(error.message)+'</div>'; return; }
+  ROWS=e||[];
+  const {data:d} = await sb.from('cs_atlas_distinctions').select('*');
+  DIS={}; (d||[]).forEach(x=>{ (DIS[x.atlas_entry_id] ||= []).push(x); });
+  render();
+}
+function stats(){
+  const n=ROWS.length, pub=ROWS.filter(r=>r.is_public&&r.source_status==='published').length;
+  const rev=ROWS.filter(r=>r.source_status==='reviewed').length;
+  const rst=ROWS.filter(r=>['restricted','sacred_private'].includes(r.sensitivity_level)).length;
+  document.getElementById('stats').innerHTML =
+    `<div><b>${n}</b>entries</div><div><b>${pub}</b>published</div><div><b>${rev}</b>reviewed</div><div><b style="color:var(--red)">${rst}</b>restricted</div>`;
+}
+function match(r){
+  if(F.status && r.source_status!==F.status) return false;
+  if(F.sens && r.sensitivity_level!==F.sens) return false;
+  if(F.trad && r.entry_type && r.entry_type!=='textile_tradition') return false;
+  if(F.pri && !(['restricted','sacred_private'].includes(r.sensitivity_level) || (DIS[r.id]||[]).length)) return false;
+  if(F.q){ const b=[r.name,r.short_definition,r.cultural_context,r.cultural_protocol,r.dictionary_style].join(' ').toLowerCase();
+    if(!b.includes(F.q.toLowerCase())) return false; }
+  return true;
+}
+function render(){
+  stats();
+  const rows=ROWS.filter(match);
+  const el=document.getElementById('list');
+  if(!rows.length){ el.innerHTML='<div class="empty">No entries match.</div>'; return; }
+  el.innerHTML = rows.map(r=>{
+    const ds=(DIS[r.id]||[]);
+    return `<div class="row" id="r${r.id}">
+      <div class="rhead" onclick="document.getElementById('r${r.id}').classList.toggle('open')">
+        <span class="nm">${esc(r.name)}<small>${esc(r.dictionary_style||'')}</small></span>
+        ${ds.length?`<span class="tag" style="background:#f7e0e0;color:var(--red)">⚠ ${ds.length} distinction${ds.length>1?'s':''}</span>`:''}
+        ${(r.entry_type && r.entry_type!=='textile_tradition')?'<span class="tag motif">motif</span>':''}
+        <span class="tag t-${r.sensitivity_level}">${r.sensitivity_level.replace('_',' ')}</span>
+        <span class="tag s-${r.source_status}">${r.source_status}</span>
+        ${r.is_public?'<span class="tag s-published">public</span>':''}
+      </div>
+      <div class="body">
+        ${ds.map(d=>`<div class="dis">⚠ Often confused with <b>${esc(d.confused_with)}</b> — ${esc(d.correction)}${d.why_confused?'<br><span style="color:var(--muted)">'+esc(d.why_confused)+'</span>':''}</div>`).join('')}
+        <label>Short definition</label><textarea data-f="short_definition">${esc(r.short_definition)}</textarea>
+        <label>Cultural context (what a reviewer must fix / verify)</label><textarea data-f="cultural_context">${esc(r.cultural_context)}</textarea>
+        <label>Cultural protocol — how it may / may not be used</label><textarea data-f="cultural_protocol">${esc(r.cultural_protocol)}</textarea>
+        <div class="two">
+          <div><label>Sensitivity</label><select class="f" data-f="sensitivity_level">
+            ${['general','context_required','restricted','sacred_private'].map(v=>`<option ${r.sensitivity_level===v?'selected':''}>${v}</option>`).join('')}
+          </select></div>
+          <div><label>Status</label><select class="f" data-f="source_status">
+            ${['draft','researched','reviewed','published','archived'].map(v=>`<option ${r.source_status===v?'selected':''}>${v}</option>`).join('')}
+          </select></div>
+        </div>
+        <div class="two">
+          <div><label>Reviewed by (a NAME — authority is accountability)</label><input class="f" data-f="reviewed_by" value="${esc(r.reviewed_by)}"></div>
+          <div><label>Living tradition?</label><select class="f" data-f="is_living">
+            <option value="true" ${r.is_living!==false?'selected':''}>Yes — still practised</option>
+            <option value="false" ${r.is_living===false?'selected':''}>No / unknown</option>
+          </select></div>
+        </div>
+        <div class="acts">
+          <button class="b-save" onclick="save('${r.id}')">Save</button>
+          ${r.is_public
+            ? `<button class="b-un" onclick="publish('${r.id}',false)">Unpublish</button>`
+            : `<button class="b-pub" onclick="publish('${r.id}',true)">Publish →</button>`}
+          <span style="font-size:11.5px;color:var(--muted)">Publishing requires status <b>published</b>, a <b>reviewed_by</b> name, and not sacred_private.</span>
+          <span class="msg" id="m${r.id}"></span>
+        </div>
+      </div></div>`;
+  }).join('');
+}
+function fields(id){
+  const o={};
+  document.querySelectorAll(`#r${id} [data-f]`).forEach(el=>{
+    let v = el.value.trim();
+    if(el.dataset.f === 'is_living') v = (v === 'true');   // real boolean, not a string
+    o[el.dataset.f] = v;
+  });
+  return o;
+}
+async function save(id){
+  const m=document.getElementById('m'+id), o=fields(id);
+  if(o.source_status==='published' && !o.reviewed_by){ flash(m,'A published entry needs a reviewer name.',false); return; }
+  o.updated_at=new Date().toISOString();
+  if(o.source_status==='reviewed'||o.source_status==='published') o.reviewed_at=new Date().toISOString();
+  const {error}=await sb.from('cs_atlas_entries').update(o).eq('id',id);
+  if(error) return flash(m,error.message,false);
+  Object.assign(ROWS.find(r=>r.id===id),o); flash(m,'Saved'); stats();
+}
+async function publish(id,on){
+  const m=document.getElementById('m'+id), o=fields(id);
+  if(on){
+    if(!o.reviewed_by) return flash(m,'Name a reviewer before publishing.',false);
+    if(o.sensitivity_level==='sacred_private') return flash(m,'sacred_private can never be published.',false);
+    if(!o.cultural_context) return flash(m,'Write the cultural context first.',false);
+    o.source_status='published';
+  }
+  o.is_public=on; o.updated_at=new Date().toISOString(); o.reviewed_at=new Date().toISOString();
+  const {error}=await sb.from('cs_atlas_entries').update(o).eq('id',id);
+  if(error) return flash(m,error.message,false);
+  Object.assign(ROWS.find(r=>r.id===id),o); flash(m,on?'Published':'Unpublished'); render();
+}
+window.save=save; window.publish=publish;
+
+document.getElementById('q').oninput=e=>{F.q=e.target.value;render();};
+document.getElementById('fstatus').onchange=e=>{F.status=e.target.value;render();};
+document.getElementById('fsens').onchange=e=>{F.sens=e.target.value;render();};
+document.getElementById('ftrad').onclick=e=>{F.trad=!F.trad;e.target.classList.toggle('on',F.trad);render();};
+document.getElementById('fpri').onclick=e=>{F.pri=!F.pri;e.target.classList.toggle('on',F.pri);render();};
+
+// ── auth ──
+async function boot(){
+  const {data:{session}} = await sb.auth.getSession();
+  if(session){ document.getElementById('app').style.display='block'; document.getElementById('gate').style.display='none'; load(); }
+  else { document.getElementById('gate').style.display='block'; }
+}
+document.getElementById('signin').onclick=async()=>{
+  const em=document.getElementById('em').value.trim(), g=document.getElementById('gmsg');
+  if(!em) return flash(g,'Enter your email.',false);
+  const {error}=await sb.auth.signInWithOtp({email:em,options:{emailRedirectTo:window.location.href}});
+  flash(g, error?error.message:'Check your inbox.', !error);
+};
+sb.auth.onAuthStateChange(()=>boot());
+boot();
+</script></body></html>

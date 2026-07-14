@@ -1,0 +1,1688 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CultureSchool — Intelligence Platform</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@300;400;600;700&display=swap');
+:root{--green:#105305;--green-dk:#0a3803;--gold:#a9832f;--red:#9b2226;--amber:#b06a00;
+--cream:#faf8f4;--off:#f3efe6;--ink:#1a1a1a;--muted:#8a887f;--rule:#e6dfd0;
+--sans:'Jost',Arial,sans-serif;--serif:'Cormorant Garamond',Georgia,serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);font-size:14px;background:var(--cream);color:var(--ink);height:100vh;overflow:hidden}
+.app{display:grid;grid-template-columns:220px 1fr;height:100vh}
+
+/* NAV */
+.nav{background:var(--green-dk);color:#fff;display:flex;flex-direction:column;height:100vh;overflow-y:auto}
+.nav-brand{padding:20px 18px 14px;border-bottom:1px solid rgba(255,255,255,.1)}
+.nav-brand .wm{font-family:var(--serif);font-size:18px;font-weight:600;color:#fff;display:block}
+.nav-brand .sub{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-top:2px;display:block}
+.nav-items{flex:1;padding:10px 0}
+.nav-item{display:flex;align-items:center;gap:9px;padding:9px 18px;cursor:pointer;font-size:13px;color:rgba(255,255,255,.65);border-left:3px solid transparent}
+.nav-item:hover{background:rgba(255,255,255,.07);color:#fff}
+.nav-item.active{background:rgba(255,255,255,.1);color:#fff;border-left-color:var(--gold);font-weight:600}
+.nav-item .ic{width:17px;text-align:center;flex-shrink:0}
+.nav-footer{padding:13px 18px;border-top:1px solid rgba(255,255,255,.1);font-size:11px;color:rgba(255,255,255,.4)}
+.nav-footer span{display:block;margin-bottom:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nav-footer button{background:none;border:none;color:rgba(255,255,255,.5);cursor:pointer;padding:0;font-size:11px;font-family:var(--sans);text-decoration:underline}
+
+/* MAIN */
+.main{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+.topbar{background:#fff;border-bottom:1px solid var(--rule);padding:11px 22px;display:flex;align-items:center;gap:14px;flex-shrink:0}
+.topbar h2{font-family:var(--serif);font-size:20px;font-weight:600;flex:1}
+.content{flex:1;overflow-y:auto;background:var(--cream)}
+.module{display:none;padding:18px 22px 60px}
+.module.active{display:block}
+
+/* GATE */
+#gate{height:100vh;display:flex;align-items:center;justify-content:center;background:var(--cream)}
+.gate-box{max-width:380px;width:100%;background:#fff;border:1px solid var(--rule);border-radius:14px;padding:32px;text-align:center}
+.gate-box h1{font-family:var(--serif);font-size:26px;font-weight:600;line-height:1.2;margin-bottom:4px}
+.gate-box h1 em{font-style:normal;color:var(--gold)}
+.gate-box p{color:var(--muted);font-size:13px;margin:10px 0 16px}
+.gate-box input.f{width:100%;padding:10px 12px;border:1px solid var(--rule);border-radius:8px;font-family:var(--sans);font-size:14px;margin-bottom:10px;display:block}
+.gate-box button{width:100%;padding:10px;background:var(--green);color:#fff;border:none;border-radius:8px;font-family:var(--sans);font-weight:600;font-size:14px;cursor:pointer}
+.gate-box button:hover{background:var(--green-dk)}
+
+/* COMMON */
+.loading{padding:40px 20px;text-align:center;color:var(--muted)}
+.empty{padding:48px 20px;text-align:center;color:var(--muted);font-family:var(--serif);font-style:italic;font-size:17px}
+.empty p{font-size:13px;margin-top:8px;font-style:normal}
+.empty code{background:var(--off);padding:2px 6px;border-radius:4px;font-family:monospace;font-size:12px}
+.banner{background:#fef9ec;border:1px solid #e0d6a0;border-radius:10px;padding:13px 16px;margin-bottom:16px;font-size:13px;color:#6a5a00}
+.banner strong{color:var(--amber)}
+.msg{font-size:12px;font-weight:600}
+.msg.ok{color:var(--green)}.msg.err{color:var(--red)}
+label,label.lbl{display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--gold);margin:13px 0 4px}
+textarea.f,input.f,select.f{width:100%;padding:9px 11px;border:1px solid var(--rule);border-radius:7px;font-family:var(--sans);font-size:13.5px;line-height:1.5;background:#fff}
+textarea.f{min-height:60px;resize:vertical}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:13px}
+button{padding:8px 15px;border-radius:8px;border:0;font-family:var(--sans);font-weight:600;font-size:13px;cursor:pointer}
+.b-save{background:var(--green);color:#fff}.b-save:hover{background:var(--green-dk)}
+.b-gold{background:var(--gold);color:#fff}
+.b-ghost{background:#fff;color:var(--muted);border:1px solid var(--rule)}
+.b-red{background:#f7e0e0;color:var(--red)}
+.b-sm{padding:5px 10px;font-size:12px}
+.tag{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:3px 8px;border-radius:5px;white-space:nowrap;display:inline-block}
+.t-general{background:#e8f0e6;color:var(--green)}.t-context_required{background:#fbeedb;color:var(--amber)}
+.t-restricted{background:#f7e0e0;color:var(--red)}.t-sacred_private{background:#3a1010;color:#fff}
+.s-draft{background:#eee;color:#555}.s-researched{background:#e3ecf5;color:#2e4870}
+.s-reviewed{background:#fbeedb;color:var(--amber)}.s-published{background:#e8f0e6;color:var(--green)}
+.t-approved,.t-active,.t-partner{background:#e8f0e6;color:var(--green)}
+.t-lead,.t-planned,.t-new{background:#eee;color:#555}
+.t-confirmed,.t-sampled{background:#e3ecf5;color:#2e4870}
+.t-past{background:#f3efe6;color:var(--muted)}
+.t-low{background:#e8f0e6;color:var(--green)}.t-medium{background:#fbeedb;color:var(--amber)}.t-high{background:#f7e0e0;color:var(--red)}
+.t-unknown,.t-none{background:#eee;color:#666}
+.t-superstar{background:#fef3d0;color:#8a6000}.t-engaged,.t-contracted{background:#e3ecf5;color:#2e4870}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.toolbar input,.toolbar select{padding:7px 10px;border:1px solid var(--rule);border-radius:7px;font-family:var(--sans);font-size:13px;background:#fff}
+.toolbar input[type=search]{min-width:180px}
+.chip{padding:5px 11px;border-radius:99px;border:1px solid var(--rule);background:#fff;cursor:pointer;font-size:12px;font-weight:600}
+.chip.on{background:var(--green);color:#fff;border-color:var(--green)}
+
+/* DASHBOARD */
+.dash-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.d-stat{background:#fff;border:1px solid var(--rule);border-radius:10px;padding:14px 16px}
+.d-stat .dv{font-family:var(--serif);font-size:30px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1;color:var(--ink)}
+.d-stat .dl{font-size:11px;color:var(--muted);margin-top:4px}
+.dash-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.d-panel{background:#fff;border:1px solid var(--rule);border-radius:10px;overflow:hidden}
+.d-panel-hd{padding:9px 14px 7px;border-bottom:1px solid var(--rule);font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:5px}
+.d-panel-hd .dot{width:6px;height:6px;border-radius:50%;background:var(--gold);flex-shrink:0}
+.p-row{display:flex;align-items:center;gap:6px;padding:6px 14px;border-bottom:1px solid var(--off);font-size:12.5px}
+.p-row:last-child{border-bottom:none}
+.p-nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.p-val{font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;flex-shrink:0}
+.p-delta{font-size:10px;flex-shrink:0}
+.up{color:var(--green)}.dn{color:var(--red)}.flat{color:var(--muted)}
+.p-empty{padding:16px 14px;text-align:center;color:var(--muted);font-size:12px;font-style:italic}
+
+/* ATLAS / DATA ROWS */
+.row{background:#fff;border:1px solid var(--rule);border-radius:12px;margin-bottom:9px;overflow:hidden}
+.rhead{display:flex;align-items:center;gap:11px;padding:11px 16px;cursor:pointer}
+.rhead:hover{background:#fcfaf6}
+.nm{font-family:var(--serif);font-size:18px;font-weight:600;flex:1}
+.nm small{font-family:var(--sans);font-size:11px;color:var(--muted);font-weight:400;margin-left:7px}
+.rbody{display:none;padding:0 16px 16px;border-top:1px solid var(--rule)}
+.row.open .rbody{display:block}
+.acts{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;align-items:center}
+.dis{background:#fdf6e8;border:1px solid #e8dfca;border-radius:8px;padding:9px 12px;margin-top:6px;font-size:13px}
+.dis b{color:var(--red)}
+
+/* SUPPLIER CARDS */
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
+.sup-card{background:#fff;border:1px solid var(--rule);border-radius:12px;padding:16px;cursor:pointer;transition:border-color .1s}
+.sup-card:hover{border-color:var(--gold)}
+.sup-name{font-family:var(--serif);font-size:16px;font-weight:600;margin-bottom:4px}
+.sup-meta{font-size:11px;color:var(--muted);margin-bottom:10px}
+.stars{display:inline-flex;gap:2px;font-size:12px}
+.star-full{color:var(--gold)}.star-empty{color:#ddd}
+.score-row{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-top:8px}
+.sc-item{text-align:center;font-size:9.5px;color:var(--muted)}
+.sc-item .scv{display:block;font-size:14px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+
+/* THREE-PANEL (KG) */
+.three-panel{display:grid;grid-template-columns:240px 1fr 260px;gap:12px;height:calc(100vh - 112px)}
+.panel-col{background:#fff;border:1px solid var(--rule);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+.pcol-hd{padding:9px 14px;border-bottom:1px solid var(--rule);font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);flex-shrink:0;display:flex;align-items:center;gap:8px}
+.pcol-body{flex:1;overflow-y:auto}
+.ei{padding:9px 14px;cursor:pointer;display:flex;align-items:center;gap:7px;border-bottom:1px solid var(--rule);font-size:12.5px}
+.ei:hover{background:var(--off)}
+.ei.active{background:#f0f8f0;border-left:3px solid var(--green)}
+.ei .en{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
+
+/* TABS */
+.tabs{display:flex;border-bottom:1px solid var(--rule);padding:0 14px;flex-shrink:0;overflow-x:auto}
+.tab{padding:9px 14px 8px;border:none;background:none;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap}
+.tab.active{color:var(--green);border-bottom-color:var(--green)}
+.tab-body{padding:14px;overflow-y:auto;flex:1}
+
+/* OVERLAY */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.38);z-index:100;display:none;align-items:flex-start;justify-content:center;padding-top:48px}
+.overlay.open{display:flex}
+.ov-box{background:#fff;border-radius:14px;width:700px;max-width:96vw;max-height:84vh;overflow-y:auto;padding:24px}
+.ov-hd{display:flex;align-items:center;margin-bottom:16px}
+.ov-hd h3{font-family:var(--serif);font-size:22px;font-weight:600;flex:1}
+.ov-close{background:none;border:1px solid var(--rule);border-radius:8px;cursor:pointer;font-size:16px;padding:4px 9px;color:var(--muted);flex-shrink:0}
+
+/* TREND LOG */
+.trend-form{background:#fff;border:1px solid var(--rule);border-radius:12px;padding:18px;margin-bottom:18px}
+.trend-form h4{font-family:var(--serif);font-size:17px;font-weight:600;margin-bottom:4px}
+.t-item{background:#fff;border:1px solid var(--rule);border-radius:10px;padding:14px 16px;margin-bottom:9px}
+.t-item-hd{display:flex;align-items:center;gap:9px;margin-bottom:7px;flex-wrap:wrap}
+.t-week{font-size:11px;color:var(--muted);font-weight:600}
+.t-cat{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:2px 7px;border-radius:4px;background:var(--off);color:var(--muted)}
+.t-headline{font-family:var(--serif);font-size:17px;font-weight:600;margin-bottom:5px}
+.t-obs{font-size:13px;line-height:1.55}
+.t-evidence{font-size:11.5px;color:var(--muted);margin-top:5px;font-style:italic}
+.t-author{font-size:11px;color:var(--muted);margin-top:4px}
+
+/* ROI CARDS */
+.roi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+.roi-card{background:#fff;border:1px solid var(--rule);border-radius:10px;padding:14px;text-align:center}
+.roi-card .rv{font-family:var(--serif);font-size:24px;font-weight:600}
+.roi-card .rl{font-size:11px;color:var(--muted);margin-top:3px}
+
+/* SCORE EDITOR */
+.star-edit{display:flex;gap:3px;cursor:pointer}
+.star-edit .s{font-size:18px;color:#ddd}
+.star-edit .s.on{color:var(--gold)}
+
+@media(max-width:1240px){
+  .dash-grid,.dash-stats{grid-template-columns:repeat(2,1fr)}
+  .three-panel{grid-template-columns:220px 1fr}
+  .three-panel .rel-col{display:none}
+}
+</style></head><body>
+
+<!-- AUTH GATE -->
+<div id="gate" style="display:none">
+  <div class="gate-box">
+    <h1>CultureSchool<br><em>Intelligence</em></h1>
+    <p>Sign in with your admin email to continue.</p>
+    <input class="f" id="em" type="email" placeholder="you@example.com">
+    <button id="signin">Send magic link</button>
+    <div class="msg" id="gmsg" style="margin-top:10px"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none">
+<div class="app">
+<nav class="nav">
+  <div class="nav-brand">
+    <span class="wm">CultureSchool</span>
+    <span class="sub">Intelligence Platform</span>
+  </div>
+  <div class="nav-items" id="nav-items">
+    <div class="nav-item active" data-mod="dashboard" onclick="showMod('dashboard')"><span class="ic">◈</span>Dashboard</div>
+    <div class="nav-item" data-mod="atlas" onclick="showMod('atlas')"><span class="ic">⌕</span>Textile Atlas</div>
+    <div class="nav-item" data-mod="graph" onclick="showMod('graph')"><span class="ic">⬡</span>Knowledge Graph</div>
+    <div class="nav-item" data-mod="suppliers" onclick="showMod('suppliers')"><span class="ic">◇</span>Supplier CRM</div>
+    <div class="nav-item" data-mod="creators" onclick="showMod('creators')"><span class="ic">✦</span>Creator CRM</div>
+    <div class="nav-item" data-mod="museums" onclick="showMod('museums')"><span class="ic">▣</span>Museum Library</div>
+    <div class="nav-item" data-mod="events" onclick="showMod('events')"><span class="ic">◉</span>Event Planner</div>
+    <div class="nav-item" data-mod="trends" onclick="showMod('trends')"><span class="ic">◬</span>Trend Observatory</div>
+  </div>
+  <div class="nav-footer">
+    <span id="nav-user"></span>
+    <button onclick="signOut()">Sign out</button>
+  </div>
+</nav>
+<div class="main">
+  <div class="topbar">
+    <h2 id="mod-title">Cultural Intelligence</h2>
+    <span class="msg" id="top-msg"></span>
+  </div>
+  <div class="content">
+    <div id="mod-dashboard" class="module active"><div class="loading">Loading dashboard…</div></div>
+    <div id="mod-atlas" class="module"><div class="loading">Loading…</div></div>
+    <div id="mod-graph" class="module" style="padding:12px 18px 60px"><div class="loading">Loading…</div></div>
+    <div id="mod-suppliers" class="module"><div class="loading">Loading…</div></div>
+    <div id="mod-creators" class="module"><div class="loading">Loading…</div></div>
+    <div id="mod-museums" class="module"><div class="loading">Loading…</div></div>
+    <div id="mod-events" class="module"><div class="loading">Loading…</div></div>
+    <div id="mod-trends" class="module"><div class="loading">Loading…</div></div>
+  </div>
+</div>
+</div>
+</div>
+
+<!-- OVERLAY -->
+<div id="overlay" class="overlay" onclick="if(event.target===this)closeOverlay()">
+  <div class="ov-box" id="ov-box"></div>
+</div>
+
+<script>
+const URL_ = 'https://qwulthvbwujfehgdegtn.supabase.co';
+const KEY_ = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3dWx0aHZid3VqZmVoZ2RlZ3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQyMDcxODIsImV4cCI6MjA1OTc4MzE4Mn0.t9n4eZng6d0jggiPNK-J_DByvEE2L9tqy5Xh_1-TSoQ';
+const SB = window.supabase.createClient(URL_, KEY_);
+
+const MOD_TITLES = {
+  dashboard:'Cultural Intelligence', atlas:'Textile Atlas', graph:'Knowledge Graph',
+  suppliers:'Supplier CRM', creators:'Creator CRM', museums:'Museum Library',
+  events:'Event Planner', trends:'Trend Observatory'
+};
+const LOADED = new Set();
+
+/* ── UTILS ────────────────────────────────────────────────────── */
+const esc = s => (s??'').toString().replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function flash(el,t,ok=true){if(!el)return;el.textContent=t;el.className='msg '+(ok?'ok':'err');setTimeout(()=>el.textContent='',3000)}
+function stars(n,max=5){let h='<span class="stars">';for(let i=1;i<=max;i++)h+=`<span class="star-${i<=(n??0)?'full':'empty'}">★</span>`;return h+'</span>'}
+function tag(t,c=''){return t?`<span class="tag ${c}">${esc(t)}</span>`:''}
+function fmt(n){return n==null?'—':Number(n).toLocaleString()}
+function cur(n){return n==null?'—':'$'+Number(n).toLocaleString()}
+function pct(n){return n==null?'—':n+'%'}
+function fmtDate(s){if(!s)return'—';const d=new Date(s);return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}
+function openOverlay(html){document.getElementById('ov-box').innerHTML=html;document.getElementById('overlay').classList.add('open')}
+function closeOverlay(){document.getElementById('overlay').classList.remove('open')}
+
+/* ── NAV ───────────────────────────────────────────────────────── */
+function showMod(name){
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.toggle('active',el.dataset.mod===name));
+  document.querySelectorAll('.module').forEach(el=>el.classList.toggle('active',el.id==='mod-'+name));
+  document.getElementById('mod-title').textContent=MOD_TITLES[name]||name;
+  if(!LOADED.has(name)){LOADED.add(name);({dashboard:loadDashboard,atlas:loadAtlas,graph:loadGraph,suppliers:loadSuppliers,creators:loadCreators,museums:loadMuseums,events:loadEvents,trends:loadTrends})[name]?.()}
+}
+
+/* ── AUTH ──────────────────────────────────────────────────────── */
+async function boot(){
+  const {data:{session}}=await SB.auth.getSession();
+  if(session){
+    document.getElementById('gate').style.display='none';
+    document.getElementById('app').style.display='block';
+    document.getElementById('nav-user').textContent=session.user.email;
+    loadDashboard(); LOADED.add('dashboard');
+  } else {
+    document.getElementById('gate').style.display='block';
+    document.getElementById('app').style.display='none';
+  }
+}
+document.getElementById('signin').onclick=async()=>{
+  const em=document.getElementById('em').value.trim(),g=document.getElementById('gmsg');
+  if(!em)return flash(g,'Enter your email.',false);
+  const {error}=await SB.auth.signInWithOtp({email:em,options:{emailRedirectTo:window.location.href}});
+  flash(g,error?error.message:'Check your inbox — link expires in 1 hour.',!error);
+};
+async function signOut(){await SB.auth.signOut();location.reload()}
+SB.auth.onAuthStateChange(()=>boot());
+
+/* ═══════════════════════════════════════════════════════════════
+   MODULE 1: DASHBOARD
+═══════════════════════════════════════════════════════════════ */
+async function loadDashboard(){
+  const el=document.getElementById('mod-dashboard');
+  el.innerHTML='<div class="loading">Loading intelligence…</div>';
+  const [S,G,T,D,Sv,C,Geo,Ev]=await Promise.all([
+    SB.from('cs_dash_emerging_searches').select('*').limit(6),
+    SB.from('cs_dash_growing_palettes').select('*').limit(6),
+    SB.from('cs_dash_trending_prints').select('*').limit(6),
+    SB.from('cs_dash_top_downloads').select('*').limit(6),
+    SB.from('cs_dash_top_saves').select('*').limit(6),
+    SB.from('cs_dash_new_creators').select('*').limit(5),
+    SB.from('cs_dash_geography').select('*').limit(6),
+    SB.from('cs_dash_event_results').select('*').limit(3),
+  ]);
+  const noSchema=S.error&&S.error.message.includes('does not exist');
+  const totalEvents=(S.data||[]).reduce((a,r)=>(a+Number(r.total||0)),0)+
+                    (G.data||[]).reduce((a,r)=>(a+Number(r.total||0)),0);
+  const totalSearches=(S.data||[]).reduce((a,r)=>(a+Number(r.total||0)),0);
+  const totalCreators=(C.data||[]).length;
+  const totalEvents2=(Ev.data||[]).length;
+
+  el.innerHTML=`
+${noSchema?`<div class="banner"><strong>Setup required:</strong> Run <code>atlas/010_intelligence_schema.sql</code> in Supabase to enable the intelligence layer. Once done, refresh this page.</div>`:''}
+${!noSchema&&totalEvents===0?`<div class="banner"><strong>Instrumentation pending:</strong> Dashboard panels will populate as traffic arrives. Post a search event from the site to see the first signal.</div>`:''}
+<div class="dash-stats">
+  <div class="d-stat"><div class="dv">${fmt(totalSearches||0)}</div><div class="dl">Searches tracked</div></div>
+  <div class="d-stat"><div class="dv">${fmt(D.data?.length||0)}</div><div class="dl">Active downloads (30d)</div></div>
+  <div class="d-stat"><div class="dv">${fmt(totalCreators)}</div><div class="dl">Creator profiles</div></div>
+  <div class="d-stat"><div class="dv">${fmt(totalEvents2)}</div><div class="dl">Field events</div></div>
+</div>
+<div class="dash-grid">
+  ${dashPanel('◈ Emerging Searches','Week-over-week','this_week','last_week','query',S.data,S.error)}
+  ${dashPanel('◎ Growing Palettes','Views this week','this_week','last_week','palette_slug',G.data,G.error)}
+  ${dashPanel('▲ Trending Prints','Views 7 days','this_week',null,'pattern_slug',T.data,T.error)}
+  ${dashPanel('↓ Top Downloads','30-day downloads','downloads',null,'entity_slug',D.data,D.error)}
+  ${dashPanel('♡ Most Saved','30-day saves','saves',null,'entity_slug',Sv.data,Sv.error)}
+  ${dashGeoPanel(Geo.data,Geo.error)}
+  ${dashCreatorPanel(C.data,C.error)}
+  ${dashEventPanel(Ev.data,Ev.error)}
+</div>`;
+}
+
+function dashPanel(title,sub,valKey,prevKey,nameKey,data,err){
+  const rows=(data||[]).slice(0,6);
+  return `<div class="d-panel">
+    <div class="d-panel-hd"><span class="dot"></span>${esc(title)}</div>
+    <div style="font-size:10px;color:var(--muted);padding:4px 14px 2px">${esc(sub)}</div>
+    ${err?`<div class="p-empty">Run 010_intelligence_schema.sql</div>`
+    :rows.length===0?`<div class="p-empty">No data yet.</div>`
+    :rows.map(r=>{
+      const v=r[valKey]??0, p=prevKey?r[prevKey]:null;
+      const delta=p!=null?(v>p?`<span class="p-delta up">↑${v-p}</span>`:v<p?`<span class="p-delta dn">↓${p-v}</span>`:`<span class="p-delta flat">—</span>`):'';
+      return `<div class="p-row"><span class="p-nm">${esc(r[nameKey]||'—')}</span>${delta}<span class="p-val">${fmt(v)}</span></div>`;
+    }).join('')}
+  </div>`;
+}
+
+function dashGeoPanel(data,err){
+  const rows=(data||[]).slice(0,6);
+  return `<div class="d-panel">
+    <div class="d-panel-hd"><span class="dot"></span>◐ Geographic Interest</div>
+    <div style="font-size:10px;color:var(--muted);padding:4px 14px 2px">30-day sessions</div>
+    ${err?`<div class="p-empty">Run 010_intelligence_schema.sql</div>`
+    :rows.length===0?`<div class="p-empty">No geographic data yet.</div>`
+    :rows.map(r=>`<div class="p-row"><span class="p-nm">${esc(r.country_code)}</span><span class="p-val">${fmt(r.sessions)}</span></div>`).join('')}
+  </div>`;
+}
+function dashCreatorPanel(data,err){
+  const rows=(data||[]).slice(0,5);
+  return `<div class="d-panel">
+    <div class="d-panel-hd"><span class="dot"></span>✦ New Creators</div>
+    <div style="font-size:10px;color:var(--muted);padding:4px 14px 2px">Most recent profiles</div>
+    ${err?`<div class="p-empty">Run 010_intelligence_schema.sql</div>`
+    :rows.length===0?`<div class="p-empty">No creator profiles yet.</div>`
+    :rows.map(r=>`<div class="p-row"><span class="p-nm">${esc(r.display_name||'Unnamed')}</span><span class="tag s-${r.creator_lifecycle}">${esc(r.creator_lifecycle)}</span></div>`).join('')}
+  </div>`;
+}
+function dashEventPanel(data,err){
+  const rows=(data||[]).slice(0,3);
+  return `<div class="d-panel">
+    <div class="d-panel-hd"><span class="dot"></span>◉ Event ROI</div>
+    <div style="font-size:10px;color:var(--muted);padding:4px 14px 2px">Capture rate · Rev/capture</div>
+    ${err?`<div class="p-empty">Run 010_intelligence_schema.sql</div>`
+    :rows.length===0?`<div class="p-empty">No past events yet.</div>`
+    :rows.map(r=>`<div class="p-row"><span class="p-nm">${esc(r.event_name)}</span><span class="p-val">${pct(r.capture_rate_pct)}</span></div>`).join('')}
+  </div>`;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MODULE 2: TEXTILE ATLAS — search-first knowledge traversal
+   Type a fiber, technique, or tradition name to see everything
+   the platform knows: countries, mills, suppliers, cost, uses.
+═══════════════════════════════════════════════════════════════ */
+let A_ROWS=[], A_DIS={}, A_F={q:'',status:'',sens:'',trad:false,pri:false};
+let TX_RESULTS=[], TX_CUR=null;
+
+async function loadAtlas(){
+  const el=document.getElementById('mod-atlas');
+  el.innerHTML=`
+    <div style="max-width:600px;margin:0 auto 28px">
+      <div style="font-family:var(--serif);font-size:13px;color:var(--muted);text-align:center;margin-bottom:14px;letter-spacing:.03em">TYPE A FIBER, TECHNIQUE, OR TRADITION</div>
+      <div style="position:relative">
+        <input id="tx-search" type="search" autocomplete="off" placeholder="Linen, Batik, Indigo, Kente, Shibori…"
+          style="width:100%;padding:14px 18px;font-size:16px;font-family:var(--serif);border:2px solid var(--rule);border-radius:12px;background:#fff;outline:none"
+          oninput="txSearch(this.value)" onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--rule)'">
+      </div>
+      <div style="font-size:12px;color:var(--muted);text-align:center;margin-top:10px">
+        Searches fibers · techniques · traditions · motifs · certifications
+      </div>
+    </div>
+    <div id="tx-results"></div>
+    <div id="tx-detail"></div>`;
+}
+
+let TX_DEBOUNCE=null;
+window.txSearch=function(q){
+  clearTimeout(TX_DEBOUNCE);
+  const res=document.getElementById('tx-results');
+  const det=document.getElementById('tx-detail');
+  if(!q.trim()){if(res)res.innerHTML='';if(det)det.innerHTML='';return}
+  if(res)res.innerHTML='<div style="text-align:center;padding:12px;color:var(--muted);font-size:13px">Searching…</div>';
+  TX_DEBOUNCE=setTimeout(async()=>{
+    const {data,error}=await SB.from('cs_kg_entries')
+      .select('id,name,entry_type,short_definition,source_status,sensitivity_level,is_public')
+      .ilike('name','%'+q+'%')
+      .order('source_status').limit(30);
+    if(error){if(res)res.innerHTML=`<div class="empty">${esc(error.message)}</div>`;return}
+    TX_RESULTS=data||[];
+    if(!TX_RESULTS.length){if(res)res.innerHTML='<div class="empty">No entries match. Add it in the Knowledge Graph editor.</div>';return}
+    if(res)res.innerHTML=`
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px">
+        ${TX_RESULTS.map(e=>`
+          <button onclick="txOpenEntry('${e.id}')" style="padding:8px 14px;border-radius:99px;border:1px solid var(--rule);background:${TX_CUR===e.id?'var(--green-dk)':'#fff'};color:${TX_CUR===e.id?'#fff':'var(--ink)'};cursor:pointer;font-family:var(--sans);font-size:13px" id="txbtn-${e.id}">
+            ${esc(e.name)} <span style="font-size:10px;opacity:.6">${e.entry_type?.replace(/_/g,' ')}</span>
+          </button>`).join('')}
+      </div>`;
+    if(TX_RESULTS.length===1)txOpenEntry(TX_RESULTS[0].id);
+  },280);
+};
+
+window.txOpenEntry=async function(id){
+  TX_CUR=id;
+  document.querySelectorAll('[id^="txbtn-"]').forEach(b=>{
+    b.style.background=b.id==='txbtn-'+id?'var(--green-dk)':'#fff';
+    b.style.color=b.id==='txbtn-'+id?'#fff':'var(--ink)';
+  });
+  const det=document.getElementById('tx-detail');
+  if(det)det.innerHTML='<div class="loading">Traversing knowledge graph…</div>';
+  const [entryRes,placesRes,relsRes,sourcesRes,capsRes]=await Promise.all([
+    SB.from('cs_kg_entries').select('*').eq('id',id).single(),
+    SB.from('cs_kg_entry_places').select('*,place:place_id(name,place_type,iso_code)').eq('entry_id',id),
+    SB.from('cs_kg_relationships').select('*,to_entry:to_entry_id(name,entry_type,short_definition),from_entry:from_entry_id(name,entry_type)').or(`from_entry_id.eq.${id},to_entry_id.eq.${id}`),
+    SB.from('cs_kg_entry_sources').select('*,source:source_id(title,author_or_org,source_type,url,reliability_tier)').eq('entry_id',id),
+    SB.from('cs_kg_supplier_capabilities').select('*,supplier:supplier_id(id,display_name,legal_name,supplier_type,status,score_quality,score_communication,score_reliability,score_traceability,score_ethics,exports_to_usa)').ilike('capability_name','%'+((document.getElementById('tx-search')||{}).value||id)+'%').limit(20),
+  ]);
+  const e=entryRes.data;
+  if(!e){if(det)det.innerHTML='<div class="empty">Entry not found.</div>';return}
+
+  const rels=relsRes.data||[];
+  const countries=(placesRes.data||[]).filter(p=>p.place?.place_type==='country');
+  const regions=(placesRes.data||[]).filter(p=>p.place?.place_type!=='country');
+  const traditions=rels.filter(r=>r.to_entry?.entry_type==='textile_tradition'||r.from_entry?.entry_type==='textile_tradition');
+  const techniques=rels.filter(r=>['print_method','dye_method','weave'].some(t=>r.to_entry?.entry_type===t||r.from_entry?.entry_type===t));
+  const motifs=rels.filter(r=>['motif','symbol'].some(t=>r.to_entry?.entry_type===t||r.from_entry?.entry_type===t));
+  const certs=rels.filter(r=>r.to_entry?.entry_type==='certification'||r.from_entry?.entry_type==='certification');
+  const uses=rels.filter(r=>r.to_entry?.entry_type==='product_use'||r.from_entry?.entry_type==='product_use');
+  const relOrgs=rels.filter(r=>r.to_entry?.entry_type==='organization'||r.from_entry?.entry_type==='organization');
+
+  const atlasRes=await SB.from('cs_atlas_entries').select('id,name,slug,cultural_context,sensitivity_level,source_status,is_public').eq('dictionary_style',e.slug).maybeSingle();
+  const supList=(capsRes.data||[]).map(c=>c.supplier).filter(Boolean).filter((s,i,a)=>a.findIndex(x=>x.id===s.id)===i);
+
+  const sxSection=(label,items,renderFn)=>items.length?`
+    <div style="margin-bottom:18px">
+      <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">${label} <span style="font-size:11px;color:var(--gold)">(${items.length})</span></div>
+      ${items.map(renderFn).join('')}
+    </div>`:'';
+
+  if(!det)return;
+  det.innerHTML=`
+    <div style="background:#fff;border:1px solid var(--rule);border-radius:14px;padding:20px 22px 24px">
+      <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+        <div style="flex:1">
+          <div style="font-family:var(--serif);font-size:26px;font-weight:600;line-height:1.1">${esc(e.name)}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">${esc(e.entry_type?.replace(/_/g,' '))}</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+          ${tag(e.sensitivity_level,'t-'+e.sensitivity_level)}
+          ${tag(e.source_status,'s-'+e.source_status)}
+          ${e.is_public?'<span class="tag s-published">public</span>':''}
+        </div>
+      </div>
+      ${e.short_definition?`<p style="font-size:14px;line-height:1.6;color:var(--ink);margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--rule)">${esc(e.short_definition)}</p>`:''}
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+        <div>
+          ${sxSection('Countries & Regions',[...countries,...regions],p=>`
+            <div style="display:flex;align-items:center;gap:7px;padding:5px 0;font-size:13px;border-bottom:1px solid var(--off)">
+              <span style="flex:1;font-weight:${p.place?.place_type==='country'?'600':'400'}">${esc(p.place?.name||'Unknown')}</span>
+              <span style="font-size:10px;color:var(--muted)">${esc(p.relationship_type)}</span>
+              ${p.is_primary?'<span class="tag t-general" style="font-size:9px">origin</span>':''}
+            </div>`)}
+          ${sxSection('Related Traditions',traditions,r=>`
+            <div style="padding:5px 0;font-size:13px;border-bottom:1px solid var(--off)">
+              <span style="font-weight:600">${esc((r.to_entry?.entry_type==='textile_tradition'?r.to_entry:r.from_entry)?.name||'')}</span>
+              <span style="font-size:10px;color:var(--muted);margin-left:6px">${esc(r.relationship_type)}</span>
+            </div>`)}
+          ${sxSection('Techniques',techniques,r=>`
+            <div style="display:flex;align-items:center;gap:7px;padding:4px 0;font-size:13px;border-bottom:1px solid var(--off)">
+              <span style="flex:1">${esc((r.to_entry_id?r.to_entry:r.from_entry)?.name||'')}</span>
+              ${tag((r.to_entry_id?r.to_entry:r.from_entry)?.entry_type?.replace(/_/g,' '))}
+            </div>`)}
+          ${sxSection('Certifications',certs,r=>`
+            <div style="padding:4px 0;font-size:13px;border-bottom:1px solid var(--off)">${esc((r.to_entry_id?r.to_entry:r.from_entry)?.name||'')}</div>`)}
+          ${sxSection('Uses',uses,r=>`
+            <div style="padding:4px 0;font-size:13px;border-bottom:1px solid var(--off)">${esc((r.to_entry_id?r.to_entry:r.from_entry)?.name||'')}</div>`)}
+        </div>
+        <div>
+          ${atlasRes.data?`<div style="margin-bottom:18px;background:var(--off);border-radius:10px;padding:12px 14px">
+            <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Atlas Entry</div>
+            <div style="font-size:14px;font-weight:600;font-family:var(--serif)">${esc(atlasRes.data.name)}</div>
+            <div style="display:flex;gap:6px;margin-top:5px">${tag(atlasRes.data.sensitivity_level,'t-'+atlasRes.data.sensitivity_level)}${tag(atlasRes.data.source_status,'s-'+atlasRes.data.source_status)}</div>
+            ${atlasRes.data.cultural_context?`<div style="font-size:12px;color:var(--muted);margin-top:6px;line-height:1.5">${esc(atlasRes.data.cultural_context.slice(0,200))}${atlasRes.data.cultural_context.length>200?'…':''}</div>`:''}
+          </div>`:''}
+
+          ${supList.length?`<div style="margin-bottom:18px">
+            <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Suppliers (${supList.length})</div>
+            ${supList.map(s=>{
+              const avg=s.score_quality?((s.score_quality+(s.score_communication||0)+(s.score_reliability||0)+(s.score_traceability||0)+(s.score_ethics||0))/5).toFixed(1):null;
+              return`<div onclick="showMod('suppliers');openSup('${s.id}')" style="padding:8px 12px;border:1px solid var(--rule);border-radius:8px;margin-bottom:6px;cursor:pointer;background:#fff" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--rule)'">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="flex:1;font-family:var(--serif);font-size:14px;font-weight:600">${esc(s.display_name||s.legal_name)}</span>
+                  ${tag(s.status,'t-'+s.status)}
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+                  ${avg?stars(Math.round(avg)):'<span style="font-size:11px;color:var(--muted)">Not scored</span>'}
+                  ${avg?`<span style="font-size:11px;color:var(--muted)">${avg}/5</span>`:''}
+                  ${s.exports_to_usa?'<span style="font-size:10px;color:var(--green)">→ USA</span>':''}
+                </div>
+              </div>`;
+            }).join('')}
+          </div>`:'<div style="background:var(--off);border-radius:10px;padding:12px;margin-bottom:18px;font-size:13px;color:var(--muted)">No suppliers linked yet. Add via Supplier CRM → capabilities.</div>'}
+
+          ${sxSection('Books & Sources',sourcesRes.data||[],s=>`
+            <div style="padding:6px 0;border-bottom:1px solid var(--off)">
+              <div style="font-size:13px;font-weight:600">${esc(s.source?.title||'Unknown')}</div>
+              ${s.source?.author_or_org?`<div style="font-size:11px;color:var(--muted)">${esc(s.source.author_or_org)}</div>`:''}
+              ${s.source?.url?`<a href="${esc(s.source.url)}" target="_blank" style="font-size:11px;color:var(--green)">Open ↗</a>`:''}
+            </div>`)}
+          ${sxSection('Motifs & Symbols',motifs,r=>`
+            <div style="padding:4px 0;font-size:13px;border-bottom:1px solid var(--off)">${esc((r.to_entry_id?r.to_entry:r.from_entry)?.name||'')}</div>`)}
+        </div>
+      </div>
+      ${e.cultural_context?`<div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--rule)">
+        <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Cultural Context</div>
+        <div style="font-size:13.5px;line-height:1.65">${esc(e.cultural_context)}</div>
+      </div>`:''}
+    </div>`;
+};
+
+function atlasMatch(r){
+  if(A_F.status&&r.source_status!==A_F.status)return false;
+  if(A_F.sens&&r.sensitivity_level!==A_F.sens)return false;
+  if(A_F.trad&&r.entry_type&&r.entry_type!=='textile_tradition')return false;
+  if(A_F.pri&&!(['restricted','sacred_private'].includes(r.sensitivity_level)||(A_DIS[r.id]||[]).length))return false;
+  if(A_F.q){const b=[r.name,r.short_definition,r.cultural_context,r.cultural_protocol,r.dictionary_style].join(' ').toLowerCase();if(!b.includes(A_F.q.toLowerCase()))return false}
+  return true;
+}
+function renderAtlas(){
+  const n=A_ROWS.length,pub=A_ROWS.filter(r=>r.is_public&&r.source_status==='published').length;
+  const rev=A_ROWS.filter(r=>r.source_status==='reviewed').length;
+  const rst=A_ROWS.filter(r=>['restricted','sacred_private'].includes(r.sensitivity_level)).length;
+  const st=document.getElementById('atlas-stats');
+  if(st)st.innerHTML=`<span><b>${n}</b> entries</span><span><b>${pub}</b> published</span><span><b>${rev}</b> reviewed</span><span style="color:var(--red)"><b>${rst}</b> restricted</span>`;
+  const rows=A_ROWS.filter(atlasMatch),el=document.getElementById('atlas-list');
+  if(!el)return;
+  if(!rows.length){el.innerHTML='<div class="empty">No entries match.</div>';return}
+  el.innerHTML=rows.map(r=>{
+    const ds=A_DIS[r.id]||[];
+    return `<div class="row" id="r${r.id}">
+      <div class="rhead" onclick="document.getElementById('r${r.id}').classList.toggle('open')">
+        <span class="nm">${esc(r.name)}<small>${esc(r.dictionary_style||'')}</small></span>
+        ${ds.length?`<span class="tag t-restricted">⚠ ${ds.length} distinction${ds.length>1?'s':''}</span>`:''}
+        ${r.entry_type&&r.entry_type!=='textile_tradition'?tag(r.entry_type.replace('_',' '),'s-draft'):''}
+        <span class="tag t-${r.sensitivity_level}">${r.sensitivity_level.replace('_',' ')}</span>
+        <span class="tag s-${r.source_status}">${r.source_status}</span>
+        ${r.is_public?'<span class="tag s-published">public</span>':''}
+      </div>
+      <div class="rbody">
+        ${ds.map(d=>`<div class="dis">⚠ Often confused with <b>${esc(d.confused_with)}</b> — ${esc(d.correction)}${d.why_confused?'<br><span style="color:var(--muted)">'+esc(d.why_confused)+'</span>':''}</div>`).join('')}
+        <label>Short definition</label><textarea class="f" data-f="short_definition">${esc(r.short_definition)}</textarea>
+        <label>Cultural context (what a reviewer must verify)</label><textarea class="f" data-f="cultural_context">${esc(r.cultural_context)}</textarea>
+        <label>Cultural protocol — how it may / may not be used</label><textarea class="f" data-f="cultural_protocol">${esc(r.cultural_protocol)}</textarea>
+        <div class="two">
+          <div><label>Sensitivity</label><select class="f" data-f="sensitivity_level">
+            ${['general','context_required','restricted','sacred_private'].map(v=>`<option ${r.sensitivity_level===v?'selected':''}>${v}</option>`).join('')}
+          </select></div>
+          <div><label>Status</label><select class="f" data-f="source_status">
+            ${['draft','researched','reviewed','published','archived'].map(v=>`<option ${r.source_status===v?'selected':''}>${v}</option>`).join('')}
+          </select></div>
+        </div>
+        <div class="two">
+          <div><label>Reviewed by (a NAME — authority is accountability)</label><input class="f" data-f="reviewed_by" value="${esc(r.reviewed_by||'')}"></div>
+          <div><label>Living tradition?</label><select class="f" data-f="is_living">
+            <option value="true" ${r.is_living!==false?'selected':''}>Yes — still practised</option>
+            <option value="false" ${r.is_living===false?'selected':''}>No / unknown</option>
+          </select></div>
+        </div>
+        <div class="acts">
+          <button class="b-save" onclick="atlasSave('${r.id}')">Save</button>
+          ${r.is_public?`<button class="b-ghost" onclick="atlasPublish('${r.id}',false)">Unpublish</button>`:`<button class="b-gold" onclick="atlasPublish('${r.id}',true)">Publish →</button>`}
+          <span style="font-size:11px;color:var(--muted)">Publishing requires status <b>published</b>, a <b>reviewed_by</b> name, and not sacred_private.</span>
+          <span class="msg" id="m${r.id}"></span>
+        </div>
+      </div></div>`;
+  }).join('');
+}
+function atlasFields(id){
+  const o={};
+  document.querySelectorAll(`#r${id} [data-f]`).forEach(el=>{
+    let v=el.value.trim();
+    if(el.dataset.f==='is_living')v=(v==='true');
+    o[el.dataset.f]=v;
+  });
+  return o;
+}
+async function atlasSave(id){
+  const m=document.getElementById('m'+id),o=atlasFields(id);
+  if(o.source_status==='published'&&!o.reviewed_by){flash(m,'A published entry needs a reviewer name.',false);return}
+  o.updated_at=new Date().toISOString();
+  if(['reviewed','published'].includes(o.source_status))o.reviewed_at=new Date().toISOString();
+  const {error}=await SB.from('cs_atlas_entries').update(o).eq('id',id);
+  if(error)return flash(m,error.message,false);
+  Object.assign(A_ROWS.find(r=>r.id===id),o);flash(m,'Saved');renderAtlas();
+}
+async function atlasPublish(id,on){
+  const m=document.getElementById('m'+id),o=atlasFields(id);
+  if(on){
+    if(!o.reviewed_by)return flash(m,'Name a reviewer before publishing.',false);
+    if(o.sensitivity_level==='sacred_private')return flash(m,'sacred_private can never be published.',false);
+    if(!o.cultural_context)return flash(m,'Write the cultural context first.',false);
+    o.source_status='published';
+  }
+  o.is_public=on;o.updated_at=new Date().toISOString();o.reviewed_at=new Date().toISOString();
+  const {error}=await SB.from('cs_atlas_entries').update(o).eq('id',id);
+  if(error)return flash(m,error.message,false);
+  Object.assign(A_ROWS.find(r=>r.id===id),o);flash(m,on?'Published':'Unpublished');renderAtlas();
+}
+window.atlasSave=atlasSave;window.atlasPublish=atlasPublish;window.atlasFields=atlasFields;
+window.atlasMatch=atlasMatch;window.renderAtlas=renderAtlas;
+
+/* ═══════════════════════════════════════════════════════════════
+   MODULE 3: KNOWLEDGE GRAPH
+   LEFT: Places (countries) | Concepts (entry types)
+   CENTER: place-centric 12-tab view OR concept detail editor
+   RIGHT: add-knowledge panel (context-sensitive)
+═══════════════════════════════════════════════════════════════ */
+let G_PLACES=[], G_ENTRIES=[], G_CUR=null, G_CUR_TYPE=null, G_MODE='places';
+
+async function loadGraph(){
+  const el=document.getElementById('mod-graph');
+  el.innerHTML=`
+  <div class="three-panel">
+    <div class="panel-col">
+      <div class="pcol-hd" style="flex-direction:column;gap:0;padding:0">
+        <div style="display:flex;border-bottom:1px solid var(--rule)">
+          <button class="tab active" id="gtab-pl" style="flex:1;border-radius:0;margin:0" onclick="gSetMode('places')">Places</button>
+          <button class="tab" id="gtab-en" style="flex:1;border-radius:0;margin:0" onclick="gSetMode('concepts')">Concepts</button>
+        </div>
+        <input id="g-search" type="search" placeholder="Filter list…" autocomplete="off"
+          style="border:0;border-bottom:1px solid var(--rule);padding:8px 14px;font-family:var(--sans);font-size:12.5px;outline:none;width:100%"
+          oninput="gFilter(this.value)">
+      </div>
+      <div class="pcol-body" id="g-list"><div class="loading">Loading…</div></div>
+    </div>
+    <div class="panel-col" id="g-detail-col">
+      <div class="empty" style="padding:40px 20px;font-size:15px">← Select a country or concept<br><span style="font-size:13px">to see its linked knowledge</span></div>
+    </div>
+    <div class="panel-col rel-col" id="g-rel-col">
+      <div class="pcol-hd">Add Knowledge</div>
+      <div class="pcol-body" id="g-rels"><div class="empty" style="padding:24px 10px;font-size:13px">Select an item first</div></div>
+    </div>
+  </div>`;
+  await gSetMode('places');
+}
+
+async function gSetMode(mode){
+  G_MODE=mode;
+  const p=document.getElementById('gtab-pl'),e=document.getElementById('gtab-en');
+  if(p)p.classList.toggle('active',mode==='places');
+  if(e)e.classList.toggle('active',mode==='concepts');
+  const q=(document.getElementById('g-search')||{}).value||'';
+  if(mode==='places'){
+    if(!G_PLACES.length){
+      const {data}=await SB.from('cs_kg_places').select('id,name,place_type,iso_code,summary').order('place_type').order('name').limit(200);
+      G_PLACES=data||[];
+    }
+    gRenderPlaces(q?G_PLACES.filter(p=>p.name.toLowerCase().includes(q.toLowerCase())):G_PLACES);
+  } else {
+    if(!G_ENTRIES.length){
+      const {data}=await SB.from('cs_kg_entries').select('id,name,entry_type,source_status').order('entry_type').order('name').limit(300);
+      G_ENTRIES=data||[];
+    }
+    gRenderEntryList(q?G_ENTRIES.filter(e=>e.name.toLowerCase().includes(q.toLowerCase())):G_ENTRIES);
+  }
+}
+window.gSetMode=gSetMode;
+
+function gFilter(q){
+  if(G_MODE==='places') gRenderPlaces(q?G_PLACES.filter(p=>p.name.toLowerCase().includes(q.toLowerCase())):G_PLACES);
+  else gRenderEntryList(q?G_ENTRIES.filter(e=>e.name.toLowerCase().includes(q.toLowerCase())):G_ENTRIES);
+}
+window.gFilter=gFilter;
+
+function gRenderPlaces(places){
+  const el=document.getElementById('g-list');if(!el)return;
+  if(!places.length){el.innerHTML='<div class="empty" style="padding:24px 10px">No places. Run seed scripts first.</div>';return}
+  const byType={};places.forEach(p=>{(byType[p.place_type]||=[]).push(p)});
+  const order=['country','world_region','cultural_region','trade_region','state_province','city'];
+  const labels={country:'Countries',world_region:'World Regions',cultural_region:'Cultural Regions',trade_region:'Trade Regions',state_province:'States',city:'Cities'};
+  el.innerHTML=order.filter(t=>byType[t]).map(t=>`
+    <div style="padding:5px 14px;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--off);border-bottom:1px solid var(--rule)">${labels[t]||t}</div>
+    ${byType[t].map(p=>`
+      <div class="ei ${G_CUR===p.id&&G_CUR_TYPE==='place'?'active':''}" id="ge-${p.id}" onclick="loadGPlace('${p.id}')">
+        <span class="en">${esc(p.name)}</span>
+        ${p.iso_code?`<span style="font-size:10px;color:var(--muted);flex-shrink:0">${esc(p.iso_code)}</span>`:''}
+      </div>`).join('')}`).join('');
+}
+
+function gRenderEntryList(entries){
+  const el=document.getElementById('g-list');if(!el)return;
+  if(!entries.length){el.innerHTML='<div class="empty" style="padding:24px 10px">No entries.</div>';return}
+  const byType={};entries.forEach(e=>{(byType[e.entry_type]||=[]).push(e)});
+  const typeLabels={textile_tradition:'Traditions',fiber:'Fibers',weave:'Weaves',print_method:'Print Methods',dye_method:'Dye Methods',motif:'Motifs',symbol:'Symbols',natural_dye_source:'Natural Dye Sources',garment_type:'Garment Types',product_use:'Uses',certification:'Certifications',museum:'Museums',book:'Books',organization:'Organizations'};
+  el.innerHTML=Object.entries(byType).map(([type,list])=>`
+    <div style="padding:5px 14px;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--off);border-bottom:1px solid var(--rule)">${typeLabels[type]||type.replace(/_/g,' ')} (${list.length})</div>
+    ${list.map(e=>`
+      <div class="ei ${G_CUR===e.id&&G_CUR_TYPE==='entry'?'active':''}" id="ge-${e.id}" onclick="loadGEntry('${e.id}')">
+        <span class="en">${esc(e.name)}</span>
+        <span class="tag s-${e.source_status}" style="font-size:9px;padding:2px 5px">${e.source_status}</span>
+      </div>`).join('')}`).join('');
+}
+
+/* ── PLACE-CENTRIC VIEW ─────────────────────────────────────── */
+async function loadGPlace(placeId){
+  G_CUR=placeId; G_CUR_TYPE='place';
+  document.querySelectorAll('.ei').forEach(el=>el.classList.toggle('active',el.id==='ge-'+placeId));
+  const dc=document.getElementById('g-detail-col');
+  if(dc)dc.innerHTML='<div class="loading">Traversing knowledge graph…</div>';
+  const [placeRes,linkedRes,supRes]=await Promise.all([
+    SB.from('cs_kg_places').select('*').eq('id',placeId).single(),
+    SB.from('cs_kg_entry_places').select('*,entry:entry_id(id,name,entry_type,short_definition,source_status,sensitivity_level,is_public,cultural_context)').eq('place_id',placeId),
+    SB.from('cs_kg_suppliers').select('id,display_name,legal_name,supplier_type,status,score_quality,score_communication,score_reliability,score_traceability,score_ethics').eq('headquarters_place_id',placeId),
+  ]);
+  const place=placeRes.data||{};
+  const linked=linkedRes.data||[];
+  const suppliers=supRes.data||[];
+  const gr={};
+  linked.forEach(le=>{const t=le.entry?.entry_type||'other';(gr[t]||=[]).push(le)});
+  const TAB_CONFIG=[
+    {id:'traditions',   label:'Traditional Textiles', types:['textile_tradition']},
+    {id:'fibers',       label:'Fibers',               types:['fiber']},
+    {id:'weaves',       label:'Weaves',               types:['weave']},
+    {id:'prints',       label:'Print Methods',        types:['print_method']},
+    {id:'dyes',         label:'Dye Methods',          types:['dye_method']},
+    {id:'motifs',       label:'Motifs & Symbols',     types:['motif','symbol','natural_dye_source']},
+    {id:'museums',      label:'Museums',              types:['museum']},
+    {id:'books',        label:'Books & Archives',     types:['book','organization']},
+    {id:'certs',        label:'Certifications',       types:['certification']},
+    {id:'suppliers',    label:'Mills & Suppliers',    types:[]},
+  ];
+  const activeTabs=TAB_CONFIG.filter(t=>{
+    if(t.id==='suppliers')return suppliers.length>0;
+    return t.types.some(type=>(gr[type]||[]).length>0);
+  });
+  if(!dc)return;
+  const totalKnowledge=linked.length+suppliers.length;
+  dc.innerHTML=`
+    <div style="padding:14px 16px 12px;border-bottom:1px solid var(--rule);flex-shrink:0">
+      <div style="font-family:var(--serif);font-size:24px;font-weight:600">${esc(place.name||'Unknown')}</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:3px">${esc((place.place_type||'').replace(/_/g,' '))} · ${totalKnowledge} knowledge entries</div>
+      ${place.summary?`<div style="font-size:13px;line-height:1.55;margin-top:8px">${esc(place.summary)}</div>`:''}
+    </div>
+    ${activeTabs.length===0
+      ?`<div class="empty">No knowledge linked to ${esc(place.name||'this place')} yet.<p>Use the right panel to link entries.</p></div>`
+      :`<div class="tabs" style="flex-shrink:0">${activeTabs.map((t,i)=>{
+          const count=t.id==='suppliers'?suppliers.length:t.types.reduce((a,type)=>(a+(gr[type]||[]).length),0);
+          return`<button class="tab ${i===0?'active':''}" onclick="gPlaceTab(this,'gpl-${t.id}')">${esc(t.label)} <span style="opacity:.6;font-size:10px">${count}</span></button>`;
+        }).join('')}</div>
+      <div class="pcol-body" style="flex:1">${activeTabs.map((t,i)=>`
+        <div id="gpl-${t.id}" style="${i>0?'display:none':''}">
+          ${t.id==='suppliers'
+            ?suppliers.map(s=>gSupRow(s)).join('')||'<div class="empty">No suppliers</div>'
+            :t.types.flatMap(type=>gr[type]||[]).map(le=>gEntryCard(le)).join('')||'<div class="empty">No entries</div>'
+          }
+        </div>`).join('')}
+      </div>`}`;
+  const rc=document.getElementById('g-rels');
+  if(rc)rc.innerHTML=`
+    <div style="padding:14px">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:10px">Link an entry to <b>${esc(place.name||'this place')}</b></div>
+      <label class="lbl">Entry name</label>
+      <input class="f" id="rp-nm" placeholder="Batik, Ikat, Indigo…" list="rp-dl">
+      <datalist id="rp-dl">${G_ENTRIES.map(e=>`<option value="${esc(e.name)}">`).join('')}</datalist>
+      <label class="lbl">Relationship</label>
+      <select class="f" id="rp-rt">${['origin','practiced_in','produced_in','associated_with','exported_from','inspired_by'].map(v=>`<option>${v}</option>`).join('')}</select>
+      <label class="lbl">Primary origin here?</label>
+      <select class="f" id="rp-pri">
+        <option value="false">No — also practiced elsewhere</option>
+        <option value="true">Yes — originates here</option>
+      </select>
+      <div class="acts" style="margin-top:10px">
+        <button class="b-save b-sm" onclick="linkToPlace('${placeId}')">Link entry</button>
+        <span class="msg" id="rp-msg"></span>
+      </div>
+      <hr style="border:none;border-top:1px solid var(--rule);margin:14px 0">
+      <button class="b-ghost b-sm" style="width:100%" onclick="gNewEntryForPlace('${placeId}','${esc(place.name||'')}')">+ New entry → link here</button>
+    </div>`;
+  if(!G_ENTRIES.length){
+    const {data}=await SB.from('cs_kg_entries').select('id,name').order('name').limit(500);
+    G_ENTRIES=data||[];
+    const dl=document.getElementById('rp-dl');
+    if(dl)dl.innerHTML=G_ENTRIES.map(e=>`<option value="${esc(e.name)}">`).join('');
+  }
+}
+
+function gPlaceTab(btn,tabId){
+  const body=btn.closest('.panel-col');
+  body.querySelectorAll('.tabs .tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  body.querySelectorAll('.pcol-body>div').forEach(d=>d.style.display='none');
+  const t=document.getElementById(tabId);if(t)t.style.display='';
+}
+window.gPlaceTab=gPlaceTab;
+
+function gEntryCard(le){
+  const e=le.entry||{};
+  const sensCls=e.sensitivity_level&&e.sensitivity_level!=='general'?'t-'+e.sensitivity_level:'';
+  return`<div style="padding:10px 16px;border-bottom:1px solid var(--rule)">
+    <div style="display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap">
+      <div style="flex:1">
+        <div style="font-family:var(--serif);font-size:15px;font-weight:600">${esc(e.name||'Unknown')}</div>
+        ${e.short_definition?`<div style="font-size:12px;color:var(--muted);line-height:1.5;margin-top:2px">${esc(e.short_definition.slice(0,120))}${e.short_definition.length>120?'…':''}</div>`:''}
+      </div>
+      <div style="display:flex;flex-direction:column;gap:3px;align-items:flex-end;flex-shrink:0">
+        ${le.is_primary?'<span class="tag t-general">primary origin</span>':''}
+        ${tag(le.relationship_type)}
+        ${sensCls?tag(e.sensitivity_level,sensCls):''}
+        <span class="tag s-${e.source_status}">${e.source_status||''}</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+function gSupRow(s){
+  const dims=[[s.score_quality],[s.score_communication],[s.score_reliability],[s.score_traceability],[s.score_ethics]];
+  const filled=dims.filter(([v])=>v!=null);
+  const avg=filled.length?filled.reduce((a,[v])=>(a+v),0)/filled.length:null;
+  return`<div onclick="openSup('${s.id}')" style="padding:12px 16px;border-bottom:1px solid var(--rule);cursor:pointer" onmouseover="this.style.background='var(--off)'" onmouseout="this.style.background=''">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+      <span style="flex:1;font-family:var(--serif);font-size:15px;font-weight:600">${esc(s.display_name||s.legal_name)}</span>
+      ${tag(s.supplier_type)} ${tag(s.status,'t-'+s.status)}
+    </div>
+    ${avg!=null?`<div style="display:flex;align-items:center;gap:6px">${stars(Math.round(avg))}<span style="font-size:11px;color:var(--muted)">${avg.toFixed(1)}/5</span></div>`:'<div style="font-size:11px;color:var(--muted)">Not yet scored</div>'}
+  </div>`;
+}
+
+async function linkToPlace(placeId){
+  const m=document.getElementById('rp-msg');
+  const nm=document.getElementById('rp-nm').value.trim();
+  if(!nm)return flash(m,'Enter an entry name.',false);
+  let entry=G_ENTRIES.find(e=>e.name.toLowerCase()===nm.toLowerCase());
+  if(!entry){
+    const {data}=await SB.from('cs_kg_entries').select('id,name').ilike('name',nm).limit(1).maybeSingle();
+    if(!data)return flash(m,'Entry not found — check spelling.',false);
+    entry=data;G_ENTRIES.push(data);
+  }
+  const {error}=await SB.from('cs_kg_entry_places').insert({
+    entry_id:entry.id,place_id:placeId,
+    relationship_type:document.getElementById('rp-rt').value,
+    is_primary:document.getElementById('rp-pri').value==='true'
+  });
+  if(error)return flash(m,error.code==='23505'?'Already linked.':error.message,false);
+  flash(m,'Linked! Refreshing…');
+  document.getElementById('rp-nm').value='';
+  setTimeout(()=>loadGPlace(placeId),700);
+}
+window.linkToPlace=linkToPlace;
+
+function gNewEntryForPlace(placeId,placeName){
+  openOverlay(`
+    <div class="ov-hd"><h3>New Knowledge Entry</h3><button class="ov-close" onclick="closeOverlay()">✕</button></div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Will be linked to <b>${esc(placeName)}</b> as primary origin.</p>
+    <label class="lbl">Name</label><input class="f" id="ne2-nm" placeholder="e.g. Tenun Ikat">
+    <div class="two">
+      <div><label class="lbl">Entry type</label>
+        <select class="f" id="ne2-tp">${['textile_tradition','fiber','weave','print_method','dye_method','motif','symbol','natural_dye_source','garment_type','product_use','certification','museum','book','organization'].map(v=>`<option>${v}</option>`).join('')}</select>
+      </div>
+      <div><label class="lbl">Sensitivity</label>
+        <select class="f" id="ne2-sens">${['general','context_required','restricted','sacred_private'].map(v=>`<option>${v}</option>`).join('')}</select>
+      </div>
+    </div>
+    <label class="lbl">Short definition</label><textarea class="f" id="ne2-def"></textarea>
+    <label class="lbl">Cultural context</label><textarea class="f" id="ne2-cctx"></textarea>
+    <div class="acts" style="margin-top:14px">
+      <button class="b-save" onclick="createGEntry('${placeId}')">Create & link</button>
+      <span class="msg" id="ne2-msg"></span>
+    </div>`);
+}
+window.gNewEntryForPlace=gNewEntryForPlace;
+
+async function createGEntry(placeId){
+  const m=document.getElementById('ne2-msg');
+  const name=document.getElementById('ne2-nm').value.trim();
+  if(!name)return flash(m,'Name is required.',false);
+  const slug=name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+  const {data:entry,error:e1}=await SB.from('cs_kg_entries').insert({
+    name,slug,entry_type:document.getElementById('ne2-tp').value,
+    sensitivity_level:document.getElementById('ne2-sens').value,
+    short_definition:document.getElementById('ne2-def').value.trim()||null,
+    cultural_context:document.getElementById('ne2-cctx').value.trim()||null,
+    source_status:'draft',is_public:false
+  }).select().single();
+  if(e1)return flash(m,e1.code==='23505'?'Name already exists.':e1.message,false);
+  if(placeId&&entry) await SB.from('cs_kg_entry_places').insert({entry_id:entry.id,place_id:placeId,relationship_type:'origin',is_primary:true});
+  flash(m,'Created & linked!');
+  G_ENTRIES=[];
+  setTimeout(()=>{closeOverlay();LOADED.delete('graph');loadGraph()},800);
+}
+window.createGEntry=createGEntry;
+
+/* ── CONCEPT EDITOR (Concepts tab) ──────────────────────────── */
+async function loadGEntry(id){
+  G_CUR=id; G_CUR_TYPE='entry';
+  document.querySelectorAll('.ei').forEach(el=>el.classList.toggle('active',el.id==='ge-'+id));
+  const dc=document.getElementById('g-detail-col');
+  const rc=document.getElementById('g-rels');
+  if(dc)dc.innerHTML='<div class="loading">Loading entry…</div>';
+  const [entryRes,relsRes,placesRes,sourcesRes]=await Promise.all([
+    SB.from('cs_kg_entries').select('*').eq('id',id).single(),
+    SB.from('cs_kg_relationships').select('*,to_entry:to_entry_id(name,entry_type),from_entry:from_entry_id(name,entry_type)').or(`from_entry_id.eq.${id},to_entry_id.eq.${id}`),
+    SB.from('cs_kg_entry_places').select('*,place:place_id(id,name,place_type)').eq('entry_id',id),
+    SB.from('cs_kg_entry_sources').select('*,source:source_id(title,source_type,reliability_tier,url,author_or_org)').eq('entry_id',id),
+  ]);
+  const e=entryRes.data;
+  if(!e){if(dc)dc.innerHTML='<div class="empty">Entry not found.</div>';return}
+  if(dc)dc.innerHTML=`
+    <div style="padding:12px 16px 10px;border-bottom:1px solid var(--rule);flex-shrink:0">
+      <div style="font-family:var(--serif);font-size:22px;font-weight:600">${esc(e.name)}</div>
+      <div style="display:flex;gap:6px;margin-top:5px;flex-wrap:wrap">
+        ${tag(e.entry_type?.replace(/_/g,' '))} ${tag(e.sensitivity_level,'t-'+e.sensitivity_level)} ${tag(e.source_status,'s-'+e.source_status)}
+        ${e.is_public?'<span class="tag s-published">public</span>':''}
+      </div>
+    </div>
+    <div class="tabs" style="flex-shrink:0">
+      <button class="tab active" onclick="gTab(this,'gt-ov')">Edit</button>
+      <button class="tab" onclick="gTab(this,'gt-pl')">Places (${(placesRes.data||[]).length})</button>
+      <button class="tab" onclick="gTab(this,'gt-rl')">Relationships (${(relsRes.data||[]).length})</button>
+      <button class="tab" onclick="gTab(this,'gt-src')">Sources (${(sourcesRes.data||[]).length})</button>
+    </div>
+    <div class="tab-body" id="gt-ov" style="flex:1;overflow-y:auto">${gTabOverview(e)}</div>
+    <div class="tab-body" id="gt-pl" style="display:none;flex:1;overflow-y:auto">${gTabPlaces(placesRes.data||[])}</div>
+    <div class="tab-body" id="gt-rl" style="display:none;flex:1;overflow-y:auto">${gTabRels(relsRes.data||[],id)}</div>
+    <div class="tab-body" id="gt-src" style="display:none;flex:1;overflow-y:auto">${gTabSources(sourcesRes.data||[])}</div>`;
+  if(rc)rc.innerHTML=`
+    <div class="pcol-hd">Add Relationship</div>
+    <div style="padding:14px">
+      <label class="lbl">To entry</label>
+      <input class="f" id="rel-to" placeholder="Entry name…" list="g-elist">
+      <datalist id="g-elist">${G_ENTRIES.map(e=>`<option value="${esc(e.name)}">`).join('')}</datalist>
+      <label class="lbl">Relationship type</label>
+      <select class="f" id="rel-type">${['made_from','uses_weave','uses_print_method','uses_dye_method','features_motif','features_symbol','related_to','often_confused_with','used_for','documented_by','certified_by','derived_from','modern_variant_of'].map(v=>`<option>${v}</option>`).join('')}</select>
+      <label class="lbl">Direction note</label>
+      <input class="f" id="rel-note" placeholder="e.g. historically used since…">
+      <div class="acts" style="margin-top:10px">
+        <button class="b-save b-sm" onclick="addGRel('${id}')">Add relationship</button>
+        <span class="msg" id="rel-msg"></span>
+      </div>
+      <hr style="border:none;border-top:1px solid var(--rule);margin:14px 0">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Also link to a place</div>
+      <input class="f" id="rp-to" placeholder="Country or region…" list="rp-dl2">
+      <datalist id="rp-dl2">${G_PLACES.map(p=>`<option value="${esc(p.name)}">`).join('')}</datalist>
+      <select class="f" id="rp-to-rt" style="margin-top:6px">${['origin','practiced_in','produced_in','associated_with','exported_from','inspired_by'].map(v=>`<option>${v}</option>`).join('')}</select>
+      <div class="acts" style="margin-top:8px">
+        <button class="b-save b-sm" onclick="linkEntryToPlace('${id}')">Link to place</button>
+        <span class="msg" id="rp2-msg"></span>
+      </div>
+    </div>`;
+}
+function gTab(btn,tid){
+  btn.closest('.panel-col').querySelectorAll('.tabs .tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  btn.closest('.panel-col').querySelectorAll('.tab-body').forEach(t=>t.style.display='none');
+  const t=document.getElementById(tid);if(t)t.style.display='block';
+}
+function gTabOverview(e){
+  return`<div>
+    <label class="lbl">Name</label><input class="f" id="ge-name" value="${esc(e.name)}">
+    <label class="lbl">Short definition</label><textarea class="f" id="ge-short">${esc(e.short_definition||'')}</textarea>
+    <label class="lbl">Overview</label><textarea class="f" id="ge-overview" style="min-height:72px">${esc(e.overview||'')}</textarea>
+    <label class="lbl">Cultural context</label><textarea class="f" id="ge-cctx">${esc(e.cultural_context||'')}</textarea>
+    <label class="lbl">Cultural protocol</label><textarea class="f" id="ge-cprot">${esc(e.cultural_protocol||'')}</textarea>
+    <div class="two">
+      <div><label class="lbl">Sensitivity</label><select class="f" id="ge-sens">${['general','context_required','restricted','sacred_private'].map(v=>`<option ${e.sensitivity_level===v?'selected':''}>${v}</option>`).join('')}</select></div>
+      <div><label class="lbl">Status</label><select class="f" id="ge-status">${['draft','researched','reviewed','published','archived'].map(v=>`<option ${e.source_status===v?'selected':''}>${v}</option>`).join('')}</select></div>
+    </div>
+    <div class="acts">
+      <button class="b-save b-sm" onclick="saveGEntry('${e.id}')">Save entry</button>
+      <span class="msg" id="ge-msg"></span>
+    </div>
+  </div>`;
+}
+function gTabPlaces(places){
+  if(!places.length)return'<div class="empty">No places linked yet.</div>';
+  return places.map(p=>`
+    <div style="display:flex;align-items:center;gap:7px;padding:8px 0;border-bottom:1px solid var(--rule);cursor:pointer" onclick="loadGPlace('${p.place?.id||''}')">
+      <span style="flex:1;font-size:13px;font-weight:600">${esc(p.place?.name||'Unknown')}</span>
+      ${tag(p.relationship_type)} ${p.is_primary?tag('primary origin','t-general'):''}
+    </div>`).join('');
+}
+function gTabRels(rels,selfId){
+  if(!rels.length)return'<div class="empty">No relationships yet.</div>';
+  return rels.map(r=>{
+    const other=r.from_entry_id===selfId?r.to_entry:r.from_entry;
+    const dir=r.from_entry_id===selfId?'→':'←';
+    return`<div style="display:flex;align-items:center;gap:7px;padding:7px 0;border-bottom:1px solid var(--rule);font-size:13px">
+      <span style="color:var(--muted);font-size:10px;flex-shrink:0">${dir}</span>
+      <span style="flex:1;font-weight:600">${esc(other?.name||'Unknown')}</span>
+      <span class="tag s-draft" style="font-size:9px">${esc(r.relationship_type)}</span>
+    </div>`;
+  }).join('');
+}
+function gTabSources(srcs){
+  if(!srcs.length)return'<div class="empty">No sources cited yet.</div>';
+  return srcs.map(s=>`<div style="border-bottom:1px solid var(--rule);padding:8px 0">
+    <div style="font-size:13px;font-weight:600">${esc(s.source?.title||'Unknown')}</div>
+    ${s.source?.author_or_org?`<div style="font-size:11px;color:var(--muted)">${esc(s.source.author_or_org)}</div>`:''}
+    <div style="font-size:11px;color:var(--muted)">${esc(s.source?.source_type||'')} · reliability ${s.source?.reliability_tier||'?'}/5</div>
+    ${s.source?.url?`<a href="${esc(s.source.url)}" target="_blank" style="font-size:11px;color:var(--green)">Open ↗</a>`:''}
+  </div>`).join('');
+}
+async function saveGEntry(id){
+  const m=document.getElementById('ge-msg');
+  const o={name:document.getElementById('ge-name')?.value.trim(),short_definition:document.getElementById('ge-short')?.value.trim(),overview:document.getElementById('ge-overview')?.value.trim(),cultural_context:document.getElementById('ge-cctx')?.value.trim(),cultural_protocol:document.getElementById('ge-cprot')?.value.trim(),sensitivity_level:document.getElementById('ge-sens')?.value,source_status:document.getElementById('ge-status')?.value,updated_at:new Date().toISOString()};
+  const {error}=await SB.from('cs_kg_entries').update(o).eq('id',id);
+  if(error)return flash(m,error.message,false);
+  flash(m,'Saved');
+  const e=G_ENTRIES.find(x=>x.id===id);if(e)e.name=o.name;
+  gRenderEntryList(G_ENTRIES);
+}
+async function addGRel(fromId){
+  const m=document.getElementById('rel-msg');
+  const toName=document.getElementById('rel-to').value.trim();
+  const relType=document.getElementById('rel-type').value;
+  const note=document.getElementById('rel-note').value.trim();
+  if(!toName)return flash(m,'Enter a target entry name.',false);
+  const toEntry=G_ENTRIES.find(e=>e.name.toLowerCase()===toName.toLowerCase());
+  if(!toEntry)return flash(m,'Entry not found.',false);
+  if(toEntry.id===fromId)return flash(m,'Cannot relate an entry to itself.',false);
+  const {error}=await SB.from('cs_kg_relationships').insert({from_entry_id:fromId,to_entry_id:toEntry.id,relationship_type:relType,direction_note:note||null});
+  if(error)return flash(m,error.code==='23505'?'Already exists.':error.message,false);
+  flash(m,'Added');
+  document.getElementById('rel-to').value='';
+  loadGEntry(fromId);
+}
+async function linkEntryToPlace(entryId){
+  const m=document.getElementById('rp2-msg');
+  const nm=document.getElementById('rp-to').value.trim();
+  if(!nm)return flash(m,'Enter a place name.',false);
+  let place=G_PLACES.find(p=>p.name.toLowerCase()===nm.toLowerCase());
+  if(!place){
+    const {data}=await SB.from('cs_kg_places').select('id,name').ilike('name',nm).limit(1).maybeSingle();
+    if(!data)return flash(m,'Place not found.',false);
+    G_PLACES.push(data);place=data;
+  }
+  const {error}=await SB.from('cs_kg_entry_places').insert({entry_id:entryId,place_id:place.id,relationship_type:document.getElementById('rp-to-rt').value,is_primary:false});
+  if(error)return flash(m,error.code==='23505'?'Already linked.':error.message,false);
+  flash(m,'Linked');
+  document.getElementById('rp-to').value='';
+  loadGEntry(entryId);
+}
+window.loadGEntry=loadGEntry;window.gTab=gTab;window.saveGEntry=saveGEntry;window.addGRel=addGRel;
+window.linkEntryToPlace=linkEntryToPlace;window.loadGPlace=loadGPlace;
+
+/* ═══════════════════════════════════════════════════════════════
+   MODULE 4: SUPPLIER CRM
+═══════════════════════════════════════════════════════════════ */
+let SUP_LIST=[], SUP_CUR=null;
+
+async function loadSuppliers(){
+  const el=document.getElementById('mod-suppliers');
+  el.innerHTML='<div class="loading">Loading suppliers…</div>';
+  let {data,error}=await SB.from('cs_supplier_scorecard').select('*').order('display_name');
+  if(error)({data,error}=await SB.from('cs_kg_suppliers').select('*').order('display_name').limit(200));
+  if(error){el.innerHTML=`<div class="empty">${esc(error.message)}</div>`;return}
+  SUP_LIST=data||[];
+  renderSuppliers(SUP_LIST);
+}
+function renderSuppliers(list){
+  const el=document.getElementById('mod-suppliers');if(!el)return;
+  el.innerHTML=`
+    <div class="toolbar">
+      <input type="search" placeholder="Search suppliers…" oninput="filterSup(this.value)">
+      <select onchange="filterSupStatus(this.value)">
+        <option value="">All statuses</option>
+        ${['lead','researched','contacted','sampling','trial','approved','paused','rejected'].map(v=>`<option>${v}</option>`).join('')}
+      </select>
+      <span style="margin-left:auto;font-size:12px;color:var(--muted)">${list.length} suppliers</span>
+    </div>
+    <div class="card-grid" id="sup-grid">
+    ${list.map(s=>supCard(s)).join('')}
+    </div>`;
+}
+function supCard(s){
+  const avg=s.avg_score?`<div style="margin:6px 0 2px">${stars(Math.round(s.avg_score))} <span style="font-size:11px;color:var(--muted)">${s.avg_score}/5 avg</span></div>`:'<div style="font-size:11px;color:var(--muted);margin-top:6px">Not yet scored</div>';
+  return `<div class="sup-card" onclick="openSup('${s.id}')">
+    <div class="sup-name">${esc(s.display_name||s.legal_name)}</div>
+    <div class="sup-meta">${esc(s.supplier_type||'')} · ${esc(s.status||'')}</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      ${tag(s.status,'t-'+s.status)} ${tag(s.risk_level,'t-'+s.risk_level)}
+      ${s.exports_to_usa?tag('USA','t-general'):''}
+    </div>
+    ${avg}
+    ${(s.avg_score||s.score_quality)?`<div class="score-row">
+      ${[['Prt.Q',s.score_quality],['Comm',s.score_communication],['Color',s.score_reliability],['Lead',s.score_traceability],['Sust',s.score_ethics]].map(([l,v])=>`<div class="sc-item"><span class="scv">${v??'—'}</span>${l}</div>`).join('')}
+    </div>`:''}
+  </div>`;
+}
+window.filterSup=function(q){
+  const filtered=q?SUP_LIST.filter(s=>(s.display_name||s.legal_name||'').toLowerCase().includes(q.toLowerCase())):SUP_LIST;
+  document.getElementById('sup-grid').innerHTML=filtered.map(s=>supCard(s)).join('');
+};
+window.filterSupStatus=function(v){
+  const filtered=v?SUP_LIST.filter(s=>s.status===v):SUP_LIST;
+  document.getElementById('sup-grid').innerHTML=filtered.map(s=>supCard(s)).join('');
+};
+async function openSup(id){
+  SUP_CUR=id;
+  const {data:s,error}=await SB.from('cs_kg_suppliers').select('*').eq('id',id).single();
+  if(error||!s){openOverlay('<div class="ov-hd"><h3>Error</h3><button class="ov-close" onclick="closeOverlay()">✕</button></div><p>'+esc((error||{}).message)+'</p>');return}
+  const {data:caps}=await SB.from('cs_kg_supplier_capabilities').select('*').eq('supplier_id',id);
+  const {data:certs}=await SB.from('cs_kg_supplier_certifications').select('*').eq('supplier_id',id);
+  const {data:contacts}=await SB.from('cs_kg_supplier_contacts').select('*').eq('supplier_id',id).order('contacted_at',{ascending:false}).limit(5);
+  const {data:samples}=await SB.from('cs_kg_fabric_samples').select('*').eq('supplier_id',id).limit(10);
+
+  openOverlay(`
+    <div class="ov-hd">
+      <h3>${esc(s.display_name||s.legal_name)}</h3>
+      <button class="ov-close" onclick="closeOverlay()">✕</button>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+      ${tag(s.supplier_type)} ${tag(s.status,'t-'+s.status)} ${tag(s.risk_level,'t-'+s.risk_level)} ${tag(s.verification_level)}
+    </div>
+    ${s.website?`<div style="margin-bottom:12px;font-size:13px"><a href="${esc(s.website)}" target="_blank" style="color:var(--green)">${esc(s.website)}</a></div>`:''}
+    <div class="two" style="margin-bottom:14px">
+      <div><div style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Scorecard</div>
+        ${[['Print Quality','score_quality',s.score_quality],['Communication','score_communication',s.score_communication],['Color Accuracy','score_reliability',s.score_reliability],['Lead Time','score_traceability',s.score_traceability],['Sustainability','score_ethics',s.score_ethics]].map(([l,f,v])=>`
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:13px">
+            <span style="width:115px;color:var(--muted)">${l}</span>
+            <div class="star-edit" data-score-field="${f}" data-score-val="${v||0}">${[1,2,3,4,5].map(i=>`<span class="s ${i<=(v||0)?'on':''}" onclick="supSetScore('${s.id}','${f}',${i},this)">${i<=(v||0)?'★':'☆'}</span>`).join('')}</div>
+          </div>`).join('')}
+        <div class="acts" style="margin-top:8px">
+          <button class="b-save b-sm" onclick="supSaveScores('${s.id}')">Save scores</button>
+          <span class="msg" id="sup-score-msg"></span>
+        </div>
+        <div style="margin-top:14px">
+          <div style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Approved for</div>
+          ${['Home','Apparel','Tabletop','Kids','Accessories'].map(cat=>`<label style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:13px;cursor:pointer;text-transform:none;letter-spacing:normal;color:var(--ink);font-weight:400"><input type="checkbox" ${(s.approved_categories||[]).includes(cat)?'checked':''} onchange="supToggleCategory('${s.id}','${cat}',this.checked)" style="width:15px;height:15px;cursor:pointer;accent-color:var(--green)">${cat}</label>`).join('')}
+        </div>
+      </div>
+      <div>
+        <div style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Details</div>
+        <div style="font-size:13px;line-height:1.8">
+          <div>Manufactures in-house: <b>${s.manufactures_in_house==null?'Unknown':s.manufactures_in_house?'Yes':'No'}</b></div>
+          <div>Prints in-house: <b>${s.prints_in_house==null?'Unknown':s.prints_in_house?'Yes':'No'}</b></div>
+          <div>Exports to USA: <b>${s.exports_to_usa==null?'Unknown':s.exports_to_usa?'Yes':'No'}</b></div>
+          ${s.languages?.length?`<div>Languages: <b>${esc(s.languages.join(', '))}</b></div>`:''}
+          ${s.approved_by?`<div>Approved by: <b>${esc(s.approved_by)}</b> on ${fmtDate(s.approved_at)}</div>`:''}
+        </div>
+      </div>
+    </div>
+    ${caps?.length?`<div style="margin-bottom:14px">
+      <div style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Capabilities (${caps.length})</div>
+      ${caps.slice(0,8).map(c=>`<div class="p-row"><span class="p-nm">${esc(c.capability_name)}</span>${tag(c.capability_type)}</div>`).join('')}
+    </div>`:''}
+    ${samples?.length?`<div style="margin-bottom:14px">
+      <div style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Samples (${samples.length})</div>
+      ${samples.map(s=>`<div class="p-row"><span class="p-nm">${esc(s.base_name)} ${s.sample_code?'· '+esc(s.sample_code):''}</span><span class="tag t-${s.verdict||'unknown'}">${s.verdict||'pending'}</span></div>`).join('')}
+    </div>`:''}
+    ${contacts?.length?`<div>
+      <div style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Contact log (${contacts.length})</div>
+      ${contacts.map(c=>`<div style="border-bottom:1px solid var(--rule);padding:7px 0;font-size:13px">
+        <div style="display:flex;gap:8px;align-items:center"><span style="font-weight:600">${fmtDate(c.contacted_at)}</span>${tag(c.channel)}</div>
+        ${c.summary?`<div style="color:var(--muted);margin-top:2px">${esc(c.summary)}</div>`:''}
+      </div>`).join('')}
+    </div>`:''}
+  `);
+}
+let SUP_SCORES={};
+window.supSetScore=function(id,field,val,starEl){
+  SUP_SCORES[field]=val;
+  starEl.closest('.star-edit').querySelectorAll('.s').forEach((s,i)=>{s.classList.toggle('on',i<val);s.textContent=i<val?'★':'☆'});
+};
+window.supSaveScores=async function(id){
+  const m=document.getElementById('sup-score-msg');
+  if(!Object.keys(SUP_SCORES).length)return flash(m,'Click a star to set a score.',false);
+  const {error}=await SB.from('cs_kg_suppliers').update({...SUP_SCORES,updated_at:new Date().toISOString()}).eq('id',id);
+  if(error)return flash(m,error.message,false);
+  flash(m,'Scores saved');
+  SUP_SCORES={};
+  const idx=SUP_LIST.findIndex(s=>s.id===id);
+  if(idx>=0){const {data}=await SB.from('cs_supplier_scorecard').select('*').eq('id',id).single();if(data)SUP_LIST[idx]=data;}
+};
+window.supToggleCategory=async function(id,cat,checked){
+  const cur=SUP_LIST.find(s=>s.id===id);
+  let cats=((cur?.approved_categories)||[]).slice();
+  if(checked){if(!cats.includes(cat))cats.push(cat);}else cats=cats.filter(c=>c!==cat);
+  const {error}=await SB.from('cs_kg_suppliers').update({approved_categories:cats,updated_at:new Date().toISOString()}).eq('id',id);
+  const msg=document.getElementById('sup-score-msg');
+  if(error&&msg){msg.textContent='Error: '+error.message;msg.className='msg err';return;}
+  if(cur)cur.approved_categories=cats;
+};
+window.openSup=openSup;
+
+/* ═══════════════════════════════════════════════════════════════
+   MODULE 5: CREATOR CRM
+═══════════════════════════════════════════════════════════════ */
+let CR_LIST=[];
+async function loadCreators(){
+  const el=document.getElementById('mod-creators');
+  el.innerHTML='<div class="loading">Loading creators…</div>';
+  const {data,error}=await SB.from('cs_creator_profiles').select('*').order('created_at',{ascending:false}).limit(200);
+  if(error&&error.message.includes('does not exist')){
+    el.innerHTML='<div class="empty">Run <code>010_intelligence_schema.sql</code> first, then refresh.</div>';return;
+  }
+  if(error){el.innerHTML=`<div class="empty">${esc(error.message)}</div>`;return}
+  CR_LIST=data||[];
+  el.innerHTML=`
+    <div class="toolbar">
+      <input type="search" placeholder="Search creators…" oninput="filterCr(this.value)">
+      <select onchange="filterCrLifecycle(this.value)">
+        <option value="">All lifecycle stages</option>
+        ${['new','engaged','active','superstar','dormant','churned'].map(v=>`<option>${v}</option>`).join('')}
+      </select>
+      <button class="b-save b-sm" onclick="openNewCreator()">+ Add creator</button>
+      <span style="margin-left:auto;font-size:12px;color:var(--muted)">${CR_LIST.length} profiles</span>
+    </div>
+    <div id="cr-table"></div>`;
+  renderCrTable(CR_LIST);
+}
+function renderCrTable(list){
+  const el=document.getElementById('cr-table');if(!el)return;
+  if(!list.length){el.innerHTML='<div class="empty">No creator profiles yet.</div>';return}
+  el.innerHTML=list.map(c=>`
+    <div class="row">
+      <div class="rhead" onclick="this.parentElement.classList.toggle('open')">
+        <span class="nm">${esc(c.display_name||'Unnamed creator')}<small>${esc(c.primary_country||'')}</small></span>
+        <span class="tag t-${c.creator_lifecycle}">${c.creator_lifecycle}</span>
+        <span class="tag t-${c.outreach_status}">${c.outreach_status}</span>
+        ${c.portfolio_url?`<a href="${esc(c.portfolio_url)}" target="_blank" onclick="event.stopPropagation()" style="font-size:12px;color:var(--green)">Portfolio ↗</a>`:''}
+      </div>
+      <div class="rbody">
+        <div class="two">
+          <div>
+            <label class="lbl">Display name</label><input class="f" id="cr-nm-${c.id}" value="${esc(c.display_name||'')}">
+            <label class="lbl">Portfolio URL</label><input class="f" id="cr-pf-${c.id}" value="${esc(c.portfolio_url||'')}">
+            <label class="lbl">Instagram</label><input class="f" id="cr-ig-${c.id}" value="${esc(c.social_instagram||'')}">
+            <label class="lbl">TikTok</label><input class="f" id="cr-tt-${c.id}" value="${esc(c.social_tiktok||'')}">
+          </div>
+          <div>
+            <label class="lbl">Country</label><input class="f" id="cr-co-${c.id}" value="${esc(c.primary_country||'')}">
+            <label class="lbl">Lifecycle</label>
+            <select class="f" id="cr-lc-${c.id}">
+              ${['new','engaged','active','superstar','dormant','churned'].map(v=>`<option ${c.creator_lifecycle===v?'selected':''}>${v}</option>`).join('')}
+            </select>
+            <label class="lbl">Outreach status</label>
+            <select class="f" id="cr-os-${c.id}">
+              ${['none','in_progress','responded','contracted','declined'].map(v=>`<option ${c.outreach_status===v?'selected':''}>${v}</option>`).join('')}
+            </select>
+            <label class="lbl">Internal notes (never public)</label>
+            <textarea class="f" id="cr-nt-${c.id}">${esc(c.internal_notes||'')}</textarea>
+          </div>
+        </div>
+        <div class="acts">
+          <button class="b-save b-sm" onclick="saveCr('${c.id}')">Save</button>
+          <span class="msg" id="crm-${c.id}"></span>
+        </div>
+      </div>
+    </div>`).join('');
+}
+async function saveCr(id){
+  const m=document.getElementById('crm-'+id);
+  const o={
+    display_name:document.getElementById('cr-nm-'+id)?.value.trim()||null,
+    portfolio_url:document.getElementById('cr-pf-'+id)?.value.trim()||null,
+    social_instagram:document.getElementById('cr-ig-'+id)?.value.trim()||null,
+    social_tiktok:document.getElementById('cr-tt-'+id)?.value.trim()||null,
+    primary_country:document.getElementById('cr-co-'+id)?.value.trim()||null,
+    creator_lifecycle:document.getElementById('cr-lc-'+id)?.value,
+    outreach_status:document.getElementById('cr-os-'+id)?.value,
+    internal_notes:document.getElementById('cr-nt-'+id)?.value.trim()||null,
+    updated_at:new Date().toISOString()
+  };
+  const {error}=await SB.from('cs_creator_profiles').update(o).eq('id',id);
+  if(error)return flash(m,error.message,false);
+  flash(m,'Saved');
+  Object.assign(CR_LIST.find(c=>c.id===id)||{},o);
+}
+function openNewCreator(){
+  openOverlay(`
+    <div class="ov-hd"><h3>Add Creator Profile</h3><button class="ov-close" onclick="closeOverlay()">✕</button></div>
+    <div class="banner">Creator profiles link to Supabase auth users. Paste the user UUID from the Supabase dashboard, or leave blank for a manual profile.</div>
+    <label class="lbl">Supabase user ID (optional)</label><input class="f" id="nc-uid" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+    <label class="lbl">Display name</label><input class="f" id="nc-nm">
+    <label class="lbl">Country</label><input class="f" id="nc-co">
+    <label class="lbl">Portfolio URL</label><input class="f" id="nc-pf">
+    <div class="acts" style="margin-top:14px">
+      <button class="b-save" onclick="createCr()">Create profile</button>
+      <span class="msg" id="nc-msg"></span>
+    </div>`);
+}
+window.createCr=async function(){
+  const m=document.getElementById('nc-msg');
+  const uid=document.getElementById('nc-uid').value.trim()||null;
+  const nm=document.getElementById('nc-nm').value.trim()||null;
+  const {error}=await SB.from('cs_creator_profiles').insert({
+    user_id:uid,display_name:nm,
+    primary_country:document.getElementById('nc-co').value.trim()||null,
+    portfolio_url:document.getElementById('nc-pf').value.trim()||null,
+  });
+  if(error)return flash(m,error.message,false);
+  flash(m,'Created');setTimeout(()=>{closeOverlay();LOADED.delete('creators');loadCreators()},800);
+};
+window.filterCr=function(q){renderCrTable(q?CR_LIST.filter(c=>(c.display_name||'').toLowerCase().includes(q.toLowerCase())):CR_LIST)};
+window.filterCrLifecycle=function(v){renderCrTable(v?CR_LIST.filter(c=>c.creator_lifecycle===v):CR_LIST)};
+window.saveCr=saveCr;window.openNewCreator=openNewCreator;
+
+/* ═══════════════════════════════════════════════════════════════
+   MODULE 6: MUSEUM LIBRARY
+═══════════════════════════════════════════════════════════════ */
+let MUS_LIST=[];
+async function loadMuseums(){
+  const el=document.getElementById('mod-museums');
+  el.innerHTML='<div class="loading">Loading museums…</div>';
+  const {data,error}=await SB.from('cs_museums').select('*').order('name');
+  if(error&&error.message.includes('does not exist')){
+    el.innerHTML='<div class="empty">Run <code>010_intelligence_schema.sql</code> first, then refresh.</div>';return;
+  }
+  if(error){el.innerHTML=`<div class="empty">${esc(error.message)}</div>`;return}
+  MUS_LIST=data||[];
+  el.innerHTML=`
+    <div class="toolbar">
+      <input type="search" placeholder="Search museums…" oninput="filterMus(this.value)">
+      <select onchange="filterMusStatus(this.value)">
+        <option value="">All partnership statuses</option>
+        ${['none','researched','contacted','partner','former'].map(v=>`<option>${v}</option>`).join('')}
+      </select>
+      <button class="b-save b-sm" onclick="openNewMuseum()">+ Add museum</button>
+    </div>
+    <div id="mus-list"></div>`;
+  renderMusList(MUS_LIST);
+}
+function renderMusList(list){
+  const el=document.getElementById('mus-list');if(!el)return;
+  if(!list.length){el.innerHTML='<div class="empty">No museums yet. Add your first museum partner.</div>';return}
+  el.innerHTML=list.map(m=>`
+    <div class="row">
+      <div class="rhead" onclick="this.parentElement.classList.toggle('open')">
+        <span class="nm">${esc(m.name)}<small>${esc(m.city?m.city+(m.country?', '+m.country:''):m.country||'')}</small></span>
+        ${tag(m.partnership_status,'t-'+m.partnership_status)}
+        ${m.website?`<a href="${esc(m.website)}" target="_blank" onclick="event.stopPropagation()" style="font-size:12px;color:var(--green)">Website ↗</a>`:''}
+      </div>
+      <div class="rbody">
+        ${m.partnership_notes?`<div class="banner" style="margin-top:10px">🔒 Partnership notes (internal): ${esc(m.partnership_notes)}</div>`:''}
+        <div class="two">
+          <div>
+            <label class="lbl">Name</label><input class="f" id="mu-nm-${m.id}" value="${esc(m.name)}">
+            <label class="lbl">City</label><input class="f" id="mu-cy-${m.id}" value="${esc(m.city||'')}">
+            <label class="lbl">Country</label><input class="f" id="mu-co-${m.id}" value="${esc(m.country||'')}">
+            <label class="lbl">Website</label><input class="f" id="mu-wb-${m.id}" value="${esc(m.website||'')}">
+          </div>
+          <div>
+            <label class="lbl">Partnership status</label>
+            <select class="f" id="mu-ps-${m.id}">
+              ${['none','researched','contacted','partner','former'].map(v=>`<option ${m.partnership_status===v?'selected':''}>${v}</option>`).join('')}
+            </select>
+            <label class="lbl">Contact name</label><input class="f" id="mu-cn-${m.id}" value="${esc(m.contact_name||'')}">
+            <label class="lbl">Collection focus</label><input class="f" id="mu-cf-${m.id}" value="${esc(m.collection_focus||'')}">
+            <label class="lbl">Partnership notes (internal only)</label>
+            <textarea class="f" id="mu-pn-${m.id}">${esc(m.partnership_notes||'')}</textarea>
+          </div>
+        </div>
+        <div class="acts">
+          <button class="b-save b-sm" onclick="saveMus('${m.id}')">Save</button>
+          <span class="msg" id="mm-${m.id}"></span>
+        </div>
+      </div>
+    </div>`).join('');
+}
+async function saveMus(id){
+  const m=document.getElementById('mm-'+id);
+  const o={
+    name:document.getElementById('mu-nm-'+id)?.value.trim(),
+    city:document.getElementById('mu-cy-'+id)?.value.trim()||null,
+    country:document.getElementById('mu-co-'+id)?.value.trim()||null,
+    website:document.getElementById('mu-wb-'+id)?.value.trim()||null,
+    partnership_status:document.getElementById('mu-ps-'+id)?.value,
+    contact_name:document.getElementById('mu-cn-'+id)?.value.trim()||null,
+    collection_focus:document.getElementById('mu-cf-'+id)?.value.trim()||null,
+    partnership_notes:document.getElementById('mu-pn-'+id)?.value.trim()||null,
+    updated_at:new Date().toISOString()
+  };
+  if(!o.name)return flash(m,'Museum name is required.',false);
+  const {error}=await SB.from('cs_museums').update(o).eq('id',id);
+  if(error)return flash(m,error.message,false);
+  flash(m,'Saved');Object.assign(MUS_LIST.find(x=>x.id===id)||{},o);
+}
+function openNewMuseum(){
+  openOverlay(`
+    <div class="ov-hd"><h3>Add Museum</h3><button class="ov-close" onclick="closeOverlay()">✕</button></div>
+    <label class="lbl">Name</label><input class="f" id="nm-nm">
+    <div class="two">
+      <div><label class="lbl">City</label><input class="f" id="nm-cy"></div>
+      <div><label class="lbl">Country</label><input class="f" id="nm-co"></div>
+    </div>
+    <label class="lbl">Website</label><input class="f" id="nm-wb" placeholder="https://…">
+    <label class="lbl">Partnership status</label>
+    <select class="f" id="nm-ps">
+      ${['none','researched','contacted','partner'].map(v=>`<option>${v}</option>`).join('')}
+    </select>
+    <label class="lbl">Collection focus</label><input class="f" id="nm-cf" placeholder="Textiles, African art, etc.">
+    <div class="acts" style="margin-top:14px">
+      <button class="b-save" onclick="createMus()">Add museum</button>
+      <span class="msg" id="nm-msg"></span>
+    </div>`);
+}
+window.createMus=async function(){
+  const m=document.getElementById('nm-msg');
+  const name=document.getElementById('nm-nm').value.trim();
+  if(!name)return flash(m,'Name is required.',false);
+  const slug=name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+  const {error}=await SB.from('cs_museums').insert({
+    name,slug,
+    city:document.getElementById('nm-cy').value.trim()||null,
+    country:document.getElementById('nm-co').value.trim()||null,
+    website:document.getElementById('nm-wb').value.trim()||null,
+    partnership_status:document.getElementById('nm-ps').value,
+    collection_focus:document.getElementById('nm-cf').value.trim()||null,
+  });
+  if(error)return flash(m,error.message,false);
+  flash(m,'Added');setTimeout(()=>{closeOverlay();LOADED.delete('museums');loadMuseums()},800);
+};
+window.filterMus=function(q){renderMusList(q?MUS_LIST.filter(m=>m.name.toLowerCase().includes(q.toLowerCase())):MUS_LIST)};
+window.filterMusStatus=function(v){renderMusList(v?MUS_LIST.filter(m=>m.partnership_status===v):MUS_LIST)};
+window.saveMus=saveMus;window.openNewMuseum=openNewMuseum;
+
+/* ═══════════════════════════════════════════════════════════════
+   MODULE 7: EVENT PLANNER
+═══════════════════════════════════════════════════════════════ */
+let EV_LIST=[];
+async function loadEvents(){
+  const el=document.getElementById('mod-events');
+  el.innerHTML='<div class="loading">Loading events…</div>';
+  const {data,error}=await SB.from('cs_dash_event_results').select('*').limit(50);
+  if(error&&error.message.includes('does not exist')){
+    el.innerHTML='<div class="empty">Run <code>010_intelligence_schema.sql</code> first, then refresh.</div>';return;
+  }
+  if(error){el.innerHTML=`<div class="empty">${esc(error.message)}</div>`;return}
+  EV_LIST=data||[];
+
+  const pastEvents=EV_LIST.filter(e=>e.status==='past');
+  const totalRev=pastEvents.reduce((a,e)=>(a+Number(e.revenue_usd||0)),0);
+  const totalCap=pastEvents.reduce((a,e)=>(a+Number(e.email_captures||0)),0);
+  const avgCapRate=pastEvents.filter(e=>e.capture_rate_pct).length?
+    (pastEvents.reduce((a,e)=>(a+Number(e.capture_rate_pct||0)),0)/pastEvents.filter(e=>e.capture_rate_pct).length).toFixed(1):null;
+
+  el.innerHTML=`
+    <div class="roi-row">
+      <div class="roi-card"><div class="rv">${EV_LIST.length}</div><div class="rl">Total events</div></div>
+      <div class="roi-card"><div class="rv">${cur(totalRev)}</div><div class="rl">Revenue from past events</div></div>
+      <div class="roi-card"><div class="rv">${pct(avgCapRate)}</div><div class="rl">Avg email capture rate</div></div>
+    </div>
+    <div class="toolbar">
+      <input type="search" placeholder="Search events…" oninput="filterEv(this.value)">
+      <select onchange="filterEvStatus(this.value)">
+        <option value="">All statuses</option>
+        ${['planned','confirmed','active','past','cancelled'].map(v=>`<option>${v}</option>`).join('')}
+      </select>
+      <button class="b-save b-sm" onclick="openNewEvent()">+ Add event</button>
+    </div>
+    <div id="ev-list"></div>`;
+  renderEvList(EV_LIST);
+}
+function renderEvList(list){
+  const el=document.getElementById('ev-list');if(!el)return;
+  if(!list.length){el.innerHTML='<div class="empty">No events yet. Add your first field event.</div>';return}
+  el.innerHTML=list.map(e=>`
+    <div class="row">
+      <div class="rhead" onclick="this.parentElement.classList.toggle('open')">
+        <span class="nm">${esc(e.event_name)}<small>${esc(e.city?e.city+(e.country?', '+e.country:''):e.country||'')} · ${fmtDate(e.starts_at)}</small></span>
+        ${tag(e.status,'t-'+e.status)} ${tag(e.event_type)}
+        ${e.capture_rate_pct!=null?`<span class="tag t-general">${e.capture_rate_pct}% capture</span>`:''}
+        ${e.revenue_usd!=null?`<span style="font-size:12px;font-weight:700;color:var(--green);margin-left:4px">${cur(e.revenue_usd)}</span>`:''}
+      </div>
+      <div class="rbody">
+        <div class="three" style="margin-top:10px">
+          <div class="roi-card"><div class="rv">${fmt(e.attendance)}</div><div class="rl">Attendance</div></div>
+          <div class="roi-card"><div class="rv">${fmt(e.email_captures)}</div><div class="rl">Email captures</div></div>
+          <div class="roi-card"><div class="rv">${pct(e.capture_rate_pct)}</div><div class="rl">Capture rate</div></div>
+        </div>
+        <div class="two" style="margin-top:12px">
+          <div class="roi-card"><div class="rv">${cur(e.revenue_usd)}</div><div class="rl">Revenue</div></div>
+          <div class="roi-card"><div class="rv">${cur(e.revenue_per_capture)}</div><div class="rl">Revenue per capture</div></div>
+        </div>
+        <div class="acts" style="margin-top:12px">
+          <button class="b-ghost b-sm" onclick="openEditEvent('${e.id}')">Edit event details</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+function openNewEvent(){
+  openOverlay(`
+    <div class="ov-hd"><h3>Add Field Event</h3><button class="ov-close" onclick="closeOverlay()">✕</button></div>
+    <label class="lbl">Event name</label><input class="f" id="ne-nm" placeholder="Sunday Market, Harlem">
+    <div class="two">
+      <div><label class="lbl">Type</label>
+        <select class="f" id="ne-tp">${['popup','market','festival','class','workshop','trade_show','exhibition','partner_event'].map(v=>`<option>${v}</option>`).join('')}</select>
+      </div>
+      <div><label class="lbl">Status</label>
+        <select class="f" id="ne-st">${['planned','confirmed','active','past','cancelled'].map(v=>`<option>${v}</option>`).join('')}</select>
+      </div>
+    </div>
+    <div class="two">
+      <div><label class="lbl">Start date/time</label><input class="f" type="datetime-local" id="ne-sd"></div>
+      <div><label class="lbl">End date/time</label><input class="f" type="datetime-local" id="ne-ed"></div>
+    </div>
+    <div class="two">
+      <div><label class="lbl">Venue</label><input class="f" id="ne-ve"></div>
+      <div><label class="lbl">City</label><input class="f" id="ne-cy"></div>
+    </div>
+    <div class="two">
+      <div><label class="lbl">Country</label><input class="f" id="ne-co"></div>
+      <div><label class="lbl">Budget (USD)</label><input class="f" type="number" id="ne-bg" placeholder="0.00"></div>
+    </div>
+    <label class="lbl">Notes</label><textarea class="f" id="ne-nt"></textarea>
+    <div class="acts" style="margin-top:14px">
+      <button class="b-save" onclick="createEvent()">Add event</button>
+      <span class="msg" id="ne-msg"></span>
+    </div>`);
+}
+async function openEditEvent(id){
+  const {data:e,error}=await SB.from('cs_field_events').select('*').eq('id',id).single();
+  if(error||!e)return;
+  const toLocal=s=>s?new Date(s).toISOString().slice(0,16):'';
+  openOverlay(`
+    <div class="ov-hd"><h3>${esc(e.event_name)}</h3><button class="ov-close" onclick="closeOverlay()">✕</button></div>
+    <div class="two">
+      <div><label class="lbl">Event name</label><input class="f" id="ee-nm" value="${esc(e.event_name)}"></div>
+      <div><label class="lbl">Status</label><select class="f" id="ee-st">${['planned','confirmed','active','past','cancelled'].map(v=>`<option ${e.status===v?'selected':''}>${v}</option>`).join('')}</select></div>
+    </div>
+    <div class="two">
+      <div><label class="lbl">Start</label><input class="f" type="datetime-local" id="ee-sd" value="${toLocal(e.starts_at)}"></div>
+      <div><label class="lbl">End</label><input class="f" type="datetime-local" id="ee-ed" value="${toLocal(e.ends_at)}"></div>
+    </div>
+    <div class="three">
+      <div><label class="lbl">Attendance</label><input class="f" type="number" id="ee-at" value="${e.attendance??''}"></div>
+      <div><label class="lbl">Email captures</label><input class="f" type="number" id="ee-ec" value="${e.email_captures??''}"></div>
+      <div><label class="lbl">Revenue (USD)</label><input class="f" type="number" id="ee-rv" value="${e.revenue_usd??''}"></div>
+    </div>
+    <div class="two">
+      <div><label class="lbl">Actual cost (USD)</label><input class="f" type="number" id="ee-ac" value="${e.actual_cost_usd??''}"></div>
+      <div><label class="lbl">Venue</label><input class="f" id="ee-ve" value="${esc(e.venue||'')}"></div>
+    </div>
+    <label class="lbl">Notes</label><textarea class="f" id="ee-nt">${esc(e.notes||'')}</textarea>
+    <div class="acts" style="margin-top:14px">
+      <button class="b-save" onclick="updateEvent('${id}')">Save event</button>
+      <span class="msg" id="ee-msg"></span>
+    </div>`);
+}
+window.createEvent=async function(){
+  const m=document.getElementById('ne-msg');
+  const name=document.getElementById('ne-nm').value.trim();
+  if(!name)return flash(m,'Event name is required.',false);
+  const sd=document.getElementById('ne-sd').value;
+  const {error}=await SB.from('cs_field_events').insert({
+    event_name:name,event_type:document.getElementById('ne-tp').value,
+    status:document.getElementById('ne-st').value,
+    starts_at:sd||null,ends_at:document.getElementById('ne-ed').value||null,
+    venue:document.getElementById('ne-ve').value.trim()||null,
+    city:document.getElementById('ne-cy').value.trim()||null,
+    country:document.getElementById('ne-co').value.trim()||null,
+    budget_usd:document.getElementById('ne-bg').value||null,
+    notes:document.getElementById('ne-nt').value.trim()||null,
+  });
+  if(error)return flash(m,error.message,false);
+  flash(m,'Added');setTimeout(()=>{closeOverlay();LOADED.delete('events');loadEvents()},800);
+};
+window.updateEvent=async function(id){
+  const m=document.getElementById('ee-msg');
+  const o={
+    event_name:document.getElementById('ee-nm').value.trim(),
+    status:document.getElementById('ee-st').value,
+    starts_at:document.getElementById('ee-sd').value||null,
+    ends_at:document.getElementById('ee-ed').value||null,
+    attendance:document.getElementById('ee-at').value||null,
+    email_captures:document.getElementById('ee-ec').value||null,
+    revenue_usd:document.getElementById('ee-rv').value||null,
+    actual_cost_usd:document.getElementById('ee-ac').value||null,
+    venue:document.getElementById('ee-ve').value.trim()||null,
+    notes:document.getElementById('ee-nt').value.trim()||null,
+    updated_at:new Date().toISOString()
+  };
+  const {error}=await SB.from('cs_field_events').update(o).eq('id',id);
+  if(error)return flash(m,error.message,false);
+  flash(m,'Saved');setTimeout(()=>{closeOverlay();LOADED.delete('events');loadEvents()},800);
+};
+window.filterEv=function(q){renderEvList(q?EV_LIST.filter(e=>e.event_name.toLowerCase().includes(q.toLowerCase())):EV_LIST)};
+window.filterEvStatus=function(v){renderEvList(v?EV_LIST.filter(e=>e.status===v):EV_LIST)};
+window.openNewEvent=openNewEvent;window.openEditEvent=openEditEvent;
+
+/* ═══════════════════════════════════════════════════════════════
+   MODULE 8: TREND OBSERVATORY
+═══════════════════════════════════════════════════════════════ */
+async function loadTrends(){
+  const el=document.getElementById('mod-trends');
+  el.innerHTML='<div class="loading">Loading trend log…</div>';
+  const {data,error}=await SB.from('cs_trend_notes').select('*').order('week_of',{ascending:false}).order('created_at',{ascending:false}).limit(100);
+  if(error&&error.message.includes('does not exist')){
+    el.innerHTML='<div class="empty">Run <code>010_intelligence_schema.sql</code> first, then refresh.</div>';return;
+  }
+  if(error){el.innerHTML=`<div class="empty">${esc(error.message)}</div>`;return}
+
+  const thisMonday=(()=>{const d=new Date();d.setDate(d.getDate()-((d.getDay()+6)%7));return d.toISOString().slice(0,10)})();
+  el.innerHTML=`
+    <div class="trend-form">
+      <h4>Log a Trend Observation</h4>
+      <p style="font-size:12.5px;color:var(--muted);margin-top:4px;margin-bottom:2px">Human-curated observations only. Not scraped feeds. Every entry carries a named author.</p>
+      <div class="two">
+        <div><label class="lbl">Week of</label><input class="f" type="date" id="tn-wk" value="${thisMonday}"></div>
+        <div><label class="lbl">Category</label>
+          <select class="f" id="tn-cat">${['pattern','color','technique','cultural','market','event','other'].map(v=>`<option>${v}</option>`).join('')}</select>
+        </div>
+      </div>
+      <label class="lbl">Headline (one sentence)</label><input class="f" id="tn-hl" placeholder="e.g. Indigo-dyed linen is accelerating across independent brands">
+      <label class="lbl">Observation (what you saw, where, and why it matters)</label><textarea class="f" id="tn-ob" style="min-height:80px" placeholder="Describe the signal in your own words. What platform? Which brands? Who's doing it?"></textarea>
+      <label class="lbl">Evidence (URLs, source names — comma-separated)</label><input class="f" id="tn-ev" placeholder="Instagram @handle, https://…, Brand name">
+      <label class="lbl">Author (your name — authority is accountability)</label><input class="f" id="tn-au" placeholder="Stacey Grant-Lewis">
+      <div class="acts" style="margin-top:12px">
+        <button class="b-save" onclick="addTrendNote()">Log observation</button>
+        <span class="msg" id="tn-msg"></span>
+      </div>
+    </div>
+    <div id="trend-log">
+      ${renderTrendLog(data||[])}
+    </div>`;
+}
+function renderTrendLog(notes){
+  if(!notes.length)return'<div class="empty">No trend observations logged yet. Be the first.</div>';
+  return notes.map(n=>`
+    <div class="t-item">
+      <div class="t-item-hd">
+        <span class="t-week">Week of ${esc(n.week_of)}</span>
+        <span class="t-cat">${esc(n.category)}</span>
+        ${n.is_public?'<span class="tag t-general">public</span>':'<span class="tag s-draft">internal</span>'}
+      </div>
+      <div class="t-headline">${esc(n.headline)}</div>
+      <div class="t-obs">${esc(n.observation)}</div>
+      ${n.evidence?`<div class="t-evidence">Sources: ${esc(n.evidence)}</div>`:''}
+      <div class="t-author">— ${esc(n.author)} · ${fmtDate(n.created_at)}</div>
+    </div>`).join('');
+}
+window.addTrendNote=async function(){
+  const m=document.getElementById('tn-msg');
+  const headline=document.getElementById('tn-hl').value.trim();
+  const obs=document.getElementById('tn-ob').value.trim();
+  const author=document.getElementById('tn-au').value.trim();
+  const week=document.getElementById('tn-wk').value;
+  if(!headline)return flash(m,'Headline is required.',false);
+  if(!obs)return flash(m,'Observation is required.',false);
+  if(!author)return flash(m,'Author name is required — authority is accountability.',false);
+  if(!week)return flash(m,'Week date is required.',false);
+  const {error}=await SB.from('cs_trend_notes').insert({
+    week_of:week,category:document.getElementById('tn-cat').value,
+    headline,observation:obs,evidence:document.getElementById('tn-ev').value.trim()||null,
+    author,is_public:false
+  });
+  if(error)return flash(m,error.message,false);
+  flash(m,'Logged');
+  document.getElementById('tn-hl').value='';
+  document.getElementById('tn-ob').value='';
+  document.getElementById('tn-ev').value='';
+  LOADED.delete('trends');loadTrends();
+};
+
+/* ── INIT ──────────────────────────────────────────────────────── */
+boot();
+</script></body></html>

@@ -1,0 +1,348 @@
+
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Printable Patch Studio — DIY Iron-on Patch</title>
+    <script src="/cs-track.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Jost:wght@300;400;600;700&display=swap');
+    :root{--green:#105305;--green-dk:#0a3803;--cream:#faf8f4;--off:#f5f3ef;--ink:#1a1a1a;--muted:#8a887f;--serif:'Cormorant Garamond',Georgia,serif;--sans:'Jost',Arial,sans-serif}
+    *{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;padding:34px 18px 60px}
+    .wrap{max-width:900px;margin:0 auto}
+    .eyebrow{font-size:10px;font-weight:700;letter-spacing:.26em;text-transform:uppercase;color:var(--green);margin:0 0 12px}
+    h1{font-family:var(--serif);font-weight:400;font-size:clamp(30px,4.4vw,46px);margin:0 0 8px}h1 em{font-style:italic}
+    .lede{color:#555;font-weight:300;max-width:60ch;margin:0 0 8px}
+    .gate-note{font-size:12px;color:var(--muted);background:background:#f4efe3;border:1px solid #e8dfca;border-radius:10px;padding:10px 14px;margin:0 0 22px;max-width:60ch}
+    .plabel{font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+    .picker{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:24px}
+    .sw{width:52px;height:52px;border-radius:10px;overflow:hidden;border:2px solid transparent;cursor:pointer;background:var(--off);box-shadow:0 2px 8px rgba(0,0,0,.08)}
+    .sw.on{border-color:var(--green)}.sw img{width:100%;height:100%;object-fit:cover;display:block}
+    .stage{display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start}
+    .preview{flex:1 1 360px;background:#fff;border:1px solid #eee7db;border-radius:14px;box-shadow:0 3px 15px rgba(0,0,0,.09);overflow:hidden}
+    .preview canvas{width:100%;height:auto;display:block}
+    .preview.alpha{background-image:linear-gradient(45deg,#e2ded4 25%,transparent 25%),linear-gradient(-45deg,#e2ded4 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#e2ded4 75%),linear-gradient(-45deg,transparent 75%,#e2ded4 75%);background-size:18px 18px;background-position:0 0,0 9px,9px -9px,-9px 0}
+    .panel input[type=range]{width:100%;margin-bottom:10px}
+    .panel input[type=file]{width:100%;font-size:12px;margin-bottom:12px}
+    .panel .chk{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--green);margin:0 0 8px;cursor:pointer}
+    .panel .chk input{width:auto;margin:0}
+    .rangelbl{display:flex;justify-content:space-between;font-size:12px;font-weight:600;color:var(--green);margin:0 0 4px}
+    .rangelbl span{color:var(--muted);font-weight:400}
+    .bgbox{border:1px solid #e8dfca;background:#f7f2e6;border-radius:10px;padding:12px 12px 4px;margin:6px 0 14px}
+    .btn-alt{display:block;width:100%;background:#fff;color:var(--green);border:1.5px solid var(--green);border-radius:10px;padding:12px;font-family:var(--sans);font-weight:600;font-size:14px;cursor:pointer;margin:0 0 10px}
+    .btn-alt:hover{background:#f0f5ef}.btn-alt:disabled{opacity:.6;cursor:default}
+    .panel{flex:0 0 250px}
+    .panel h3{font-family:var(--serif);font-weight:600;font-size:20px;margin:0 0 12px}
+    .panel label{font-size:12px;font-weight:600;color:var(--green);display:block;margin:0 0 4px}
+    .panel select{width:100%;padding:9px;border:1px solid #e0dccf;border-radius:8px;margin-bottom:14px;font-family:var(--sans);background:#fff}
+    .btn{display:block;width:100%;background:var(--green);color:#fff;border:0;border-radius:10px;padding:13px;font-family:var(--sans);font-weight:600;font-size:15px;cursor:pointer;margin:4px 0 10px}
+    .btn:hover{background:var(--green-dk)}.btn:disabled{opacity:.6;cursor:default}
+    .note{font-size:11.5px;color:var(--muted);line-height:1.6}
+    #locked{display:none;background:#fff;border:1px solid #e8dfca;border-radius:12px;padding:16px;margin-top:10px}
+    #locked b{color:var(--ink)}
+    #locked a{display:inline-block;margin-top:8px;background:var(--green);color:#fff;padding:8px 14px;border-radius:8px;font-weight:600;font-size:13px;text-decoration:none}
+    .authbar{display:flex;justify-content:flex-end;align-items:center;gap:12px;margin-bottom:6px;font-size:13px}
+    .authbar .whoami{color:var(--muted)}.authbar .whoami b{color:var(--ink)}
+    .link-btn{background:none;border:0;color:var(--green);font-weight:600;cursor:pointer;font-size:13px;font-family:var(--sans)}
+    .btn-gold{background:var(--green);color:#fff;padding:7px 14px;border-radius:8px;text-decoration:none;font-weight:600;font-size:13px}
+    .overlay{display:none;position:fixed;inset:0;background:rgba(20,16,10,.55);align-items:center;justify-content:center;z-index:80;padding:16px}
+    .overlay.show{display:flex}
+    .modal{background:#fff;border-radius:16px;padding:26px;max-width:380px;width:100%;position:relative}
+    .modal h3{font-family:var(--serif);font-weight:600;font-size:24px;margin:0 0 6px}
+    .modal .sub{color:var(--muted);font-size:13.5px;margin:0 0 16px;line-height:1.5}
+    .modal .field label{display:block;font-size:12px;font-weight:600;color:var(--green);margin-bottom:4px}
+    .modal .field input{width:100%;padding:10px;border:1px solid #e0dccf;border-radius:8px;font-family:var(--sans);margin-bottom:14px}
+    .modal .btn-dark{width:100%;background:var(--green);color:#fff;border:0;border-radius:9px;padding:12px;font-weight:600;font-size:15px;cursor:pointer}
+    .modal .btn-dark:disabled{opacity:.6}
+    .modal-x{position:absolute;top:12px;right:16px;border:0;background:none;font-size:24px;color:var(--muted);cursor:pointer}
+    .msg{margin-top:12px;font-size:13px}.msg.ok{color:var(--green)}.msg.err{color:#b3261e}
+    </style></head><body>
+    <div class="wrap">
+      <div class="authbar" id="authSlot"></div>
+      <p class="eyebrow">&#10022; Printable patch studio</p>
+      <h1>Your patch, <em>print-ready.</em></h1>
+      <p class="lede">Pick a design, choose your size and transfer paper, and download a print-ready sheet to iron on at home.</p>
+      <p class="gate-note">&#128274; Owners of the <b>DIY Iron-on Patch</b> only. Your download is composed from the clean, high-resolution file &mdash; pulled securely through your gated <code>coco-art-download</code> function, never from the public preview.</p>
+      <p class="plabel">Featured designs</p>
+      <div class="picker" id="picker"></div>
+      <div class="stage">
+        <div class="preview"><canvas id="preview" width="850" height="1100"></canvas></div>
+        <div class="panel">
+          <h3 id="dname">&mdash;</h3>
+          <label>Shape</label>
+          <select id="shape"><option value="rounded" selected>Rounded square</option><option value="circle">Circle</option><option value="shield">Shield / crest</option><option value="hexagon">Hexagon</option><option value="heart">Heart</option></select>
+          <label>Size</label>
+          <select id="size"><option value="3">3 inch</option><option value="4" selected>4 inch</option><option value="5">5 inch</option><option value="6">6 inch</option><option value="8">8 inch (2&times;)</option></select>
+          <label>Your transfer paper</label>
+          <select id="paper"><option value="light" selected>Light-fabric (mirrored)</option><option value="dark">Dark-fabric (normal)</option></select>
+          <label style="font-size:12px;font-weight:600;color:var(--green);display:block;margin-bottom:4px">Or upload your own design</label>
+          <input type="file" id="upload" accept="image/*">
+    
+          <div class="bgbox">
+            <label class="chk"><input type="checkbox" id="stripBg"> Remove background</label>
+            <select id="bgMode" style="margin-bottom:10px">
+              <option value="flood" selected>Edges only (keeps interior colour)</option>
+              <option value="global">Everywhere (that colour throughout)</option>
+            </select>
+            <div class="rangelbl"><span style="color:var(--green)">Tolerance</span><span id="tolVal">32</span></div>
+            <input type="range" id="bgTol" min="0" max="140" value="32">
+            <div class="rangelbl"><span style="color:var(--green)">Edge softness</span><span id="fthVal">0.5</span></div>
+            <input type="range" id="bgFeather" min="0" max="100" value="50">
+          </div>
+    
+          <button class="btn-alt" id="dlPng">Download transparent PNG (for transfers)</button>
+          <button class="btn" id="dl">Download printable patch (PDF)</button>
+          <p class="note">Preview uses the watermarked image; your <b>download</b> uses the clean file.</p>
+          <div id="locked"><b>This is a DIY Iron-on Patch feature.</b><br>We couldn&rsquo;t verify your access to the print-ready file. Make sure you&rsquo;re signed in with the account you purchased on.<br><a href="https://cultureschool.org/products/diy-iron-on-patch" target="_blank" rel="noopener">Get the DIY Iron-on Patch &rarr;</a></div>
+        </div>
+      </div>
+    </div>
+    <script>
+    const SUPABASE_URL='https://qwulthvbwujfehgdegtn.supabase.co';
+    const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3dWx0aHZid3VqZmVoZ2RlZ3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQyMDcxODIsImV4cCI6MjA1OTc4MzE4Mn0.t9n4eZng6d0jggiPNK-J_DByvEE2L9tqy5Xh_1-TSoQ';
+    let sb=null;try{sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);}catch(e){}
+    const CDN='https://cdn.shopify.com/s/files/1/0673/3637/2387/files/';
+    const FALLBACK=[
+     {id:null,name:'Cape Cod Mermaid',img:CDN+'coco_cape_cod_mermaid_3000px.png?v=1783376748'},
+     {id:null,name:'Morning Blue',img:CDN+'kente_coco_cape_cod_morning_blue_and_violets_3000px.png?v=1783376997'},
+     {id:null,name:'Mudcloth',img:CDN+'coco_mudcloth_3000px_150dpi_4.png?v=1776905847'},
+    ];
+    let DESIGNS=[], active=null, activeImg=null;
+    
+    /* ── auth: magic-link sign-in (same as the textile library) ── */
+    document.body.insertAdjacentHTML('beforeend', `<div class="overlay" id="signupOverlay"><div class="modal" role="dialog" aria-modal="true"><button class="modal-x" data-close>&times;</button><h3>Sign in to your studio</h3><p class="sub">Enter the email you purchased with and we&rsquo;ll send a magic link — no password to remember.</p><div class="field"><label for="suEmail">Email</label><input id="suEmail" type="email" autocomplete="email" placeholder="you@example.com"></div><button class="btn-dark" id="suBtn">Send my magic link</button><div class="msg" id="suMsg"></div></div></div>`);
+    var _mm=document.querySelector('#signupOverlay .modal'); if(_mm){ _mm.addEventListener('click', function(e){ e.stopPropagation(); }); }
+    var authSlot=document.getElementById('authSlot');
+    function updateAuthUI(session){ if(!authSlot)return; var email=session&&session.user&&session.user.email;
+      if(email){ authSlot.innerHTML='<span class="whoami">Signed in as <b></b></span> <button class="link-btn" id="signOut" type="button">Sign out</button>'; authSlot.querySelector('b').textContent=email; var lk=document.getElementById('locked'); if(lk)lk.style.display='none'; }
+      else { authSlot.innerHTML='<a class="btn-gold" href="#" id="signInBtn">Sign in</a>'; } }
+    if(sb){ sb.auth.getSession().then(function(r){updateAuthUI(r.data.session);}); sb.auth.onAuthStateChange(function(_e,session){updateAuthUI(session);}); } else updateAuthUI(null);
+    function openSignin(){ document.getElementById('signupOverlay').classList.add('show'); var el=document.getElementById('suEmail'); if(el){ setTimeout(function(){ el.focus(); }, 30); } }
+    function closeSignin(){ document.getElementById('signupOverlay').classList.remove('show'); }
+    document.addEventListener('click', function(e){
+      if(e.target.closest('#signInBtn')){ e.preventDefault(); openSignin(); return; }
+      if(e.target.closest('#signOut')){ e.preventDefault(); if(sb)sb.auth.signOut().then(function(){updateAuthUI(null);}); return; }
+      if(e.target.closest('[data-close]') || e.target.classList.contains('overlay')){ closeSignin(); return; }
+    });
+    document.getElementById('suBtn').addEventListener('click', async function(){
+      var email=document.getElementById('suEmail').value.trim(); var msg=document.getElementById('suMsg'); msg.className='msg';
+      if(!email){ msg.className='msg err'; msg.textContent='Enter your email first.'; return; }
+      if(!sb){ msg.className='msg err'; msg.textContent='Sign-in unavailable.'; return; }
+      var b=document.getElementById('suBtn'); b.disabled=true; b.textContent='Sending\u2026';
+      try{ var r=await sb.auth.signInWithOtp({ email:email, options:{ emailRedirectTo: window.location.href }}); if(r.error) throw r.error;
+        msg.className='msg ok'; msg.textContent='Check your inbox — your magic link is on its way.'; }
+      catch(err){ msg.className='msg err'; msg.textContent=(err&&err.message)||'Something went wrong. Try again.'; }
+      finally{ b.disabled=false; b.textContent='Send my magic link'; } });
+    
+    /* ── background removal (for heat transfers) ────────────────────────────────
+       'flood' floods inward from the border and stops at the design, so white
+       INSIDE a motif survives. 'global' removes that colour everywhere.
+       PNG only — JPEG has no alpha channel and would flatten this back to white. */
+    function removeBackground(canvas, opts){
+      opts = opts || {};
+      var mode = opts.mode || 'flood', tol = (opts.tolerance == null ? 32 : opts.tolerance),
+          feather = (opts.feather == null ? 0.5 : opts.feather);
+      var ctx = canvas.getContext('2d', { willReadFrequently: true });
+      var W = canvas.width, H = canvas.height;
+      var img = ctx.getImageData(0,0,W,H), d = img.data;
+    
+      var bg = opts.color;
+      if(!bg){                                   // auto: most common corner colour
+        var corners = [[0,0],[W-1,0],[0,H-1],[W-1,H-1]].map(function(p){
+          var i=(p[1]*W+p[0])*4; return d[i]+','+d[i+1]+','+d[i+2]; });
+        var counts={}; corners.forEach(function(c){counts[c]=(counts[c]||0)+1;});
+        bg = Object.keys(counts).sort(function(a,b){return counts[b]-counts[a];})[0].split(',').map(Number);
+      }
+      var br=bg[0], bgc=bg[1], bb=bg[2];
+      function dist(i){ var dr=d[i]-br, dg=d[i+1]-bgc, db=d[i+2]-bb; return Math.sqrt(dr*dr+dg*dg+db*db); }
+      var band = Math.max(1, tol*feather);
+      function alphaFor(dd){ if(dd<=tol) return 0; if(dd>=tol+band) return 255;
+        return Math.round(255*(dd-tol)/band); }
+    
+      if(mode==='global'){
+        for(var i=0;i<d.length;i+=4){ var a=alphaFor(dist(i)); if(a<d[i+3]) d[i+3]=a; }
+      } else {
+        var seen=new Uint8Array(W*H), stack=[], x, y;
+        for(x=0;x<W;x++){ stack.push(x,0); stack.push(x,H-1); }
+        for(y=0;y<H;y++){ stack.push(0,y); stack.push(W-1,y); }
+        while(stack.length){
+          y=stack.pop(); x=stack.pop();
+          if(x<0||y<0||x>=W||y>=H) continue;
+          var p=y*W+x; if(seen[p]) continue;
+          var idx=p*4, dd=dist(idx);
+          if(dd>tol+band) continue;              // hit the design — stop
+          seen[p]=1;
+          var al=alphaFor(dd); if(al<d[idx+3]) d[idx+3]=al;
+          if(al===0){ stack.push(x+1,y); stack.push(x-1,y); stack.push(x,y+1); stack.push(x,y-1); }
+        }
+      }
+      ctx.putImageData(img,0,0);
+      return canvas;
+    }
+    /* Returns the design to draw: the original, or a bg-removed copy. */
+    function workingImage(src){
+      var el = document.getElementById('stripBg');
+      if(!el || !el.checked || !src) return src;
+      var iw = src.naturalWidth || src.width, ih = src.naturalHeight || src.height;
+      var cv = document.createElement('canvas'); cv.width=iw; cv.height=ih;
+      cv.getContext('2d',{willReadFrequently:true}).drawImage(src,0,0);
+      return removeBackground(cv, {
+        mode:      document.getElementById('bgMode').value,
+        tolerance: +document.getElementById('bgTol').value,
+        feather:   +document.getElementById('bgFeather').value/100
+      });
+    }
+    /* Just the patch, transparent outside the shape, at true print resolution. */
+    function composeTransparentPatch(src, o){
+      o = o || {};
+      var sizeIn = o.sizeIn || 4, shape = o.shape || 'rounded', mirror = !!o.mirror, dpi = o.dpi || 300;
+      var S = Math.round(sizeIn * dpi);
+      var cv = document.createElement('canvas'); cv.width = cv.height = S;
+      var x = cv.getContext('2d');            // starts fully transparent — no fillRect
+      x.save(); shapePath(x,0,0,S,shape); x.clip();
+      if(mirror){ x.translate(S/2,0); x.scale(-1,1); x.translate(-S/2,0); }
+      var iw = src.naturalWidth||src.width, ih = src.naturalHeight||src.height;
+      var sc = Math.max(S/iw, S/ih);
+      x.drawImage(src, (S-iw*sc)/2, (S-ih*sc)/2, iw*sc, ih*sc);
+      x.restore();
+      return cv;
+    }
+    
+    /* ── reusable core (size + paper) ── */
+    function rr(x,a,b,w,h,r){x.beginPath();x.moveTo(a+r,b);x.arcTo(a+w,b,a+w,b+h,r);x.arcTo(a+w,b+h,a,b+h,r);x.arcTo(a,b+h,a,b,r);x.arcTo(a,b,a+w,b,r);x.closePath();}
+    function shapePath(x,px,py,s,shape){ var cx=px+s/2, cy=py+s/2, r=s/2;
+      if(shape==='circle'){ x.beginPath(); x.arc(cx,cy,r,0,Math.PI*2); x.closePath(); }
+      else if(shape==='hexagon'){ x.beginPath(); for(var i=0;i<6;i++){var a=Math.PI/180*(60*i-30),X=cx+r*Math.cos(a),Y=cy+r*Math.sin(a); if(i)x.lineTo(X,Y); else x.moveTo(X,Y);} x.closePath(); }
+      else if(shape==='shield'){ var q=s*0.14; x.beginPath(); x.moveTo(px+q,py); x.lineTo(px+s-q,py); x.quadraticCurveTo(px+s,py,px+s,py+q); x.lineTo(px+s,py+s*0.52); x.quadraticCurveTo(px+s,py+s*0.82,cx,py+s); x.quadraticCurveTo(px,py+s*0.82,px,py+s*0.52); x.lineTo(px,py+q); x.quadraticCurveTo(px,py,px+q,py); x.closePath(); }
+      else if(shape==='heart'){ x.beginPath(); x.moveTo(cx,py+s*0.3); x.bezierCurveTo(px+s*0.1,py,px,py+s*0.45,cx,py+s*0.88); x.bezierCurveTo(px+s,py+s*0.45,px+s*0.9,py,cx,py+s*0.3); x.closePath(); }
+      else { rr(x,px,py,s,s,s*0.2); } }
+    function drawPatch(x,px,py,ps,img,mirror,shape){
+      x.save(); shapePath(x,px,py,ps,shape); x.clip();
+      var _w=img&&(img.naturalWidth||img.width), _h=img&&(img.naturalHeight||img.height);
+      if(img&&_w){ x.save(); if(mirror){x.translate(px+ps/2,0);x.scale(-1,1);x.translate(-(px+ps/2),0);}
+        var sc=Math.max(ps/_w,ps/_h),iw=_w*sc,ih=_h*sc; x.drawImage(img,px+(ps-iw)/2,py+(ps-ih)/2,iw,ih); x.restore();
+      } else {x.fillStyle='#d8ccc0';x.fillRect(px,py,ps,ps);}
+      x.restore();
+      x.save(); x.setLineDash([6,4]); x.strokeStyle='#a9832f'; x.lineWidth=2.4; shapePath(x,px-6,py-6,ps+12,shape); x.stroke(); x.restore();
+    }
+    function composePatchSheet(img,opts){
+      opts=opts||{}; var name=opts.name||'Your design', sizeIn=opts.sizeIn||4, mirror=opts.mirror!==false, paper=mirror?'light':'dark', shape=opts.shape||'rounded';
+      var S=100,W=8.5*S,H=11*S,cv=document.createElement('canvas');cv.width=W;cv.height=H;var x=cv.getContext('2d');
+      x.fillStyle='#fff';x.fillRect(0,0,W,H);var M=0.75*S;
+      x.fillStyle='#2b2016';x.font='700 '+Math.round(0.28*S)+'px Georgia,serif';x.textAlign='left';x.fillText('Printable Iron-on Patch',M,0.95*S);
+      x.fillStyle='#7a6f5e';x.font='italic '+Math.round(0.135*S)+'px Georgia,serif';x.fillText('Design: '+name+'   \u00b7   '+sizeIn+'-inch   \u00b7   for '+paper.toUpperCase()+'-fabric transfer paper',M,1.2*S);
+      x.strokeStyle='#d8cdb6';x.beginPath();x.moveTo(M,1.38*S);x.lineTo(W-M,1.38*S);x.stroke();
+      var ps=sizeIn*S,px=(W-ps)/2,py=1.72*S; drawPatch(x,px,py,ps,img,mirror,shape);
+      x.textAlign='center';
+      x.fillStyle='#7a6f5e';x.font=Math.round(0.115*S)+'px Arial';x.fillText('Gold dashed line = cut here. Round the corners.',W/2,py+ps+0.34*S);
+      x.fillStyle='#2b2016';x.font=Math.round(0.125*S)+'px Arial';x.fillText('Print at 100% on '+paper+'-fabric transfer paper  \u00b7  iron on through parchment, hot & dry ~25 sec  \u00b7  cool, then peel.',W/2,py+ps+0.6*S);
+      x.textAlign='left';
+      x.strokeStyle='#d8cdb6';x.beginPath();x.moveTo(M,H-0.72*S);x.lineTo(W-M,H-0.72*S);x.stroke();
+      x.fillStyle='#7a6f5e';x.font=Math.round(0.1*S)+'px Arial';x.fillText('CultureSchool  \u00b7  cococreate.cultureschool.org  \u00b7  Full how-to in the Make-Your-Own-Patch guide.',M,H-0.5*S);
+      return cv;
+    }
+    function loadImg(url,cross){return new Promise(function(res,rej){var im=new Image();if(cross)im.crossOrigin='anonymous';im.onload=function(){res(im);};im.onerror=function(){rej(new Error('image load failed'));};im.src=url;});}
+    
+    /* ── the gate: pull the CLEAN print_path via coco-art-download (enforces has_art_access) ── */
+    async function fetchCleanPrintUrl(design){
+      if(!sb||!design||!design.id){ var e=new Error('no clean file'); e.code='not_entitled'; throw e; }
+      var resp = await sb.functions.invoke('coco-art-download', { body: { art_id: design.id } });
+      if(resp.error || !resp.data || !resp.data.url){ var er=new Error('not entitled'); er.code='not_entitled'; throw er; }
+      return resp.data.url;  // signed URL to the clean, high-res original
+    }
+    
+    function refresh(){ if(!activeImg)return;
+      var pvBox=document.querySelector('.preview'); var strip=document.getElementById('stripBg');
+      if(pvBox) pvBox.classList.toggle('alpha', !!(strip&&strip.checked));
+      var sheet=composePatchSheet(workingImage(activeImg),{name:active&&active.name,sizeIn:+document.getElementById('size').value,mirror:document.getElementById('paper').value==='light',shape:document.getElementById('shape').value});
+      var pv=document.getElementById('preview'); pv.width=sheet.width; pv.height=sheet.height; pv.getContext('2d').drawImage(sheet,0,0); }
+    function selectDesign(d){ active=d; document.getElementById('dname').textContent=d.name||'Design'; document.getElementById('locked').style.display='none';
+      if(typeof csTrack==='function')csTrack('view',{type:'pattern',id:d.id,slug:d.name,surface:'studio'});
+      document.querySelectorAll('.sw').forEach(function(el){el.classList.toggle('on',el.dataset.u===d.img);});
+      loadImg(d.img,true).then(function(im){activeImg=im;refresh();}).catch(function(){activeImg=null;}); }
+    function renderPicker(){ var box=document.getElementById('picker');
+      box.innerHTML=DESIGNS.map(function(d){return '<button class="sw" data-u="'+d.img+'" title="'+(d.name||'').replace(/"/g,'')+'"><img src="'+d.img+'" crossorigin="anonymous" alt=""></button>';}).join('');
+      box.querySelectorAll('.sw').forEach(function(b){var d=DESIGNS.find(function(x){return x.img===b.dataset.u;});b.onclick=function(){selectDesign(d);};}); }
+    document.getElementById('size').onchange=refresh;
+    document.getElementById('paper').onchange=refresh;
+    document.getElementById('shape').onchange=refresh;
+    document.getElementById('stripBg').onchange=refresh;
+    document.getElementById('bgMode').onchange=refresh;
+    document.getElementById('bgTol').oninput=function(e){ document.getElementById('tolVal').textContent=e.target.value; refresh(); };
+    document.getElementById('bgFeather').oninput=function(e){ document.getElementById('fthVal').textContent=(e.target.value/100).toFixed(2); refresh(); };
+    
+    /* ── upload your own design ─────────────────────────────────────────────────
+       Your own file needs no entitlement check — there is no clean file to fetch.
+       Sign-in is still required (the studio itself is the paid feature). */
+    document.getElementById('upload').onchange=function(e){
+      var f=e.target.files && e.target.files[0]; if(!f) return;
+      var rd=new FileReader();
+      rd.onload=function(){
+        var im=new Image();
+        im.onload=function(){
+          activeImg=im;
+          active={ id:null, name:(f.name||'Your design').replace(/\.[^.]+$/,''), img:rd.result, isUpload:true };
+          document.getElementById('dname').textContent=active.name;
+          document.getElementById('locked').style.display='none';
+          document.querySelectorAll('.sw').forEach(function(el){el.classList.remove('on');});
+          refresh();
+        };
+        im.src=rd.result;
+      };
+      rd.readAsDataURL(f);
+    };
+    
+    /* ── transparent PNG for heat transfers ────────────────────────────────────
+       PNG, not JPEG — JPEG has no alpha and would flatten the transparency. */
+    document.getElementById('dlPng').onclick=async function(){
+      if(!active||!activeImg){ return; }
+      var sess = sb ? (await sb.auth.getSession()).data.session : null;
+      if(!sess){ openSignin(); return; }
+      var btn=this, t=btn.textContent; btn.disabled=true; btn.textContent='Preparing your PNG\u2026';
+      try{
+        var src = activeImg;
+        if(!active.isUpload){                       // library design -> gated clean file
+          var cleanUrl = await fetchCleanPrintUrl(active);
+          src = await loadImg(cleanUrl,true);
+        }
+        var cv = composeTransparentPatch(workingImage(src), {
+          sizeIn: +document.getElementById('size').value,
+          shape:  document.getElementById('shape').value,
+          mirror: document.getElementById('paper').value==='light',
+          dpi: 300
+        });
+        await new Promise(function(res){
+          cv.toBlob(function(b){
+            var u=URL.createObjectURL(b), a=document.createElement('a');
+            a.href=u; a.download=(active.name||'design').replace(/[^a-z0-9]+/gi,'-').toLowerCase()+'-'+document.getElementById('size').value+'in-transfer.png';
+            if(typeof csTrack==='function')csTrack('download',{type:'pattern',id:active&&active.id,slug:active&&active.name,surface:'studio'});
+            a.click(); URL.revokeObjectURL(u); res();
+          },'image/png');
+        });
+      }catch(e){ if(e.code==='not_entitled'){ document.getElementById('locked').style.display='block'; } else { alert('Could not prepare the PNG: '+e.message); } }
+      finally{ btn.disabled=false; btn.textContent=t; }
+    };
+    document.getElementById('dl').onclick=async function(){
+      if(!active){return;}
+      var sess = sb ? (await sb.auth.getSession()).data.session : null;
+      if(!sess){ openSignin(); return; }
+      var btn=this; btn.disabled=true; var t=btn.textContent; btn.textContent='Preparing your file\u2026';
+      try{
+        var cleanImg = activeImg;
+        if(!active.isUpload){                                     // library design -> gated clean file
+          var cleanUrl = await fetchCleanPrintUrl(active);
+          cleanImg = await loadImg(cleanUrl,true);
+        }
+        var sheet=composePatchSheet(workingImage(cleanImg),{name:active.name,sizeIn:+document.getElementById('size').value,mirror:document.getElementById('paper').value==='light',shape:document.getElementById('shape').value});
+        var JsPDF=window.jspdf.jsPDF; var doc=new JsPDF('p','pt','letter'); doc.addImage(sheet.toDataURL('image/jpeg',0.94),'JPEG',0,0,612,792);
+        doc.save((active.name||'design').replace(/[^a-z0-9]+/gi,'-').toLowerCase()+'-'+document.getElementById('size').value+'in-patch.pdf');
+      }catch(e){ if(e.code==='not_entitled'){ document.getElementById('locked').style.display='block'; } else { alert('Could not prepare the file: '+e.message); } }
+      finally{ btn.disabled=false; btn.textContent=t; }
+    };
+    (async function(){
+      if(sb){ try{ var r=await sb.from('coco_art').select('id,title,image_url').eq('is_active',true).eq('is_featured',true).order('created_at',{ascending:false}).limit(24);
+        if(r.data&&r.data.length) DESIGNS=r.data.filter(function(x){return x.image_url;}).map(function(x){return {id:x.id,name:x.title,img:x.image_url};}); }catch(e){} }
+      if(!DESIGNS.length) DESIGNS=FALLBACK;
+      renderPicker(); selectDesign(DESIGNS[0]);
+    })();
+    </script></body></html>
+    
