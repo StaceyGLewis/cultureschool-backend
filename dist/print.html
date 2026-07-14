@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CoCo Print Studio · CultureSchool</title>
+<script src="/cs-track.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -1319,6 +1320,7 @@ function selectPalette(p) {
   if (!activePalette || activePalette.id !== p.id) palCycleOffset = 0;
   activePalette = p;
   activeColor = null;
+  if (typeof csTrack === 'function') csTrack('palette_view', { type: 'palette', id: p.id, slug: p.name });
   document.querySelectorAll('.palette-card').forEach(c => c.classList.remove('on'));
   const card = document.querySelector(`.palette-card[data-id="${p.id}"]`);
   if (card) card.classList.add('on');
@@ -3005,6 +3007,7 @@ function doExport() {
   }
 }
 function downloadBlob(blob, name) {
+  if (typeof csTrack === 'function') csTrack('download', { type: 'pattern', slug: name, surface: 'generator' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = name;

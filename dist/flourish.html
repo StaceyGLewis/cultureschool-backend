@@ -1721,6 +1721,7 @@ main.is-library {
   Made with <a href="https://cococreate.cultureschool.org">CoCoCreate</a> · CultureSchool
 </footer>
 
+<script src="/cs-track.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL = 'https://qwulthvbwujfehgdegtn.supabase.co';
@@ -2157,6 +2158,7 @@ async function loadPalette() {
 
     window.__palette = data;
   renderPalette(data, customDesc);
+  if (typeof csTrack === 'function') csTrack('palette_view', { type: 'palette', id: data.id, slug: data.name });
 
   } catch (e) {
     console.error('[palette page]', e);
@@ -2526,6 +2528,7 @@ function copyCSSVars() {
 
 function downloadPaletteCard(format, returnBlob = false) {
   const p      = window._currentPal || {};
+  if (typeof csTrack === 'function' && p.id && !returnBlob) csTrack('download', { type: 'palette', id: p.id, slug: p.name });
   const colors = p.colors || ['#c9a96e','#8a6020','#f0e0c0','#2a1a08','#e8c89a'];
   const name   = p.name || 'CoCo Palette';
   const desc   = p.color_descriptor || '';

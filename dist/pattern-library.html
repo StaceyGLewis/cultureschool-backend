@@ -6,6 +6,7 @@
 <title>Pattern Library — CoCo by CultureSchool</title>
 <meta name="description" content="Textile traditions from every corner of the world. Grab one. Make something.">
 
+<script src="/cs-track.js"></script>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Pinyon+Script&family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
@@ -896,6 +897,10 @@ const DRAW_FN = {
   batiktulis:       drawBatikTulis,
   tartan:           drawTartan,
   plaid:            drawTartan,
+  // ── Renamed styles (see fix-misnomers.sql) ────────────────────
+  'chief-blanket':  drawChiefBlanket,
+  ogham:            drawOgham,
+  songket:          drawSongket,
 };
 
 /* ═══════════════════════════════════════════════
@@ -3234,6 +3239,180 @@ function drawTartan(ctx, w, h, colors, tile, rot, cx) {
   ctx.restore();
 }
 
+function drawChiefBlanket(ctx, w, h, colors, tile, rot, cx) {
+  // Chief's blanket: stepped diamond + zigzag bands. Key renamed off "navajo" — Navajo Nation trademark.
+  ctx.fillStyle=colors[colors.length-1]||colors[0]; ctx.fillRect(0,0,w,h);
+  const cols2=Math.ceil(w/tile)+2, rows=Math.ceil(h/tile)+2;
+  ctx.save();
+  ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
+  for (let r=-1;r<rows;r++) {
+    const y=r*tile, ci=Math.abs(r)%colors.length;
+    if (r%3===0) {
+      ctx.fillStyle=colors[ci%colors.length];
+      ctx.fillRect(-tile,y,w+tile*2,tile*0.18);
+    } else if (r%3===1) {
+      const zH=tile, zAmp=tile*0.22;
+      const steps=Math.ceil((w+tile*2)/(tile*0.5));
+      ctx.beginPath(); ctx.moveTo(-tile,y+zH*0.5);
+      for (let s=0;s<=steps;s++) {
+        const zx=-tile+s*(tile*0.5);
+        ctx.lineTo(zx, y+(s%2===0?zH*0.5-zAmp:zH*0.5+zAmp));
+      }
+      ctx.lineTo(w+tile,y+zH);
+      for (let s=steps;s>=0;s--) {
+        const zx=-tile+s*(tile*0.5);
+        ctx.lineTo(zx, y+(s%2===0?zH*0.5-zAmp:zH*0.5+zAmp)+tile*0.18);
+      }
+      ctx.closePath();
+      ctx.fillStyle=colors[(ci+1)%colors.length]; ctx.fill();
+    } else {
+      const dCount=Math.ceil(w/tile)+2;
+      const H=tile*0.48, W=tile*0.48;
+      const step=tile*0.1;
+      for (let cl=-1;cl<dCount;cl++) {
+        const cx0=cl*tile+tile/2, cy0=y+tile/2;
+        const dci=Math.abs(r*dCount+cl)%colors.length;
+        const k=Math.floor(H/step);
+        ctx.fillStyle=colors[dci%colors.length];
+        for (let row2=0;row2<k*2;row2++) {
+          const rowW=(k-Math.abs(row2-k))*2*step;
+          ctx.fillRect(cx0-rowW/2, cy0-H+row2*step, rowW, step);
+        }
+        const k2=Math.floor(k*0.55);
+        ctx.fillStyle=colors[(dci+1)%colors.length];
+        for (let row2=0;row2<k2*2;row2++) {
+          const rowW=(k2-Math.abs(row2-k2))*2*step;
+          ctx.fillRect(cx0-rowW/2, cy0-k2*step+row2*step, rowW, step);
+        }
+      }
+    }
+  }
+  ctx.restore();
+}
+
+function drawOgham(ctx, w, h, colors, tile, rot, cx) {
+  // Ogham — ancient Irish alphabet inscribed on standing stones, 4th–8th century CE.
+  // Strokes branch from or cross a central stemline. 4 aicme (letter families):
+  // right-strokes (Beithe), left-strokes (hUatha), horizontal crossings (Ailme), diagonals (Muine).
+  ctx.fillStyle = colors[colors.length - 1] || colors[0];
+  ctx.fillRect(0, 0, w, h);
+  ctx.save();
+  ctx.translate(w / 2, h / 2);
+  ctx.rotate(rot * Math.PI / 180);
+  ctx.translate(-w / 2, -h / 2);
+  const cols = Math.ceil(w / tile) + 2;
+  const rows = Math.ceil(h / tile) + 2;
+  const stemX = tile * 0.5;
+  const top = tile * 0.06, bot = tile * 0.94;
+  const strokeLen = tile * 0.34;
+  const segH = (bot - top) / 7;
+  const glyphs = [
+    ['r',1],['r',2],['r',3],['r',4],['r',5],
+    ['l',1],['l',2],['l',3],['l',4],['l',5],
+    ['h',1],['h',2],['h',3],['h',4],['h',5],
+    ['d',1],['d',2],['d',3],
+  ];
+  ctx.lineCap = 'round';
+  ctx.lineWidth = Math.max(1.5, tile * 0.055);
+  let idx = 0;
+  for (let r = -1; r < rows; r++) {
+    for (let c = -1; c < cols; c++) {
+      const ox = c * tile, oy = r * tile;
+      const [type, count] = glyphs[idx % glyphs.length];
+      const ci = ((r * (cols + 2) + c) % colors.length + colors.length) % colors.length;
+      idx++;
+      const sx = ox + stemX;
+      ctx.strokeStyle = colors[ci];
+      ctx.beginPath(); ctx.moveTo(sx, oy + top); ctx.lineTo(sx, oy + bot); ctx.stroke();
+      ctx.strokeStyle = colors[(ci + 1) % colors.length];
+      for (let n = 0; n < count; n++) {
+        const ny = oy + top + (n + 1) * segH;
+        ctx.beginPath();
+        if      (type === 'r') { ctx.moveTo(sx,              ny); ctx.lineTo(sx + strokeLen,   ny); }
+        else if (type === 'l') { ctx.moveTo(sx - strokeLen,  ny); ctx.lineTo(sx,               ny); }
+        else if (type === 'h') { ctx.moveTo(sx - strokeLen,  ny); ctx.lineTo(sx + strokeLen,   ny); }
+        else                   { ctx.moveTo(sx - strokeLen * 0.65, ny - segH * 0.38);
+                                 ctx.lineTo(sx + strokeLen * 0.65, ny + segH * 0.38); }
+        ctx.stroke();
+      }
+    }
+  }
+  ctx.restore();
+}
+
+function drawSongket(ctx, w, h, colors, tile, rot, cx) {
+  // Songket — Malaysian and Indonesian supplementary-weft brocade.
+  // Metallic threads woven as supplementary weft over silk/cotton form raised
+  // geometric motifs. Used for ceremonial dress; widely documented and
+  // commercially reproduced. Signature motif: Bintang Lapan (8-pointed star).
+  ctx.fillStyle = colors[0];
+  ctx.fillRect(0, 0, w, h);
+  ctx.save();
+  ctx.translate(w/2, h/2);
+  ctx.rotate(rot * Math.PI / 180);
+  ctx.translate(-w/2, -h/2);
+  const cols = Math.ceil(w / tile) + 2;
+  const rows = Math.ceil(h / tile) + 2;
+  const detail = cx > 35;
+  const lw = Math.max(1, tile * 0.025);
+  const bandH = Math.max(2, tile * 0.065);
+  for (let y = -bandH; y < h + tile * 2; y += tile) {
+    ctx.fillStyle = colors[1] || colors[0];
+    ctx.globalAlpha = 0.22;
+    ctx.fillRect(-tile, y, w + tile * 2, bandH);
+    ctx.globalAlpha = 1;
+  }
+  for (let r = -1; r < rows; r++) {
+    for (let c = -1; c < cols; c++) {
+      const hoffset = (r % 2 === 0) ? 0 : tile * 0.5;
+      const cx0 = c * tile + tile * 0.5 + hoffset;
+      const cy0 = r * tile + tile * 0.5;
+      const ci = Math.abs(r * (cols + 2) + c) % colors.length;
+      const R = tile * 0.44;
+      ctx.save();
+      ctx.translate(cx0, cy0);
+      const outerR = R * 0.40, innerR = R * 0.20;
+      ctx.beginPath();
+      for (let p = 0; p < 16; p++) {
+        const angle = (p / 16) * Math.PI * 2 - Math.PI / 16;
+        const r2 = p % 2 === 0 ? outerR : innerR;
+        if (p === 0) ctx.moveTo(Math.cos(angle) * r2, Math.sin(angle) * r2);
+        else ctx.lineTo(Math.cos(angle) * r2, Math.sin(angle) * r2);
+      }
+      ctx.closePath();
+      ctx.fillStyle = colors[(ci + 1) % colors.length];
+      ctx.fill();
+      if (detail) {
+        const dR = R * 0.48;
+        ctx.beginPath();
+        ctx.moveTo(0, -dR); ctx.lineTo(dR, 0);
+        ctx.lineTo(0, dR); ctx.lineTo(-dR, 0);
+        ctx.closePath();
+        ctx.strokeStyle = colors[(ci + 2) % colors.length];
+        ctx.lineWidth = lw;
+        ctx.globalAlpha = 0.4;
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+      const aR = Math.max(1.5, tile * 0.055);
+      [[0, -R * 0.62], [R * 0.62, 0], [0, R * 0.62], [-R * 0.62, 0]].forEach(([dx, dy]) => {
+        ctx.beginPath();
+        ctx.moveTo(dx, dy - aR); ctx.lineTo(dx + aR, dy);
+        ctx.lineTo(dx, dy + aR); ctx.lineTo(dx - aR, dy);
+        ctx.closePath();
+        ctx.fillStyle = colors[(ci + 1) % colors.length];
+        ctx.globalAlpha = 0.7; ctx.fill(); ctx.globalAlpha = 1;
+      });
+      ctx.beginPath();
+      ctx.arc(0, 0, Math.max(1.5, tile * 0.07), 0, Math.PI * 2);
+      ctx.fillStyle = colors[(ci + 2) % colors.length];
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+
 /* ═══════════════════════════════════════════════
    WATERMARK STAMP
 ═══════════════════════════════════════════════ */
@@ -3675,6 +3854,7 @@ function openModal(idx) {
   const row = filtered[idx];
   if (!row) return;
   _activePattern = row;
+  if (typeof csTrack === 'function') csTrack('pattern_view', { type: 'pattern', id: row.id, slug: row.name });
 
   const colors = row.colors || ['#c8a050','#5a4a38','#faf6f0'];
   const style  = row.style || 'diamond';
@@ -3912,7 +4092,7 @@ document.getElementById('patternSearch').addEventListener('input', e => {
   const clearBtn = document.getElementById('searchClear');
   if (clearBtn) clearBtn.classList.toggle('visible', _searchQuery.length > 0);
   clearTimeout(_searchDebounce);
-  _searchDebounce = setTimeout(filterAndRender, 200);
+  _searchDebounce = setTimeout(() => { filterAndRender(); if (typeof csTrack === 'function' && _searchQuery) csTrack('search', { query: _searchQuery }); }, 200);
 });
 
 function clearSearch() {
@@ -4042,6 +4222,7 @@ function downloadPatternPreview() {
   ctx.textBaseline = 'bottom';
   ctx.fillText('cultureschool.org', W / 2, H - 28);
 
+  if (typeof csTrack === 'function' && _activePattern) csTrack('download', { type: 'pattern', id: _activePattern.id, slug: _activePattern.name });
   out.toBlob(blob => {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
