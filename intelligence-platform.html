@@ -169,7 +169,10 @@
   .star-edit{display:flex;gap:3px;cursor:pointer}
   .star-edit .s{font-size:18px;color:#ddd}
   .star-edit .s.on{color:var(--gold)}
-  
+  .t-researched{background:#e3ecf5;color:#2e4870}.t-contacted{background:#fbeedb;color:var(--amber)}
+  .t-in_talks{background:#e8f0e6;color:var(--green)}.t-declined{background:#f7e0e0;color:var(--red)}
+  .t-paused{background:#f3efe6;color:var(--muted)}.t-former{background:#eee;color:#666}
+
   @media(max-width:1240px){
     .dash-grid,.dash-stats{grid-template-columns:repeat(2,1fr)}
     .three-panel{grid-template-columns:220px 1fr}
@@ -203,6 +206,7 @@
       <div class="nav-item" data-mod="suppliers" onclick="showMod('suppliers')"><span class="ic">◇</span>Supplier CRM</div>
       <div class="nav-item" data-mod="creators" onclick="showMod('creators')"><span class="ic">✦</span>Creator CRM</div>
       <div class="nav-item" data-mod="museums" onclick="showMod('museums')"><span class="ic">▣</span>Museum Library</div>
+      <div class="nav-item" data-mod="institutions" onclick="showMod('institutions')"><span class="ic">⊞</span>Institutions</div>
       <div class="nav-item" data-mod="events" onclick="showMod('events')"><span class="ic">◉</span>Event Planner</div>
       <div class="nav-item" data-mod="trends" onclick="showMod('trends')"><span class="ic">◬</span>Trend Observatory</div>
     </div>
@@ -223,6 +227,7 @@
       <div id="mod-suppliers" class="module"><div class="loading">Loading…</div></div>
       <div id="mod-creators" class="module"><div class="loading">Loading…</div></div>
       <div id="mod-museums" class="module"><div class="loading">Loading…</div></div>
+      <div id="mod-institutions" class="module"><div class="loading">Loading…</div></div>
       <div id="mod-events" class="module"><div class="loading">Loading…</div></div>
       <div id="mod-trends" class="module"><div class="loading">Loading…</div></div>
     </div>
@@ -243,7 +248,7 @@
   const MOD_TITLES = {
     dashboard:'Cultural Intelligence', atlas:'Textile Atlas', graph:'Knowledge Graph',
     suppliers:'Supplier CRM', creators:'Creator CRM', museums:'Museum Library',
-    events:'Event Planner', trends:'Trend Observatory'
+    institutions:'Institutions', events:'Event Planner', trends:'Trend Observatory'
   };
   const LOADED = new Set();
   
@@ -264,7 +269,7 @@
     document.querySelectorAll('.nav-item').forEach(el=>el.classList.toggle('active',el.dataset.mod===name));
     document.querySelectorAll('.module').forEach(el=>el.classList.toggle('active',el.id==='mod-'+name));
     document.getElementById('mod-title').textContent=MOD_TITLES[name]||name;
-    if(!LOADED.has(name)){LOADED.add(name);({dashboard:loadDashboard,atlas:loadAtlas,graph:loadGraph,suppliers:loadSuppliers,creators:loadCreators,museums:loadMuseums,events:loadEvents,trends:loadTrends})[name]?.()}
+    if(!LOADED.has(name)){LOADED.add(name);({dashboard:loadDashboard,atlas:loadAtlas,graph:loadGraph,suppliers:loadSuppliers,creators:loadCreators,museums:loadMuseums,institutions:loadInstitutions,events:loadEvents,trends:loadTrends})[name]?.()}
   }
   
   /* ── AUTH ──────────────────────────────────────────────────────── */
@@ -395,6 +400,22 @@
     const bySurface={};
     rows.forEach(r=>{const s=(r.metadata&&r.metadata.surface)||'unknown';bySurface[s]=(bySurface[s]||0)+1});
     const surfaces=Object.entries(bySurface).sort((a,b)=>b[1]-a[1]).slice(0,3);
+    // Recent named events — last 12 with a slug, to show "which patterns/palettes"
+    const named=rows.filter(r=>r.entity_slug).slice(0,12);
+    const namedHtml=named.length===0?''
+      :`<div style="border-top:1px solid var(--off);padding:6px 14px 4px;">
+         <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Recent named events</div>
+         ${named.map(r=>{
+           const age=Math.round((Date.now()-new Date(r.created_at||0).getTime())/60000);
+           const when=age<60?age+'m ago':Math.round(age/60)+'h ago';
+           const surf=(r.metadata&&r.metadata.surface)||'—';
+           return`<div style="display:flex;gap:6px;align-items:baseline;padding:2px 0;font-size:10px;border-bottom:1px solid var(--off);">
+             <span style="color:var(--muted);flex-shrink:0;min-width:60px;">${esc(r.event_type)}</span>
+             <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink);">${esc(r.entity_slug)}</span>
+             <span style="color:var(--muted);flex-shrink:0;">${esc(surf)} · ${when}</span>
+           </div>`;
+         }).join('')}
+       </div>`;
     return`<div class="d-panel">
       <div class="d-panel-hd"><span class="dot" style="background:${rows.length?'var(--green)':'#ddd'}"></span>◉ Live Events <span style="font-size:9px;opacity:.6">(30d, direct)</span></div>
       <div style="font-size:10px;color:var(--muted);padding:4px 14px 2px">Reads cs_events directly — real-time signal</div>
@@ -402,6 +423,7 @@
         ?`<div class="p-empty">No events yet.<br><span style="font-size:10px">Search or open a pattern on any CoCo surface.</span></div>`
         :entries.map(([type,count])=>`<div class="p-row"><span class="p-nm">${esc(type)}</span><span class="p-val">${count}</span></div>`).join('')
         +`<div style="border-top:1px solid var(--off);padding:5px 14px;font-size:10px;color:var(--muted)">Surfaces: ${surfaces.map(([s,n])=>`${esc(s)} ${n}`).join(' · ')}</div>`
+        +namedHtml
       }
     </div>`;
   }
@@ -411,26 +433,75 @@
      Type a fiber, technique, or tradition name to see everything
      the platform knows: countries, mills, suppliers, cost, uses.
   ═══════════════════════════════════════════════════════════════ */
-  let A_ROWS=[], A_DIS={}, A_F={q:'',status:'',sens:'',trad:false,pri:false};
+  let A_ROWS=[], A_DIS={}, A_KG_LIST=[], A_F={q:'',status:'',sens:'',trad:false,pri:false,unlinked:false};
   let TX_RESULTS=[], TX_CUR=null;
   
   async function loadAtlas(){
     const el=document.getElementById('mod-atlas');
     el.innerHTML=`
-      <div style="max-width:600px;margin:0 auto 28px">
-        <div style="font-family:var(--serif);font-size:13px;color:var(--muted);text-align:center;margin-bottom:14px;letter-spacing:.03em">TYPE A FIBER, TECHNIQUE, OR TRADITION</div>
-        <div style="position:relative">
-          <input id="tx-search" type="search" autocomplete="off" placeholder="Linen, Batik, Indigo, Kente, Shibori…"
-            style="width:100%;padding:14px 18px;font-size:16px;font-family:var(--serif);border:2px solid var(--rule);border-radius:12px;background:#fff;outline:none"
-            oninput="txSearch(this.value)" onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--rule)'">
-        </div>
-        <div style="font-size:12px;color:var(--muted);text-align:center;margin-top:10px">
-          Searches fibers · techniques · traditions · motifs · certifications
-        </div>
+      <div style="display:flex;gap:0;border-bottom:1px solid var(--rule);margin:0 0 18px">
+        <button class="tab active" id="atab-search" onclick="atlasSetTab('search')">Search</button>
+        <button class="tab" id="atab-edit" onclick="atlasSetTab('edit')">Edit Entries</button>
       </div>
-      <div id="tx-results"></div>
-      <div id="tx-detail"></div>`;
+      <div id="atlas-search-view">
+        <div style="max-width:600px;margin:0 auto 28px">
+          <div style="font-family:var(--serif);font-size:13px;color:var(--muted);text-align:center;margin-bottom:14px;letter-spacing:.03em">TYPE A FIBER, TECHNIQUE, OR TRADITION</div>
+          <div style="position:relative">
+            <input id="tx-search" type="search" autocomplete="off" placeholder="Linen, Batik, Indigo, Kente, Shibori…"
+              style="width:100%;padding:14px 18px;font-size:16px;font-family:var(--serif);border:2px solid var(--rule);border-radius:12px;background:#fff;outline:none"
+              oninput="txSearch(this.value)" onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--rule)'">
+          </div>
+          <div style="font-size:12px;color:var(--muted);text-align:center;margin-top:10px">
+            Searches fibers · techniques · traditions · motifs · certifications
+          </div>
+        </div>
+        <div id="tx-results"></div>
+        <div id="tx-detail"></div>
+      </div>
+      <div id="atlas-edit-view" style="display:none">
+        <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:10px;font-size:12px;color:var(--muted)" id="atlas-stats"></div>
+        <div class="toolbar">
+          <input type="search" placeholder="Filter entries…" oninput="A_F.q=this.value;renderAtlas()">
+          <select onchange="A_F.status=this.value;renderAtlas()">
+            <option value="">All statuses</option>
+            <option>draft</option><option>researched</option><option>reviewed</option><option>published</option><option>archived</option>
+          </select>
+          <select onchange="A_F.sens=this.value;renderAtlas()">
+            <option value="">All sensitivities</option>
+            <option>general</option><option>context_required</option><option>restricted</option><option>sacred_private</option>
+          </select>
+          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;font-weight:600;text-transform:none;letter-spacing:0;color:var(--muted);margin:0">
+            <input type="checkbox" onchange="A_F.trad=this.checked;renderAtlas()"> Traditions only
+          </label>
+          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;font-weight:600;text-transform:none;letter-spacing:0;color:var(--muted);margin:0">
+            <input type="checkbox" onchange="A_F.unlinked=this.checked;renderAtlas()"> KG unlinked only
+          </label>
+        </div>
+        <div id="atlas-list"><div class="loading">Loading entries…</div></div>
+      </div>`;
   }
+  function atlasSetTab(tab){
+    document.getElementById('atab-search').classList.toggle('active',tab==='search');
+    document.getElementById('atab-edit').classList.toggle('active',tab==='edit');
+    document.getElementById('atlas-search-view').style.display=tab==='search'?'':'none';
+    document.getElementById('atlas-edit-view').style.display=tab==='edit'?'':'none';
+    if(tab==='edit'&&!A_ROWS.length)loadAtlasEntries();
+  }
+  async function loadAtlasEntries(){
+    const listEl=document.getElementById('atlas-list');
+    if(listEl)listEl.innerHTML='<div class="loading">Loading entries…</div>';
+    const [entryRes,distRes,kgRes]=await Promise.all([
+      SB.from('cs_atlas_entries').select('*').order('name').limit(300),
+      SB.from('cs_atlas_distinctions').select('*'),
+      SB.from('cs_kg_entries').select('id,name,entry_type,source_status').order('name').limit(500),
+    ]);
+    if(entryRes.error){if(listEl)listEl.innerHTML=`<div class="empty">${esc(entryRes.error.message)}</div>`;return}
+    A_ROWS=entryRes.data||[];
+    A_DIS={};(distRes.data||[]).forEach(d=>{(A_DIS[d.atlas_entry_id]||(A_DIS[d.atlas_entry_id]=[])).push(d)});
+    A_KG_LIST=kgRes.data||[];
+    renderAtlas();
+  }
+  window.atlasSetTab=atlasSetTab;window.loadAtlasEntries=loadAtlasEntries;
   
   let TX_DEBOUNCE=null;
   window.txSearch=function(q){
@@ -538,18 +609,10 @@
           </div>
           <div>
             ${e.dictionary_style?`<div style="margin-bottom:18px">
-              <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Pattern Preview</div>
-              <div style="border-radius:10px;overflow:hidden;border:1px solid var(--rule)">
-                <div style="height:220px;overflow:hidden;position:relative;background:var(--off)">
-                  <iframe src="https://pattern-dictionary.cultureschool.org/#${esc(e.dictionary_style)}"
-                    style="width:100%;height:600px;border:0;pointer-events:none;display:block"
-                    scrolling="no" loading="lazy" title="${esc(e.name)} pattern preview"></iframe>
-                </div>
-                <div style="padding:7px 12px;background:var(--off);border-top:1px solid var(--rule);display:flex;align-items:center;justify-content:space-between">
-                  <span style="font-size:11px;font-weight:600;color:var(--ink)">${esc(e.name)}</span>
-                  <a href="https://pattern-dictionary.cultureschool.org/#${esc(e.dictionary_style)}" target="_blank" style="font-size:11px;color:var(--green);font-weight:600">Open full ↗</a>
-                </div>
-              </div>
+              <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Pattern Dictionary</div>
+              <a href="https://pattern-dictionary.cultureschool.org/#${esc(e.dictionary_style)}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:8px 13px;border:1px solid var(--rule);border-radius:8px;background:#fff;font-size:13px;font-weight:600;color:var(--green);text-decoration:none" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--rule)'">
+                View ${esc(e.name)} palette &amp; swatches ↗
+              </a>
             </div>`:''}
   
             ${supList.length?`<div style="margin-bottom:18px">
@@ -596,6 +659,7 @@
     if(A_F.sens&&r.sensitivity_level!==A_F.sens)return false;
     if(A_F.trad&&r.entry_type&&r.entry_type!=='textile_tradition')return false;
     if(A_F.pri&&!(['restricted','sacred_private'].includes(r.sensitivity_level)||(A_DIS[r.id]||[]).length))return false;
+    if(A_F.unlinked&&r.entry_id)return false;
     if(A_F.q){const b=[r.name,r.short_definition,r.cultural_context,r.cultural_protocol,r.dictionary_style].join(' ').toLowerCase();if(!b.includes(A_F.q.toLowerCase()))return false}
     return true;
   }
@@ -603,8 +667,9 @@
     const n=A_ROWS.length,pub=A_ROWS.filter(r=>r.is_public&&r.source_status==='published').length;
     const rev=A_ROWS.filter(r=>r.source_status==='reviewed').length;
     const rst=A_ROWS.filter(r=>['restricted','sacred_private'].includes(r.sensitivity_level)).length;
+    const unl=A_ROWS.filter(r=>!r.entry_id).length;
     const st=document.getElementById('atlas-stats');
-    if(st)st.innerHTML=`<span><b>${n}</b> entries</span><span><b>${pub}</b> published</span><span><b>${rev}</b> reviewed</span><span style="color:var(--red)"><b>${rst}</b> restricted</span>`;
+    if(st)st.innerHTML=`<span><b>${n}</b> entries</span><span><b>${pub}</b> published</span><span><b>${rev}</b> reviewed</span><span style="color:var(--red)"><b>${rst}</b> restricted</span><span style="color:var(--amber)"><b>${unl}</b> KG unlinked</span>`;
     const rows=A_ROWS.filter(atlasMatch),el=document.getElementById('atlas-list');
     if(!el)return;
     if(!rows.length){el.innerHTML='<div class="empty">No entries match.</div>';return}
@@ -624,6 +689,11 @@
           <label>Short definition</label><textarea class="f" data-f="short_definition">${esc(r.short_definition)}</textarea>
           <label>Cultural context (what a reviewer must verify)</label><textarea class="f" data-f="cultural_context">${esc(r.cultural_context)}</textarea>
           <label>Cultural protocol — how it may / may not be used</label><textarea class="f" data-f="cultural_protocol">${esc(r.cultural_protocol)}</textarea>
+          <label>KG Entry link <span style="font-weight:400;font-size:10px;color:var(--muted)">(connects this Atlas entry to the Knowledge Graph)</span></label>
+          <select class="f" data-f="entry_id">
+            <option value="">— not linked —</option>
+            ${A_KG_LIST.map(k=>`<option value="${k.id}" ${r.entry_id===k.id?'selected':''}>${esc(k.name)}${k.entry_type?' ('+esc(k.entry_type.replace(/_/g,' '))+')':''}</option>`).join('')}
+          </select>
           <div class="two">
             <div><label>Sensitivity</label><select class="f" data-f="sensitivity_level">
               ${['general','context_required','restricted','sacred_private'].map(v=>`<option ${r.sensitivity_level===v?'selected':''}>${v}</option>`).join('')}
@@ -639,6 +709,10 @@
               <option value="false" ${r.is_living===false?'selected':''}>No / unknown</option>
             </select></div>
           </div>
+          <div class="two">
+            <div><label>Researched by</label><input class="f" data-f="researched_by" value="${esc(r.researched_by||'')}"></div>
+            <div><label style="display:flex;align-items:center;gap:7px;margin-top:13px;cursor:pointer"><input type="checkbox" data-f="sources_verified" ${r.sources_verified?'checked':''}> Sources verified</label></div>
+          </div>
           <div class="acts">
             <button class="b-save" onclick="atlasSave('${r.id}')">Save</button>
             ${r.is_public?`<button class="b-ghost" onclick="atlasPublish('${r.id}',false)">Unpublish</button>`:`<button class="b-gold" onclick="atlasPublish('${r.id}',true)">Publish →</button>`}
@@ -651,9 +725,12 @@
   function atlasFields(id){
     const o={};
     document.querySelectorAll(`#r${id} [data-f]`).forEach(el=>{
+      const f=el.dataset.f;
+      if(el.type==='checkbox'){o[f]=el.checked;return}
       let v=el.value.trim();
-      if(el.dataset.f==='is_living')v=(v==='true');
-      o[el.dataset.f]=v;
+      if(f==='is_living')v=(v==='true');
+      else if(f==='entry_id')v=(v===''?null:v);
+      o[f]=v;
     });
     return o;
   }
@@ -662,6 +739,7 @@
     if(o.source_status==='published'&&!o.reviewed_by){flash(m,'A published entry needs a reviewer name.',false);return}
     o.updated_at=new Date().toISOString();
     if(['reviewed','published'].includes(o.source_status))o.reviewed_at=new Date().toISOString();
+    if(o.researched_by&&!A_ROWS.find(r=>r.id===id)?.researched_at)o.researched_at=new Date().toISOString();
     const {error}=await SB.from('cs_atlas_entries').update(o).eq('id',id);
     if(error)return flash(m,error.message,false);
     Object.assign(A_ROWS.find(r=>r.id===id),o);flash(m,'Saved');renderAtlas();
@@ -680,7 +758,7 @@
     Object.assign(A_ROWS.find(r=>r.id===id),o);flash(m,on?'Published':'Unpublished');renderAtlas();
   }
   window.atlasSave=atlasSave;window.atlasPublish=atlasPublish;window.atlasFields=atlasFields;
-  window.atlasMatch=atlasMatch;window.renderAtlas=renderAtlas;
+  window.atlasMatch=atlasMatch;window.renderAtlas=renderAtlas;window.atlasSetTab=atlasSetTab;
   
   /* ═══════════════════════════════════════════════════════════════
      MODULE 3: KNOWLEDGE GRAPH
@@ -1176,6 +1254,7 @@
           <option value="">All statuses</option>
           ${['lead','researched','contacted','sampling','trial','approved','paused','rejected'].map(v=>`<option>${v}</option>`).join('')}
         </select>
+        <button class="b-save b-sm" onclick="openNewSupplier()">+ Add supplier</button>
         <span style="margin-left:auto;font-size:12px;color:var(--muted)">${list.length} suppliers</span>
       </div>
       <div class="card-grid" id="sup-grid">
@@ -1265,6 +1344,9 @@
           ${c.summary?`<div style="color:var(--muted);margin-top:2px">${esc(c.summary)}</div>`:''}
         </div>`).join('')}
       </div>`:''}
+      <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--rule);display:flex;justify-content:flex-end">
+        <button class="b-red b-sm" onclick="deleteSupplier('${s.id}','${esc(s.display_name||s.legal_name)}')">Delete supplier</button>
+      </div>
     `);
   }
   let SUP_SCORES={};
@@ -1292,7 +1374,66 @@
     if(cur)cur.approved_categories=cats;
   };
   window.openSup=openSup;
-  
+
+  function openNewSupplier(){
+    openOverlay(`
+      <div class="ov-hd"><h3>Add Supplier</h3><button class="ov-close" onclick="closeOverlay()">✕</button></div>
+      <label class="lbl">Display name</label><input class="f" id="ns-nm" placeholder="e.g. Tessuti di Como">
+      <label class="lbl">Legal name (if different)</label><input class="f" id="ns-ln">
+      <div class="two">
+        <div><label class="lbl">Type</label>
+          <select class="f" id="ns-tp">${['mill','printer','dyer','weaver','broker','importer','brand','cooperative','other'].map(v=>`<option>${v}</option>`).join('')}</select>
+        </div>
+        <div><label class="lbl">Status</label>
+          <select class="f" id="ns-st">${['lead','researched','contacted','sampling','trial','approved','paused','rejected'].map(v=>`<option>${v}</option>`).join('')}</select>
+        </div>
+      </div>
+      <label class="lbl">Website</label><input class="f" id="ns-wb" placeholder="https://…">
+      <div class="two">
+        <div><label class="lbl">Country</label><input class="f" id="ns-co"></div>
+        <div><label class="lbl">Risk level</label>
+          <select class="f" id="ns-rl"><option value="">Unknown</option>${['low','medium','high'].map(v=>`<option>${v}</option>`).join('')}</select>
+        </div>
+      </div>
+      <div style="margin-top:10px;display:flex;flex-direction:column;gap:6px">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;text-transform:none;letter-spacing:normal;color:var(--ink);font-weight:400"><input type="checkbox" id="ns-mih" style="width:15px;height:15px;accent-color:var(--green)"> Manufactures in-house</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;text-transform:none;letter-spacing:normal;color:var(--ink);font-weight:400"><input type="checkbox" id="ns-pih" style="width:15px;height:15px;accent-color:var(--green)"> Prints in-house</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;text-transform:none;letter-spacing:normal;color:var(--ink);font-weight:400"><input type="checkbox" id="ns-exp" style="width:15px;height:15px;accent-color:var(--green)"> Exports to USA</label>
+      </div>
+      <div class="acts" style="margin-top:14px">
+        <button class="b-save" onclick="createSupplier()">Add supplier</button>
+        <span class="msg" id="ns-msg"></span>
+      </div>`);
+  }
+  window.createSupplier=async function(){
+    const m=document.getElementById('ns-msg');
+    const name=document.getElementById('ns-nm').value.trim();
+    if(!name)return flash(m,'Display name is required.',false);
+    const {error}=await SB.from('cs_kg_suppliers').insert({
+      display_name:name,
+      legal_name:document.getElementById('ns-ln').value.trim()||null,
+      supplier_type:document.getElementById('ns-tp').value,
+      status:document.getElementById('ns-st').value,
+      website:document.getElementById('ns-wb').value.trim()||null,
+      risk_level:document.getElementById('ns-rl').value||null,
+      manufactures_in_house:document.getElementById('ns-mih').checked,
+      prints_in_house:document.getElementById('ns-pih').checked,
+      exports_to_usa:document.getElementById('ns-exp').checked,
+    });
+    if(error)return flash(m,error.message,false);
+    flash(m,'Added');setTimeout(()=>{closeOverlay();LOADED.delete('suppliers');loadSuppliers()},800);
+  };
+  window.deleteSupplier=async function(id,name){
+    if(!confirm(`Delete "${name}"? This also removes linked capabilities and samples.`))return;
+    const {error}=await SB.from('cs_kg_suppliers').delete().eq('id',id);
+    if(error){alert('Delete failed: '+error.message);return}
+    closeOverlay();
+    SUP_LIST=SUP_LIST.filter(s=>s.id!==id);
+    const grid=document.getElementById('sup-grid');
+    if(grid)grid.innerHTML=SUP_LIST.map(s=>supCard(s)).join('');
+  };
+  window.openNewSupplier=openNewSupplier;
+
   /* ═══════════════════════════════════════════════════════════════
      MODULE 5: CREATOR CRM
   ═══════════════════════════════════════════════════════════════ */
@@ -1524,6 +1665,211 @@
   window.filterMus=function(q){renderMusList(q?MUS_LIST.filter(m=>m.name.toLowerCase().includes(q.toLowerCase())):MUS_LIST)};
   window.filterMusStatus=function(v){renderMusList(v?MUS_LIST.filter(m=>m.partnership_status===v):MUS_LIST)};
   window.saveMus=saveMus;window.openNewMuseum=openNewMuseum;
+
+  /* ═══════════════════════════════════════════════════════════════
+     MODULE 6b: INSTITUTIONS
+     Schools, folk schools, universities, guilds, archives, nonprofits,
+     residencies, cooperatives, trade associations, libraries — any
+     organization that teaches, holds, or preserves textile knowledge.
+  ═══════════════════════════════════════════════════════════════ */
+  let INST_LIST=[];
+  const INST_TYPES=['museum','school','folk_school','university','guild','archive','nonprofit','residency','cooperative','trade_association','library'];
+  const INST_STATUSES=['researched','contacted','in_talks','partner','declined','paused'];
+
+  async function loadInstitutions(){
+    const el=document.getElementById('mod-institutions');
+    el.innerHTML='<div class="loading">Loading institutions…</div>';
+    const {data,error}=await SB.from('cs_institutions').select('*').order('name');
+    if(error&&error.message&&error.message.includes('does not exist')){
+      el.innerHTML='<div class="empty">Run the cs_institutions migration in Supabase first, then refresh.</div>';return;
+    }
+    if(error){el.innerHTML=`<div class="empty">${esc(error.message)}</div>`;return}
+    INST_LIST=data||[];
+    el.innerHTML=`
+      <div class="toolbar">
+        <input type="search" placeholder="Search by name or discipline…" oninput="filterInst(this.value)">
+        <select onchange="filterInstType(this.value)">
+          <option value="">All types</option>
+          ${INST_TYPES.map(v=>`<option value="${v}">${v.replace(/_/g,' ')}</option>`).join('')}
+        </select>
+        <select onchange="filterInstStatus(this.value)">
+          <option value="">All statuses</option>
+          ${INST_STATUSES.map(v=>`<option value="${v}">${v.replace(/_/g,' ')}</option>`).join('')}
+        </select>
+        <button class="b-save b-sm" onclick="openNewInstitution()">+ Add institution</button>
+        <span style="margin-left:auto;font-size:12px;color:var(--muted)">${INST_LIST.length} institutions</span>
+      </div>
+      <div id="inst-list"></div>`;
+    renderInstList(INST_LIST);
+  }
+
+  function renderInstList(list){
+    const el=document.getElementById('inst-list');if(!el)return;
+    if(!list.length){el.innerHTML='<div class="empty">No institutions yet. Add your first partner.</div>';return}
+    el.innerHTML=list.map(m=>`
+      <div class="row">
+        <div class="rhead" onclick="this.parentElement.classList.toggle('open')">
+          <span class="nm">${esc(m.name)}<small>${esc([m.city,m.country].filter(Boolean).join(', '))}</small></span>
+          ${tag(m.institution_type.replace(/_/g,' '))}
+          ${tag(m.partnership_status.replace(/_/g,' '),'t-'+m.partnership_status)}
+          ${m.partnership_fit?`<span style="font-size:12px;color:var(--gold);letter-spacing:-1px">${'★'.repeat(m.partnership_fit)}${'☆'.repeat(5-m.partnership_fit)}</span>`:''}
+          ${m.teaches?'<span class="tag t-general">teaches</span>':''}
+          ${m.holds_collection?'<span class="tag s-researched">collection</span>':''}
+          ${m.website?`<a href="${esc(m.website)}" target="_blank" onclick="event.stopPropagation()" style="font-size:12px;color:var(--green)">Website ↗</a>`:''}
+        </div>
+        <div class="rbody">
+          ${m.partnership_notes?`<div class="banner" style="margin-top:10px">🔒 Partnership notes (internal): ${esc(m.partnership_notes)}</div>`:''}
+          ${m.summary?`<p style="font-size:13px;line-height:1.55;margin-top:10px;color:var(--muted)">${esc(m.summary)}</p>`:''}
+          <div class="two">
+            <div>
+              <label class="lbl">Name</label><input class="f" id="in-nm-${m.id}" value="${esc(m.name)}">
+              <label class="lbl">Type</label>
+              <select class="f" id="in-tp-${m.id}">
+                ${INST_TYPES.map(v=>`<option value="${v}" ${m.institution_type===v?'selected':''}>${v.replace(/_/g,' ')}</option>`).join('')}
+              </select>
+              <label class="lbl">Disciplines (comma-separated)</label>
+              <input class="f" id="in-disc-${m.id}" value="${esc((m.disciplines||[]).join(', '))}">
+              <label class="lbl">City</label><input class="f" id="in-cy-${m.id}" value="${esc(m.city||'')}">
+              <label class="lbl">Country</label><input class="f" id="in-co-${m.id}" value="${esc(m.country||'')}">
+              <label class="lbl">Website</label><input class="f" id="in-wb-${m.id}" value="${esc(m.website||'')}">
+              <label class="lbl">Courses URL</label><input class="f" id="in-cu-${m.id}" value="${esc(m.courses_url||'')}">
+              <label class="lbl">Collection URL</label><input class="f" id="in-col-${m.id}" value="${esc(m.collection_url||'')}">
+              <label class="lbl">Notable holdings</label><textarea class="f" id="in-nh-${m.id}">${esc(m.notable_holdings||'')}</textarea>
+            </div>
+            <div>
+              <label class="lbl">Partnership status</label>
+              <select class="f" id="in-ps-${m.id}">
+                ${INST_STATUSES.map(v=>`<option value="${v}" ${m.partnership_status===v?'selected':''}>${v.replace(/_/g,' ')}</option>`).join('')}
+              </select>
+              <label class="lbl">Partnership fit (1–5)</label>
+              <div class="star-edit" id="in-fit-${m.id}" data-val="${m.partnership_fit||0}">
+                ${[1,2,3,4,5].map(i=>`<span class="s ${i<=(m.partnership_fit||0)?'on':''}" onclick="instSetFit('${m.id}',${i},this)">${i<=(m.partnership_fit||0)?'★':'☆'}</span>`).join('')}
+              </div>
+              <label class="lbl">Contact name</label><input class="f" id="in-cn-${m.id}" value="${esc(m.contact_name||'')}">
+              <label class="lbl">Contact email</label><input class="f" id="in-ce-${m.id}" value="${esc(m.contact_email||'')}">
+              <label class="lbl">Last contacted</label><input class="f" type="date" id="in-lc-${m.id}" value="${m.last_contacted_at?m.last_contacted_at.slice(0,10):''}">
+              <label class="lbl">Summary</label><textarea class="f" id="in-su-${m.id}">${esc(m.summary||'')}</textarea>
+              <label class="lbl">Partnership notes (internal only)</label>
+              <textarea class="f" id="in-pn-${m.id}">${esc(m.partnership_notes||'')}</textarea>
+              <div style="margin-top:12px;display:flex;flex-direction:column;gap:7px">
+                ${[['in-te','teaches','Teaches / offers courses',m.teaches],['in-hc','holds_collection','Holds a textile collection',m.holds_collection],['in-gc','grants_credential','Grants credentials / certificates',m.grants_credential],['in-oa','open_access_images','Open access images',m.open_access_images]].map(([id,_,label,val])=>`
+                  <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;text-transform:none;letter-spacing:normal;color:var(--ink);font-weight:400"><input type="checkbox" ${val?'checked':''} id="${id}-${m.id}" style="width:15px;height:15px;accent-color:var(--green)"> ${label}</label>`).join('')}
+              </div>
+            </div>
+          </div>
+          <div class="acts" style="margin-top:14px">
+            <button class="b-save b-sm" onclick="saveInst('${m.id}')">Save</button>
+            <button class="b-red b-sm" onclick="deleteInst('${m.id}','${esc(m.name)}')">Delete</button>
+            <span class="msg" id="im-${m.id}"></span>
+          </div>
+        </div>
+      </div>`).join('');
+  }
+
+  window.instSetFit=function(id,val,starEl){
+    const cont=starEl.closest('.star-edit');
+    cont.dataset.val=val;
+    cont.querySelectorAll('.s').forEach((s,i)=>{s.classList.toggle('on',i<val);s.textContent=i<val?'★':'☆'});
+  };
+
+  async function saveInst(id){
+    const m=document.getElementById('im-'+id);
+    const fitEl=document.getElementById('in-fit-'+id);
+    const o={
+      name:document.getElementById('in-nm-'+id)?.value.trim(),
+      institution_type:document.getElementById('in-tp-'+id)?.value,
+      disciplines:(document.getElementById('in-disc-'+id)?.value||'').split(',').map(s=>s.trim()).filter(Boolean),
+      city:document.getElementById('in-cy-'+id)?.value.trim()||null,
+      country:document.getElementById('in-co-'+id)?.value.trim()||null,
+      website:document.getElementById('in-wb-'+id)?.value.trim()||null,
+      courses_url:document.getElementById('in-cu-'+id)?.value.trim()||null,
+      collection_url:document.getElementById('in-col-'+id)?.value.trim()||null,
+      notable_holdings:document.getElementById('in-nh-'+id)?.value.trim()||null,
+      partnership_status:document.getElementById('in-ps-'+id)?.value,
+      partnership_fit:fitEl?Number(fitEl.dataset.val)||null:null,
+      contact_name:document.getElementById('in-cn-'+id)?.value.trim()||null,
+      contact_email:document.getElementById('in-ce-'+id)?.value.trim()||null,
+      last_contacted_at:document.getElementById('in-lc-'+id)?.value||null,
+      summary:document.getElementById('in-su-'+id)?.value.trim()||null,
+      partnership_notes:document.getElementById('in-pn-'+id)?.value.trim()||null,
+      teaches:document.getElementById('in-te-'+id)?.checked||false,
+      holds_collection:document.getElementById('in-hc-'+id)?.checked||false,
+      grants_credential:document.getElementById('in-gc-'+id)?.checked||false,
+      open_access_images:document.getElementById('in-oa-'+id)?.checked||false,
+      updated_at:new Date().toISOString()
+    };
+    if(!o.name)return flash(m,'Name is required.',false);
+    const {error}=await SB.from('cs_institutions').update(o).eq('id',id);
+    if(error)return flash(m,error.message,false);
+    flash(m,'Saved');Object.assign(INST_LIST.find(x=>x.id===id)||{},o);
+  }
+
+  async function deleteInst(id,name){
+    if(!confirm(`Delete "${name}"? This cannot be undone.`))return;
+    const {error}=await SB.from('cs_institutions').delete().eq('id',id);
+    if(error){alert('Delete failed: '+error.message);return}
+    INST_LIST=INST_LIST.filter(x=>x.id!==id);
+    renderInstList(INST_LIST);
+  }
+
+  function openNewInstitution(){
+    openOverlay(`
+      <div class="ov-hd"><h3>Add Institution</h3><button class="ov-close" onclick="closeOverlay()">✕</button></div>
+      <label class="lbl">Name</label><input class="f" id="ni-nm" placeholder="e.g. Penland School of Crafts">
+      <div class="two">
+        <div><label class="lbl">Type</label>
+          <select class="f" id="ni-tp">
+            ${INST_TYPES.map(v=>`<option value="${v}">${v.replace(/_/g,' ')}</option>`).join('')}
+          </select>
+        </div>
+        <div><label class="lbl">Partnership status</label>
+          <select class="f" id="ni-ps">
+            ${INST_STATUSES.map(v=>`<option value="${v}">${v.replace(/_/g,' ')}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div class="two">
+        <div><label class="lbl">City</label><input class="f" id="ni-cy"></div>
+        <div><label class="lbl">Country</label><input class="f" id="ni-co"></div>
+      </div>
+      <label class="lbl">Website</label><input class="f" id="ni-wb" placeholder="https://…">
+      <label class="lbl">Disciplines (comma-separated)</label><input class="f" id="ni-disc" placeholder="weaving, natural dye, embroidery…">
+      <div style="margin-top:10px;display:flex;flex-direction:column;gap:7px">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;text-transform:none;letter-spacing:normal;color:var(--ink);font-weight:400"><input type="checkbox" id="ni-te" style="width:15px;height:15px;accent-color:var(--green)"> Teaches / offers courses</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;text-transform:none;letter-spacing:normal;color:var(--ink);font-weight:400"><input type="checkbox" id="ni-hc" style="width:15px;height:15px;accent-color:var(--green)"> Holds a textile collection</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;text-transform:none;letter-spacing:normal;color:var(--ink);font-weight:400"><input type="checkbox" id="ni-gc" style="width:15px;height:15px;accent-color:var(--green)"> Grants credentials / certificates</label>
+      </div>
+      <div class="acts" style="margin-top:14px">
+        <button class="b-save" onclick="createInstitution()">Add institution</button>
+        <span class="msg" id="ni-msg"></span>
+      </div>`);
+  }
+  window.createInstitution=async function(){
+    const m=document.getElementById('ni-msg');
+    const name=document.getElementById('ni-nm').value.trim();
+    if(!name)return flash(m,'Name is required.',false);
+    const slug=name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+    const {error}=await SB.from('cs_institutions').insert({
+      name,slug,
+      institution_type:document.getElementById('ni-tp').value,
+      partnership_status:document.getElementById('ni-ps').value,
+      city:document.getElementById('ni-cy').value.trim()||null,
+      country:document.getElementById('ni-co').value.trim()||null,
+      website:document.getElementById('ni-wb').value.trim()||null,
+      disciplines:(document.getElementById('ni-disc').value||'').split(',').map(s=>s.trim()).filter(Boolean),
+      teaches:document.getElementById('ni-te').checked,
+      holds_collection:document.getElementById('ni-hc').checked,
+      grants_credential:document.getElementById('ni-gc').checked,
+    });
+    if(error)return flash(m,error.message,false);
+    flash(m,'Added');setTimeout(()=>{closeOverlay();LOADED.delete('institutions');loadInstitutions()},800);
+  };
+  window.filterInst=function(q){
+    renderInstList(q?INST_LIST.filter(i=>i.name.toLowerCase().includes(q.toLowerCase())||(i.disciplines||[]).some(d=>d.toLowerCase().includes(q.toLowerCase()))):INST_LIST);
+  };
+  window.filterInstType=function(v){renderInstList(v?INST_LIST.filter(i=>i.institution_type===v):INST_LIST)};
+  window.filterInstStatus=function(v){renderInstList(v?INST_LIST.filter(i=>i.partnership_status===v):INST_LIST)};
+  window.saveInst=saveInst;window.deleteInst=deleteInst;window.openNewInstitution=openNewInstitution;
   
   /* ═══════════════════════════════════════════════════════════════
      MODULE 7: EVENT PLANNER

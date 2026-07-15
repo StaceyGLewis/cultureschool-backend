@@ -674,7 +674,7 @@ a{color:inherit}
         csTrack('search',{query:q});
         if(visibleCards.length===1){
           var c=visibleCards[0];
-          csTrack('view',{type:'atlas_entry',slug:c.id||c.dataset.name});
+          csTrack('pattern_view',{type:'pattern',slug:c.dataset.name||c.id});
         }
       },400);
     }
@@ -697,7 +697,7 @@ a{color:inherit}
   document.querySelectorAll('.pd-share-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
       var id = btn.dataset.id;
-      if(typeof csTrack==='function')csTrack('view',{type:'atlas_entry',slug:id});
+      if(typeof csTrack==='function')csTrack('pattern_view',{type:'pattern',slug:id});
       var url = 'https://pattern-dictionary.cultureschool.org/#' + id;
       navigator.clipboard.writeText(url).then(function() {
         btn.textContent = '✓ Link copied';

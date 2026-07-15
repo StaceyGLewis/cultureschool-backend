@@ -340,7 +340,7 @@
     };
     (async function(){
       if(sb){ try{ var r=await sb.from('coco_art').select('id,title,image_url').eq('is_active',true).eq('is_featured',true).order('created_at',{ascending:false}).limit(24);
-        if(r.data&&r.data.length) DESIGNS=r.data.filter(function(x){return x.image_url;}).map(function(x){return {id:x.id,name:x.title,img:x.image_url};}); }catch(e){} }
+        if(r.data&&r.data.length) DESIGNS=r.data.filter(function(x){return x.image_url;}).map(function(x){var slug=x.title||(x.image_url||'').split('/').pop().replace(/[_-]/g,' ').replace(/\.[^.]+$/,'');return {id:x.id,name:slug,img:x.image_url};}); }catch(e){} }
       if(!DESIGNS.length) DESIGNS=FALLBACK;
       renderPicker(); selectDesign(DESIGNS[0]);
     })();
