@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html><html lang="en"><head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>CultureSchool — Intelligence Platform</title>
@@ -98,6 +99,9 @@
   .p-delta{font-size:10px;flex-shrink:0}
   .up{color:var(--green)}.dn{color:var(--red)}.flat{color:var(--muted)}
   .p-empty{padding:16px 14px;text-align:center;color:var(--muted);font-size:12px;font-style:italic}
+  .gap-btn{font-size:9px;padding:2px 6px;border-radius:4px;border:1px solid var(--amber);color:var(--amber);background:transparent;cursor:pointer;font-weight:700;letter-spacing:.03em;flex-shrink:0;line-height:1.5}
+  .gap-btn:hover{background:var(--amber);color:#fff}
+  .covered{font-size:10px;color:var(--green);flex-shrink:0}
   
   /* ATLAS / DATA ROWS */
   .row{background:#fff;border:1px solid var(--rule);border-radius:12px;margin-bottom:9px;overflow:hidden}
@@ -209,6 +213,8 @@
       <div class="nav-item" data-mod="institutions" onclick="showMod('institutions')"><span class="ic">⊞</span>Institutions</div>
       <div class="nav-item" data-mod="events" onclick="showMod('events')"><span class="ic">◉</span>Event Planner</div>
       <div class="nav-item" data-mod="trends" onclick="showMod('trends')"><span class="ic">◬</span>Trend Observatory</div>
+      <div class="nav-item" data-mod="makers" onclick="showMod('makers')"><span class="ic">⬢</span>Maker Network</div>
+      <div class="nav-item" data-mod="fieldlogs" onclick="showMod('fieldlogs')"><span class="ic">◐</span>Field Logs</div>
     </div>
     <div class="nav-footer">
       <span id="nav-user"></span>
@@ -230,6 +236,8 @@
       <div id="mod-institutions" class="module"><div class="loading">Loading…</div></div>
       <div id="mod-events" class="module"><div class="loading">Loading…</div></div>
       <div id="mod-trends" class="module"><div class="loading">Loading…</div></div>
+      <div id="mod-makers" class="module"><div class="loading">Loading…</div></div>
+      <div id="mod-fieldlogs" class="module"><div class="loading">Loading…</div></div>
     </div>
   </div>
   </div>
@@ -248,7 +256,8 @@
   const MOD_TITLES = {
     dashboard:'Cultural Intelligence', atlas:'Textile Atlas', graph:'Knowledge Graph',
     suppliers:'Supplier CRM', creators:'Creator CRM', museums:'Museum Library',
-    institutions:'Institutions', events:'Event Planner', trends:'Trend Observatory'
+    institutions:'Institutions', events:'Event Planner', trends:'Trend Observatory',
+    makers:'Maker Network', fieldlogs:'Field Logs'
   };
   const LOADED = new Set();
   
@@ -269,7 +278,7 @@
     document.querySelectorAll('.nav-item').forEach(el=>el.classList.toggle('active',el.dataset.mod===name));
     document.querySelectorAll('.module').forEach(el=>el.classList.toggle('active',el.id==='mod-'+name));
     document.getElementById('mod-title').textContent=MOD_TITLES[name]||name;
-    if(!LOADED.has(name)){LOADED.add(name);({dashboard:loadDashboard,atlas:loadAtlas,graph:loadGraph,suppliers:loadSuppliers,creators:loadCreators,museums:loadMuseums,institutions:loadInstitutions,events:loadEvents,trends:loadTrends})[name]?.()}
+    if(!LOADED.has(name)){LOADED.add(name);({dashboard:loadDashboard,atlas:loadAtlas,graph:loadGraph,suppliers:loadSuppliers,creators:loadCreators,museums:loadMuseums,institutions:loadInstitutions,events:loadEvents,trends:loadTrends,makers:loadMakers,fieldlogs:loadFieldLogs})[name]?.()}
   }
   
   /* ── AUTH ──────────────────────────────────────────────────────── */
@@ -302,7 +311,7 @@
     el.innerHTML='<div class="loading">Loading intelligence…</div>';
     const since7=new Date(Date.now()-7*24*3600000).toISOString();
     const since30=new Date(Date.now()-30*24*3600000).toISOString();
-    const [S,G,T,D,Sv,C,Geo,Ev,Raw]=await Promise.all([
+    const [S,G,T,D,Sv,C,Geo,Ev,Raw,Ax]=await Promise.all([
       SB.from('cs_dash_emerging_searches').select('*').limit(6),
       SB.from('cs_dash_growing_palettes').select('*').limit(6),
       SB.from('cs_dash_trending_prints').select('*').limit(6),
@@ -312,7 +321,9 @@
       SB.from('cs_dash_geography').select('*').limit(6),
       SB.from('cs_dash_event_results').select('*').limit(3),
       SB.from('cs_events').select('event_type,created_at,entity_slug,metadata').gte('created_at',since30).order('created_at',{ascending:false}).limit(500),
+      SB.from('cs_atlas_entries').select('name,slug').limit(500),
     ]);
+    const knownTerms=new Set((Ax.data||[]).flatMap(e=>[(e.name||'').toLowerCase(),(e.slug||'').toLowerCase().replace(/-/g,' ')]));
     const noSchema=Raw.error&&Raw.error.message&&Raw.error.message.includes('does not exist');
     const rawRows=Raw.data||[];
     const raw7=rawRows.filter(r=>r.created_at>=since7);
@@ -332,8 +343,8 @@
   </div>
   <div class="dash-grid">
     ${dashRawPanel(rawRows,Raw.error)}
-    ${dashPanel('◈ Emerging Searches','Week-over-week','this_week','last_week','query',S.data,S.error)}
-    ${dashPanel('◎ Growing Palettes','Views this week','this_week','last_week','palette_slug',G.data,G.error)}
+    ${dashSearchPanel(S.data,S.error,knownTerms)}
+    ${dashPalettePanel(G.data,G.error)}
     ${dashPanel('▲ Trending Prints','Views 7 days','this_week',null,'pattern_slug',T.data,T.error)}
     ${dashPanel('↓ Top Downloads','30-day downloads','downloads',null,'entity_slug',D.data,D.error)}
     ${dashPanel('♡ Most Saved','30-day saves','saves',null,'entity_slug',Sv.data,Sv.error)}
@@ -343,6 +354,26 @@
   </div>`;
   }
   
+  function dashPalettePanel(data,err){
+    const rows=(data||[]).slice(0,6);
+    return `<div class="d-panel">
+      <div class="d-panel-hd"><span class="dot"></span>◎ Growing Palettes</div>
+      <div style="font-size:10px;color:var(--muted);padding:4px 14px 2px">Views this week vs last · click to open</div>
+      ${err?`<div class="p-empty">Run 011_fix_palette_trends_view.sql</div>`
+      :rows.length===0?`<div class="p-empty">No palette views yet.</div>`
+      :rows.map(r=>{
+        const v=r.this_week??0, prev=r.last_week;
+        const delta=prev!=null?(v>prev?`<span class="p-delta up">↑${v-prev}</span>`:v<prev?`<span class="p-delta dn">↓${prev-v}</span>`:`<span class="p-delta flat">—</span>`):'';
+        const nm=r.palette_name||'—';
+        const href=r.palette_id?`https://coco-palettes.cultureschool.org/?id=${esc(r.palette_id)}`:null;
+        const nmEl=href
+          ?`<a class="p-nm" href="${href}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none" onmouseover="this.style.color='var(--green)'" onmouseout="this.style.color='inherit'">${esc(nm)}</a>`
+          :`<span class="p-nm">${esc(nm)}</span>`;
+        return `<div class="p-row">${nmEl}${delta}<span class="p-val">${fmt(v)}</span></div>`;
+      }).join('')}
+    </div>`;
+  }
+
   function dashPanel(title,sub,valKey,prevKey,nameKey,data,err){
     const rows=(data||[]).slice(0,6);
     return `<div class="d-panel">
@@ -358,6 +389,26 @@
     </div>`;
   }
   
+  function dashSearchPanel(data,err,knownTerms){
+    const rows=(data||[]).slice(0,6);
+    return `<div class="d-panel">
+      <div class="d-panel-hd"><span class="dot"></span>◈ Emerging Searches</div>
+      <div style="font-size:10px;color:var(--muted);padding:4px 14px 2px">Week-over-week · gaps flagged</div>
+      ${err?`<div class="p-empty">Run 010_intelligence_schema.sql</div>`
+      :rows.length===0?`<div class="p-empty">No searches yet.</div>`
+      :rows.map(r=>{
+        const v=r.this_week??0, p=r.last_week;
+        const delta=p!=null?(v>p?`<span class="p-delta up">↑${v-p}</span>`:v<p?`<span class="p-delta dn">↓${p-v}</span>`:`<span class="p-delta flat">—</span>`):'';
+        const q=r.query||'';
+        const isGap=!knownTerms.has(q.toLowerCase());
+        const badge=isGap
+          ?`<button class="gap-btn" onclick="atlasCreateFromSearch(${esc(JSON.stringify(q))})" title="No Atlas entry — click to create a draft">+ Atlas</button>`
+          :`<span class="covered" title="Atlas entry exists">✓</span>`;
+        return `<div class="p-row"><span class="p-nm">${esc(q||'—')}</span>${badge}${delta}<span class="p-val">${fmt(v)}</span></div>`;
+      }).join('')}
+    </div>`;
+  }
+
   function dashGeoPanel(data,err){
     const rows=(data||[]).slice(0,6);
     return `<div class="d-panel">
@@ -759,6 +810,24 @@
   }
   window.atlasSave=atlasSave;window.atlasPublish=atlasPublish;window.atlasFields=atlasFields;
   window.atlasMatch=atlasMatch;window.renderAtlas=renderAtlas;window.atlasSetTab=atlasSetTab;
+
+  window.atlasCreateFromSearch=async function(name){
+    const slug=(name.toLowerCase()
+      .replace(/\s+/g,'-')
+      .replace(/[^\w぀-鿿-]/g,'')
+      .replace(/--+/g,'-')
+      .replace(/^-|-$/g,''))||('gap-'+Date.now().toString(36));
+    const {data,error}=await SB.from('cs_atlas_entries').insert({
+      name,slug,source_status:'draft',sensitivity_level:'general',is_public:false,is_living:true
+    }).select().single();
+    if(error){alert('Could not create draft: '+error.message);return;}
+    // Navigate to Atlas > Edit and surface the new entry
+    showMod('atlas');
+    atlasSetTab('edit');
+    A_F.q=name;
+    if(A_ROWS.length){A_ROWS.unshift(data);renderAtlas();}
+    else{await loadAtlasEntries();}
+  };
   
   /* ═══════════════════════════════════════════════════════════════
      MODULE 3: KNOWLEDGE GRAPH
@@ -2109,6 +2178,313 @@
     LOADED.delete('trends');loadTrends();
   };
   
+  /* ═══════════════════════════════════════════════════════════════
+     MODULE: MAKER NETWORK
+  ═══════════════════════════════════════════════════════════════ */
+  let MK_LIST=[], MK_ATLAS_ENTRIES=[];
+  const MK_CONTACT_STATUSES=['uncontacted','researching','reached_out','in_conversation','declined','active'];
+
+  async function loadMakers(){
+    const el=document.getElementById('mod-makers');
+    el.innerHTML='<div class="loading">Loading maker network…</div>';
+    const [{data,error},{data:atlasList}]=await Promise.all([
+      SB.from('cs_maker_network_detail').select('*').order('organization'),
+      SB.from('cs_atlas_entries').select('id,name,slug').order('name')
+    ]);
+    if(error&&error.message&&error.message.includes('does not exist')){
+      el.innerHTML='<div class="empty">Run atlas/08-maker-network-atlas-linkage.sql in Supabase first, then refresh.</div>';return;
+    }
+    if(error){el.innerHTML=`<div class="empty">${esc(error.message)}</div>`;return}
+    MK_LIST=data||[];
+    MK_ATLAS_ENTRIES=atlasList||[];
+    const continents=[...new Set(MK_LIST.map(m=>m.continent).filter(Boolean))].sort();
+    el.innerHTML=`
+      <div class="toolbar">
+        <input type="search" placeholder="Search by name, country, craft…" oninput="filterMakers(this.value)">
+        <select onchange="filterMakerContinent(this.value)">
+          <option value="">All continents</option>
+          ${continents.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('')}
+        </select>
+        <select onchange="filterMakerStatus(this.value)">
+          <option value="">All contact statuses</option>
+          ${MK_CONTACT_STATUSES.map(v=>`<option value="${v}">${v.replace(/_/g,' ')}</option>`).join('')}
+        </select>
+        <span style="margin-left:auto;font-size:12px;color:var(--muted)">${MK_LIST.length} organizations</span>
+      </div>
+      <div id="mk-list"></div>`;
+    renderMakerList(MK_LIST);
+  }
+
+  function renderMakerList(list){
+    const el=document.getElementById('mk-list');if(!el)return;
+    if(!list.length){el.innerHTML='<div class="empty">No makers match your filter.</div>';return}
+    el.innerHTML=list.map(m=>{
+      const traditions=(m.linked_traditions||[]).filter(Boolean);
+      const places=(m.linked_places||[]).filter(Boolean);
+      const linkTypes=m.link_types||[];
+      return `
+      <div class="row" id="mk-row-${m.maker_id}">
+        <div class="rhead" onclick="this.parentElement.classList.toggle('open')">
+          <span class="nm">${esc(m.organization)}<small>${esc([m.subregion,m.country,m.continent].filter(Boolean).join(', '))}</small></span>
+          ${m.entity_type?tag(m.entity_type):''}
+          ${m.listed?'<span class="tag t-general">listed</span>':'<span class="tag" style="opacity:.45">unlisted</span>'}
+          ${traditions.length?`<span class="tag s-researched">${traditions.length} tradition${traditions.length!==1?'s':''}</span>`:'<span class="tag" style="opacity:.35">no traditions</span>'}
+          ${m.contact_status?tag(m.contact_status.replace(/_/g,' '),'t-'+m.contact_status):''}
+          ${m.source_url?`<a href="${esc(m.source_url)}" target="_blank" onclick="event.stopPropagation()" style="font-size:12px;color:var(--green)">Source ↗</a>`:''}
+        </div>
+        <div class="rbody">
+          ${m.crafts_techniques?`<p style="font-size:13px;color:var(--muted);margin:8px 0 4px"><strong>Crafts / Techniques:</strong> ${esc(m.crafts_techniques)}</p>`:''}
+          ${m.can_make?`<p style="font-size:13px;color:var(--muted);margin:4px 0"><strong>Can make:</strong> ${esc(m.can_make)}</p>`:''}
+          ${m.engagement_potential?`<p style="font-size:13px;color:var(--muted);margin:4px 0"><strong>Engagement potential:</strong> ${esc(m.engagement_potential)}</p>`:''}
+          ${m.qualification_status?`<p style="font-size:13px;color:var(--muted);margin:4px 0"><strong>Qualification status:</strong> ${esc(m.qualification_status)}</p>`:''}
+          <div style="margin:12px 0 8px">
+            <strong style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)">Linked Atlas Traditions</strong>
+            <div id="mk-links-${m.maker_id}" style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px">
+              ${traditions.length
+                ?traditions.map((t,i)=>`<span class="tag s-researched">${esc(t)}${linkTypes[i]?` · ${esc(linkTypes[i])}`:''}</span>`).join('')
+                :'<span style="font-size:12px;color:var(--muted)">None yet — link this maker to traditions below.</span>'}
+            </div>
+          </div>
+          ${places.length?`<p style="font-size:12px;color:var(--muted);margin:4px 0"><strong>KG places:</strong> ${places.map(p=>esc(p)).join(', ')}</p>`:''}
+          <div class="acts" style="margin-top:12px;flex-wrap:wrap;gap:8px">
+            <label class="lbl" style="display:inline;margin:0">Contact status</label>
+            <select class="f" id="mk-cs-${m.maker_id}" style="width:auto;display:inline-block;margin:0 6px 0 6px">
+              <option value="">—</option>
+              ${MK_CONTACT_STATUSES.map(v=>`<option value="${v}" ${m.contact_status===v?'selected':''}>${v.replace(/_/g,' ')}</option>`).join('')}
+            </select>
+            <select class="f" id="mk-li-${m.maker_id}" style="width:auto;display:inline-block;margin:0 6px 0 0">
+              <option value="true" ${m.listed?'selected':''}>Listed</option>
+              <option value="false" ${!m.listed?'selected':''}>Unlisted</option>
+            </select>
+            <button class="b-save b-sm" onclick="saveMakerMeta('${m.maker_id}')">Save</button>
+            <button class="b-sm" style="background:var(--green);color:#fff;border:none;cursor:pointer" onclick="openLinkMaker(${m.maker_id},'${esc(m.organization).replace(/'/g,"\\'")}')">+ Link tradition</button>
+            <span class="msg" id="mk-msg-${m.maker_id}"></span>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  async function saveMakerMeta(id){
+    const m=document.getElementById('mk-msg-'+id);
+    const cs=document.getElementById('mk-cs-'+id)?.value||null;
+    const listed=document.getElementById('mk-li-'+id)?.value==='true';
+    const {error}=await SB.from('maker_network').update({contact_status:cs,listed}).eq('id',Number(id));
+    if(error)return flash(m,error.message,false);
+    flash(m,'Saved');
+    const row=MK_LIST.find(x=>Number(x.maker_id)===Number(id));
+    if(row){row.contact_status=cs;row.listed=listed;}
+  }
+
+  function openLinkMaker(makerId,orgName){
+    openOverlay(`
+      <div class="ov-hd"><h3>Link tradition: ${esc(orgName)}</h3><button class="ov-close" onclick="closeOverlay()">✕</button></div>
+      <label class="lbl">Atlas tradition</label>
+      <select class="f" id="lk-entry">
+        <option value="">Select a tradition…</option>
+        ${MK_ATLAS_ENTRIES.map(e=>`<option value="${e.id}">${esc(e.name)}</option>`).join('')}
+      </select>
+      <label class="lbl">Link type</label>
+      <select class="f" id="lk-type">
+        <option value="practices">practices — actively makes / produces this tradition</option>
+        <option value="preserves">preserves — archival or documentation role</option>
+        <option value="teaches">teaches — educational programs</option>
+        <option value="sources">sources — sources materials or components</option>
+        <option value="adjacent">adjacent — related tradition, not primary</option>
+      </select>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin:10px 0;text-transform:none;letter-spacing:normal;color:var(--ink);font-weight:400">
+        <input type="checkbox" id="lk-primary" style="width:15px;height:15px;accent-color:var(--green)"> Primary tradition for this organization
+      </label>
+      <label class="lbl">Your name (for accountability)</label>
+      <input class="f" id="lk-by" placeholder="e.g. Stacey">
+      <label class="lbl">Notes (optional)</label>
+      <textarea class="f" id="lk-notes" rows="2" placeholder="Why this link? Context for future editors."></textarea>
+      <div class="acts" style="margin-top:14px">
+        <button class="b-save" onclick="submitMakerLink(${makerId})">Link tradition</button>
+        <span class="msg" id="lk-msg"></span>
+      </div>`);
+  }
+
+  window.submitMakerLink=async function(makerId){
+    const m=document.getElementById('lk-msg');
+    const entryId=document.getElementById('lk-entry').value;
+    const linkType=document.getElementById('lk-type').value;
+    const isPrimary=document.getElementById('lk-primary').checked;
+    const linkedBy=document.getElementById('lk-by').value.trim();
+    const notes=document.getElementById('lk-notes').value.trim();
+    if(!entryId)return flash(m,'Select a tradition.',false);
+    if(!linkedBy)return flash(m,'Your name is required — accountability.',false);
+    const {error}=await SB.from('cs_maker_network_atlas').insert({
+      maker_id:Number(makerId),atlas_entry_id:entryId,
+      link_type:linkType,is_primary:isPrimary,
+      notes:notes||null,linked_by:linkedBy
+    });
+    if(error)return flash(m,error.message,false);
+    flash(m,'Linked!');
+    setTimeout(()=>{closeOverlay();LOADED.delete('makers');loadMakers()},800);
+  };
+
+  window.filterMakers=function(q){
+    if(!q)return renderMakerList(MK_LIST);
+    const t=q.toLowerCase();
+    renderMakerList(MK_LIST.filter(m=>
+      (m.organization||'').toLowerCase().includes(t)||
+      (m.country||'').toLowerCase().includes(t)||
+      (m.crafts_techniques||'').toLowerCase().includes(t)||
+      (m.subregion||'').toLowerCase().includes(t)
+    ));
+  };
+  window.filterMakerContinent=function(v){renderMakerList(v?MK_LIST.filter(m=>m.continent===v):MK_LIST)};
+  window.filterMakerStatus=function(v){renderMakerList(v?MK_LIST.filter(m=>m.contact_status===v):MK_LIST)};
+  window.saveMakerMeta=saveMakerMeta;
+  window.openLinkMaker=openLinkMaker;
+
+  /* ── FIELD LOGS ────────────────────────────────────────────────── */
+  async function loadFieldLogs(){
+    const el=document.getElementById('mod-fieldlogs');
+    el.innerHTML=`
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px">
+        <div>
+          <h3 style="font-size:16px;font-weight:600">Field Logs</h3>
+          <p style="font-size:12px;color:var(--muted);margin-top:2px">Saved field research sessions — palettes, heritage signals, Atlas matches</p>
+        </div>
+        <a href="https://field-read.cultureschool.org/" target="_blank"
+           style="background:var(--gold);color:#1a1208;border:none;border-radius:8px;padding:9px 18px;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;letter-spacing:.04em">
+          + New Field Log
+        </a>
+      </div>`;
+
+    try{
+      const{data,error}=await SB.from('cs_field_logs')
+        .select('id,title,location,observed_date,source_type,technique,logged_by,image_count,master_palette,heritage_signals,atlas_matches,notes,created_at')
+        .order('created_at',{ascending:false})
+        .limit(40);
+
+      if(error)throw error;
+      if(!data?.length){
+        el.innerHTML+=`<div style="padding:40px 0;text-align:center;color:var(--muted)">
+          No field logs yet.<br>
+          <span style="font-size:11px;display:block;margin-top:6px">
+            Use the Field Log tool to read a corpus of field photos and save the session here.
+          </span>
+        </div>`;
+        return;
+      }
+
+      // ── Corpus Trends panel (2+ logs) ─────────────────────────────
+      if(data.length>=2){
+        const allC=[];
+        data.forEach((log,li)=>{
+          (log.master_palette||[]).forEach(c=>{
+            if(c.r!=null)allC.push({r:c.r,g:c.g,b:c.b,hex:c.hex||'#888',name:c.name||'—',li,w:c.weight||0});
+          });
+        });
+        const clusters=[];
+        allC.forEach(c=>{
+          let bi=-1,bd=Infinity;
+          clusters.forEach((cl,ci)=>{
+            const d=Math.sqrt((c.r-cl.r)**2+(c.g-cl.g)**2+(c.b-cl.b)**2);
+            if(d<48&&d<bd){bd=d;bi=ci;}
+          });
+          if(bi>=0){clusters[bi].logs.add(c.li);clusters[bi].tw+=c.w;}
+          else clusters.push({r:c.r,g:c.g,b:c.b,hex:c.hex||'#888',name:c.name||'—',logs:new Set([c.li]),tw:c.w});
+        });
+        clusters.sort((a,b)=>b.logs.size-a.logs.size||b.tw-a.tw);
+        const topColors=clusters.slice(0,8);
+
+        const sigFreq={};
+        data.forEach(log=>{
+          const s=log.heritage_signals||{};
+          [...(s.markers||[]),...(s.techniques||[])].forEach(t=>{sigFreq[t]=(sigFreq[t]||0)+1;});
+          if(s.feeling)sigFreq[s.feeling]=(sigFreq[s.feeling]||0)+1;
+        });
+        const topSigs=Object.entries(sigFreq).sort((a,b)=>b[1]-a[1]).slice(0,10);
+
+        const colorSwatches=topColors.map(cl=>`
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
+            <div style="width:38px;height:38px;border-radius:7px;background:${esc(cl.hex)};border:1px solid var(--rule)" title="${esc(cl.name)} · ${esc(cl.hex)}"></div>
+            <div style="font-size:9px;color:var(--muted);text-align:center;line-height:1.2;width:42px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(cl.name)}</div>
+            <div style="font-size:9px;color:var(--gold);font-weight:700;white-space:nowrap">${cl.logs.size}<span style="color:var(--muted);font-weight:400">/${data.length}</span></div>
+          </div>`).join('');
+
+        const sigChips=topSigs.length
+          ?topSigs.map(([label,count])=>`<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid var(--rule);color:var(--ink);margin:2px 2px 0 0">${esc(label)}<span style="color:var(--gold);font-weight:700;font-size:10px">${count}</span></span>`).join('')
+          :`<span style="font-size:11px;color:var(--muted)">Name images with cultural context — e.g. kente_accra_market.jpg</span>`;
+
+        const trendDiv=document.createElement('div');
+        trendDiv.style.cssText='background:#fff;border:1px solid var(--rule);border-radius:12px;padding:16px 20px;margin-bottom:20px';
+        trendDiv.innerHTML=`
+          <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:16px">
+            <span style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold)">Corpus Trends</span>
+            <span style="font-size:11px;color:var(--muted)">across ${data.length} field log${data.length>1?'s':''}</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+            <div>
+              <div style="font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:12px">Recurring colors</div>
+              ${topColors.length
+                ?`<div style="display:flex;flex-wrap:wrap;gap:10px">${colorSwatches}</div>`
+                :`<span style="font-size:11px;color:var(--muted)">No palette data yet</span>`}
+            </div>
+            <div>
+              <div style="font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:12px">Top signals</div>
+              <div style="line-height:1.9">${sigChips}</div>
+            </div>
+          </div>`;
+        el.appendChild(trendDiv);
+      }
+
+      // ── Log cards ────────────────────────────────────────────────
+      const logsHead=document.createElement('div');
+      logsHead.style.cssText='font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:12px';
+      logsHead.textContent=data.length>=2?'Recent logs':'Field logs';
+      el.appendChild(logsHead);
+
+      const grid=document.createElement('div');
+      grid.style.cssText='display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px';
+
+      data.forEach(log=>{
+        const palette=Array.isArray(log.master_palette)?log.master_palette.slice(0,6):[];
+        const signals=log.heritage_signals||{};
+        const allTags=[
+          ...(signals.markers||[]),
+          ...(signals.techniques||[]),
+          signals.feeling?signals.feeling+' palette':null,
+        ].filter(Boolean).slice(0,4);
+        const atlasCount=Array.isArray(log.atlas_matches)?log.atlas_matches.length:0;
+        const dt=log.observed_date?new Date(log.observed_date).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):
+          new Date(log.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+
+        const swatches=palette.map(c=>`<span style="flex:1;background:${esc(c.hex)};height:100%"></span>`).join('');
+        const tagHtml=allTags.map(t=>`<span style="display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;border:1px solid rgba(201,169,110,.25);color:var(--gold);background:rgba(201,169,110,.08);margin:2px 2px 0 0">${esc(t)}</span>`).join('');
+
+        const card=document.createElement('div');
+        card.style.cssText='background:#fff;border:1px solid var(--rule);border-radius:12px;overflow:hidden;cursor:pointer';
+        card.onmouseover=()=>card.style.borderColor='var(--gold)';
+        card.onmouseout=()=>card.style.borderColor='var(--rule)';
+        card.innerHTML=`
+          <div style="height:32px;display:flex">${swatches||'<span style="flex:1;background:var(--rule)"></span>'}</div>
+          <div style="padding:12px 14px 14px">
+            <div style="font-size:13px;font-weight:600;color:var(--ink);line-height:1.3;margin-bottom:4px">${esc(log.title)}</div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:8px">
+              ${esc(dt)}${log.location?' · '+esc(log.location):''}${log.image_count?' · '+log.image_count+' images':''}
+              ${log.logged_by?' · '+esc(log.logged_by):''}
+            </div>
+            <div>${tagHtml}</div>
+            ${atlasCount?`<div style="font-size:10px;color:var(--muted);margin-top:8px">⌕ ${atlasCount} Atlas match${atlasCount>1?'es':''}</div>`:''}
+            ${log.notes?`<div style="font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5;border-top:1px solid var(--rule);padding-top:8px">${esc(log.notes.slice(0,140))}${log.notes.length>140?'…':''}</div>`:''}
+          </div>`;
+        grid.appendChild(card);
+      });
+
+      el.appendChild(grid);
+    }catch(err){
+      el.innerHTML+=`<div style="padding:40px 0;text-align:center;color:var(--muted)">
+        Error loading field logs: ${esc(err.message||String(err))}<br>
+        <span style="font-size:11px;display:block;margin-top:6px">Check Supabase RLS policies on cs_field_logs.</span>
+      </div>`;
+    }
+  }
+
   /* ── INIT ──────────────────────────────────────────────────────── */
   boot();
   </script></body></html>
