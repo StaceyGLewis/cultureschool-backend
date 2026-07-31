@@ -2543,7 +2543,7 @@ async function loadWorkspacePatterns() {
     // workspace_enabled=true controls which patterns appear — no is_public filter
     // so curated patterns show regardless of their public status
     const { data, error } = await supa
-      .from('patterns')
+      .from('patterns_public')
       .select('id, code, name, style, colors, heritage_origin, occasion')
       .eq('workspace_enabled', true)
       .order('grab_count', { ascending: false })
@@ -2609,7 +2609,7 @@ async function searchPatterns(q) {
   if (!q || q.length < 2) { results.style.display = 'none'; return; }
   try {
     const { data, error } = await supa
-      .from('patterns')
+      .from('patterns_public')
       .select('id, code, name, style, colors, heritage_origin, occasion')
       .or(`name.ilike.%${q}%,palette_name.ilike.%${q}%,heritage_origin.ilike.%${q}%,style.ilike.%${q}%`)
       .eq('workspace_enabled', true)
@@ -3620,7 +3620,7 @@ async function loadPatternLibraryStrip() {
   strip.innerHTML = '<span style="font-size:.6rem;color:var(--ws-ink-soft,#888);">Loading…</span>';
 
   const { data, error } = await sb
-    .from('patterns')
+    .from('patterns_public')
     .select('id, name, style, colors, thumb_url, heritage_name, code')
     .eq('is_public', true)
     .order('grab_count', { ascending: false })

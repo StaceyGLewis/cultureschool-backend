@@ -244,10 +244,39 @@ create policy "patterns member read"
 -- ────────────────────────────────────────────────────────────────────────────
 
 /*
--- Display-safe projection: no colors, no code, no palette_story.
+-- Display-safe projection for public product surfaces.
+--
+--  MEASURED before choosing these columns:
+--    heritage_meaning     non-null on 7,088 / 7,088   ← the researched IP
+--    code                 non-null on 0               ← column unused today
+--    palette_story        non-null on 0               ← column unused today
+--    contributor_email    non-null on 0               ← no PII exposure
+--
+--  EXCLUDED (this is the point of the view):
+--    heritage_meaning, heritage_technique, heritage_significance, heritage_tags
+--      → the deep cultural research text on all 7,088 rows. Neither index.html
+--        nor planner.html renders it, so removing it breaks nothing. The
+--        pattern library still shows it, because the library reads the base
+--        table and non-members will only see the 6 free rows there — heritage
+--        stays visible as the hook, exactly as intended.
+--    description, palette_story, code, color_descriptor,
+--    contributed_by, contributor_email
+--
+--  ⚠️  INCLUDED FOR NOW, AND IT SHOULDN'T BE: `colors`
+--      index.html renders tiles to canvas from `colors`, and planner.html's
+--      Step-C deltaE fallback computes palette distance from `colors`. Both
+--      break without it, and thumb_url is null on all 7,088 rows so there is
+--      no image to fall back to.
+--
+--      → Remove `colors` from this view once the thumbnail backfill is done
+--        (Phase 1 in ENGINE-SPLIT-SCOPE.md). Until then, colors + the public
+--        engine still permit regeneration. This view is an increment, not the
+--        finish line. Do not describe the archive as closed until `colors` is
+--        out of it.
 create or replace view public.patterns_public
 with (security_invoker = on) as
-select id, name, style, occasion, thumb_url,
+select id, name, style, colors, occasion, thumb_url,
+       palette_name, palette_id, grab_count, workspace_enabled, is_public,
        heritage_name, heritage_origin, heritage_region, heritage_era,
        continent, tags, search_tags, aesthetic_tags, created_at
 from public.patterns
@@ -256,7 +285,7 @@ where is_public;
 grant select on public.patterns_public to anon, authenticated;
 
 comment on view public.patterns_public is
-  'Display-safe pattern projection for public product surfaces. Deliberately excludes colors, code and palette_story — those are the generative inputs and stay members-only.';
+  'Display-safe pattern projection for public product surfaces (index, planner). Excludes the deep heritage research text, description and palette_story. Still exposes colors as an interim measure until thumb_url is backfilled — see atlas/ENGINE-SPLIT-SCOPE.md.';
 
 alter table public.patterns enable row level security;
 

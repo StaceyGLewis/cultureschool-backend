@@ -5872,7 +5872,10 @@ function openModal(idx) {
 
   // CTA link
   const ctaColors = colors.join(',');
-  const ctaUrl = `https://coco-pattern-generator.netlify.app?style=${encodeURIComponent(style)}&colors=${encodeURIComponent(ctaColors)}&name=${encodeURIComponent(row.name||'')}&palette=${encodeURIComponent(row.palette_name||'')}`;
+  // Points at CoCo Print Studio — the member-facing maker tool.
+  // NOT coco-pattern-generator: that is patterng.html, an internal
+  // admin-only authoring tool. See atlas/ENGINE-SPLIT-SCOPE.md.
+  const ctaUrl = `https://coco-print-studio.cultureschool.org?style=${encodeURIComponent(style)}&colors=${encodeURIComponent(ctaColors)}&name=${encodeURIComponent(row.name||'')}&palette=${encodeURIComponent(row.palette_name||'')}`;
   applyCtaAccess(ctaUrl);
 
   // Show modal first so canvas has dimensions

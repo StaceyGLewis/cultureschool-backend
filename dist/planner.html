@@ -2063,7 +2063,7 @@ function _bridgeCopy(url) {
     // Step A: exact palette_id match
     if (paletteId) {
       const res = await sb
-        .from('patterns')
+        .from('patterns_public')
         .select('id, name, code, colors, heritage_name, thumb_url, palette_id')
         .eq('palette_id', paletteId)
         .eq('is_public', true)
@@ -2075,7 +2075,7 @@ function _bridgeCopy(url) {
       const palName = window.plannerSession && window.plannerSession.activePaletteName;
       if (palName) {
         const res = await sb
-          .from('patterns')
+          .from('patterns_public')
           .select('id, name, code, colors, heritage_name, thumb_url')
           .eq('is_public', true)
           .ilike('palette_name', '%' + palName + '%')
@@ -2086,7 +2086,7 @@ function _bridgeCopy(url) {
     // Step C: deltaE fallback with safe limit
     if (!data || !data.length) {
       const res = await sb
-        .from('patterns')
+        .from('patterns_public')
         .select('id, name, code, colors, heritage_name, thumb_url')
         .eq('is_public', true)
         .not('colors', 'is', null)
