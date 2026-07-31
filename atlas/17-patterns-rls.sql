@@ -257,10 +257,37 @@ create policy "patterns member read"
 --  This is the option that actually matches the locked decision — the archive
 --  stays visible as product, the engine inputs stay gated.
 --
---  ⚠️  Requires a client change first: index.html and planner.html must select
---      from patterns_public and render thumb_url rather than drawing from
---      `colors` + `code`. Do NOT enable this until that is deployed, or those
---      surfaces will render blank tiles.
+--  ⚠️  DEPLOY BEFORE YOU RUN THIS.
+--      dist/index.html and dist/planner.html have been repointed to
+--      patterns_public in the repo (commit 369b82b), but you deploy by
+--      dropping files into Netlify — so the LIVE copies still query the
+--      `patterns` base table until you drop them.
+--
+--      Run this section while the old files are live and, the moment
+--      patterns_public_select is dropped, anonymous visitors on the shop grid
+--      and the planner get 6 rows instead of 7,088. Deploy first, then run.
+--
+--      RUN 3B IN TWO PASSES. Do not paste the whole section at once — the
+--      view must exist before the clients point at it, and the clients must be
+--      live before the old policy is dropped.
+--
+--        PASS 1  → run ONLY the `create or replace view` + `grant` + `comment`
+--                  below. This changes NO access: the base table policies are
+--                  untouched, everything keeps working exactly as it does now.
+--
+--        DEPLOY  → drop dist/index.html + dist/planner.html into Netlify.
+--                  They query patterns_public, which now exists. Reload both
+--                  logged OUT and confirm the grids are full.
+--                  (Deploying before PASS 1 would break them — the view would
+--                  not exist and every query would 404.)
+--
+--        PASS 2  → run the `drop policy patterns_public_select` + the two
+--                  `create policy` statements. This is the moment the archive
+--                  actually closes.
+--
+--        VERIFY  → reload index + planner logged OUT. Grids should still be
+--                  full. Then check the library: logged out you should see 6
+--                  patterns, not 7,088.
 -- ────────────────────────────────────────────────────────────────────────────
 
 /*
@@ -293,8 +320,32 @@ create policy "patterns member read"
 --        engine still permit regeneration. This view is an increment, not the
 --        finish line. Do not describe the archive as closed until `colors` is
 --        out of it.
+--  ⚠️ SECURITY_INVOKER MUST BE OFF HERE — this is deliberate and load-bearing.
+--
+--     An earlier draft of this file said `security_invoker = on`, copying the
+--     pattern from atlas/16. That would have broken the entire design:
+--
+--       security_invoker = on  → the view runs as the CALLER, so the caller's
+--                                RLS on public.patterns applies. After
+--                                patterns_public_select is dropped, anon would
+--                                get 6 rows from this view, not 7,088. The
+--                                shop grid and planner would still break —
+--                                exactly what 3B exists to prevent.
+--
+--       security_invoker = off → the view runs as its OWNER (postgres), which
+--                                bypasses RLS on the base table. Public
+--                                surfaces get every public row, but only the
+--                                columns selected below.
+--
+--     The view IS the privilege boundary. That is the point: the base table is
+--     locked to members, and this projection is the controlled public window.
+--
+--     Consequence: Supabase's linter will flag this as a "Security Definer
+--     View", the same warning atlas/16 cleaned up. That warning is CORRECT and
+--     is being accepted deliberately here. Do not "fix" it by flipping this to
+--     on — that silently empties the public surfaces. Leave this comment.
 create or replace view public.patterns_public
-with (security_invoker = on) as
+with (security_invoker = off) as
 select id, name, style, colors, occasion, thumb_url,
        palette_name, palette_id, grab_count, workspace_enabled, is_public,
        heritage_name, heritage_origin, heritage_region, heritage_era,
