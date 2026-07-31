@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,7 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <style>
-/* ââ RESET + ROOT ââ */
+/* ── RESET + ROOT ── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
   --ink:#0a0704;
@@ -25,17 +26,17 @@
 }
 html,body{height:100%;background:var(--ink);color:#f0e8d8;font-family:var(--sans);-webkit-font-smoothing:antialiased;overflow-x:hidden;}
 
-/* ââ GRAIN OVERLAY ââ */
+/* ── GRAIN OVERLAY ── */
 body::before{
   content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:.028;
   background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   background-size:256px;
 }
 
-/* ââ LAYOUT ââ */
+/* ── LAYOUT ── */
 .app{display:grid;grid-template-columns:340px 1fr;min-height:100vh;}
 
-/* ââ SIDEBAR ââ */
+/* ── SIDEBAR ── */
 .sidebar{
   background:rgba(255,255,255,.03);
   border-right:1px solid var(--line);
@@ -83,13 +84,13 @@ body::before{
 .sidebar-body{flex:1;padding:20px 20px 0;display:flex;flex-direction:column;gap:22px;}
 .sidebar-foot{padding:16px 20px 20px;border-top:1px solid var(--line);}
 
-/* ââ SECTION LABELS ââ */
+/* ── SECTION LABELS ── */
 .section-label{
   font-size:.56rem;letter-spacing:.24em;text-transform:uppercase;
   color:var(--gold);opacity:.7;margin-bottom:10px;
 }
 
-/* ââ PALETTE INPUT ââ */
+/* ── PALETTE INPUT ── */
 .palette-swatches{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
 .swatch-pill{
   width:32px;height:32px;border-radius:50%;
@@ -146,7 +147,7 @@ body::before{
 }
 .btn-load:hover{background:rgba(201,169,110,.25);}
 
-/* ââ PATTERN STYLES ââ */
+/* ── PATTERN STYLES ── */
 .style-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
 .style-btn{
   aspect-ratio:1;border-radius:10px;border:1.5px solid rgba(255,255,255,.1);
@@ -164,7 +165,7 @@ body::before{
 .style-name{font-size:.5rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.5);}
 .style-btn.active .style-name{color:var(--gold-lt);}
 
-/* ââ CONTROLS ââ */
+/* ── CONTROLS ── */
 .control-row{display:flex;flex-direction:column;gap:6px;}
 .art-panel{display:none;flex-direction:column;gap:10px;padding:10px 12px;background:rgba(201,169,110,.08);border:1px solid rgba(201,169,110,.2);border-radius:8px;margin-top:4px;}
 .art-panel.visible{display:flex;}
@@ -202,7 +203,7 @@ input[type=range]::-webkit-slider-thumb{
   box-shadow:0 2px 6px rgba(0,0,0,.4);
 }
 
-/* ââ MODE TABS ââ */
+/* ── MODE TABS ── */
 .mode-tabs{display:flex;gap:0;margin-bottom:0;border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,.1);}
 .mode-tab{flex:1;padding:9px 6px;border:none;background:transparent;cursor:pointer;font:600 .6rem/1 var(--sans);letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.38);transition:all .2s;}
 .mode-tab.active{background:rgba(201,169,110,.18);color:var(--gold-lt);}
@@ -253,7 +254,7 @@ input[type=range]::-webkit-slider-thumb{
 .mode-panel{display:none;flex-direction:column;gap:22px;}
 .mode-panel.active{display:flex;}
 
-/* ââ BUTTONS ââ */
+/* ── BUTTONS ── */
 .btn-generate{
   width:100%;padding:14px;border-radius:12px;border:none;cursor:pointer;
   background:linear-gradient(135deg,var(--gold-dk),var(--gold));
@@ -281,7 +282,7 @@ input[type=range]::-webkit-slider-thumb{
 }
 .btn-export-png:hover{background:rgba(201,169,110,.28);}
 
-/* ââ SPOONFLOWER LINK ââ */
+/* ── SPOONFLOWER LINK ── */
 .spoon-link{
   display:flex;align-items:center;gap:8px;padding:10px 14px;
   background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);
@@ -294,7 +295,7 @@ input[type=range]::-webkit-slider-thumb{
 .spoon-link-name{font-size:.78rem;color:rgba(255,255,255,.75);margin-top:1px;}
 .spoon-link-arrow{font-size:.9rem;color:rgba(255,255,255,.28);}
 
-/* ââ CANVAS AREA ââ */
+/* ── CANVAS AREA ── */
 .canvas-area{
   display:flex;flex-direction:column;
   background:repeating-conic-gradient(rgba(255,255,255,.025) 0% 25%,transparent 0% 50%) 0 0 / 24px 24px;
@@ -319,7 +320,7 @@ input[type=range]::-webkit-slider-thumb{
 .canvas-frame:hover{box-shadow:0 32px 100px rgba(0,0,0,.8),0 0 0 1px rgba(201,169,110,.2);}
 #patternCanvas{display:block;max-width:100%;max-height:calc(100vh - 160px);}
 
-/* ââ SCALE TOGGLE ââ */
+/* ── SCALE TOGGLE ── */
 .scale-toggle{display:flex;gap:6px;}
 .scale-btn{
   padding:5px 12px;border-radius:6px;border:1px solid rgba(255,255,255,.12);
@@ -329,7 +330,7 @@ input[type=range]::-webkit-slider-thumb{
 }
 .scale-btn.active{background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.28);}
 
-/* ââ EMPTY STATE ââ */
+/* ── EMPTY STATE ── */
 .empty-state{
   text-align:center;padding:60px 40px;
 }
@@ -343,7 +344,7 @@ input[type=range]::-webkit-slider-thumb{
 }
 .empty-sub{font-size:.78rem;color:rgba(255,255,255,.2);line-height:1.6;}
 
-/* ââ MOCKUP TAB ââ */
+/* ── MOCKUP TAB ── */
 .mockup-drop{
   border:1.5px dashed rgba(201,169,110,.3);border-radius:12px;
   padding:20px 16px;text-align:center;cursor:pointer;
@@ -376,7 +377,7 @@ input[type=range]::-webkit-slider-thumb{
 }
 .mockup-scale-btn.active{background:rgba(255,255,255,.08);color:#fff;border-color:rgba(255,255,255,.28);}
 
-/* ââ TOAST ââ */
+/* ── TOAST ── */
 .toast{
   position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);
   background:rgba(20,15,8,.95);border:1px solid rgba(201,169,110,.3);
@@ -387,7 +388,7 @@ input[type=range]::-webkit-slider-thumb{
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
-/* ââ ORDER MODAL ââ */
+/* ── ORDER MODAL ── */
 .order-overlay{
   position:fixed;inset:0;z-index:9000;
   background:rgba(0,0,0,.72);backdrop-filter:blur(8px);
@@ -473,7 +474,7 @@ input[type=range]::-webkit-slider-thumb{
   .canvas-area{min-height:60vw;}
 }
 
-/* ââ PATTERN LIBRARY ââ */
+/* ── PATTERN LIBRARY ── */
 .lib-pattern-card {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -536,7 +537,7 @@ input[type=range]::-webkit-slider-thumb{
   color: #fff;
 }
 
-/* ââ OVERLAY LAYER ââ */
+/* ── OVERLAY LAYER ── */
 .overlay-toggle {
   display:flex; align-items:center; justify-content:space-between;
   cursor:pointer; padding:10px 12px;
@@ -572,7 +573,7 @@ input[type=range]::-webkit-slider-thumb{
 .blend-select:focus { outline:none; border-color:var(--gold); }
 .blend-select option { background:#1a1208; color:#f0e0c0; }
 
-/* ââ ADJ SLIDERS ââ */
+/* ── ADJ SLIDERS ── */
 .adj-sliders { display:flex; flex-direction:column; gap:8px; padding:10px 0 4px; }
 .btn-reset-adj {
   align-self:flex-end; padding:4px 12px; border-radius:6px;
@@ -583,7 +584,7 @@ input[type=range]::-webkit-slider-thumb{
 }
 .btn-reset-adj:hover { border-color:var(--gold); color:var(--gold); }
 
-/* ââ EXPORT SIZE SELECT ââ */
+/* ── EXPORT SIZE SELECT ── */
 .export-size-select {
   width:100%; appearance:none; -webkit-appearance:none;
   background:rgba(255,255,255,.07) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='rgba(255,255,255,.4)'/%3E%3C/svg%3E") no-repeat right 10px center;
@@ -596,11 +597,11 @@ input[type=range]::-webkit-slider-thumb{
 .export-size-select:focus { outline:none; border-color:var(--gold); }
 .export-size-select option { background:#1a1208; color:#f0e0c0; }
 
-/* ââ SAVE BAR ââ */
+/* ── SAVE BAR ── */
 .save-bar { display:none; flex-direction:column; gap:8px; padding-top:8px; }
 .save-bar.open { display:flex; }
 
-/* ââ EXPORT GATE â must be present for modal to work ââ */
+/* ══ EXPORT GATE — must be present for modal to work ══ */
 .gate-overlay {
   position: fixed; inset: 0; z-index: 9100;
   background: rgba(0,0,0,.82); backdrop-filter: blur(10px);
@@ -661,7 +662,7 @@ input[type=range]::-webkit-slider-thumb{
   background: none; border: none; text-align: center;
 }
 .gate-preview-link:hover { opacity: 1; }
-/* ââ Pattern Saves ââ */
+/* ── Pattern Saves ── */
 .pat-saves-btn{
   display:block;width:100%;margin-top:8px;
   padding:7px 12px;border-radius:6px;
@@ -699,9 +700,33 @@ input[type=range]::-webkit-slider-thumb{
 </head>
 <body>
 
+<!-- ══════════════════════════════════════════════════════════════════
+     ADMIN GATE — internal tool. Nothing below is usable until the
+     signed-in account has users.admin = true.
+
+     NOTE: this hides the UI. It does NOT keep the file private — the
+     full HTML, including the pattern engine, is still delivered to
+     anyone who requests the URL. Do not deploy this file to a public
+     site. See atlas/ENGINE-SPLIT-SCOPE.md.
+══════════════════════════════════════════════════════════════════ -->
+<div id="__adminGate" style="position:fixed;inset:0;z-index:99999;background:#0e0b08;display:flex;align-items:center;justify-content:center;padding:24px;font-family:'DM Sans',system-ui,sans-serif">
+  <div style="max-width:400px;width:100%;text-align:center">
+    <div id="__agIcon" style="font-size:1.6rem;color:#c8a050;margin-bottom:14px">✦</div>
+    <div id="__agTitle" style="font-family:Georgia,serif;font-style:italic;font-size:1.5rem;color:#faf6ef;margin-bottom:10px">Checking authorization…</div>
+    <div id="__agSub" style="font-size:.82rem;line-height:1.6;color:rgba(250,246,239,.45)"></div>
+    <div id="__agForm" style="display:none;margin-top:20px">
+      <input id="__agEmail" type="email" placeholder="admin@cultureschool.org" autocomplete="email"
+        style="width:100%;padding:12px 16px;border:1.5px solid rgba(255,255,255,.16);border-radius:10px;font-size:.9rem;outline:none;margin-bottom:10px;background:rgba(255,255,255,.05);color:#faf6ef;box-sizing:border-box">
+      <button id="__agSend"
+        style="width:100%;padding:13px;background:linear-gradient(135deg,#e8d5a8,#c8a050);border:none;border-radius:99px;font:700 .65rem/1 'DM Sans',sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#1e1810;cursor:pointer">Send sign-in link →</button>
+    </div>
+    <div id="__agMsg" style="font-size:.72rem;color:#c8a050;margin-top:12px;min-height:1em"></div>
+  </div>
+</div>
+
 <div class="app">
 
-  <!-- ââ SIDEBAR ââ -->
+  <!-- ══ SIDEBAR ══ -->
   <aside class="sidebar">
     <div class="sidebar-head">
       <div class="sidebar-logo-wrap">
@@ -709,15 +734,15 @@ input[type=range]::-webkit-slider-thumb{
         <svg class="sidebar-logo-mark" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
           <!-- Body -->
           <ellipse cx="28" cy="38" rx="16" ry="11" fill="#c9a96e" opacity=".9"/>
-          <!-- Wing â iridescent dark -->
+          <!-- Wing — iridescent dark -->
           <path d="M18 34 Q10 28 14 18 Q22 22 28 30 Z" fill="#2a1a08"/>
           <path d="M18 34 Q10 28 14 18 Q22 22 28 30 Z" fill="url(#wingSheen)" opacity=".55"/>
-          <!-- Tail â long elegant sweep -->
+          <!-- Tail — long elegant sweep -->
           <path d="M42 40 Q56 32 62 18 Q54 26 44 34 Z" fill="#1a0f04"/>
           <path d="M42 40 Q56 32 62 18 Q54 26 44 34 Z" fill="url(#tailSheen)" opacity=".45"/>
           <!-- Head -->
           <ellipse cx="18" cy="28" rx="8" ry="7" fill="#1a0f04"/>
-          <!-- White cheek patch â the magpie's signature -->
+          <!-- White cheek patch — the magpie's signature -->
           <ellipse cx="17" cy="30" rx="4" ry="3.5" fill="rgba(240,224,192,.85)"/>
           <!-- Eye -->
           <circle cx="16" cy="27" r="1.8" fill="#c9a96e"/>
@@ -743,8 +768,8 @@ input[type=range]::-webkit-slider-thumb{
           <div class="sidebar-tagline">Pattern Generator. Patent pending.</div>
         </div>
       </div>
-      <a class="app-switcher" href="https://coco-print-studio.cultureschool.org" target="_blank">â¡ Print Studio â</a>
-      <a class="app-switcher" href="https://coco-recolor.cultureschool.org" target="_blank">â Recolor â</a>
+      <a class="app-switcher" href="https://coco-print-studio.cultureschool.org" target="_blank">⊡ Print Studio ↗</a>
+      <a class="app-switcher" href="https://coco-recolor.cultureschool.org" target="_blank">◈ Recolor ↗</a>
     </div>
 
     <div class="sidebar-body">
@@ -754,10 +779,10 @@ input[type=range]::-webkit-slider-thumb{
         <button class="mode-tab active" id="tabGeometric" onclick="switchMode('geometric')">Geometric</button>
         <button class="mode-tab" id="tabImage" onclick="switchMode('image')">From Image</button>
         <button class="mode-tab" id="tabMockup" onclick="switchMode('mockup')">Mockup</button>
-        <button class="mode-tab" id="tabLibrary" onclick="switchMode('library')">â Library</button>
+        <button class="mode-tab" id="tabLibrary" onclick="switchMode('library')">◈ Library</button>
       </div>
 
-      <!-- ââ GEOMETRIC MODE ââ -->
+      <!-- ══ GEOMETRIC MODE ══ -->
       <div class="mode-panel active" id="panelGeometric">
 
         <!-- PALETTE -->
@@ -782,7 +807,7 @@ input[type=range]::-webkit-slider-thumb{
               <input type="range" id="adjLit" min="-50" max="50" value="0"
                 oninput="_adjLit=+this.value;document.getElementById('adjLitVal').textContent=this.value;updateRangeStyles();applyAdjustments()">
             </div>
-            <button class="btn-reset-adj" onclick="resetAdjustments()">âº Reset</button>
+            <button class="btn-reset-adj" onclick="resetAdjustments()">↺ Reset</button>
           </div>
 
           <div class="hex-input-row">
@@ -790,13 +815,13 @@ input[type=range]::-webkit-slider-thumb{
             <input class="hex-input" id="hexInput" type="text" placeholder="#c9a96e" maxlength="7">
             <button class="btn-add-hex" onclick="addHexColor()">Add</button>
           </div>
-          <div class="hex-expand-note" id="hexExpandNote">Single color detected â expanding to a full palette automatically.</div>
+          <div class="hex-expand-note" id="hexExpandNote">Single color detected — expanding to a full palette automatically.</div>
           <div class="photo-extract" id="photoExtract" onclick="document.getElementById('palettePhotoInput').click()">
             <input type="file" id="palettePhotoInput" accept="image/*">
             <img class="photo-extract-thumb" id="photoExtractThumb" alt="">
-            <div class="photo-extract-icon" id="photoExtractIcon">ð·</div>
+            <div class="photo-extract-icon" id="photoExtractIcon">📷</div>
             <div class="photo-extract-label"><strong>Extract palette from photo</strong><br>Drop or click to pull colors</div>
-            <div class="photo-extract-clear" id="photoExtractClear" style="display:none" onclick="clearExtractedPhoto(event)">â</div>
+            <div class="photo-extract-clear" id="photoExtractClear" style="display:none" onclick="clearExtractedPhoto(event)">✕</div>
           </div>
           <div id="useSameImageRow" style="display:none;margin-top:6px;display:none;">
             <button onclick="usePaletteImageForTiling()"
@@ -806,11 +831,11 @@ input[type=range]::-webkit-slider-thumb{
                      cursor:pointer;transition:all .15s;font-family:var(--sans);"
               onmouseover="this.style.background='rgba(201,169,110,.18)'"
               onmouseout="this.style.background='rgba(201,169,110,.08)'">
-              â¦ Also tile this image â From Image tab
+              ✦ Also tile this image → From Image tab
             </button>
           </div>
           <div class="palette-id-row">
-            <input class="palette-id-input" id="paletteIdInput" type="text" placeholder="Paste palette ID or ?id=â¦">
+            <input class="palette-id-input" id="paletteIdInput" type="text" placeholder="Paste palette ID or ?id=…">
             <button class="btn-load" onclick="loadPaletteById()">Load</button>
           </div>
         </div>
@@ -828,15 +853,15 @@ input[type=range]::-webkit-slider-thumb{
             <input type="range" id="sizeRange" min="20" max="160" value="60" oninput="onRangeInput(this,'sizeVal','px');regenerate()">
           </div>
           <div class="control-row">
-            <div class="control-label">Rotation <span id="rotVal">0Â°</span></div>
-            <input type="range" id="rotRange" min="0" max="90" value="0" oninput="onRangeInput(this,'rotVal','Â°');regenerate()">
+            <div class="control-label">Rotation <span id="rotVal">0°</span></div>
+            <input type="range" id="rotRange" min="0" max="90" value="0" oninput="onRangeInput(this,'rotVal','°');regenerate()">
           </div>
           <div class="control-row">
             <div class="control-label">Complexity <span id="cxVal">50</span></div>
             <input type="range" id="cxRange" min="1" max="100" value="50" oninput="onRangeInput(this,'cxVal','');regenerate()">
           </div>
 
-          <!-- MONOGRAM CONTROLS â shown only when monogram style is active -->
+          <!-- MONOGRAM CONTROLS — shown only when monogram style is active -->
           <div class="mono-panel" id="monoPanel">
             <div class="control-label" style="font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:rgba(201,169,110,.7);">Monogram text</div>
             <input class="mono-input" id="monoInput" type="text" maxlength="3"
@@ -851,7 +876,7 @@ input[type=range]::-webkit-slider-thumb{
             </div>
           </div>
 
-          <!-- ART PRINT CONTROLS â shown when art-print style active -->
+          <!-- ART PRINT CONTROLS — shown when art-print style active -->
           <div class="art-panel" id="artPanel">
             <div class="control-label" style="color:rgba(201,169,110,.7);">Your artwork</div>
             <div class="art-dropzone" id="artDropzone"
@@ -860,7 +885,7 @@ input[type=range]::-webkit-slider-thumb{
               ondragleave="this.classList.remove('drag-over')"
               ondrop="handleArtDrop(event)">
               <div class="art-dropzone-label">Drop image or tap to upload</div>
-              <div class="art-dropzone-sub">JPG Â· PNG Â· WebP Â· GIF Â· SVG</div>
+              <div class="art-dropzone-sub">JPG · PNG · WebP · GIF · SVG</div>
               <input type="file" id="artFileInput" accept="image/*,.svg"
                 style="display:none" onchange="handleArtFile(this.files[0])">
             </div>
@@ -868,9 +893,9 @@ input[type=range]::-webkit-slider-thumb{
             <div class="control-label" style="color:rgba(201,169,110,.55);">Placement</div>
             <div class="art-mode-row">
               <button class="art-mode-btn active" data-mode="center" onclick="setArtMode('center',this)">Center</button>
-              <button class="art-mode-btn" data-mode="tile-2" onclick="setArtMode('tile-2',this)">2 Ã 2</button>
-              <button class="art-mode-btn" data-mode="tile-3" onclick="setArtMode('tile-3',this)">3 Ã 3</button>
-              <button class="art-mode-btn" data-mode="half-drop" onclick="setArtMode('half-drop',this)">Halfâdrop</button>
+              <button class="art-mode-btn" data-mode="tile-2" onclick="setArtMode('tile-2',this)">2 × 2</button>
+              <button class="art-mode-btn" data-mode="tile-3" onclick="setArtMode('tile-3',this)">3 × 3</button>
+              <button class="art-mode-btn" data-mode="half-drop" onclick="setArtMode('half-drop',this)">Half‑drop</button>
               <button class="art-mode-btn" data-mode="brick" onclick="setArtMode('brick',this)">Brick</button>
             </div>
             <div class="control-row">
@@ -884,7 +909,7 @@ input[type=range]::-webkit-slider-thumb{
         <!-- OVERLAY LAYER -->
         <div style="display:flex;flex-direction:column;gap:8px;">
           <button class="overlay-toggle" id="overlayToggle" onclick="toggleOverlay()">
-            <span class="overlay-toggle-label">â¦ Overlay Pattern</span>
+            <span class="overlay-toggle-label">✦ Overlay Pattern</span>
             <span class="overlay-pip" id="overlayPip"></span>
           </button>
           <div class="overlay-panel" id="overlayPanel">
@@ -914,7 +939,7 @@ input[type=range]::-webkit-slider-thumb{
         <!-- TEXTURE LAYER (Layer 3) -->
         <div style="display:flex;flex-direction:column;gap:8px;">
           <button class="overlay-toggle" id="textureToggle" onclick="toggleTexture()">
-            <span class="overlay-toggle-label">â¬¡ Texture Layer</span>
+            <span class="overlay-toggle-label">⬡ Texture Layer</span>
             <span class="overlay-pip" id="texturePip"></span>
           </button>
           <div class="overlay-panel" id="texturePanel">
@@ -944,7 +969,7 @@ input[type=range]::-webkit-slider-thumb{
         <div style="display:flex;gap:8px;align-items:center;">
           <button class="overlay-toggle" id="imperfectBtn" onclick="toggleImperfect()"
             style="flex:1;padding:8px 10px;">
-            <span class="overlay-toggle-label" style="font-size:.55rem;">â³ Imperfect Repeat</span>
+            <span class="overlay-toggle-label" style="font-size:.55rem;">⟳ Imperfect Repeat</span>
             <span class="overlay-pip" id="imperfectPip"></span>
           </button>
           <button onclick="randomizeSeed()" title="New random variation"
@@ -953,55 +978,55 @@ input[type=range]::-webkit-slider-thumb{
             cursor:pointer;transition:all .18s;flex-shrink:0;"
             onmouseover="this.style.borderColor='rgba(201,169,110,.4)';this.style.color='var(--gold)'"
             onmouseout="this.style.borderColor='rgba(255,255,255,.12)';this.style.color='rgba(255,255,255,.45)'">
-            â
+            ⚄
           </button>
         </div>
 
-        <button class="btn-generate" onclick="generate()">â¦ Generate Pattern</button>
+        <button class="btn-generate" onclick="generate()">✦ Generate Pattern</button>
 
         <div>
           <div class="section-label">Export</div>
           <select class="export-size-select" id="exportSizeSelect">
-            <option value="1200">1200 Ã 1200 px â web preview</option>
-            <option value="2400">2400 Ã 2400 px â small print</option>
-            <option value="3000" selected>3000 Ã 3000 px â standard Â· 150 dpi</option>
-            <option value="4800">4800 Ã 4800 px â hi-res print</option>
-            <option value="6000">6000 Ã 6000 px â production</option>
+            <option value="1200">1200 × 1200 px — web preview</option>
+            <option value="2400">2400 × 2400 px — small print</option>
+            <option value="3000" selected>3000 × 3000 px — standard · 150 dpi</option>
+            <option value="4800">4800 × 4800 px — hi-res print</option>
+            <option value="6000">6000 × 6000 px — production</option>
           </select>
           <div class="export-row">
-            <button class="btn-export btn-export-svg" onclick="exportSVG()">â SVG</button>
-            <button class="btn-export btn-export-png" onclick="exportPNG()">â PNG</button>
+            <button class="btn-export btn-export-svg" onclick="exportSVG()">↓ SVG</button>
+            <button class="btn-export btn-export-png" onclick="exportPNG()">↓ PNG</button>
           </div>
           <button class="btn-order" onclick="openOrderModal()" style="width:100%;margin-top:8px;">
-            â¦ Order this print
+            ✦ Order this print
           </button>
           <button class="btn-share-inspo" onclick="shareToInspo()">
-            â¦ Share to Daily Inspo
+            ✦ Share to Daily Inspo
           </button>
         </div>
 
         <!-- SAVE TO LIBRARY -->
         <div>
           <button class="overlay-toggle" id="saveBarToggle" onclick="toggleSaveBar()" style="width:100%;padding:10px 12px;">
-            <span class="overlay-toggle-label">â Save to Library</span>
+            <span class="overlay-toggle-label">◈ Save to Library</span>
             <span class="overlay-pip" id="saveBarPip"></span>
           </button>
           <div class="save-bar" id="saveBar">
-            <input class="hex-input" id="savePatternName" type="text" placeholder="Pattern nameâ¦">
+            <input class="hex-input" id="savePatternName" type="text" placeholder="Pattern name…">
             <div class="save-public-row">
               <label class="save-public-toggle">
                 <input type="checkbox" id="savePublic">
                 <span class="save-public-slider"></span>
               </label>
-              <span class="save-public-label"><b>Make public</b> â share with the CoCo community</span>
+              <span class="save-public-label"><b>Make public</b> — share with the CoCo community</span>
             </div>
-            <button class="btn-generate" id="saveBtn" onclick="saveToLibrary()" style="padding:11px;">â Save</button>
+            <button class="btn-generate" id="saveBtn" onclick="saveToLibrary()" style="padding:11px;">◈ Save</button>
           </div>
         </div>
 
       </div><!-- /panelGeometric -->
 
-      <!-- ââ IMAGE MODE ââ -->
+      <!-- ══ IMAGE MODE ══ -->
       <div class="mode-panel" id="panelImage">
 
         <!-- DROP ZONE -->
@@ -1010,7 +1035,7 @@ input[type=range]::-webkit-slider-thumb{
           <div class="img-drop" id="imgDrop" onclick="document.getElementById('imgFileInput').click()">
             <input type="file" id="imgFileInput" accept="image/*">
             <div id="imgDropInner">
-              <div class="img-drop-icon">ð¼</div>
+              <div class="img-drop-icon">🖼</div>
               <div class="img-drop-label">Drop an image or <strong>click to upload</strong><br>JPG, PNG, GIF, WEBP</div>
             </div>
           </div>
@@ -1050,36 +1075,36 @@ input[type=range]::-webkit-slider-thumb{
 
         <!-- RECOLOR TOGGLE -->
         <button class="overlay-toggle" id="recolorToggle" onclick="toggleImageRecolor()" style="width:100%;">
-          <span class="overlay-toggle-label">â¬¡ Recolor with palette</span>
+          <span class="overlay-toggle-label">⬡ Recolor with palette</span>
           <span class="overlay-pip" id="recolorPip"></span>
         </button>
 
-        <button class="btn-generate" onclick="generateImage()">âº Refresh Repeat</button>
+        <button class="btn-generate" onclick="generateImage()">↺ Refresh Repeat</button>
 
         <div>
           <div class="section-label">Export</div>
           <select class="export-size-select" id="exportSizeSelectImg">
-            <option value="1200">1200 Ã 1200 px â web preview</option>
-            <option value="2400">2400 Ã 2400 px â small print</option>
-            <option value="3000" selected>3000 Ã 3000 px â standard Â· 150 dpi</option>
-            <option value="4800">4800 Ã 4800 px â hi-res print</option>
-            <option value="6000">6000 Ã 6000 px â production</option>
+            <option value="1200">1200 × 1200 px — web preview</option>
+            <option value="2400">2400 × 2400 px — small print</option>
+            <option value="3000" selected>3000 × 3000 px — standard · 150 dpi</option>
+            <option value="4800">4800 × 4800 px — hi-res print</option>
+            <option value="6000">6000 × 6000 px — production</option>
           </select>
           <div class="export-row">
-            <button class="btn-export btn-export-svg" onclick="exportSVG()">â SVG</button>
-            <button class="btn-export btn-export-png" onclick="exportPNG()">â PNG</button>
+            <button class="btn-export btn-export-svg" onclick="exportSVG()">↓ SVG</button>
+            <button class="btn-export btn-export-png" onclick="exportPNG()">↓ PNG</button>
           </div>
           <button class="btn-order" onclick="openOrderModal()" style="width:100%;margin-top:8px;">
-            â¦ Order this print
+            ✦ Order this print
           </button>
           <button class="btn-share-inspo" onclick="shareToInspo()">
-            â¦ Share to Daily Inspo
+            ✦ Share to Daily Inspo
           </button>
         </div>
 
       </div><!-- /panelImage -->
 
-      <!-- ââ MOCKUP MODE ââ -->
+      <!-- ══ MOCKUP MODE ══ -->
       <div class="mode-panel" id="panelMockup">
 
         <div>
@@ -1087,12 +1112,12 @@ input[type=range]::-webkit-slider-thumb{
           <div class="mockup-drop" id="mockupDrop" onclick="document.getElementById('mockupFileInput').click()">
             <input type="file" id="mockupFileInput" accept="image/*">
             <div id="mockupDropInner">
-              <div class="mockup-drop-icon">ð¨</div>
+              <div class="mockup-drop-icon">🎨</div>
               <div class="mockup-drop-label">Drop your exported pattern<br>or <strong>click to upload</strong></div>
             </div>
           </div>
           <div style="margin-top:8px;text-align:center;">
-            <span class="mockup-clear" id="mockupUseCurrent" onclick="useCurrentPatternForMockup()" style="color:rgba(201,169,110,.6);">â¦ Use current pattern</span>
+            <span class="mockup-clear" id="mockupUseCurrent" onclick="useCurrentPatternForMockup()" style="color:rgba(201,169,110,.6);">✦ Use current pattern</span>
           </div>
         </div>
 
@@ -1110,25 +1135,25 @@ input[type=range]::-webkit-slider-thumb{
           </div>
         </div>
 
-        <button class="btn-generate" onclick="renderMockup()">â¦ Render Mockup</button>
+        <button class="btn-generate" onclick="renderMockup()">✦ Render Mockup</button>
 
         <div>
           <div class="section-label">Export</div>
           <div class="export-row">
-            <button class="btn-export btn-export-png" onclick="exportMockupPNG()" style="flex:1;">â Save Mockup PNG</button>
+            <button class="btn-export btn-export-png" onclick="exportMockupPNG()" style="flex:1;">↓ Save Mockup PNG</button>
           </div>
         </div>
 
       </div><!-- /panelMockup -->
 
-      <!-- ââ LIBRARY MODE ââ -->
+      <!-- ══ LIBRARY MODE ══ -->
       <div class="mode-panel" id="panelLibrary">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
           <div>
-            <div style="font-size:.6rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:4px;">â Pattern Library</div>
+            <div style="font-size:.6rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:4px;">◈ Pattern Library</div>
             <div style="font-size:.8rem;color:var(--muted);">Named pattern + palette combos. Click any to load it.</div>
           </div>
-          <input id="libSearch" type="search" placeholder="Search patternsâ¦"
+          <input id="libSearch" type="search" placeholder="Search patterns…"
             oninput="filterLibrary(this.value)"
             style="padding:8px 14px;border-radius:10px;border:1px solid var(--line);background:var(--surface);
             font:400 .85rem/1 var(--sans);color:var(--ink);outline:none;width:200px;
@@ -1142,7 +1167,7 @@ input[type=range]::-webkit-slider-thumb{
           grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
           gap:12px;min-height:120px;">
           <div style="color:var(--muted);font-size:.8rem;grid-column:1/-1;padding:40px 0;text-align:center;">
-            Loading pattern libraryâ¦
+            Loading pattern library…
           </div>
         </div>
       </div><!-- /panelLibrary -->
@@ -1150,18 +1175,18 @@ input[type=range]::-webkit-slider-thumb{
     </div><!-- /sidebar-body -->
 
     <div class="sidebar-foot">
-      <button class="pat-saves-btn" id="patSavesBtn" onclick="openPatSaves()">â¦ My Saves (0)</button>
+      <button class="pat-saves-btn" id="patSavesBtn" onclick="openPatSaves()">✦ My Saves (0)</button>
       <a class="spoon-link" id="spoonLink" href="https://www.spoonflower.com/en/shop" target="_blank" rel="noopener">
         <div class="spoon-link-text">
           <div class="spoon-link-label">Upload your pattern to</div>
-          <div class="spoon-link-name">Spoonflower â</div>
+          <div class="spoon-link-name">Spoonflower →</div>
         </div>
-        <div class="spoon-link-arrow">â¦</div>
+        <div class="spoon-link-arrow">✦</div>
       </a>
     </div>
   </aside>
 
-  <!-- ââ CANVAS ââ -->
+  <!-- ══ CANVAS ══ -->
   <main class="canvas-area">
     <div class="canvas-topbar">
       <div>
@@ -1169,7 +1194,7 @@ input[type=range]::-webkit-slider-thumb{
         <div class="canvas-meta" id="canvasMeta">Select a style and generate</div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;">
-        <button onclick="savePatternLocally()" title="Quick-save this pattern to browser" style="font-size:.65rem;padding:5px 12px;background:rgba(201,169,110,.1);border:1px solid rgba(201,169,110,.22);border-radius:5px;cursor:pointer;color:rgba(201,169,110,.8);letter-spacing:.05em;transition:border-color .15s,color .15s;" onmouseover="this.style.borderColor='#c9a96e';this.style.color='#c9a96e'" onmouseout="this.style.borderColor='rgba(201,169,110,.22)';this.style.color='rgba(201,169,110,.8)'">â¦ Save</button>
+        <button onclick="savePatternLocally()" title="Quick-save this pattern to browser" style="font-size:.65rem;padding:5px 12px;background:rgba(201,169,110,.1);border:1px solid rgba(201,169,110,.22);border-radius:5px;cursor:pointer;color:rgba(201,169,110,.8);letter-spacing:.05em;transition:border-color .15s,color .15s;" onmouseover="this.style.borderColor='#c9a96e';this.style.color='#c9a96e'" onmouseout="this.style.borderColor='rgba(201,169,110,.22)';this.style.color='rgba(201,169,110,.8)'">✦ Save</button>
         <div class="scale-toggle">
           <button class="scale-btn active" onclick="setPreviewSize('small',this)">Square</button>
           <button class="scale-btn" onclick="setPreviewSize('wide',this)">Wide</button>
@@ -1180,7 +1205,7 @@ input[type=range]::-webkit-slider-thumb{
 
     <div class="canvas-wrap" id="canvasWrap">
       <div class="empty-state" id="emptyState">
-        <span class="empty-icon">â¦</span>
+        <span class="empty-icon">✦</span>
         <div class="empty-title">Add your palette, pick a style</div>
         <div class="empty-sub">Your pattern will appear here.<br>Each palette tells a different story.</div>
       </div>
@@ -1197,16 +1222,16 @@ input[type=range]::-webkit-slider-thumb{
 <!-- EXPORT GATE MODAL -->
 <div class="gate-overlay" id="gateOverlay" onclick="if(event.target===this)closeGate()">
   <div class="gate-box">
-    <button class="gate-close" onclick="closeGate()">â</button>
-    <div class="gate-eyebrow">â CultureSchool</div>
+    <button class="gate-close" onclick="closeGate()">✕</button>
+    <div class="gate-eyebrow">◈ CultureSchool</div>
     <h2 class="gate-title">You're on the free plan.</h2>
     <div class="gate-preview-strip" id="gateStrip"></div>
     <p class="gate-body">
       Upgrade to <b>All Access</b> for <b>$18/month</b> to unlock hi-res exports and pattern saving.
-      Already a member? Sign in below â access unlocks automatically.
+      Already a member? Sign in below — access unlocks automatically.
     </p>
     <a class="gate-cta" href="https://account.cultureschool.org" target="_blank" rel="noopener">
-      Upgrade to All Access â
+      Upgrade to All Access →
     </a>
 
     <!-- Already a member? Sign in with magic link -->
@@ -1233,7 +1258,7 @@ input[type=range]::-webkit-slider-thumb{
     </div>
     <div id="gateSent" style="display:none;font:400 .72rem/1.55 var(--sans);
          color:rgba(255,255,255,.5);text-align:center;padding:4px 0;">
-      â¦ Check your email â tap the link and the export unlocks right here.
+      ✦ Check your email — tap the link and the export unlocks right here.
     </div>
 
     <button class="gate-preview-link" style="margin-top:12px;"
@@ -1246,8 +1271,8 @@ input[type=range]::-webkit-slider-thumb{
 <!-- ORDER MODAL -->
 <div class="order-overlay" id="orderOverlay" onclick="if(event.target===this)closeOrderModal()">
   <div class="order-box">
-    <button class="order-close" onclick="closeOrderModal()">â</button>
-    <div class="order-eyebrow">â CultureSchool Ã Printful</div>
+    <button class="order-close" onclick="closeOrderModal()">✕</button>
+    <div class="order-eyebrow">◈ CultureSchool × Printful</div>
     <h2 class="order-title">Order this <em>pattern</em></h2>
     <div class="order-preview" id="orderPreview">
       <canvas id="orderPreviewCanvas" width="400" height="140"
@@ -1257,23 +1282,23 @@ input[type=range]::-webkit-slider-thumb{
 
     <div class="order-field-lbl">Product</div>
     <select class="order-select" id="orderProduct" onchange="updateOrderProductInfo()">
-      <option value="4532:18x18">Premium Throw Pillow 18â³Ã18â³</option>
-      <option value="4532:20x12">Premium Throw Pillow 20â³Ã12â³</option>
-      <option value="4532:22x22">Premium Throw Pillow 22â³Ã22â³</option>
-      <option value="canvas:8x10">Canvas Print 8â³Ã10â³</option>
-      <option value="canvas:11x14">Canvas Print 11â³Ã14â³</option>
-      <option value="canvas:16x20">Canvas Print 16â³Ã20â³</option>
-      <option value="canvas:24x36">Canvas Print 24â³Ã36â³</option>
-      <option value="blanket:50x60">Throw Blanket 50â³Ã60â³</option>
-      <option value="blanket:60x80">Throw Blanket 60â³Ã80â³</option>
-      <option value="blanket:sherpa">Sherpa Blanket 50â³Ã60â³</option>
-      <option value="tote:15x15">All-Over Print Tote 15â³Ã15â³</option>
-      <option value="tote:16x20">Large Tote w/ Pocket 16â³Ã20â³</option>
+      <option value="4532:18x18">Premium Throw Pillow 18″×18″</option>
+      <option value="4532:20x12">Premium Throw Pillow 20″×12″</option>
+      <option value="4532:22x22">Premium Throw Pillow 22″×22″</option>
+      <option value="canvas:8x10">Canvas Print 8″×10″</option>
+      <option value="canvas:11x14">Canvas Print 11″×14″</option>
+      <option value="canvas:16x20">Canvas Print 16″×20″</option>
+      <option value="canvas:24x36">Canvas Print 24″×36″</option>
+      <option value="blanket:50x60">Throw Blanket 50″×60″</option>
+      <option value="blanket:60x80">Throw Blanket 60″×80″</option>
+      <option value="blanket:sherpa">Sherpa Blanket 50″×60″</option>
+      <option value="tote:15x15">All-Over Print Tote 15″×15″</option>
+      <option value="tote:16x20">Large Tote w/ Pocket 16″×20″</option>
     </select>
 
     <div class="order-dpi-spec" id="orderDpiSpec"></div>
     <div class="order-price-note" style="font-size:.68rem;color:rgba(255,255,255,.3);line-height:1.5;margin:12px 0 4px;">
-      Pricing confirmed at checkout Â· Includes Printful fulfillment Â· Ships in 3â7 business days
+      Pricing confirmed at checkout · Includes Printful fulfillment · Ships in 3–7 business days
     </div>
 
     <div class="order-field-lbl">Your name</div>
@@ -1284,10 +1309,10 @@ input[type=range]::-webkit-slider-thumb{
 
     <div class="order-field-lbl">Notes (optional)</div>
     <input class="order-input" id="orderNotes" type="text"
-      placeholder="Colour requests, gifting notesâ¦">
+      placeholder="Colour requests, gifting notes…">
 
     <button class="order-submit" id="orderSubmit" onclick="submitPrintOrder()">
-      Request this print â
+      Request this print →
     </button>
     <p class="order-note">
       We'll confirm your order and send a payment link within 48 hours.<br>
@@ -1297,14 +1322,93 @@ input[type=range]::-webkit-slider-thumb{
 </div>
 
 <script>
-/* ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+/* ══════════════════════════════════════════════════════
    SUPABASE
-ââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+══════════════════════════════════════════════════════ */
 const SUPA_URL  = "https://qwulthvbwujfehgdegtn.supabase.co";
 const SUPA_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3dWx0aHZid3VqZmVoZ2RlZ3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQyMDcxODIsImV4cCI6MjA1OTc4MzE4Mn0.t9n4eZng6d0jggiPNK-J_DByvEE2L9tqy5Xh_1-TSoQ";
 const sb = window.supabase.createClient(SUPA_URL, SUPA_ANON);
 
-/* ââ AUTH: check session on load + listen for magic-link return ââ */
+/* ══════════════════════════════════════════════════════
+   ADMIN GATE
+   This is an internal authoring tool. Only users.admin = true
+   may use it. Everyone else gets "Authorization required".
+
+   Reminder: this gate hides the UI, it does not withhold the
+   file. Keep this page off any public deploy.
+══════════════════════════════════════════════════════ */
+(function adminGate(){
+  const gate  = document.getElementById('__adminGate');
+  const title = document.getElementById('__agTitle');
+  const sub   = document.getElementById('__agSub');
+  const form  = document.getElementById('__agForm');
+  const msg   = document.getElementById('__agMsg');
+  if (!gate) return;
+
+  document.body.style.overflow = 'hidden';
+
+  const deny = (t, s, showForm) => {
+    title.textContent = t;
+    sub.textContent   = s;
+    form.style.display = showForm ? 'block' : 'none';
+  };
+
+  const allow = () => {
+    gate.remove();
+    document.body.style.overflow = '';
+    window.__isAdmin = true;
+  };
+
+  async function check(){
+    try {
+      const { data: { session } } = await sb.auth.getSession();
+      if (!session?.user) {
+        deny('Authorization required',
+             'This is an internal CultureSchool tool. Sign in with an administrator account to continue.',
+             true);
+        return false;
+      }
+      const { data: uRow, error } = await sb.from('users')
+        .select('admin')
+        .eq('email', session.user.email.toLowerCase())
+        .maybeSingle();
+      if (error) {
+        deny('Authorization required',
+             'Could not verify your account. Contact the site owner.', false);
+        return false;
+      }
+      if (uRow?.admin) { allow(); return true; }
+      deny('Authorization required',
+           'The account ' + session.user.email + ' is not an administrator.',
+           false);
+      return false;
+    } catch (e) {
+      deny('Authorization required',
+           'Could not verify your account. Contact the site owner.', false);
+      return false;
+    }
+  }
+
+  document.getElementById('__agSend').onclick = async () => {
+    const em = (document.getElementById('__agEmail').value || '').trim().toLowerCase();
+    if (!em || !em.includes('@')) { msg.textContent = 'Enter a valid email.'; return; }
+    msg.textContent = 'Sending…';
+    const { error } = await sb.auth.signInWithOtp({
+      email: em,
+      options: { emailRedirectTo: window.location.href }
+    });
+    msg.textContent = error ? error.message : '✦ Check your email for a sign-in link.';
+  };
+
+  sb.auth.onAuthStateChange((event) => {
+    if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') check();
+    if (event === 'SIGNED_OUT') location.reload();
+  });
+
+  check();
+})();
+
+/* ── AUTH: check session on load + listen for magic-link return ── */
 sb.auth.getSession().then(({ data: { session } }) => {
   if (session?.user) {
     _isMember = true;
@@ -1320,17 +1424,17 @@ sb.auth.onAuthStateChange((event, session) => {
   }
   if (_isMember && wasGuest) {
     closeGate();
-    toast('â¦ Signed in â export unlocked');
+    toast('✦ Signed in — export unlocked');
   }
   if (event === 'SIGNED_OUT') _isMember = false;
 });
 
-/* ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+/* ══════════════════════════════════════════════════════
    STATE
-ââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+══════════════════════════════════════════════════════ */
 let palette  = ['#c9a96e','#8a6020','#f0e0c0','#2a1a08','#e8c89a'];
 
-/* ââ ATTRIBUTION CHAIN ââ tracks the source palette loaded by ID
+/* ── ATTRIBUTION CHAIN ── tracks the source palette loaded by ID
    so every saved pattern, order, and export carries provenance  */
 let _loadedPaletteId      = null;
 let _loadedCulturalOrigin = null;
@@ -1339,20 +1443,20 @@ let _loadedLocation       = null;
 let _loadedOccasion       = null;
 let _isMember             = false;
 
-/* ââ PRODUCT SPECS â min export px for print-ready output ââ */
+/* ── PRODUCT SPECS — min export px for print-ready output ── */
 const PRODUCT_SPECS = {
-  '4532:18x18':  { min:4800, note:'18Ã18â³ pillow â 4800px minimum for 300dpi' },
-  '4532:20x12':  { min:4800, note:'20Ã12â³ pillow â 4800px minimum for 300dpi' },
-  '4532:22x22':  { min:6000, note:'22Ã22â³ pillow â 6000px recommended for 300dpi' },
-  'canvas:8x10':  { min:2400, note:'8Ã10â³ canvas â 2400px sufficient at 300dpi' },
-  'canvas:11x14': { min:3000, note:'11Ã14â³ canvas â 3000px minimum for 300dpi' },
-  'canvas:16x20': { min:4800, note:'16Ã20â³ canvas â 4800px minimum for 300dpi' },
-  'canvas:24x36': { min:6000, note:'24Ã36â³ canvas â export at 6000px (hi-res)' },
-  'blanket:50x60':{ min:4800, note:'50Ã60â³ blanket â 4800px minimum at 150dpi' },
-  'blanket:60x80':{ min:6000, note:'60Ã80â³ blanket â 6000px for best result' },
-  'blanket:sherpa':{ min:4800, note:'50Ã60â³ sherpa â 4800px minimum at 150dpi' },
-  'tote:15x15':  { min:3000, note:'15Ã15â³ tote â 3000px minimum for 300dpi' },
-  'tote:16x20':  { min:4800, note:'16Ã20â³ tote â 4800px minimum for 300dpi' },
+  '4532:18x18':  { min:4800, note:'18×18″ pillow — 4800px minimum for 300dpi' },
+  '4532:20x12':  { min:4800, note:'20×12″ pillow — 4800px minimum for 300dpi' },
+  '4532:22x22':  { min:6000, note:'22×22″ pillow — 6000px recommended for 300dpi' },
+  'canvas:8x10':  { min:2400, note:'8×10″ canvas — 2400px sufficient at 300dpi' },
+  'canvas:11x14': { min:3000, note:'11×14″ canvas — 3000px minimum for 300dpi' },
+  'canvas:16x20': { min:4800, note:'16×20″ canvas — 4800px minimum for 300dpi' },
+  'canvas:24x36': { min:6000, note:'24×36″ canvas — export at 6000px (hi-res)' },
+  'blanket:50x60':{ min:4800, note:'50×60″ blanket — 4800px minimum at 150dpi' },
+  'blanket:60x80':{ min:6000, note:'60×80″ blanket — 6000px for best result' },
+  'blanket:sherpa':{ min:4800, note:'50×60″ sherpa — 4800px minimum at 150dpi' },
+  'tote:15x15':  { min:3000, note:'15×15″ tote — 3000px minimum for 300dpi' },
+  'tote:16x20':  { min:4800, note:'16×20″ tote — 4800px minimum for 300dpi' },
 };
 let styleKey = 'diamond';
 let paletteName = '';
@@ -1372,11 +1476,11 @@ let _basePalette = [...palette];
 let _adjHue = 0, _adjSat = 0, _adjLit = 0;
 let imageRecolor = false;
 
-/* ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+/* ══════════════════════════════════════════════════════
    PATTERN STYLE DEFINITIONS
-ââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+══════════════════════════════════════════════════════ */
 
-/* ââ inspired-by additions: Mehndi / Ogham / Celtic ââ */
+/* ── inspired-by additions: Mehndi / Runes / Celtic ── */
 function _botehBez(t,p0,p1,p2,p3){const u=1-t;return{
   x:u*u*u*p0[0]+3*u*u*t*p1[0]+3*u*t*t*p2[0]+t*t*t*p3[0],
   y:u*u*u*p0[1]+3*u*u*t*p1[1]+3*u*t*t*p2[1]+t*t*t*p3[1]};}
@@ -2149,7 +2253,7 @@ const STYLES = [
     draw: drawTartan
   },
 
-  // ââ Heritage patterns ââ
+  // ── Heritage patterns ──
   {
     key:'hamsa', name:'Hamsa',
     preview: (svg,c) => `
@@ -2350,17 +2454,17 @@ const STYLES = [
   },
 ];
 
-/* ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+/* ══════════════════════════════════════════════════════
    PATTERN DRAW FUNCTIONS
    Each takes: (ctx, w, h, colors, tileSize, rotation, complexity)
-ââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+══════════════════════════════════════════════════════ */
 
 
-/* ââ MONOGRAM DRAW FUNCTIONS âââââââââââââââââââââââââââââââ */
+/* ── MONOGRAM DRAW FUNCTIONS ─────────────────────────────── */
 
-/* Shared helper â resolves font string from _monoFont setting */
-/* ââ ART PRINT âââââââââââââââââââââââââââââââââââââââââââââââ
-   Places the user's own artwork on the canvas â single motif,
+/* Shared helper — resolves font string from _monoFont setting */
+/* ── ART PRINT ───────────────────────────────────────────────
+   Places the user's own artwork on the canvas — single motif,
    grid repeat, half-drop, or brick offset. No palette is applied
    to the image itself; colors set the background only.
    Best practice: draw at full natural resolution then scale down
@@ -2375,7 +2479,7 @@ function drawArtPrint(ctx, w, h, colors, tile, rot, cx) {
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, w, h);
 
-  /* No image yet â show a helpful placeholder */
+  /* No image yet — show a helpful placeholder */
   if (!img || !img.complete || !img.naturalWidth) {
     ctx.fillStyle = colors[0];
     ctx.globalAlpha = 0.12;
@@ -2384,7 +2488,7 @@ function drawArtPrint(ctx, w, h, colors, tile, rot, cx) {
     ctx.fillStyle = colors[0];
     ctx.font = `400 ${Math.min(w,h)*0.07}px 'Cormorant Garamond',serif`;
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText('Upload your artwork â', w/2, h/2);
+    ctx.fillText('Upload your artwork →', w/2, h/2);
     return;
   }
 
@@ -2410,21 +2514,21 @@ function drawArtPrint(ctx, w, h, colors, tile, rot, cx) {
     drawOne(w/2, h/2, w, h);
 
   } else if (mode === 'tile-2') {
-    /* 2Ã2 grid */
+    /* 2×2 grid */
     const tw = w/2, th = h/2;
     for (let r = 0; r < 2; r++)
       for (let cc = 0; cc < 2; cc++)
         drawOne(cc*tw + tw/2, r*th + th/2, tw, th);
 
   } else if (mode === 'tile-3') {
-    /* 3Ã3 grid */
+    /* 3×3 grid */
     const tw = w/3, th = h/3;
     for (let r = 0; r < 3; r++)
       for (let cc = 0; cc < 3; cc++)
         drawOne(cc*tw + tw/2, r*th + th/2, tw, th);
 
   } else if (mode === 'half-drop') {
-    /* Industry-standard half-drop repeat â odd columns offset by half */
+    /* Industry-standard half-drop repeat — odd columns offset by half */
     const cols = Math.max(2, Math.ceil(cx/25));
     const rows = cols + 1;
     const tw = w / cols;
@@ -2436,7 +2540,7 @@ function drawArtPrint(ctx, w, h, colors, tile, rot, cx) {
       }
 
   } else if (mode === 'brick') {
-    /* Brick repeat â odd rows offset by half width */
+    /* Brick repeat — odd rows offset by half width */
     const cols = Math.max(2, Math.ceil(cx/25));
     const rows = cols + 1;
     const tw = w / cols;
@@ -2462,16 +2566,16 @@ function _monoFontStr(size) {
   return fmap[f] || fmap.script;
 }
 
-/* ââ MEDALLION âââââââââââââââââââââââââââââââââââââââââââââââ
+/* ── MEDALLION ───────────────────────────────────────────────
    Centered wax-seal medallion over a radial bg. Holi-inspired.
-   Works on any palette â the pattern behind pulls from colors. */
+   Works on any palette — the pattern behind pulls from colors. */
 function drawMonoMedallion(ctx, w, h, colors, tile, rot, cx) {
   const bg   = colors[colors.length-1] || colors[0];
   const ring = colors[1] || colors[0];
   const fill = colors.length > 3 ? colors[colors.length-2] : '#f7f3ea';
   const text = (window._monoText || 'MH').substring(0,3);
 
-  /* Background â concentric ring motif using all palette colors */
+  /* Background — concentric ring motif using all palette colors */
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, w, h);
 
@@ -2543,7 +2647,7 @@ function drawMonoMedallion(ctx, w, h, colors, tile, rot, cx) {
   ctx.fillText(text, mx, my);
 }
 
-/* ââ REPEAT STAMP ââââââââââââââââââââââââââââââââââââââââââââ
+/* ── REPEAT STAMP ────────────────────────────────────────────
    Circle-framed initials tiling the full canvas like a wax
    seal print on fabric. */
 function drawMonoStamp(ctx, w, h, colors, tile, rot, cx) {
@@ -2607,7 +2711,7 @@ function drawMonoStamp(ctx, w, h, colors, tile, rot, cx) {
   ctx.restore();
 }
 
-/* ââ INTERLOCKING ââââââââââââââââââââââââââââââââââââââââââââ
+/* ── INTERLOCKING ────────────────────────────────────────────
    Two (or three) letters interleaved using compositing,
    centered on the canvas with a subtle pattern background. */
 function drawMonoInterlock(ctx, w, h, colors, tile, rot, cx) {
@@ -2615,7 +2719,7 @@ function drawMonoInterlock(ctx, w, h, colors, tile, rot, cx) {
   const text = (window._monoText || 'MH');
   const chars = text.substring(0,3).split('');
 
-  /* Subtle bg â small diamond grid */
+  /* Subtle bg — small diamond grid */
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, w, h);
   const bgStep = tile * 0.8;
@@ -2631,7 +2735,7 @@ function drawMonoInterlock(ctx, w, h, colors, tile, rot, cx) {
   ctx.globalAlpha = 1;
 
   if (chars.length < 2) {
-    /* Single letter â huge, slightly rotated */
+    /* Single letter — huge, slightly rotated */
     const fontSize = tile * 0.88;
     ctx.font = _monoFontStr(fontSize);
     ctx.fillStyle = colors[0];
@@ -2676,7 +2780,7 @@ function drawMonoInterlock(ctx, w, h, colors, tile, rot, cx) {
   ctx.globalAlpha = 1;
 }
 
-/* ââ CREST / SHIELD ââââââââââââââââââââââââââââââââââââââââââ
+/* ── CREST / SHIELD ──────────────────────────────────────────
    Heraldic shield path, centered, letters inside.
    Complexity controls ornament density around the shield. */
 function drawMonoCrest(ctx, w, h, colors, tile, rot, cx) {
@@ -2766,10 +2870,10 @@ function drawMonoCrest(ctx, w, h, colors, tile, rot, cx) {
   }
 }
 
-/* ââ WATERMARK âââââââââââââââââââââââââââââââââââââââââââââââ
+/* ── WATERMARK ───────────────────────────────────────────────
    One large ghosted letter over a tiling pattern background.
    The pattern is drawn using the stripe/kente engine then the
-   letter is placed at low opacity â luminous, not flat. */
+   letter is placed at low opacity — luminous, not flat. */
 function drawMonoWatermark(ctx, w, h, colors, tile, rot, cx) {
   const text = (window._monoText || 'A').substring(0,1); // watermark = 1 char
   const bg   = colors[colors.length-1] || colors[0];
@@ -2794,7 +2898,7 @@ function drawMonoWatermark(ctx, w, h, colors, tile, rot, cx) {
     ctx.globalAlpha = 1;
   }
 
-  /* The watermark letter â large, centered, ghosted */
+  /* The watermark letter — large, centered, ghosted */
   const fontSize = tile * 1.05;
   ctx.font = _monoFontStr(fontSize);
   ctx.fillStyle = colors[0];
@@ -2805,9 +2909,9 @@ function drawMonoWatermark(ctx, w, h, colors, tile, rot, cx) {
   ctx.save();
   ctx.translate(w/2, h/2);
   ctx.rotate(wrot * Math.PI/180);
-  ctx.globalAlpha = 0.11 + (cx/100)*0.09; // 11â20% opacity
+  ctx.globalAlpha = 0.11 + (cx/100)*0.09; // 11–20% opacity
   ctx.fillText(text, 0, 0);
-  /* Second pass â slightly offset for depth */
+  /* Second pass — slightly offset for depth */
   ctx.globalAlpha = 0.06;
   ctx.fillStyle = colors[1] || colors[0];
   ctx.fillText(text, fontSize*0.015, fontSize*0.015);
@@ -3027,7 +3131,7 @@ function drawBotanical(ctx, w, h, colors, tile, rot, cx) {
 
   const cols = Math.ceil(w / tile) + 2;
   const rows = Math.ceil(h / tile) + 2;
-  const nc = Math.ceil(w / tile); // columns per canvas â used for seamless color wrap
+  const nc = Math.ceil(w / tile); // columns per canvas — used for seamless color wrap
   const nr = Math.ceil(h / tile);
   const leafCount = Math.max(2, Math.floor(cx / 18));
 
@@ -3193,12 +3297,12 @@ function drawIkat(ctx, w, h, colors, tile, rot, cx) {
 }
 
 
-/* ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-   BOTANICAL DRAW FUNCTIONS â 6 new styles
-ââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+/* ══════════════════════════════════════════════════════
+   BOTANICAL DRAW FUNCTIONS — 6 new styles
+══════════════════════════════════════════════════════ */
 
 function drawFrond(ctx, w, h, colors, tile, rot, cx) {
-  // Sweeping palm fronds â serrated, dramatic
+  // Sweeping palm fronds — serrated, dramatic
   ctx.fillStyle = colors[colors.length-1] || colors[0];
   ctx.fillRect(0,0,w,h);
   const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
@@ -3264,7 +3368,7 @@ function drawFrond(ctx, w, h, colors, tile, rot, cx) {
 }
 
 function drawToile(ctx, w, h, colors, tile, rot, cx) {
-  // Engraved-look botanical â one or two colors, detailed line work
+  // Engraved-look botanical — one or two colors, detailed line work
   const bg = colors.length>2 ? colors[2] : '#f5f0e8';
   const ink = colors[0];
   const ink2 = colors[1]||colors[0];
@@ -3303,7 +3407,7 @@ function drawToile(ctx, w, h, colors, tile, rot, cx) {
       ctx.beginPath();
       ctx.arc(cx0,cy0-tile*0.44,tile*0.045,0,Math.PI*2);
       ctx.fill();
-      // Side leaves â engraved style
+      // Side leaves — engraved style
       for (let l=0;l<detail;l++) {
         const t = (l+1)/(detail+1);
         const ly = cy0+tile*0.4 - t*tile*0.8;
@@ -3342,7 +3446,7 @@ function drawWildflower(ctx, w, h, colors, tile, rot, cx) {
       for (let m=0;m<motifCount;m++) {
         const mx = basex + rand()*tile;
         const my = basey + rand()*tile;
-        // r2 is the base radius â minimum 6px, scales with tile
+        // r2 is the base radius — minimum 6px, scales with tile
         // multiply by 3.5 so motifs are actually visible at any tile size
         const scale = 0.5 + rand()*0.9;
         const r2 = Math.max(6, tile * 0.18 * scale);
@@ -3352,7 +3456,7 @@ function drawWildflower(ctx, w, h, colors, tile, rot, cx) {
         ctx.save();
         ctx.translate(mx, my); ctx.rotate(angle);
         if (type < 1) {
-          // Daisy â petals around center
+          // Daisy — petals around center
           const petals = 5 + Math.floor(rand()*4);
           for (let p=0;p<petals;p++) {
             const pa = (p/petals)*Math.PI*2;
@@ -3394,7 +3498,7 @@ function drawWildflower(ctx, w, h, colors, tile, rot, cx) {
           ctx.globalAlpha = 0.9;
           ctx.fill();
         } else {
-          // Bud â outer + inner ellipse
+          // Bud — outer + inner ellipse
           ctx.beginPath();
           ctx.ellipse(0, 0, r2, r2*1.6, 0, 0, Math.PI*2);
           ctx.fillStyle = colors[ci%colors.length];
@@ -3425,7 +3529,7 @@ function drawWildflower(ctx, w, h, colors, tile, rot, cx) {
 }
 
 function drawTropical(ctx, w, h, colors, tile, rot, cx) {
-  // Oversized tropical leaves â dramatic negative space, large scale
+  // Oversized tropical leaves — dramatic negative space, large scale
   ctx.fillStyle = colors[colors.length-1]||colors[0];
   ctx.fillRect(0,0,w,h);
   const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
@@ -3440,7 +3544,7 @@ function drawTropical(ctx, w, h, colors, tile, rot, cx) {
       const rc = ((r%nr)+nr)%nr, cc = ((cl%nc)+nc)%nc;
       const ci = (rc*nc+cc)%colors.length;
       const lw = tile*0.46, lh = tile*0.82;
-      // Main leaf shape â broad tropical
+      // Main leaf shape — broad tropical
       const angles = [[-0.6,lw,lh],[0,lw*0.7,lh],[0.6,lw,lh]];
       angles.forEach(([ang,rw,rh],i) => {
         ctx.save();
@@ -3482,7 +3586,7 @@ function drawTropical(ctx, w, h, colors, tile, rot, cx) {
 }
 
 function drawVine(ctx, w, h, colors, tile, rot, cx) {
-  // Continuous flowing vine â sinuous stems, leaves branching off
+  // Continuous flowing vine — sinuous stems, leaves branching off
   // Period is snapped to an integer number of cycles so the vine stitches seamlessly when tiled
   ctx.fillStyle = colors[colors.length-1]||colors[0];
   ctx.fillRect(0,0,w,h);
@@ -3495,7 +3599,7 @@ function drawVine(ctx, w, h, colors, tile, rot, cx) {
   for (let r=-1;r<rows;r++) {
     const y0 = r*tile+tile/2;
     const ci = Math.abs(r)%colors.length;
-    // Main vine â horizontal sinuous wave, period snapped so edges match when tiled
+    // Main vine — horizontal sinuous wave, period snapped so edges match when tiled
     const amp = tile*0.28;
     ctx.beginPath();
     ctx.moveTo(-tile, y0);
@@ -3541,7 +3645,7 @@ function drawVine(ctx, w, h, colors, tile, rot, cx) {
         });
       });
     }
-    // Berries/buds at intervals â also edge-wrapped
+    // Berries/buds at intervals — also edge-wrapped
     if (cx>45) {
       for (let b=0;b<Math.floor(leafPairs/2);b++) {
         const t2 = (b+0.5)/Math.floor(leafPairs/2);
@@ -3562,7 +3666,7 @@ function drawVine(ctx, w, h, colors, tile, rot, cx) {
 }
 
 function drawHeritage(ctx, w, h, colors, tile, rot, cx) {
-  // West African / Caribbean heritage botanical â bold outlines, geometric leaf shapes
+  // West African / Caribbean heritage botanical — bold outlines, geometric leaf shapes
   ctx.fillStyle = colors[colors.length-1]||colors[0];
   ctx.fillRect(0,0,w,h);
   const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
@@ -3594,7 +3698,7 @@ function drawHeritage(ctx, w, h, colors, tile, rot, cx) {
       ctx.closePath();
       ctx.fillStyle = colors[(ci+1)%colors.length];
       ctx.fill();
-      // Geometric leaf arms â 4 directions
+      // Geometric leaf arms — 4 directions
       [[0,-1],[0,1],[1,0],[-1,0]].forEach(([dx,dy],i) => {
         const arm = tile*0.48;
         const lx = cx0+dx*w2, ly = cy0+dy*h2;
@@ -3628,12 +3732,12 @@ function drawHeritage(ctx, w, h, colors, tile, rot, cx) {
   ctx.restore();
 }
 
-/* ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+/* ══════════════════════════════════════════════════════
    BATIK, FLORAL, ADINKRA, MUDCLOTH, ASIAN LATTICE
-ââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+══════════════════════════════════════════════════════ */
 
 function drawBatik(ctx, w, h, colors, tile, rot, cx) {
-  // True batik â bold outlined motifs, flat fills, wax-resist character
+  // True batik — bold outlined motifs, flat fills, wax-resist character
   // References: 4-petal flower, circle-in-diamond, dot scatter (like images shown)
   const ground = colors[colors.length-1]||colors[0];
   ctx.fillStyle = ground;
@@ -3662,7 +3766,7 @@ function drawBatik(ctx, w, h, colors, tile, rot, cx) {
       ctx.translate(cx0, cy0);
 
       if (motif === 'flower') {
-        // 4 bold filled petals â like images 2 & 4
+        // 4 bold filled petals — like images 2 & 4
         // Petals: leaf/eye shapes pointing N/S/E/W
         for (let p=0;p<4;p++) {
           const angle = (p/4)*Math.PI*2;
@@ -3693,7 +3797,7 @@ function drawBatik(ctx, w, h, colors, tile, rot, cx) {
         ctx.fill();
 
       } else if (motif === 'circle-diamond') {
-        // Circle with 4 pointed petals filling the corners â like image 3
+        // Circle with 4 pointed petals filling the corners — like image 3
         // Outer diamond shape
         ctx.beginPath();
         ctx.moveTo(0, -R);
@@ -3728,7 +3832,7 @@ function drawBatik(ctx, w, h, colors, tile, rot, cx) {
         ctx.stroke();
 
       } else {
-        // Starburst â like image 5, bold pointed shapes
+        // Starburst — like image 5, bold pointed shapes
         const points = 6 + Math.floor(cx/25);
         for (let p=0;p<points;p++) {
           const pa = (p/points)*Math.PI*2;
@@ -3757,7 +3861,7 @@ function drawBatik(ctx, w, h, colors, tile, rot, cx) {
 
       ctx.restore();
 
-      // Dot scatter between motifs â classic batik filler
+      // Dot scatter between motifs — classic batik filler
       if (dots) {
         const dotR = Math.max(2, tile*0.04);
         const dotPositions = [
@@ -3779,7 +3883,7 @@ function drawBatik(ctx, w, h, colors, tile, rot, cx) {
 }
 
 function drawFloral(ctx, w, h, colors, tile, rot, cx) {
-  // Formal damask-style floral â symmetrical 6-petal blooms with layered detail
+  // Formal damask-style floral — symmetrical 6-petal blooms with layered detail
   ctx.fillStyle = colors[colors.length-1]||colors[0];
   ctx.fillRect(0,0,w,h);
   const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
@@ -3843,7 +3947,7 @@ function drawFloral(ctx, w, h, colors, tile, rot, cx) {
 }
 
 function drawAdinkra(ctx, w, h, colors, tile, rot, cx) {
-  // Ghanaian Adinkra â Gye Nyame + Sankofa + Dwennimmen inspired geometric symbols
+  // Ghanaian Adinkra — Gye Nyame + Sankofa + Dwennimmen inspired geometric symbols
   ctx.fillStyle = colors[colors.length-1]||colors[0];
   ctx.fillRect(0,0,w,h);
   const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
@@ -3865,7 +3969,7 @@ function drawAdinkra(ctx, w, h, colors, tile, rot, cx) {
       ctx.save();
       ctx.translate(cx0, cy0);
       if (sym === 'gye') {
-        // Gye Nyame â "except God" â concentric rings with cross
+        // Gye Nyame — "except God" — concentric rings with cross
         for (let i=3;i>=1;i--) {
           ctx.beginPath();
           ctx.arc(0, 0, R*(i/3), 0, Math.PI*2);
@@ -3878,7 +3982,7 @@ function drawAdinkra(ctx, w, h, colors, tile, rot, cx) {
         ctx.beginPath(); ctx.arc(0,0,R*0.18,0,Math.PI*2);
         ctx.fillStyle=ink; ctx.fill();
       } else if (sym === 'sankofa') {
-        // Sankofa â heart shape with backward bird implication (two arcs)
+        // Sankofa — heart shape with backward bird implication (two arcs)
         ctx.beginPath();
         ctx.arc(-R*0.38, -R*0.18, R*0.38, Math.PI*0.1, Math.PI*1.1);
         ctx.stroke();
@@ -3892,7 +3996,7 @@ function drawAdinkra(ctx, w, h, colors, tile, rot, cx) {
         ctx.beginPath(); ctx.arc(0, R*0.28, R*0.14, 0, Math.PI*2);
         ctx.fillStyle=ink; ctx.fill();
       } else if (sym === 'dwennimmen') {
-        // Ram's horns â 4 spirals
+        // Ram's horns — 4 spirals
         [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx,sy]) => {
           ctx.beginPath();
           ctx.arc(sx*R*0.36, sy*R*0.36, R*0.3, 0, Math.PI*1.5*Math.sign(sx*sy)*-1);
@@ -3901,14 +4005,14 @@ function drawAdinkra(ctx, w, h, colors, tile, rot, cx) {
         ctx.beginPath(); ctx.arc(0,0,R*0.15,0,Math.PI*2);
         ctx.fillStyle=ink; ctx.fill();
       } else if (sym === 'funtunfunefu') {
-        // Two-headed crocodile â two overlapping circles with dividing line
+        // Two-headed crocodile — two overlapping circles with dividing line
         ctx.beginPath(); ctx.arc(-R*0.28,0,R*0.36,0,Math.PI*2); ctx.stroke();
         ctx.beginPath(); ctx.arc(R*0.28,0,R*0.36,0,Math.PI*2); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(0,-R*0.4); ctx.lineTo(0,R*0.4); ctx.stroke();
         ctx.beginPath(); ctx.arc(0,0,R*0.14,0,Math.PI*2);
         ctx.fillStyle=ink; ctx.fill();
       } else {
-        // Nkyinkyim â adaptation â zigzag S-curve
+        // Nkyinkyim — adaptation — zigzag S-curve
         ctx.beginPath();
         ctx.moveTo(-R,-R*0.5);
         ctx.bezierCurveTo(-R*0.3,R*0.1, R*0.3,-R*0.1, R,R*0.5);
@@ -3941,7 +4045,7 @@ function drawAdinkra(ctx, w, h, colors, tile, rot, cx) {
 }
 
 function drawMudcloth(ctx, w, h, colors, tile, rot, cx) {
-  // West African bogolan mudcloth â bold geometric marks on earthy ground
+  // West African bogolan mudcloth — bold geometric marks on earthy ground
   ctx.fillStyle = colors[0];
   ctx.fillRect(0,0,w,h);
   const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
@@ -4024,7 +4128,7 @@ function drawMudcloth(ctx, w, h, colors, tile, rot, cx) {
 }
 
 function drawAsianLattice(ctx, w, h, colors, tile, rot, cx) {
-  // East Asian fretwork â interlocking squares, chrysanthemum centers, swastika fret
+  // East Asian fretwork — interlocking squares, chrysanthemum centers, swastika fret
   ctx.fillStyle = colors[colors.length-1]||colors[0];
   ctx.fillRect(0,0,w,h);
   const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
@@ -4102,9 +4206,9 @@ function drawAsianLattice(ctx, w, h, colors, tile, rot, cx) {
   ctx.restore();
 }
 
-/* ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+/* ══════════════════════════════════════════════════════
    8 NEW CULTURAL PATTERN DRAW FUNCTIONS
-ââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+══════════════════════════════════════════════════════ */
 
 function drawShibori(ctx, w, h, colors, tile, rot, cx) {
   const ground = colors[0];
@@ -4462,17 +4566,17 @@ function drawZellige(ctx, w, h, colors, tile, rot, cx) {
   ctx.restore();
 }
 
-/* ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-   UI â STYLE GRID
-ââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+/* ══════════════════════════════════════════════════════
+   UI — STYLE GRID
+══════════════════════════════════════════════════════ */
 
-/* ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-   NEW PATTERN STYLES â Otomi, Phulkari, Azulejo,
+/* ══════════════════════════════════════════════════════
+   NEW PATTERN STYLES — Otomi, Phulkari, Azulejo,
    Quatrefoil, Talavera, Ikat Diamond
-ââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+══════════════════════════════════════════════════════ */
 
 function drawOtomi(ctx, w, h, colors, tile, rot, cx) {
-  // Mexican Otomi â scattered folk motifs: birds, flowers, leaves, deer
+  // Mexican Otomi — scattered folk motifs: birds, flowers, leaves, deer
   ctx.fillStyle = colors[colors.length-1] || colors[0];
   ctx.fillRect(0,0,w,h);
   const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
@@ -4551,7 +4655,7 @@ function drawOtomi(ctx, w, h, colors, tile, rot, cx) {
 }
 
 function drawPhulkari(ctx, w, h, colors, tile, rot, cx) {
-  // Punjabi Phulkari â dense geometric floss embroidery, diamond + cross grid
+  // Punjabi Phulkari — dense geometric floss embroidery, diamond + cross grid
   ctx.fillStyle = colors[colors.length-1] || colors[0];
   ctx.fillRect(0,0,w,h);
   const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
@@ -4609,7 +4713,7 @@ function drawPhulkari(ctx, w, h, colors, tile, rot, cx) {
 }
 
 function drawAzulejo(ctx, w, h, colors, tile, rot, cx) {
-  // Portuguese Azulejo â blue and white tin-glazed ceramic tile
+  // Portuguese Azulejo — blue and white tin-glazed ceramic tile
   const bg = colors[colors.length-1] || '#f8f6f0';
   ctx.fillStyle = bg;
   ctx.fillRect(0,0,w,h);
@@ -4680,7 +4784,7 @@ function drawAzulejo(ctx, w, h, colors, tile, rot, cx) {
 }
 
 function drawQuatrefoil(ctx, w, h, colors, tile, rot, cx) {
-  // Moroccan-style quatrefoil ogee â the lantern shape from the reference images
+  // Moroccan-style quatrefoil ogee — the lantern shape from the reference images
   ctx.fillStyle = colors[colors.length-1] || colors[0];
   ctx.fillRect(0,0,w,h);
   const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
@@ -4696,7 +4800,7 @@ function drawQuatrefoil(ctx, w, h, colors, tile, rot, cx) {
       const rx = tile*0.44, ry = tile*0.52;
       ctx.save(); ctx.translate(cx0,cy0);
 
-      // Lantern/ogee outline â 4 arcs meeting at top and bottom points
+      // Lantern/ogee outline — 4 arcs meeting at top and bottom points
       ctx.beginPath();
       // Top arc (concave)
       ctx.moveTo(0, -ry);
@@ -4736,7 +4840,7 @@ function drawQuatrefoil(ctx, w, h, colors, tile, rot, cx) {
 }
 
 function drawTalavera(ctx, w, h, colors, tile, rot, cx) {
-  // Mexican/Spanish Talavera tile â bold symmetrical medallion like the blue+yellow reference
+  // Mexican/Spanish Talavera tile — bold symmetrical medallion like the blue+yellow reference
   const bg = colors[colors.length-1] || '#ffffff';
   ctx.fillStyle = bg;
   ctx.fillRect(0,0,w,h);
@@ -4753,7 +4857,7 @@ function drawTalavera(ctx, w, h, colors, tile, rot, cx) {
       const R = tile*0.46;
       ctx.save(); ctx.translate(cx0,cy0);
 
-      // Outer circle â bold
+      // Outer circle — bold
       ctx.beginPath(); ctx.arc(0,0,R,0,Math.PI*2);
       ctx.strokeStyle = colors[ci%colors.length]; ctx.lineWidth = lw; ctx.stroke();
 
@@ -4769,7 +4873,7 @@ function drawTalavera(ctx, w, h, colors, tile, rot, cx) {
       ctx.closePath();
       ctx.strokeStyle = colors[ci%colors.length]; ctx.lineWidth = lw; ctx.stroke();
 
-      // Cardinal cross lines â like the Talavera grid
+      // Cardinal cross lines — like the Talavera grid
       ctx.beginPath();
       ctx.moveTo(-R,0); ctx.lineTo(R,0);
       ctx.moveTo(0,-R); ctx.lineTo(0,R);
@@ -4808,7 +4912,7 @@ function drawTalavera(ctx, w, h, colors, tile, rot, cx) {
 }
 
 function drawIkatDiamond(ctx, w, h, colors, tile, rot, cx) {
-  // Ikat Diamond â the blurred-edge warp ikat characteristic of Central Asian textiles
+  // Ikat Diamond — the blurred-edge warp ikat characteristic of Central Asian textiles
   ctx.fillStyle = colors[0];
   ctx.fillRect(0,0,w,h);
   const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
@@ -4832,7 +4936,7 @@ function drawIkatDiamond(ctx, w, h, colors, tile, rot, cx) {
       ctx.fillStyle = colors[(ci+(isAlt?1:0))%colors.length];
       ctx.fill();
 
-      // Ikat blurred edge â jagged triangles around the edge
+      // Ikat blurred edge — jagged triangles around the edge
       const edgeCount = 10;
       const jagged = (x1,y1,x2,y2,count,depth) => {
         ctx.beginPath();
@@ -4876,9 +4980,9 @@ function drawIkatDiamond(ctx, w, h, colors, tile, rot, cx) {
   ctx.restore();
 }
 
-/* ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-   NEW PATTERNS â Damask Â· Stripes Â· Noise
-ââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+/* ══════════════════════════════════════════════════════
+   NEW PATTERNS — Damask · Stripes · Noise
+══════════════════════════════════════════════════════ */
 
 function drawDamask(ctx, w, h, colors, tile, rot, cx) {
   ctx.fillStyle = colors[colors.length-1] || colors[0];
@@ -4903,7 +5007,7 @@ function drawDamask(ctx, w, h, colors, tile, rot, cx) {
       ctx.beginPath(); ctx.ellipse(0, 0, R*0.38, R*0.56, 0, 0, Math.PI*2);
       ctx.fillStyle = fill1; ctx.fill();
 
-      // 4 acanthus arms â baroque leaf shapes N/S/E/W
+      // 4 acanthus arms — baroque leaf shapes N/S/E/W
       [[0,-1],[0,1],[1,0],[-1,0]].forEach(([dx, dy]) => {
         const armL = R * 0.76, armW = R * 0.20;
         ctx.save();
@@ -4958,7 +5062,7 @@ function drawStripes(ctx, w, h, colors, tile, rot, cx) {
   ctx.fillRect(0, 0, w, h);
   const diag = Math.ceil(Math.sqrt(w*w + h*h));
   const nc = colors.length;
-  // cx controls width ratio â low cx = equal stripes, high cx = alternating narrow/wide
+  // cx controls width ratio — low cx = equal stripes, high cx = alternating narrow/wide
   const altRatio = 0.5 + (cx / 210);
   const w1 = tile * altRatio;         // wide stripe
   const w2 = tile * (1.0 - altRatio + 0.5); // narrow stripe
@@ -4983,7 +5087,7 @@ function drawStripes(ctx, w, h, colors, tile, rot, cx) {
 }
 
 function drawNoise(ctx, w, h, colors, tile, rot, cx) {
-  // Seeded grain / texture â great as a texture layer
+  // Seeded grain / texture — great as a texture layer
   ctx.fillStyle = colors[colors.length-1] || colors[0];
   ctx.fillRect(0, 0, w, h);
   let s = (globalSeed * 1664525 + 1013904223) & 0xFFFFFF;
@@ -5006,7 +5110,7 @@ function drawNoise(ctx, w, h, colors, tile, rot, cx) {
   ctx.globalAlpha = 1;
 }
 
-// ââ GRADIENT STYLE 1: Linear wash ââ
+// ── GRADIENT STYLE 1: Linear wash ──
 function drawGradientLinear(ctx, W, H, colors, tile, rot, cx) {
   const grd = ctx.createLinearGradient(0, 0, W, 0);
   colors.forEach((c, i) => grd.addColorStop(i / (colors.length - 1), c));
@@ -5020,7 +5124,7 @@ function drawGradientLinear(ctx, W, H, colors, tile, rot, cx) {
   ctx.fillRect(0, 0, W, H);
 }
 
-// ââ GRADIENT STYLE 2: Radial burst ââ
+// ── GRADIENT STYLE 2: Radial burst ──
 function drawGradientRadial(ctx, W, H, colors, tile, rot, cx) {
   const cx2 = W / 2, cy2 = H / 2;
   const r = Math.sqrt(cx2 * cx2 + cy2 * cy2);
@@ -5030,7 +5134,7 @@ function drawGradientRadial(ctx, W, H, colors, tile, rot, cx) {
   ctx.fillRect(0, 0, W, H);
 }
 
-// ââ GRADIENT STYLE 3: Diagonal dissolve ââ
+// ── GRADIENT STYLE 3: Diagonal dissolve ──
 function drawGradientDiagonal(ctx, W, H, colors, tile, rot, cx) {
   ctx.clearRect(0, 0, W, H);
   const n = colors.length;
@@ -5056,7 +5160,7 @@ function drawGradientDiagonal(ctx, W, H, colors, tile, rot, cx) {
   ctx.fillRect(0, 0, W, H);
 }
 
-// ââ GRADIENT STYLE 4: Fluid blend ââ
+// ── GRADIENT STYLE 4: Fluid blend ──
 function drawGradientFluid(ctx, W, H, colors, tile, rot, cx) {
   ctx.fillStyle = colors[0];
   ctx.fillRect(0, 0, W, H);
@@ -5083,13 +5187,13 @@ function drawGradientFluid(ctx, W, H, colors, tile, rot, cx) {
   ctx.fillRect(0, 0, W, H);
 }
 
-/* ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-   CULTURAL PATTERNS â Adire Â· Kanga Â· Kente Strip Â· Andean
-   Greek Key Â· Hawaiian Â· Toile Scenic Â· Batik Tulis Â· Tartan
-ââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+/* ══════════════════════════════════════════════════════
+   CULTURAL PATTERNS — Adire · Kanga · Kente Strip · Andean
+   Greek Key · Hawaiian · Toile Scenic · Batik Tulis · Tartan
+══════════════════════════════════════════════════════ */
 
 function drawAdire(ctx, w, h, colors, tile, rot, cx) {
-  // Yoruba adire â alternating oniko (concentric rings) and eleko (geometric cross) cells
+  // Yoruba adire — alternating oniko (concentric rings) and eleko (geometric cross) cells
   ctx.fillStyle = colors[0];
   ctx.fillRect(0,0,w,h);
   const cols = Math.ceil(w/tile)+2, rows = Math.ceil(h/tile)+2;
@@ -5145,7 +5249,7 @@ function drawAdire(ctx, w, h, colors, tile, rot, cx) {
 }
 
 function drawKanga(ctx, w, h, colors, tile, rot, cx) {
-  // East African kanga â bold pindo border frame + geometric mji interior
+  // East African kanga — bold pindo border frame + geometric mji interior
   ctx.fillStyle=colors[colors.length-1]||colors[0];
   ctx.fillRect(0,0,w,h);
   const cols=Math.ceil(w/tile)+2, rows=Math.ceil(h/tile)+2;
@@ -5198,7 +5302,7 @@ function drawKanga(ctx, w, h, colors, tile, rot, cx) {
 }
 
 function drawKenteStrip(ctx, w, h, colors, tile, rot, cx) {
-  // Kente strip weave â narrow warp strips with colored block sequences and weft inlay
+  // Kente strip weave — narrow warp strips with colored block sequences and weft inlay
   ctx.fillStyle=colors[0]; ctx.fillRect(0,0,w,h);
   ctx.save();
   ctx.translate(w/2,h/2); ctx.rotate(rot*Math.PI/180); ctx.translate(-w/2,-h/2);
@@ -5236,7 +5340,7 @@ function drawKenteStrip(ctx, w, h, colors, tile, rot, cx) {
 }
 
 function drawAndean(ctx, w, h, colors, tile, rot, cx) {
-  // Andean woven textile â stepped chakana crosses + zigzag accent bands
+  // Andean woven textile — stepped chakana crosses + zigzag accent bands
   ctx.fillStyle=colors[0]; ctx.fillRect(0,0,w,h);
   const cols=Math.ceil(w/tile)+2, rows=Math.ceil(h/tile)+2;
   ctx.save();
@@ -5289,7 +5393,7 @@ function drawAndean(ctx, w, h, colors, tile, rot, cx) {
 }
 
 function drawGreekKey(ctx, w, h, colors, tile, rot, cx) {
-  // Greek key / meander â interlocking right-angle hook spirals
+  // Greek key / meander — interlocking right-angle hook spirals
   const bg=colors[colors.length-1]||colors[0];
   ctx.fillStyle=bg; ctx.fillRect(0,0,w,h);
   const cols=Math.ceil(w/tile)+2, rows=Math.ceil(h/tile)+2;
@@ -5328,7 +5432,7 @@ function drawGreekKey(ctx, w, h, colors, tile, rot, cx) {
 }
 
 function drawHawaiian(ctx, w, h, colors, tile, rot, cx) {
-  // Hawaiian quilt â 8-fold radiating leaf/petal symmetry (breadfruit, kalo appliquÃ©)
+  // Hawaiian quilt — 8-fold radiating leaf/petal symmetry (breadfruit, kalo appliqué)
   ctx.fillStyle=colors[colors.length-1]||colors[0];
   ctx.fillRect(0,0,w,h);
   const cols=Math.ceil(w/tile)+2, rows=Math.ceil(h/tile)+2;
@@ -5371,7 +5475,7 @@ function drawHawaiian(ctx, w, h, colors, tile, rot, cx) {
 }
 
 function drawToileScenic(ctx, w, h, colors, tile, rot, cx) {
-  // Toile de Jouy â pastoral silhouette vignettes (tree, urn, figure, arch) in single ink
+  // Toile de Jouy — pastoral silhouette vignettes (tree, urn, figure, arch) in single ink
   const bg=colors.length>2?colors[2]:'#f5f0e8';
   const ink=colors[0], ink2=colors[1]||colors[0];
   ctx.fillStyle=bg; ctx.fillRect(0,0,w,h);
@@ -5443,7 +5547,7 @@ function drawToileScenic(ctx, w, h, colors, tile, rot, cx) {
 }
 
 function drawBatikTulis(ctx, w, h, colors, tile, rot, cx) {
-  // Batik tulis â fine hand-drawn: kawung (4-ellipse lattice) + parang (S-knife) alternating
+  // Batik tulis — fine hand-drawn: kawung (4-ellipse lattice) + parang (S-knife) alternating
   const bg=colors[colors.length-1]||colors[0];
   ctx.fillStyle=bg; ctx.fillRect(0,0,w,h);
   const cols=Math.ceil(w/tile)+2, rows=Math.ceil(h/tile)+2;
@@ -5510,7 +5614,7 @@ function drawBatikTulis(ctx, w, h, colors, tile, rot, cx) {
 }
 
 function drawTartan(ctx, w, h, colors, tile, rot, cx) {
-  // Tartan / plaid â warp + weft stripe crossing, weft drawn with multiply blend
+  // Tartan / plaid — warp + weft stripe crossing, weft drawn with multiply blend
   ctx.fillStyle=colors[0]; ctx.fillRect(0,0,w,h);
   const nc=colors.length, bw=tile*0.32;
   const sett=[];
@@ -5549,7 +5653,7 @@ function drawTartan(ctx, w, h, colors, tile, rot, cx) {
   ctx.restore();
 }
 
-/* âââ Heritage pattern draw functions âââ */
+/* ═══ Heritage pattern draw functions ═══ */
 
 function drawHamsa(ctx, w, h, colors, tile, rot, cx) {
   ctx.fillStyle = colors[colors.length-1] || colors[0];
@@ -6062,7 +6166,7 @@ function drawSongket(ctx, w, h, colors, tile, rot, cx) {
 }
 
 function drawHmong(ctx, w, h, colors, tile, rot, cx) {
-  // Dense cross-stitch grid â each cell has a small geometric figure
+  // Dense cross-stitch grid — each cell has a small geometric figure
   ctx.fillStyle=colors[0]; ctx.fillRect(0,0,w,h);
   const cell=Math.max(6,Math.round(tile*0.22));
   const cols2=Math.ceil(w/cell)+2, rows=Math.ceil(h/cell)+2;
@@ -6107,7 +6211,7 @@ function drawHmong(ctx, w, h, colors, tile, rot, cx) {
 }
 
 function drawSiapo(ctx, w, h, colors, tile, rot, cx) {
-  // Samoan siapo â fine geometric grid on bark cloth ground
+  // Samoan siapo — fine geometric grid on bark cloth ground
   const ground=colors[1]||'#d4b896';
   const ink=colors[0];
   ctx.fillStyle=ground; ctx.fillRect(0,0,w,h);
@@ -6164,7 +6268,7 @@ function drawSiapo(ctx, w, h, colors, tile, rot, cx) {
 }
 
 function drawAboriginal(ctx, w, h, colors, tile, rot, cx) {
-  // Waterhole composition â concentric circles + dotted connecting paths + dot field
+  // Waterhole composition — concentric circles + dotted connecting paths + dot field
   ctx.fillStyle=colors[colors.length-1]||colors[0]; ctx.fillRect(0,0,w,h);
   function seededRand(seed) {
     let s=seed; return ()=>{s=(s*16807)%2147483647; return (s-1)/2147483646;};
@@ -6223,7 +6327,7 @@ function drawAboriginal(ctx, w, h, colors, tile, rot, cx) {
 }
 
 function drawNdebeleBeads(ctx, w, h, colors, tile, rot, cx) {
-  // Beadwork â precise pixel-art squares forming triangles/chevrons/stepped diamonds
+  // Beadwork — precise pixel-art squares forming triangles/chevrons/stepped diamonds
   ctx.fillStyle=colors[colors.length-1]||'#fff'; ctx.fillRect(0,0,w,h);
   const bead=Math.max(4,Math.round(tile*0.12));
   const cols2=Math.ceil(w/bead)+2, rows=Math.ceil(h/bead)+2;
@@ -6259,7 +6363,7 @@ function drawNdebeleBeads(ctx, w, h, colors, tile, rot, cx) {
 }
 
 function drawIncaTocapu(ctx, w, h, colors, tile, rot, cx) {
-  // Tocapu grid â each cell has a distinct geometric unit
+  // Tocapu grid — each cell has a distinct geometric unit
   ctx.fillStyle=colors[0]; ctx.fillRect(0,0,w,h);
   const cols2=Math.ceil(w/tile)+2, rows=Math.ceil(h/tile)+2;
   const nc=colors.length;
@@ -6383,7 +6487,7 @@ function drawBargello(ctx, w, h, colors, tile, rot, cx) {
   ctx.restore();
 }
 
-/* ââ Imperfect repeat post-process ââ */
+/* ── Imperfect repeat post-process ── */
 function applyImperfectRepeat(canvas, ctx, tile) {
   if (!imperfectRepeat) return;
   const off = document.createElement('canvas');
@@ -6512,9 +6616,9 @@ function randomizeSeed() {
   regenerate();
 }
 
-/* ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-   UI â SWATCHES
-ââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+/* ══════════════════════════════════════════════════════
+   UI — SWATCHES
+══════════════════════════════════════════════════════ */
 function renderSwatches() {
   const row = document.getElementById('swatchRow');
   row.innerHTML = '';
@@ -6560,9 +6664,9 @@ document.getElementById('hexInput').addEventListener('keydown', function(e) {
   if (e.key === 'Enter') addHexColor();
 });
 
-/* ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+/* ══════════════════════════════════════════════════════
    LOAD PALETTE FROM SUPABASE
-ââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+══════════════════════════════════════════════════════ */
 async function loadPaletteById() {
   let raw = document.getElementById('paletteIdInput').value.trim();
 
@@ -6572,7 +6676,7 @@ async function loadPaletteById() {
 
   if (!raw) { toast('Paste a palette ID or URL'); return; }
 
-  toast('Loading paletteâ¦');
+  toast('Loading palette…');
   try {
     const { data, error } = await sb.from('palettes')
       .select('id, name, colors, cultural_origin, contributed_by, contributor_email, location, occasion, story')
@@ -6591,7 +6695,7 @@ async function loadPaletteById() {
     setBasePalette(palette);
     paletteName = data.name || '';
 
-    // ââ Carry attribution through the session ââ
+    // ── Carry attribution through the session ──
     _loadedPaletteId      = data.id;
     _loadedCulturalOrigin = data.cultural_origin  || null;
     _loadedContributedBy  = data.contributed_by   || null;
@@ -6651,9 +6755,9 @@ async function loadPaletteById() {
   }
 })();
 
-/* ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+/* ══════════════════════════════════════════════════════
    WATERMARK STAMP
-ââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+══════════════════════════════════════════════════════ */
 function stampCanvas(canvas) {
   const ctx = canvas.getContext('2d');
   const w = canvas.width, h = canvas.height;
@@ -6683,9 +6787,9 @@ function stampCanvas(canvas) {
   ctx.restore();
 }
 
-/* ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+/* ══════════════════════════════════════════════════════
    GENERATE
-ââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+══════════════════════════════════════════════════════ */
 function generate() {
   if (!palette.length) { toast('Add at least one color'); return; }
 
@@ -6706,7 +6810,7 @@ function generate() {
 
   style.draw(ctx, canvasW, canvasH, palette, tile, rot, cx);
 
-  // ââ LAYER 2: OVERLAY PATTERN ââ
+  // ── LAYER 2: OVERLAY PATTERN ──
   if (overlayEnabled && overlayKey) {
     const overlayStyle = STYLES.find(s => s.key === overlayKey);
     if (overlayStyle) {
@@ -6719,7 +6823,7 @@ function generate() {
     }
   }
 
-  // ââ LAYER 3: TEXTURE ââ
+  // ── LAYER 3: TEXTURE ──
   if (textureEnabled && textureKey) {
     const txStyle = STYLES.find(s => s.key === textureKey);
     if (txStyle) {
@@ -6732,7 +6836,7 @@ function generate() {
     }
   }
 
-  // ââ IMPERFECT REPEAT ââ
+  // ── IMPERFECT REPEAT ──
   applyImperfectRepeat(canvas, ctx, tile);
   stampCanvas(canvas);
 
@@ -6744,10 +6848,10 @@ function generate() {
   document.getElementById('canvasFrame').style.display = 'block';
 
   // Update meta
-  const name = paletteName ? `${paletteName} â ${style.name}` : style.name;
+  const name = paletteName ? `${paletteName} — ${style.name}` : style.name;
   document.getElementById('canvasTitle').textContent = name;
   document.getElementById('canvasMeta').textContent =
-    `${canvasW}Ã${canvasH} Â· tile ${tile}px Â· ${palette.length} colors`;
+    `${canvasW}×${canvasH} · tile ${tile}px · ${palette.length} colors`;
 }
 
 function regenerate() {
@@ -6757,9 +6861,9 @@ function regenerate() {
   }
 }
 
-/* ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+/* ══════════════════════════════════════════════════════
    SVG GENERATION (for export)
-ââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+══════════════════════════════════════════════════════ */
 function generateSVG(style, w, h, colors, tile, rot, cx) {
   const baseTile = tile;
   const baseContent = style.preview(null, colors);
@@ -6811,9 +6915,9 @@ function scaleSVGPreview(content, targetSize) {
   return `<g transform="scale(${scale.toFixed(3)})">${content}</g>`;
 }
 
-/* ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+/* ══════════════════════════════════════════════════════
    EXPORT
-ââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+══════════════════════════════════════════════════════ */
 function exportSVG() {
   if (document.getElementById('canvasFrame').style.display === 'none') {
     toast('Generate a pattern first'); return;
@@ -6832,11 +6936,11 @@ function exportPNG() {
     toast('Generate a pattern first'); return;
   }
 
-  // ââ IMAGE MODE: re-draw at selected resolution ââ
+  // ── IMAGE MODE: re-draw at selected resolution ──
   if (currentMode === 'image') {
     if (!sourceImage) { toast('No image loaded'); return; }
     const hiPx = parseInt(document.getElementById('exportSizeSelectImg')?.value || 3000);
-    toast('Rendering high-res PNGâ¦');
+    toast('Rendering high-res PNG…');
     const tileSize = parseInt(document.getElementById('imgSizeRange').value);
     const gap      = parseInt(document.getElementById('imgGapRange').value);
     const opacity  = parseInt(document.getElementById('imgOpacRange').value);
@@ -6857,14 +6961,14 @@ function exportPNG() {
       if (window._cocoSink) { const s = window._cocoSink; window._cocoSink = null; s(blob); return; }
       const name = repeatKey.replace('-','_');
       downloadBlob(blob, `coco_${name}_repeat_${hiPx}px.png`);
-      toast(`PNG downloaded (${hiPx}Ã${hiPx})`);
+      toast(`PNG downloaded (${hiPx}×${hiPx})`);
     }, 'image/png');
     return;
   }
 
-  // ââ GEOMETRIC MODE: re-draw at selected resolution ââ
+  // ── GEOMETRIC MODE: re-draw at selected resolution ──
   const hiPx = parseInt(document.getElementById('exportSizeSelect')?.value || 3000);
-  toast('Rendering high-res PNGâ¦');
+  toast('Rendering high-res PNG…');
   const hiCanvas = document.createElement('canvas');
   hiCanvas.width = hiPx; hiCanvas.height = hiPx;
   const ctx = hiCanvas.getContext('2d');
@@ -6875,7 +6979,7 @@ function exportPNG() {
   const cx    = parseInt(document.getElementById('cxRange').value);
   style.draw(ctx, hiPx, hiPx, palette, tile, rot, cx);
 
-  // ââ Layer 2: Overlay ââ
+  // ── Layer 2: Overlay ──
   if (overlayEnabled && overlayKey) {
     const ovStyle = STYLES.find(s => s.key === overlayKey);
     if (ovStyle) {
@@ -6887,7 +6991,7 @@ function exportPNG() {
     }
   }
 
-  // ââ Layer 3: Texture ââ
+  // ── Layer 3: Texture ──
   if (textureEnabled && textureKey) {
     const txStyle = STYLES.find(s => s.key === textureKey);
     if (txStyle) {
@@ -6899,7 +7003,7 @@ function exportPNG() {
     }
   }
 
-  // ââ Imperfect Repeat ââ
+  // ── Imperfect Repeat ──
   applyImperfectRepeat(hiCanvas, ctx, tile);
   stampCanvas(hiCanvas);
 
@@ -6907,13 +7011,13 @@ function exportPNG() {
     if (window._cocoSink) { const s = window._cocoSink; window._cocoSink = null; s(blob); return; }
     const name = (paletteName || styleKey).replace(/\s+/g,'_').toLowerCase();
     downloadBlob(blob, `coco_${name}_${hiPx}px.png`);
-    toast(`PNG downloaded (${hiPx}Ã${hiPx})`);
+    toast(`PNG downloaded (${hiPx}×${hiPx})`);
   }, 'image/png');
 }
 
-/* ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+/* ══════════════════════════════════════════════════════
    PREVIEW SIZE
-ââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+══════════════════════════════════════════════════════ */
 function setPreviewSize(size, btn) {
   document.querySelectorAll('.scale-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
@@ -6923,9 +7027,9 @@ function setPreviewSize(size, btn) {
   regenerate();
 }
 
-/* ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+/* ══════════════════════════════════════════════════════
    RANGE STYLES + HELPERS
-ââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+══════════════════════════════════════════════════════ */
 function onRangeInput(el, labelId, unit) {
   document.getElementById(labelId).textContent = el.value + unit;
   updateRangeStyles();
@@ -6938,7 +7042,7 @@ function updateRangeStyles() {
   });
 }
 
-/* ââ DOWNLOAD HELPER â a.click() must be in the DOM on Safari/iPad ââ */
+/* ── DOWNLOAD HELPER — a.click() must be in the DOM on Safari/iPad ── */
 function downloadBlob(blob, filename) {
   const url = URL.createObjectURL(blob);
   const a   = document.createElement('a');
@@ -6957,11 +7061,11 @@ function toast(msg) {
   t._timer = setTimeout(() => t.classList.remove('show'), 2200);
 }
 
-/* ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-   EXPORT GATE â protects production-resolution assets
+/* ══════════════════════════════════════════════════════
+   EXPORT GATE — protects production-resolution assets
    Web preview (1200px PNG) is always free.
    High-res PNG + all SVG require membership.
-ââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+══════════════════════════════════════════════════════ */
 function _gateStrip() {
   const strip = document.getElementById('gateStrip');
   if (!strip) return;
@@ -6970,7 +7074,7 @@ function _gateStrip() {
 }
 
 async function openGate() {
-  // Live session check â getSession is more reliable than getUser for
+  // Live session check — getSession is more reliable than getUser for
   // detecting magic-link returns on the same page load
   try {
     const { data: { session } } = await sb.auth.getSession();
@@ -7011,7 +7115,7 @@ async function gateSendLink() {
     toast('Enter the email on your CultureSchool account'); return;
   }
   const btn = document.getElementById('gateSendBtn');
-  if (btn) { btn.textContent = 'Sendingâ¦'; btn.disabled = true; }
+  if (btn) { btn.textContent = 'Sending…'; btn.disabled = true; }
   try {
     const { error } = await sb.auth.signInWithOtp({
       email,
@@ -7029,7 +7133,7 @@ async function gateSendLink() {
   } catch(e) {
     console.error('[magic link]', e);
     const msg = e?.message || 'Could not send link';
-    toast(msg.length < 80 ? msg : 'Could not send link â check console');
+    toast(msg.length < 80 ? msg : 'Could not send link — check console');
     btn.textContent = 'Send link'; btn.disabled = false;
   }
 }
@@ -7049,12 +7153,12 @@ function _gateDownloadPreview() {
   }, 'image/png');
 }
 
-/* ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+/* ══════════════════════════════════════════════════════
    SHARE TO DAILY INSPO
    Constructs a deep link carrying the palette + pattern
    into Daily Inspo's post composer.
    Daily Inspo reads: ?source=pattern&palette_id=&colors=&style=&name=
-ââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+══════════════════════════════════════════════════════ */
 function shareToInspo() {
   const frame = document.getElementById('canvasFrame');
   if (!frame || frame.style.display === 'none') {
@@ -7068,12 +7172,12 @@ function shareToInspo() {
   if (styleKey)              params.set('style', styleKey);
   if (_loadedCulturalOrigin) params.set('origin', _loadedCulturalOrigin);
   window.open(`${INSPO}?${params.toString()}`, '_blank', 'noopener');
-  toast('Opening Daily Inspoâ¦');
+  toast('Opening Daily Inspo…');
 }
 
-/* ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-   HEX EXPANSION â derive full palette from single hex
-ââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+/* ══════════════════════════════════════════════════════
+   HEX EXPANSION — derive full palette from single hex
+══════════════════════════════════════════════════════ */
 function hexToHsl(hex) {
   let r = parseInt(hex.slice(1,3),16)/255;
   let g = parseInt(hex.slice(3,5),16)/255;
@@ -7146,9 +7250,9 @@ function resetAdjustments() {
   if (_basePalette.length) { palette=[..._basePalette]; renderSwatches(); buildStyleGrid(); regenerate(); }
 }
 
-/* ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+/* ══════════════════════════════════════════════════════
    IMAGE RECOLOR
-ââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+══════════════════════════════════════════════════════ */
 function toggleImageRecolor() {
   imageRecolor = !imageRecolor;
   document.getElementById('recolorToggle').classList.toggle('active', imageRecolor);
@@ -7179,9 +7283,9 @@ function recolorImageTile(img) {
   return c;
 }
 
-/* ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+/* ══════════════════════════════════════════════════════
    SAVE TO LIBRARY
-ââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+══════════════════════════════════════════════════════ */
 function toggleSaveBar() {
   const bar    = document.getElementById('saveBar');
   const toggle = document.getElementById('saveBarToggle');
@@ -7197,9 +7301,9 @@ async function saveToLibrary() {
   if (!_isMember) { openGate(); return; }
   const nameEl = document.getElementById('savePatternName');
   const name = nameEl.value.trim() ||
-    (paletteName ? paletteName + ' Â· ' + styleKey : styleKey);
+    (paletteName ? paletteName + ' · ' + styleKey : styleKey);
   const btn = document.getElementById('saveBtn');
-  btn.textContent = 'Savingâ¦'; btn.disabled = true;
+  btn.textContent = 'Saving…'; btn.disabled = true;
   try {
     const isPublic = document.getElementById('savePublic')?.checked || false;
     const { error } = await sb.from('patterns').insert({
@@ -7215,7 +7319,7 @@ async function saveToLibrary() {
       occasion:         _loadedOccasion       || null,
     });
     if (error) throw error;
-    toast('Saved to library â¦');
+    toast('Saved to library ✦');
     nameEl.value = '';
     toggleSaveBar();
     if (currentMode === 'library') {
@@ -7224,15 +7328,15 @@ async function saveToLibrary() {
       window._libLoaded = true;
     }
   } catch(e) {
-    toast('Save failed â ' + (e.message || 'check connection'));
+    toast('Save failed — ' + (e.message || 'check connection'));
   } finally {
-    btn.textContent = 'â Save'; btn.disabled = false;
+    btn.textContent = '◈ Save'; btn.disabled = false;
   }
 }
 
-/* ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+/* ══════════════════════════════════════════════════════
    MODE SWITCHING
-ââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+══════════════════════════════════════════════════════ */
 let currentMode = 'geometric';
 
 function switchMode(mode) {
@@ -7244,9 +7348,9 @@ function switchMode(mode) {
   updateRangeStyles();
 }
 
-/* ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+/* ══════════════════════════════════════════════════════
    IMAGE REPEAT ENGINE
-ââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+══════════════════════════════════════════════════════ */
 let sourceImage = null;
 let repeatKey   = 'half-drop';
 let bgColor     = '#f7f2ea';
@@ -7319,7 +7423,7 @@ function repeatPreviewSVG(key) {
   }
 }
 
-/* ââ Use palette photo as tiling source ââ */
+/* ── Use palette photo as tiling source ── */
 window.usePaletteImageForTiling = function() {
   if (!window._paletteExtractedImg || !window._paletteExtractedSrc) {
     toast('Upload a photo in the palette section first');
@@ -7329,10 +7433,10 @@ window.usePaletteImageForTiling = function() {
   showImageThumb(window._paletteExtractedSrc, 'palette-image');
   switchMode('image');
   generateImage();
-  toast('Image loaded for tiling â¦');
+  toast('Image loaded for tiling ✦');
 };
 
-/* ââ Image upload ââ */
+/* ── Image upload ── */
 function initImageDrop() {
   const drop = document.getElementById('imgDrop');
   const input = document.getElementById('imgFileInput');
@@ -7374,7 +7478,7 @@ function showImageThumb(src, name) {
   const inner = document.getElementById('imgDropInner');
   inner.innerHTML = `
     <img class="img-thumb" src="${src}" alt="Source image">
-    <div class="img-clear" onclick="clearSourceImage(event)">â Remove</div>`;
+    <div class="img-clear" onclick="clearSourceImage(event)">✕ Remove</div>`;
   document.getElementById('imgDrop').classList.add('has-image');
 }
 
@@ -7384,7 +7488,7 @@ function clearSourceImage(e) {
   document.getElementById('imgFileInput').value = '';
   document.getElementById('imgDrop').classList.remove('has-image');
   document.getElementById('imgDropInner').innerHTML = `
-    <div class="img-drop-icon">ð¼</div>
+    <div class="img-drop-icon">🖼</div>
     <div class="img-drop-label">Drop an image or <strong>click to upload</strong><br>JPG, PNG, GIF, WEBP</div>`;
 }
 
@@ -7406,7 +7510,7 @@ document.getElementById && document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-/* ââ Core repeat draw ââ */
+/* ── Core repeat draw ── */
 function drawRepeat(ctx, w, h, img, tileW, tileH, repeatType, gap, opacity) {
   ctx.fillStyle = bgColor;
   ctx.fillRect(0,0,w,h);
@@ -7416,7 +7520,7 @@ function drawRepeat(ctx, w, h, img, tileW, tileH, repeatType, gap, opacity) {
   const rows = Math.ceil(h/(tileH+gap))+3;
 
   if (repeatType === 'h-line') {
-    // Full-width horizontal stripes â tile stretched to full width, stacked rows
+    // Full-width horizontal stripes — tile stretched to full width, stacked rows
     const stripeH = tileH + gap;
     const numStripes = Math.ceil(h / stripeH) + 2;
     for (let row = -1; row < numStripes; row++) {
@@ -7429,7 +7533,7 @@ function drawRepeat(ctx, w, h, img, tileW, tileH, repeatType, gap, opacity) {
   }
 
   if (repeatType === 'v-line') {
-    // Full-height vertical stripes â tile stretched to full height, side by side
+    // Full-height vertical stripes — tile stretched to full height, side by side
     const stripeW = tileW + gap;
     const numStripes = Math.ceil(w / stripeW) + 2;
     for (let col = -1; col < numStripes; col++) {
@@ -7519,7 +7623,7 @@ function generateImage() {
   document.getElementById('emptyState').style.display = 'none';
   document.getElementById('canvasFrame').style.display = 'block';
   document.getElementById('canvasTitle').textContent = repeatKey.replace('-',' ').replace(/\w/g,l=>l.toUpperCase()) + ' Repeat';
-  document.getElementById('canvasMeta').textContent = `${tileW}Ã${tileH}px tile Â· ${repeatKey} Â· ${canvasW}Ã${canvasH}`;
+  document.getElementById('canvasMeta').textContent = `${tileW}×${tileH}px tile · ${repeatKey} · ${canvasW}×${canvasH}`;
 }
 
 function regenerateImage() {
@@ -7528,12 +7632,12 @@ function regenerateImage() {
   }
 }
 
-/* ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+/* ══════════════════════════════════════════════════════
    PALETTE PHOTO EXTRACTION
    Reads dominant colors from an uploaded photo and
-   populates the geometric palette â same pixel-bucketing
+   populates the geometric palette — same pixel-bucketing
    used in the main palette page reverse lookup.
-ââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+══════════════════════════════════════════════════════ */
 (function() {
   function extractDominantColors(img, count) {
     const canvas = document.createElement('canvas');
@@ -7603,7 +7707,7 @@ function regenerateImage() {
           renderSwatches();
           buildStyleGrid();
           regenerate();
-          toast(`${extracted.length} colors extracted â¦`);
+          toast(`${extracted.length} colors extracted ✦`);
         };
         img.src = ev.target.result;
       };
@@ -7655,9 +7759,9 @@ function regenerateImage() {
   }
 })();
 
-/* ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-   PATCHED addHexColor â auto-expand single hex
-ââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+/* ══════════════════════════════════════════════════════
+   PATCHED addHexColor — auto-expand single hex
+══════════════════════════════════════════════════════ */
 const _origAddHex = addHexColor;
 window.addHexColor = function() {
   const inp = document.getElementById('hexInput');
@@ -7674,7 +7778,7 @@ window.addHexColor = function() {
     setBasePalette(palette);
     document.getElementById('hexExpandNote').classList.add('visible');
     setTimeout(() => document.getElementById('hexExpandNote').classList.remove('visible'), 3000);
-    toast('Expanded to full palette â¦');
+    toast('Expanded to full palette ✦');
   }
 
   inp.value = '';
@@ -7684,14 +7788,14 @@ window.addHexColor = function() {
   regenerate();
 };
 
-/* ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+/* ══════════════════════════════════════════════════════
    INIT
-ââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
-/* ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+══════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════
    MOCKUP ENGINE
    Draws pattern onto styled product shapes using Canvas
    Each surface: flat lay + draped view side by side
-ââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+══════════════════════════════════════════════════════ */
 
 let mockupImage   = null;  // the pattern image
 let mockupSurface = 'pillow';
@@ -7711,7 +7815,7 @@ const SURFACES = [
 
 const SCALE_FACTOR = { sm:0.18, md:0.28, lg:0.42 };
 
-/* ââ PHOTO MOCKUP ENGINE ââ */
+/* ── PHOTO MOCKUP ENGINE ── */
 const MOCKUP_PHOTOS = {
   pillow:     'https://cdn.shopify.com/s/files/1/0673/3637/2387/files/pillow_mockup-removebg-preview.png?v=1776558405',
   blanket:    'https://cdn.shopify.com/s/files/1/0673/3637/2387/files/Duvet_blank.png?v=1776558309',
@@ -7779,7 +7883,7 @@ function loadMockupFile(file) {
       mockupImage = img;
       const inner = document.getElementById('mockupDropInner');
       inner.innerHTML = `<img class="mockup-thumb" src="${e.target.result}" alt="Pattern">
-        <span class="mockup-clear" onclick="clearMockupImage(event)">â Remove</span>`;
+        <span class="mockup-clear" onclick="clearMockupImage(event)">✕ Remove</span>`;
       document.getElementById('mockupDrop').classList.add('has-image');
     };
     img.src = e.target.result;
@@ -7793,7 +7897,7 @@ function clearMockupImage(e) {
   document.getElementById('mockupFileInput').value = '';
   document.getElementById('mockupDrop').classList.remove('has-image');
   document.getElementById('mockupDropInner').innerHTML = `
-    <div class="mockup-drop-icon">ð¨</div>
+    <div class="mockup-drop-icon">🎨</div>
     <div class="mockup-drop-label">Drop your exported pattern<br>or <strong>click to upload</strong></div>`;
 }
 
@@ -7810,15 +7914,15 @@ function useCurrentPatternForMockup() {
       // show mini thumb
       const inner = document.getElementById('mockupDropInner');
       inner.innerHTML = `<img class="mockup-thumb" src="${url}" alt="Current pattern">
-        <span class="mockup-clear" onclick="clearMockupImage(event)">â Remove</span>`;
+        <span class="mockup-clear" onclick="clearMockupImage(event)">✕ Remove</span>`;
       document.getElementById('mockupDrop').classList.add('has-image');
-      toast('Pattern loaded â¦');
+      toast('Pattern loaded ✦');
     };
     img.src = url;
   }, 'image/png');
 }
 
-/* ââ TILE PATTERN onto a canvas region ââ */
+/* ── TILE PATTERN onto a canvas region ── */
 function tilePattern(ctx, img, x, y, w, h, scale) {
   if (!img) return;
   const tileW = Math.round(img.width * scale);
@@ -7836,7 +7940,7 @@ function tilePattern(ctx, img, x, y, w, h, scale) {
   ctx.restore();
 }
 
-/* ââ PHOTO-BASED MULTIPLY MOCKUP ââ */
+/* ── PHOTO-BASED MULTIPLY MOCKUP ── */
 // Every surface uses a contained product zone so the pattern never bleeds
 // into the photo's studio background or room props.
 // The photo is aspect-ratio-preserved and centered inside its zone.
@@ -7849,8 +7953,8 @@ const PHOTO_PRODUCT_ZONE = {
   tote:       { relW: 0.72, relH: 0.84, bg: '#e8e4dc' },
   curtain:    { relW: 0.70, relH: 0.92, bg: '#e0dbd3' },
   tablecloth: { relW: 0.88, relH: 0.86, bg: '#e4e0d8' },
-  // wallpaper â full canvas room scene (undefined)
-  // backdrop  â full canvas room scene, code-drawn (undefined)
+  // wallpaper → full canvas room scene (undefined)
+  // backdrop  → full canvas room scene, code-drawn (undefined)
 };
 
 function renderPhotoMockup(ctx, photoImg, scale, surf) {
@@ -7878,11 +7982,11 @@ function renderPhotoMockup(ctx, photoImg, scale, surf) {
   ctx.fillStyle = zone ? zone.bg : '#f0ece4';
   ctx.fillRect(0, 0, cw, ch);
 
-  // ââ Offscreen composite ââ
+  // ── Offscreen composite ──
   // 1. Tile pattern on white base
   // 2. Multiply photo's shadow/crease structure onto pattern
   // 3. destination-in: clip the entire result to the photo's non-transparent pixels
-  //    â pattern shows ONLY where the product exists; transparent bg = nothing drawn
+  //    → pattern shows ONLY where the product exists; transparent bg = nothing drawn
   const off = document.createElement('canvas');
   off.width = dw; off.height = dh;
   const oc = off.getContext('2d');
@@ -7894,7 +7998,7 @@ function renderPhotoMockup(ctx, photoImg, scale, surf) {
   // Tile pattern
   tilePattern(oc, mockupImage, 0, 0, dw, dh, scale);
 
-  // Multiply photo â applies fabric shadows, creases, folds naturally
+  // Multiply photo — applies fabric shadows, creases, folds naturally
   oc.globalCompositeOperation = 'multiply';
   oc.drawImage(photoImg, 0, 0, dw, dh);
   oc.globalCompositeOperation = 'source-over';
@@ -7908,7 +8012,7 @@ function renderPhotoMockup(ctx, photoImg, scale, surf) {
   ctx.drawImage(off, dx, dy);
 }
 
-/* ââ SHADOW helper ââ */
+/* ── SHADOW helper ── */
 function shadow(ctx, blur, color) {
   ctx.shadowBlur = blur; ctx.shadowColor = color; ctx.shadowOffsetX = 3; ctx.shadowOffsetY = 4;
 }
@@ -7916,7 +8020,7 @@ function noShadow(ctx) {
   ctx.shadowBlur = 0; ctx.shadowColor = 'transparent'; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
 }
 
-/* ââ MAIN RENDER ââ */
+/* ── MAIN RENDER ── */
 function renderMockup() {
   if (!mockupImage) { toast('Upload a pattern first'); return; }
 
@@ -7929,7 +8033,7 @@ function renderMockup() {
   const scale = SCALE_FACTOR[mockupScale];
   const surf  = mockupSurface;
 
-  // ââ Photo-based mockup (multiply composite) ââ
+  // ── Photo-based mockup (multiply composite) ──
   const photoImg = loadedMockupPhotos[surf];
   if (photoImg) {
     renderPhotoMockup(ctx, photoImg, scale, surf);
@@ -7937,13 +8041,13 @@ function renderMockup() {
     document.getElementById('emptyState').style.display = 'none';
     document.getElementById('canvasFrame').style.display = 'block';
     document.getElementById('canvasTitle').textContent = SURFACES.find(s=>s.key===surf).name + ' Mockup';
-    document.getElementById('canvasMeta').textContent = 'Pattern scale: ' + mockupScale + ' Â· ' + cw + 'Ã' + ch;
+    document.getElementById('canvasMeta').textContent = 'Pattern scale: ' + mockupScale + ' · ' + cw + '×' + ch;
     return;
   }
 
-  // ââ Geometric fallback for surfaces without a photo ââ
+  // ── Geometric fallback for surfaces without a photo ──
 
-  // Background â warm neutral
+  // Background — warm neutral
   const bg = surf === 'wallpaper' || surf === 'backdrop'
     ? '#f0ece4'
     : '#e8e2d8';
@@ -7963,7 +8067,7 @@ function renderMockup() {
     const half = cw / 2;
     const pad  = 28;
 
-    // ââ LEFT: FLAT LAY ââ
+    // ── LEFT: FLAT LAY ──
     ctx.save();
     ctx.beginPath(); ctx.rect(0, 0, half, ch); ctx.clip();
     drawFlatLay(ctx, surf, 0, 0, half, ch, scale, pad);
@@ -7975,7 +8079,7 @@ function renderMockup() {
     ctx.beginPath(); ctx.moveTo(half, 40); ctx.lineTo(half, ch-40); ctx.stroke();
     ctx.setLineDash([]);
 
-    // ââ RIGHT: DRAPED ââ
+    // ── RIGHT: DRAPED ──
     ctx.save();
     ctx.beginPath(); ctx.rect(half, 0, half, ch); ctx.clip();
     ctx.translate(half, 0);
@@ -7997,16 +8101,16 @@ function renderMockup() {
   document.getElementById('emptyState').style.display = 'none';
   document.getElementById('canvasFrame').style.display = 'block';
   document.getElementById('canvasTitle').textContent = SURFACES.find(s=>s.key===surf).name + ' Mockup';
-  document.getElementById('canvasMeta').textContent = 'Pattern scale: ' + mockupScale + ' Â· ' + cw + 'Ã' + ch;
+  document.getElementById('canvasMeta').textContent = 'Pattern scale: ' + mockupScale + ' · ' + cw + '×' + ch;
 }
 
 function drawWallpaperMockup(ctx, cw, ch, scale) {
-  // ââ Architectural room scene ââ
+  // ── Architectural room scene ──
   const wallBottom = ch * 0.75;
   const chairRailY = ch * 0.72;
   const floorY     = ch * 0.79;
 
-  // Wall â full pattern
+  // Wall — full pattern
   tilePattern(ctx, mockupImage, 0, 0, cw, wallBottom, scale);
 
   // Ambient wall shadow at top (ceiling junction)
@@ -8016,7 +8120,7 @@ function drawWallpaperMockup(ctx, cw, ch, scale) {
   ctx.fillStyle = ceilGrad;
   ctx.fillRect(0, 0, cw, ch * 0.06);
 
-  // ââ Chair rail molding ââ
+  // ── Chair rail molding ──
   ctx.fillStyle = '#f0ebe2';
   ctx.fillRect(0, chairRailY - 10, cw, 18);
   // Top bevel
@@ -8026,7 +8130,7 @@ function drawWallpaperMockup(ctx, cw, ch, scale) {
   ctx.fillStyle = '#d8d0c4';
   ctx.fillRect(0, chairRailY + 7, cw, 3);
 
-  // ââ Wainscoting ââ
+  // ── Wainscoting ──
   ctx.fillStyle = '#f2ede4';
   ctx.fillRect(0, chairRailY + 10, cw, floorY - chairRailY - 10);
   // Raised panel insets
@@ -8049,13 +8153,13 @@ function drawWallpaperMockup(ctx, cw, ch, scale) {
     ctx.strokeRect(px + 6, panelY + 5, panelW - 12, panelH - 10);
   }
 
-  // ââ Baseboard ââ
+  // ── Baseboard ──
   ctx.fillStyle = '#ece7de';
   ctx.fillRect(0, floorY - 2, cw, 10);
   ctx.fillStyle = '#d0c8bc';
   ctx.fillRect(0, floorY + 7, cw, 3);
 
-  // ââ Oak plank floor (perspective-aware) ââ
+  // ── Oak plank floor (perspective-aware) ──
   const plankColors = ['#b8966a','#c09a6e','#b49062','#bc9870','#aa8c60'];
   const plankBaseH = 22;
   let ty = floorY + 10;
@@ -8089,7 +8193,7 @@ function drawWallpaperMockup(ctx, cw, ch, scale) {
   ctx.fillStyle = floorShadow;
   ctx.fillRect(0, floorY + 10, cw, 50);
 
-  // ââ Furniture: minimal console table ââ
+  // ── Furniture: minimal console table ──
   const tblW = cw * 0.28, tblH = ch * 0.14;
   const tblX = cw * 0.36, tblY = floorY - tblH + 10;
   shadow(ctx, 22, 'rgba(0,0,0,.22)');
@@ -8110,13 +8214,13 @@ function drawWallpaperMockup(ctx, cw, ch, scale) {
   ctx.fillRect(tblX + tblW * 0.65 - 6, tblY - 22, 12, 22);
   noShadow(ctx);
 
-  // ââ Left side shadow vignette ââ
+  // ── Left side shadow vignette ──
   const leftVig = ctx.createLinearGradient(0, 0, cw * 0.12, 0);
   leftVig.addColorStop(0, 'rgba(0,0,0,.14)');
   leftVig.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = leftVig; ctx.fillRect(0, 0, cw * 0.12, ch);
 
-  // ââ Right side shadow vignette ââ
+  // ── Right side shadow vignette ──
   const rightVig = ctx.createLinearGradient(cw, 0, cw * 0.88, 0);
   rightVig.addColorStop(0, 'rgba(0,0,0,.14)');
   rightVig.addColorStop(1, 'rgba(0,0,0,0)');
@@ -8195,7 +8299,7 @@ function drawDraped(ctx, surf, ox, oy, w, h, scale, pad) {
   const cx = ox+w/2, cy = oy+h/2;
 
   if (surf === 'pillow') {
-    // Perspective pillow â slightly angled
+    // Perspective pillow — slightly angled
     const pw = w*0.6, ph = w*0.52;
     shadow(ctx, 20, 'rgba(0,0,0,.22)');
     ctx.save();
@@ -8250,7 +8354,7 @@ function drawDraped(ctx, surf, ox, oy, w, h, scale, pad) {
     ctx.strokeStyle='rgba(0,0,0,.08)'; ctx.lineWidth=1.5; ctx.stroke();
 
   } else if (surf === 'tablecloth') {
-    // On a table â perspective drop
+    // On a table — perspective drop
     const tw = w*0.74, th = h*0.44;
     const tx2 = cx-tw/2, ty2 = cy-h*0.1;
     shadow(ctx, 14, 'rgba(0,0,0,.14)');
@@ -8303,7 +8407,7 @@ function drawToteFlat(ctx, cx, cy, bw, bh, scale) {
 }
 
 function drawToteDraped(ctx, cx, cy, bw, bh, scale) {
-  // Hanging tote â slight perspective lean
+  // Hanging tote — slight perspective lean
   shadow(ctx, 16, 'rgba(0,0,0,.2)');
   ctx.save();
   ctx.translate(cx, cy);
@@ -8346,11 +8450,11 @@ function exportMockupPNG() {
   canvas.toBlob(blob => {
     const surf = SURFACES.find(s=>s.key===mockupSurface).name.toLowerCase().replace(' ','_');
     downloadBlob(blob, `coco_mockup_${surf}.png`);
-    toast('Mockup saved â¦');
+    toast('Mockup saved ✦');
   }, 'image/png');
 }
 
-/* ââ switchMode â handles all 4 tabs cleanly ââ */
+/* ── switchMode — handles all 4 tabs cleanly ── */
 window.switchMode = function(mode) {
   currentMode = mode;
   ['geometric','image','mockup','library'].forEach(m => {
@@ -8375,7 +8479,7 @@ initMockupDrop();
 preloadMockupPhotos();
 updateRangeStyles();
 
-/* ââ PATTERN LIBRARY ââ */
+/* ══ PATTERN LIBRARY ══ */
 window._libLoaded = false;
 window._allPatterns = [];
 window._libOccasion = '';
@@ -8391,14 +8495,14 @@ async function loadPatternLibrary() {
       .limit(200);
 
     if (error || !data || !data.length) {
-      grid.innerHTML = '<div style="color:var(--muted);font-size:.8rem;grid-column:1/-1;padding:40px 0;text-align:center;">No patterns yet â seed the patterns table first.</div>';
+      grid.innerHTML = '<div style="color:var(--muted);font-size:.8rem;grid-column:1/-1;padding:40px 0;text-align:center;">No patterns yet — seed the patterns table first.</div>';
       return;
     }
     window._allPatterns = data;
     buildLibOccasionChips(data);
     renderLibGrid(data);
   } catch(e) {
-    grid.innerHTML = '<div style="color:var(--muted);font-size:.8rem;grid-column:1/-1;padding:40px 0;text-align:center;">Could not load patterns â check Supabase connection.</div>';
+    grid.innerHTML = '<div style="color:var(--muted);font-size:.8rem;grid-column:1/-1;padding:40px 0;text-align:center;">Could not load patterns — check Supabase connection.</div>';
   }
 }
 
@@ -8457,7 +8561,7 @@ function libPatternCard(p, i) {
       <div class="lib-pattern-body">
         <div class="lib-style-badge">${styleCap}</div>
         <div class="lib-pattern-name">${escHtml(p.name)}</div>
-        <div class="lib-pattern-meta">${escHtml(p.palette_name||'')}${p.occasion?' Â· '+p.occasion:''}</div>
+        <div class="lib-pattern-meta">${escHtml(p.palette_name||'')}${p.occasion?' · '+p.occasion:''}</div>
       </div>
     </div>`;
 }
@@ -8478,16 +8582,16 @@ function loadLibraryPattern(p) {
   if (match) { styleKey = libStyleKey; }
   buildStyleGrid();
   regenerate();
-  toast('Loaded: ' + p.name + ' â¦');
+  toast('Loaded: ' + p.name + ' ✦');
 }
 
 
 
-/* ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-   ORDER MODAL â CultureSchool Ã Printful
-ââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+/* ══════════════════════════════════════════════════════
+   ORDER MODAL — CultureSchool × Printful
+══════════════════════════════════════════════════════ */
 
-// Pricing is dynamic â fetched from Shopify/Printful at checkout
+// Pricing is dynamic — fetched from Shopify/Printful at checkout
 
 function openOrderModal() {
   const frame = document.getElementById('canvasFrame');
@@ -8516,7 +8620,7 @@ function closeOrderModal() {
   document.body.style.overflow = '';
 }
 
-// updateOrderPrice removed â pricing is dynamic from Shopify/Printful
+// updateOrderPrice removed — pricing is dynamic from Shopify/Printful
 
 /* Show DPI spec for the selected product and whether
    the current export selection meets the requirement */
@@ -8536,8 +8640,8 @@ function updateOrderProductInfo() {
   div.className   = 'order-dpi-spec ' + (meetsSpec ? 'ok' : 'warn');
   div.style.display = 'block';
   div.innerHTML   = meetsSpec
-    ? `â ${spec.note} â your current ${curPx}px export meets this.`
-    : `â  ${spec.note}. Your current selection is ${curPx}px â export at ${spec.min}px before ordering.`;
+    ? `✓ ${spec.note} — your current ${curPx}px export meets this.`
+    : `⚠ ${spec.note}. Your current selection is ${curPx}px — export at ${spec.min}px before ordering.`;
 }
 
 async function submitPrintOrder() {
@@ -8548,7 +8652,7 @@ async function submitPrintOrder() {
   if (!name)  { toast('Please enter your name'); return; }
   if (!email || !email.includes('@')) { toast('Please enter a valid email'); return; }
   const btn = document.getElementById('orderSubmit');
-  btn.textContent = 'Sendingâ¦'; btn.disabled = true;
+  btn.textContent = 'Sending…'; btn.disabled = true;
   try {
     const canvas   = document.getElementById('patternCanvas');
     const base64   = canvas.toDataURL('image/png').split(',')[1];
@@ -8566,15 +8670,15 @@ async function submitPrintOrder() {
     const result = await res.json();
     if (!res.ok) throw new Error(result.error || 'Order failed');
     closeOrderModal();
-    toast("â¦ Request received â we'll send a payment link within 48 hours");
+    toast("✦ Request received — we'll send a payment link within 48 hours");
   } catch(e) {
-    const subject = encodeURIComponent('Print Order â ' + (paletteName || 'CoCo Pattern'));
+    const subject = encodeURIComponent('Print Order — ' + (paletteName || 'CoCo Pattern'));
     const body    = encodeURIComponent('Name: ' + name + '\nEmail: ' + email + '\nProduct: ' + product + '\nNotes: ' + notes);
     window.location.href = 'mailto:hello@cultureschool.org?subject=' + subject + '&body=' + body;
     closeOrderModal();
-    toast('Opening your email clientâ¦');
+    toast('Opening your email client…');
   } finally {
-    btn.textContent = 'Request this print â'; btn.disabled = false;
+    btn.textContent = 'Request this print →'; btn.disabled = false;
   }
 }
 
@@ -8647,7 +8751,7 @@ function updateMonogramPanel(key) {
 window.setMonoFont = setMonoFont;
 window.updateMonogramPanel = updateMonogramPanel;
 
-// ââ Pattern Local Saves âââââââââââââââââââââââââââââââââââ
+// ── Pattern Local Saves ───────────────────────────────────
 const _PAT_SAVES_KEY = 'coco_pattern_saves_v1';
 function _getPatSaves() { return JSON.parse(localStorage.getItem(_PAT_SAVES_KEY) || '[]'); }
 function _putPatSaves(arr) { localStorage.setItem(_PAT_SAVES_KEY, JSON.stringify(arr)); }
@@ -8684,7 +8788,7 @@ function savePatternLocally() {
     if (document.getElementById('patSavesModal')?.classList.contains('open')) _renderPatSavesGrid();
     // Brief toast feedback
     const t = document.createElement('div');
-    t.textContent = 'Pattern saved â¦';
+    t.textContent = 'Pattern saved ✦';
     Object.assign(t.style, {position:'fixed',bottom:'24px',left:'50%',transform:'translateX(-50%)',
       background:'rgba(201,169,110,.92)',color:'#1a1209',padding:'8px 18px',borderRadius:'6px',
       fontSize:'.75rem',zIndex:'9999',pointerEvents:'none',letterSpacing:'.04em'});
@@ -8696,7 +8800,7 @@ function savePatternLocally() {
 function _updatePatSavesBadge() {
   const n = _getPatSaves().length;
   const btn = document.getElementById('patSavesBtn');
-  if (btn) btn.textContent = n ? `â¦ My Saves (${n})` : 'â¦ My Saves';
+  if (btn) btn.textContent = n ? `✦ My Saves (${n})` : '✦ My Saves';
 }
 
 function openPatSaves() {
@@ -8718,9 +8822,9 @@ function _renderPatSavesGrid() {
         <div style="font-size:.6rem;color:rgba(245,230,200,.55);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.label}</div>
         <div style="font-size:.55rem;color:rgba(245,230,200,.3);margin-bottom:5px;">${s.date}</div>
         <div style="display:flex;gap:4px;">
-          <button onclick="loadPatSave(${s.id})" style="flex:1;font-size:.55rem;padding:3px;background:rgba(201,169,110,.1);border:1px solid rgba(201,169,110,.2);border-radius:3px;cursor:pointer;color:rgba(201,169,110,.8);">â© Load</button>
-          <button onclick="downloadPatSave(${s.id})" style="flex:1;font-size:.55rem;padding:3px;background:#c9a96e;border:none;border-radius:3px;cursor:pointer;color:#1a1209;">â PNG</button>
-          <button onclick="deletePatSave(${s.id})" style="font-size:.6rem;padding:3px 5px;background:transparent;border:none;cursor:pointer;color:rgba(245,230,200,.3);">â</button>
+          <button onclick="loadPatSave(${s.id})" style="flex:1;font-size:.55rem;padding:3px;background:rgba(201,169,110,.1);border:1px solid rgba(201,169,110,.2);border-radius:3px;cursor:pointer;color:rgba(201,169,110,.8);">↩ Load</button>
+          <button onclick="downloadPatSave(${s.id})" style="flex:1;font-size:.55rem;padding:3px;background:#c9a96e;border:none;border-radius:3px;cursor:pointer;color:#1a1209;">↓ PNG</button>
+          <button onclick="deletePatSave(${s.id})" style="font-size:.6rem;padding:3px 5px;background:transparent;border:none;cursor:pointer;color:rgba(245,230,200,.3);">✕</button>
         </div>
       </div>
     </div>
@@ -8770,13 +8874,13 @@ document.addEventListener('DOMContentLoaded', () => { _updatePatSavesBadge(); })
 <!-- Pattern Saves Modal -->
 <div class="pat-modal-overlay" id="patSavesModal" onclick="if(event.target===this)closePatSaves()">
   <div class="pat-modal">
-    <button class="pat-modal-close" onclick="closePatSaves()">â</button>
+    <button class="pat-modal-close" onclick="closePatSaves()">✕</button>
     <div class="pat-modal-title">My Pattern Saves</div>
-    <div class="pat-modal-sub">Stored in your browser. Click Load to restore a pattern, or â PNG to download the thumbnail.</div>
+    <div class="pat-modal-sub">Stored in your browser. Click Load to restore a pattern, or ↓ PNG to download the thumbnail.</div>
     <div class="pat-saves-grid" id="patSavesGrid"></div>
-    <p id="patSavesEmpty" style="color:rgba(245,230,200,.35);font-size:.8rem;text-align:center;padding:32px 0;margin:0;">No saves yet â generate a pattern and click <strong style="color:#c9a96e">â¦ My Saves</strong> to quick-save it.</p>
+    <p id="patSavesEmpty" style="color:rgba(245,230,200,.35);font-size:.8rem;text-align:center;padding:32px 0;margin:0;">No saves yet — generate a pattern and click <strong style="color:#c9a96e">✦ My Saves</strong> to quick-save it.</p>
     <div style="margin-top:16px;display:flex;gap:8px;">
-      <button onclick="savePatternLocally()" style="flex:1;padding:10px;background:#c9a96e;border:none;border-radius:6px;cursor:pointer;color:#1a1209;font-size:.75rem;letter-spacing:.06em;">â¦ Save Current Pattern</button>
+      <button onclick="savePatternLocally()" style="flex:1;padding:10px;background:#c9a96e;border:none;border-radius:6px;cursor:pointer;color:#1a1209;font-size:.75rem;letter-spacing:.06em;">✦ Save Current Pattern</button>
       <button onclick="closePatSaves()" style="flex:1;padding:10px;background:rgba(201,169,110,.1);border:1px solid rgba(201,169,110,.2);border-radius:6px;cursor:pointer;color:rgba(201,169,110,.8);font-size:.75rem;">Close</button>
     </div>
   </div>
@@ -8791,16 +8895,16 @@ document.addEventListener('DOMContentLoaded', () => { _updatePatSavesBadge(); })
   <div style="
     background:#1a1507;border:1px solid rgba(201,169,110,.2);border-radius:14px;
     padding:28px;width:min(520px,95vw);max-height:88vh;overflow-y:auto;position:relative;">
-    <div style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;letter-spacing:.03em;color:#f5e6c8;margin-bottom:14px;">Let's create something beautiful. â¨</div>
+    <div style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;letter-spacing:.03em;color:#f5e6c8;margin-bottom:14px;">Let's create something beautiful. ✨</div>
     <div style="font-size:.73rem;color:rgba(245,230,200,.65);line-height:1.75;">
       <p style="margin-bottom:10px;">By uploading a photo, you confirm that you have permission to use it and that you've read and agree to <a href="https://cultureschool.org/terms" target="_blank" style="color:#c9a96e;text-decoration:underline;">CultureSchool's Terms of Service</a>.</p>
       <p style="margin-bottom:10px;">To keep our creative community fair and respectful, please upload only original content or images you have the right to use. Please don't include celebrities, fictional characters, designers, brands, businesses, films, TV shows, books, music, sports teams, product names, logos, or any other copyrighted, trademarked, or protected material.</p>
       <p style="margin-bottom:10px;">By continuing, you acknowledge that uploading prohibited content violates CultureSchool's Terms of Service and applicable intellectual property laws. Accounts that repeatedly violate these guidelines may be suspended, and royalties earned from infringing content may be withheld.</p>
-      <p>Thank you for helping us build a creative community rooted in originality, respect, and culture. ðð¨</p>
+      <p>Thank you for helping us build a creative community rooted in originality, respect, and culture. 🌍🎨</p>
     </div>
     <div style="display:flex;gap:8px;margin-top:20px;">
       <button onclick="declineUploadTos()" style="flex:1;padding:10px;background:transparent;border:1px solid rgba(255,255,255,.12);border-radius:8px;cursor:pointer;color:rgba(245,230,200,.5);font-size:.73rem;">Cancel</button>
-      <button onclick="acceptUploadTos()" style="flex:2;padding:10px;background:#c9a96e;border:none;border-radius:8px;cursor:pointer;color:#1a1209;font-size:.73rem;font-weight:600;letter-spacing:.04em;">I agree â continue</button>
+      <button onclick="acceptUploadTos()" style="flex:2;padding:10px;background:#c9a96e;border:none;border-radius:8px;cursor:pointer;color:#1a1209;font-size:.73rem;font-weight:600;letter-spacing:.04em;">I agree — continue</button>
     </div>
   </div>
 </div>
@@ -8827,11 +8931,11 @@ function declineUploadTos() {
 }
 </script>
 <script>
-/* ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-   Submit to Library (coco_art_submissions review queue) â Generator
+/* ══════════════════════════════════════════════════════════════
+   Submit to Library (coco_art_submissions review queue) — Generator
    Sign-in reuses the existing member gate (openGate). The high-res
    render reuses exportPNG() via a one-shot window._cocoSink.
-âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+═══════════════════════════════════════════════════════════════ */
 (function(){
   const BUCKETS = ['coco-drops','public-uploads'];
   const $ = id => document.getElementById(id);
@@ -8845,7 +8949,7 @@ function declineUploadTos() {
     '<div style="background:#17130e;color:#f3ece0;border:1px solid #3a2f22;border-radius:16px;max-width:430px;width:100%;padding:26px 24px;box-shadow:0 30px 70px rgba(0,0,0,.6);font-family:system-ui,-apple-system,sans-serif;">'
     + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">'
     +   '<div style="font:600 1.25rem/1 Georgia,serif;">Submit to Library</div>'
-    +   '<button id="subClose" style="background:none;border:0;color:#9a8878;font-size:1.6rem;cursor:pointer;line-height:1;">Ã</button>'
+    +   '<button id="subClose" style="background:none;border:0;color:#9a8878;font-size:1.6rem;cursor:pointer;line-height:1;">×</button>'
     + '</div>'
     + '<p style="color:#b8ab99;font-size:.85rem;margin:0 0 14px;">Signed in as <b id="subWho" style="color:#f3ece0;"></b>. Sends the current pattern to the review queue.</p>'
     + '<label style="display:block;font:600 .7rem/1.4 system-ui;letter-spacing:.06em;text-transform:uppercase;color:#9a8878;margin-bottom:5px;">Title</label>'
@@ -8877,7 +8981,7 @@ function declineUploadTos() {
   // Add a Submit button after each export row (covers both mode panels)
   document.querySelectorAll('.export-row').forEach(row => {
     const b = document.createElement('button');
-    b.className='btn-order'; b.textContent='â¦ Submit to Library';
+    b.className='btn-order'; b.textContent='✦ Submit to Library';
     b.style.cssText='width:100%;margin-top:8px;';
     b.onclick = ()=> window.cocoOpenSubmit();
     row.insertAdjacentElement('afterend', b);
@@ -8902,20 +9006,20 @@ function declineUploadTos() {
     if(!title){ setMsg('Add a title.','#f0a2a2'); return; }
     if(!name){ setMsg('Add your name.','#f0a2a2'); return; }
     if(!em){ setMsg('Please sign in again.','#f0a2a2'); return; }
-    const b=$('subGo'); b.disabled=true; setMsg('Renderingâ¦');
+    const b=$('subGo'); b.disabled=true; setMsg('Rendering…');
     let done=false;
     window._cocoSink = async (blob)=>{
       done=true;
       try{
-        setMsg('Uploadingâ¦');
+        setMsg('Uploading…');
         const url = await uploadBlob(blob);
-        setMsg('Submittingâ¦');
+        setMsg('Submitting…');
         const { error } = await sb.from('coco_art_submissions').insert([{
           title, creator_name:name, creator_email:em, image_url:url, note:note||null, vibe:'Pattern Generator', status:'pending'
         }]);
         if(error) throw error;
-        setMsg('â Submitted for review.','#7fd18a');
-        if(typeof toast==='function') toast('Submitted to the Library â¦');
+        setMsg('✓ Submitted for review.','#7fd18a');
+        if(typeof toast==='function') toast('Submitted to the Library ✦');
         $('subTitle').value=''; $('subNote').value='';
         setTimeout(()=> ov.style.display='none', 1200);
       }catch(e){ setMsg(e.message||'Submit failed.','#f0a2a2'); }
@@ -8923,7 +9027,7 @@ function declineUploadTos() {
     };
     try{ exportPNG(); }
     catch(e){ window._cocoSink=null; setMsg('Render failed: '+(e.message||''),'#f0a2a2'); b.disabled=false; return; }
-    setTimeout(()=>{ if(!done && window._cocoSink){ window._cocoSink=null; b.disabled=false; setMsg('Could not render â make sure a pattern is generated.','#f0a2a2'); } }, 9000);
+    setTimeout(()=>{ if(!done && window._cocoSink){ window._cocoSink=null; b.disabled=false; setMsg('Could not render — make sure a pattern is generated.','#f0a2a2'); } }, 9000);
   };
 })();
 </script>
