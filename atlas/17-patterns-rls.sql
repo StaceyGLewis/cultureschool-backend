@@ -10,6 +10,24 @@
 --      together which of SECTION 3A / 3B you want before running anything else.
 --
 --  ── MEASURED STATE (2026-07-31, via anon key, no auth) ─────────────────────
+--    • RLS is ENABLED on public.patterns, and NOT forced.  ← Section 0a result
+--      "Not forced" is correct and expected: the table owner / service_role
+--      bypasses RLS, which is what netlify/functions/skin-pattern.js relies on.
+--
+--    ⚠️  RLS BEING ALREADY ENABLED CHANGES SECTION 3.
+--      anon can currently read all 7,088 rows *with RLS on*. That means an
+--      existing PERMISSIVE SELECT policy is allowing it — almost certainly
+--      `using (true)`.
+--
+--      PostgreSQL ORs permissive policies together. Adding the restrictive
+--      policies below WITHOUT removing that existing one changes NOTHING —
+--      the old policy keeps returning every row. This is the single easiest
+--      way to "harden" the table and accomplish nothing.
+--
+--      → Run 0b, find the existing SELECT policy, and drop it as part of
+--        Section 3. I have left a placeholder there; send me 0b's output and
+--        I will fill in the exact policy name.
+--
 --    • public.patterns holds 7,088 rows
 --    • is_public = true on ALL 7,088 — so `.eq('is_public', true)` filters nothing
 --    • anon can SELECT every column of every row, including the full
@@ -233,6 +251,12 @@ comment on view public.patterns_public is
   'Display-safe pattern projection for public product surfaces. Deliberately excludes colors, code and palette_story — those are the generative inputs and stay members-only.';
 
 alter table public.patterns enable row level security;
+
+-- ⚠️ REQUIRED: drop the existing permissive SELECT policy that currently
+--    lets anon read all 7,088 rows. Without this the two policies below are
+--    decorative — permissive policies OR together.
+--    Fill in the real name from Section 0b before running:
+-- drop policy if exists "<NAME FROM 0b>" on public.patterns;
 
 drop policy if exists "patterns free read"   on public.patterns;
 drop policy if exists "patterns member read" on public.patterns;
