@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1344,29 +1345,6 @@ const sb = window.supabase.createClient(SUPA_URL, SUPA_ANON);
   const form  = document.getElementById('__agForm');
   const msg   = document.getElementById('__agMsg');
   if (!gate) return;
-
-  /* LOCAL BYPASS.
-     This tool is no longer deployed — it runs from localhost only. A gate
-     on a page served from your own machine protects nothing: anyone who can
-     open it already has the file. So skip it here.
-
-     Signing in is still needed to WRITE. atlas/17 §4 restricts INSERT and
-     UPDATE on public.patterns to an authenticated all-access account, and
-     that is enforced by Postgres regardless of where this page is served
-     from. The tool's existing member gate (openGate(), line ~7099) already
-     handles magic-link sign-in — run `openGate()` in the console, or trigger
-     any gated action, and sign in there when a save fails.
-
-     If this file is ever deployed to a real host again, the gate re-arms
-     automatically — the bypass is hostname-scoped, not a permanent removal. */
-  const isLocal = ['localhost','127.0.0.1','0.0.0.0','::1'].includes(location.hostname)
-                  || location.protocol === 'file:';
-  if (isLocal) {
-    gate.remove();
-    window.__isAdmin = true;
-    window.__localDevMode = true;
-    return;
-  }
 
   document.body.style.overflow = 'hidden';
 
