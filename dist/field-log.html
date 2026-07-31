@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Field Log — CultureSchool Intelligence</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --bg:#F5F3EF;
+  --surface:#FFFFFF;
+  --surface-2:#F0EDE7;
+  --ink:#1C1713;
+  --muted:#6E6357;
+  --faint:#A8A095;
+  --rule:#E0DCD4;
+  --forest:#2C5F3F;
+  --forest-dim:rgba(44,95,63,.08);
+  --forest-border:rgba(44,95,63,.22);
+  --amber:#9B7823;
+  --amber-dim:rgba(155,120,35,.1);
+  --amber-border:rgba(155,120,35,.25);
+  --rust:#8B4A2A;
+  --rust-dim:rgba(139,74,42,.08);
+  --rust-border:rgba(139,74,42,.22);
+  --r:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased;scroll-behavior:smooth}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  font-size:14px;line-height:1.55;
+}
+
+/* ── Topbar ── */
+.topbar{
+  display:flex;align-items:center;gap:10px;
+  padding:0 24px;height:52px;
+  background:var(--surface);border-bottom:1px solid var(--rule);
+  position:sticky;top:0;z-index:100;
+}
+.topbar-back{
+  display:inline-flex;align-items:center;gap:5px;font-size:12px;
+  color:var(--muted);text-decoration:none;transition:.15s;flex-shrink:0;
+}
+.topbar-back:hover{color:var(--forest)}
+.topbar-divider{width:1px;height:18px;background:var(--rule);flex-shrink:0}
+.topbar-title{font-size:13px;font-weight:600;color:var(--ink)}
+.topbar-sub{font-size:11px;color:var(--faint);margin-left:6px}
+.topbar-spacer{flex:1}
+.topbar-badge{
+  font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--forest);background:var(--forest-dim);border:1px solid var(--forest-border);
+  border-radius:20px;padding:3px 10px;
+}
+
+/* ── Main layout ── */
+.main{max-width:1160px;margin:0 auto;padding:28px 24px 80px}
+
+/* ── Setup strip ── */
+.setup-strip{
+  background:var(--surface);border:1px solid var(--rule);
+  border-radius:var(--r);padding:20px 22px;margin-bottom:16px;
+}
+.setup-strip-title{
+  font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;
+}
+.form-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:10px}
+@media(max-width:800px){.form-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.form-grid{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:11px;color:var(--faint);font-weight:500;letter-spacing:.03em}
+.field input,.field select,.field textarea{
+  background:var(--bg);border:1px solid var(--rule);color:var(--ink);
+  font-family:inherit;font-size:13px;padding:8px 11px;
+  border-radius:6px;transition:.15s;outline:none;
+}
+.field input:focus,.field select:focus,.field textarea:focus{
+  border-color:var(--forest);background:var(--surface);
+}
+.field input::placeholder,.field textarea::placeholder{color:var(--faint)}
+.field.span2{grid-column:span 2}
+.field.span-all{grid-column:1/-1}
+.opts-row{
+  display:flex;flex-wrap:wrap;gap:16px;align-items:center;
+  margin-top:14px;padding-top:14px;border-top:1px solid var(--rule);
+}
+.opt-group{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+.stepper{display:flex;align-items:center;gap:0;border:1px solid var(--rule);border-radius:6px;overflow:hidden}
+.stepper button{
+  background:var(--bg);border:none;color:var(--ink);
+  font-size:14px;width:28px;height:28px;cursor:pointer;
+}
+.stepper button:hover{background:var(--rule)}
+.stepper .val{
+  width:32px;text-align:center;font-variant-numeric:tabular-nums;
+  font-size:12px;font-weight:600;border-left:1px solid var(--rule);border-right:1px solid var(--rule);
+  height:28px;display:flex;align-items:center;justify-content:center;
+}
+.toggle{display:inline-flex;align-items:center;gap:7px;cursor:pointer;font-size:12px;color:var(--muted);user-select:none}
+.toggle input{display:none}
+.sw{width:34px;height:18px;background:var(--rule);border-radius:20px;position:relative;transition:.2s;flex-shrink:0}
+.sw::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.toggle input:checked+.sw{background:var(--forest)}
+.toggle input:checked+.sw::after{transform:translateX(16px)}
+
+/* ── Drop zone ── */
+.drop-panel{
+  background:var(--surface);border:1px solid var(--rule);border-radius:var(--r);
+  margin-bottom:16px;overflow:hidden;
+}
+.drop-panel-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 20px;border-bottom:1px solid var(--rule);
+}
+.drop-panel-label{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.drop-panel-count{font-size:12px;color:var(--faint)}
+.drop{
+  margin:16px 20px;border:1.5px dashed var(--rule);border-radius:var(--r);
+  padding:32px 20px;text-align:center;cursor:pointer;transition:.2s;
+}
+.drop:hover,.drop.hot{border-color:var(--forest);background:var(--forest-dim)}
+.drop-icon{font-size:22px;color:var(--faint);margin-bottom:8px}
+.drop p{font-size:13px;color:var(--muted)}
+.drop p b{color:var(--ink)}
+.drop-pickers{display:flex;gap:8px;justify-content:center;margin-top:12px;flex-wrap:wrap}
+
+/* ── Buttons ── */
+.btn{
+  font-family:inherit;font-size:12px;font-weight:600;padding:8px 16px;
+  border-radius:6px;cursor:pointer;border:1px solid var(--rule);
+  background:var(--surface);color:var(--ink);transition:.15s;letter-spacing:.02em;
+}
+.btn:hover{border-color:var(--forest);color:var(--forest)}
+.btn.primary{background:var(--forest);border-color:var(--forest);color:#fff}
+.btn.primary:hover{background:#235030;border-color:#235030}
+.btn.sm{padding:5px 11px;font-size:11px}
+.btn:disabled{opacity:.38;cursor:not-allowed}
+.btn-row{display:flex;gap:8px;margin:0 20px 20px;flex-wrap:wrap;align-items:center}
+
+/* ── Thumbnail grid ── */
+.thumb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;padding:0 20px 16px}
+.thumb-card{border:1px solid var(--rule);border-radius:8px;overflow:hidden;background:var(--surface)}
+.thumb-img{width:100%;height:100px;object-fit:cover;display:block}
+.thumb-pal{display:flex;height:8px}
+.thumb-pal span{flex:1}
+.thumb-meta{padding:5px 8px 2px}
+.thumb-name{font-size:10px;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.thumb-note{
+  width:100%;border:none;border-top:1px solid var(--rule);background:transparent;
+  font-family:inherit;font-size:10px;color:var(--ink);padding:4px 8px;
+  resize:none;outline:none;height:36px;line-height:1.4;
+}
+.thumb-note::placeholder{color:var(--faint)}
+.thumb-rm{
+  display:block;width:100%;font-size:10px;color:var(--faint);
+  background:none;border:none;border-top:1px solid var(--rule);
+  cursor:pointer;padding:3px 0;text-align:center;
+}
+.thumb-rm:hover{color:var(--rust);background:var(--rust-dim)}
+
+/* ── Progress ── */
+.progress{display:none;padding:0 20px 16px}
+.progress.on{display:block}
+.bar{height:3px;background:var(--rule);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--forest);transition:width .2s}
+.progress-label{font-size:11px;color:var(--muted);margin-top:6px;font-variant-numeric:tabular-nums}
+
+/* ── Results ── */
+#results{display:none}
+#results.on{display:block}
+
+.section-head{
+  display:flex;align-items:baseline;gap:10px;margin:24px 0 14px;
+}
+.section-head h2{font-size:14px;font-weight:700;color:var(--ink)}
+.section-head .meta{font-size:11px;color:var(--faint)}
+
+/* Corpus profile bar */
+.profile-bar{
+  background:var(--surface);border:1px solid var(--rule);border-radius:var(--r);
+  padding:14px 18px;margin-bottom:14px;display:flex;gap:28px;flex-wrap:wrap;
+}
+.profile-stat{display:flex;flex-direction:column;gap:2px}
+.profile-stat .label{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+.profile-stat .val{font-size:18px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.profile-stat .sub{font-size:11px;color:var(--muted)}
+.profile-divider{width:1px;background:var(--rule);align-self:stretch}
+
+/* Horizontal swatch palette */
+.swatch-row{
+  display:flex;border-radius:var(--r);overflow:hidden;
+  border:1px solid var(--rule);height:64px;margin-bottom:8px;
+}
+.swatch-block{flex:1;position:relative;cursor:default;transition:.1s;min-width:0}
+.swatch-block:hover .swatch-tip{display:block}
+.swatch-tip{
+  display:none;position:absolute;bottom:100%;left:50%;transform:translateX(-50%);
+  background:var(--ink);color:#fff;font-size:10px;white-space:nowrap;
+  padding:4px 8px;border-radius:4px;margin-bottom:4px;z-index:10;pointer-events:none;
+}
+.swatch-tip::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);
+  border:4px solid transparent;border-top-color:var(--ink)}
+
+.palette-table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--rule);border-radius:var(--r);overflow:hidden}
+.palette-table th{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);padding:8px 12px;text-align:left;border-bottom:1px solid var(--rule);background:var(--bg)}
+.palette-table td{padding:10px 12px;border-bottom:1px solid var(--rule);vertical-align:middle;font-size:12px;color:var(--ink)}
+.palette-table tr:last-child td{border-bottom:none}
+.palette-table tr:hover td{background:var(--bg)}
+.swatch-cell{width:44px}
+.swatch-sq{width:32px;height:32px;border-radius:5px;border:1px solid rgba(0,0,0,.08);cursor:pointer}
+.hex-mono{font-family:'SF Mono','Fira Code',monospace;font-size:11px;font-weight:500}
+.copy-btn{font-size:10px;color:var(--faint);background:none;border:none;cursor:pointer;padding:2px 5px;border-radius:3px;margin-left:3px}
+.copy-btn:hover{background:var(--rule);color:var(--ink)}
+.weight-cell{width:80px}
+.weight-wrap{display:flex;align-items:center;gap:6px}
+.weight-bar-bg{flex:1;height:4px;background:var(--rule);border-radius:4px;overflow:hidden}
+.weight-bar-fill{height:100%;background:var(--forest);border-radius:4px}
+.img-pill{
+  display:inline-block;font-size:10px;padding:2px 7px;border-radius:10px;
+  background:var(--bg);border:1px solid var(--rule);color:var(--muted);
+  font-variant-numeric:tabular-nums;white-space:nowrap;
+}
+
+/* Per-image breakdown */
+.img-row{display:flex;gap:10px;overflow-x:auto;padding-bottom:8px;-webkit-overflow-scrolling:touch}
+.img-row::-webkit-scrollbar{height:4px}
+.img-row::-webkit-scrollbar-track{background:transparent}
+.img-row::-webkit-scrollbar-thumb{background:var(--rule);border-radius:4px}
+.img-card{flex-shrink:0;width:140px;border:1px solid var(--rule);border-radius:8px;overflow:hidden;background:var(--surface)}
+.img-card img{width:140px;height:100px;object-fit:cover;display:block}
+.img-card-pal{display:flex;height:10px}
+.img-card-pal span{flex:1}
+.img-card-name{font-size:9px;color:var(--faint);padding:4px 8px 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.img-card-note{font-size:9px;color:var(--muted);padding:2px 8px 6px;font-style:italic;line-height:1.4}
+
+/* Intelligence panels */
+.intel-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px}
+@media(max-width:860px){.intel-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.intel-grid{grid-template-columns:1fr}}
+.intel-panel{background:var(--surface);border:1px solid var(--rule);border-radius:var(--r);overflow:hidden}
+.intel-head{
+  padding:10px 14px;border-bottom:1px solid var(--rule);background:var(--bg);
+  font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+}
+.intel-body{padding:12px 14px}
+
+.pal-match{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--rule)}
+.pal-match:last-child{border-bottom:none}
+.pal-swatches{display:flex;height:24px;border-radius:4px;overflow:hidden;flex-shrink:0;width:64px;border:1px solid var(--rule)}
+.pal-swatches span{flex:1}
+.pal-match-name{font-size:12px;font-weight:500;color:var(--ink);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pal-match-code{font-size:10px;color:var(--faint)}
+.pal-score{
+  font-family:'SF Mono','Fira Code',monospace;font-size:10px;
+  padding:2px 7px;border-radius:10px;flex-shrink:0;
+}
+.pal-score.strong{background:var(--forest-dim);border:1px solid var(--forest-border);color:var(--forest)}
+.pal-score.ok{background:var(--amber-dim);border:1px solid var(--amber-border);color:var(--amber)}
+.pal-score.weak{background:var(--bg);border:1px solid var(--rule);color:var(--faint)}
+
+.chip{
+  display:inline-flex;align-items:center;
+  border-radius:20px;padding:3px 10px;font-size:11px;font-weight:500;margin:2px 2px 2px 0;
+}
+.chip.region{background:var(--amber-dim);border:1px solid var(--amber-border);color:var(--amber)}
+.chip.technique{background:var(--rust-dim);border:1px solid var(--rust-border);color:var(--rust)}
+.chip.setting{background:var(--forest-dim);border:1px solid var(--forest-border);color:var(--forest)}
+.chip.feeling{background:var(--bg);border:1px solid var(--rule);color:var(--muted)}
+.chip.empty{border:1px dashed var(--rule);color:var(--faint);font-style:italic;font-weight:400}
+
+.atlas-item{padding:8px 0;border-bottom:1px solid var(--rule)}
+.atlas-item:last-child{border-bottom:none}
+.atlas-item-title{font-size:12px;font-weight:600;color:var(--ink);line-height:1.3}
+.atlas-item-heritage{font-size:10px;color:var(--muted);margin-top:1px}
+.atlas-item-score{
+  display:inline-block;font-size:9px;font-weight:600;letter-spacing:.06em;
+  padding:1px 6px;border-radius:10px;
+  background:var(--amber-dim);border:1px solid var(--amber-border);color:var(--amber);
+  margin-top:3px;
+}
+
+/* Notes + save */
+.save-panel{background:var(--surface);border:1px solid var(--rule);border-radius:var(--r);overflow:hidden;margin-top:14px}
+.save-panel-head{
+  padding:12px 16px;border-bottom:1px solid var(--rule);background:var(--bg);
+  font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+}
+.save-panel-body{padding:14px 16px}
+.notes-textarea{
+  width:100%;min-height:100px;border:1px solid var(--rule);
+  border-radius:6px;background:var(--bg);color:var(--ink);
+  font-family:inherit;font-size:13px;padding:10px 12px;
+  resize:vertical;outline:none;line-height:1.6;
+}
+.notes-textarea:focus{border-color:var(--forest);background:var(--surface)}
+.notes-textarea::placeholder{color:var(--faint)}
+.save-row{display:flex;align-items:center;gap:12px;margin-top:12px;flex-wrap:wrap}
+.save-status{font-size:12px;color:var(--muted);font-style:italic}
+.save-status.ok{color:var(--forest);font-style:normal;font-weight:500}
+.save-status.err{color:var(--rust);font-style:normal}
+.export-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+
+.empty-state{font-size:12px;color:var(--faint);font-style:italic;padding:10px 0}
+
+/* Toast */
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(12px);
+  background:var(--ink);color:#fff;padding:9px 20px;border-radius:6px;
+  font-size:12px;font-weight:600;opacity:0;transition:.2s;pointer-events:none;z-index:9999;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.ok{background:var(--forest)}
+
+footer{padding:32px 0 0;font-size:11px;color:var(--faint);border-top:1px solid var(--rule);margin-top:40px}
+</style>
+</head>
+<body>
+
+<!-- Topbar -->
+<div class="topbar">
+  <a class="topbar-back" href="https://coco-atlas-admin.cultureschool.org/">← Atlas</a>
+  <div class="topbar-divider"></div>
+  <span class="topbar-title">Field Log</span>
+  <span class="topbar-sub">Corpus color reader</span>
+  <div class="topbar-spacer"></div>
+  <span class="topbar-badge">CultureSchool Intelligence</span>
+</div>
+
+<div class="main">
+
+  <!-- ── Setup strip ── -->
+  <div class="setup-strip">
+    <div class="setup-strip-title">
+      <span>01 · Session context</span>
+      <span style="font-size:11px;color:var(--faint);font-weight:400;letter-spacing:0;text-transform:none">Required: title. All other fields improve Atlas matching.</span>
+    </div>
+    <div class="form-grid">
+      <div class="field span2">
+        <label>Session title *</label>
+        <input type="text" id="f-title" placeholder="e.g. Accra textile market · wax print stalls, July 2026">
+      </div>
+      <div class="field">
+        <label>Location</label>
+        <input type="text" id="f-location" placeholder="City, market, region…">
+      </div>
+      <div class="field">
+        <label>Date observed</label>
+        <input type="date" id="f-date">
+      </div>
+      <div class="field">
+        <label>Source type</label>
+        <select id="f-source">
+          <option value="market">Market / souk / bazaar</option>
+          <option value="supplier">Supplier / mill visit</option>
+          <option value="event">Event / trade show</option>
+          <option value="studio">Studio / maker visit</option>
+          <option value="archive">Archive / museum</option>
+          <option value="online">Online / Pinterest</option>
+          <option value="field">General field</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Technique focus</label>
+        <input type="text" id="f-technique" placeholder="Kente, Batik, Adire…">
+      </div>
+      <div class="field">
+        <label>Corpus label</label>
+        <input type="text" id="f-corpus" placeholder="Batch description — travels with CSV export">
+      </div>
+      <div class="field">
+        <label>Logged by</label>
+        <input type="text" id="f-logged-by" placeholder="Your name">
+      </div>
+    </div>
+    <div class="opts-row">
+      <div class="opt-group">
+        Colors per image
+        <div class="stepper">
+          <button onclick="step('k',-1)">−</button>
+          <div class="val" id="kVal">5</div>
+          <button onclick="step('k',1)">+</button>
+        </div>
+      </div>
+      <div class="opt-group">
+        Master palette size
+        <div class="stepper">
+          <button onclick="step('mk',-1)">−</button>
+          <div class="val" id="mkVal">8</div>
+          <button onclick="step('mk',1)">+</button>
+        </div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="filterNeutral">
+        <span class="sw"></span>
+        Ignore near-white &amp; near-black
+      </label>
+    </div>
+  </div>
+
+  <!-- ── Drop zone ── -->
+  <div class="drop-panel">
+    <div class="drop-panel-head">
+      <span class="drop-panel-label">02 · Field images</span>
+      <span class="drop-panel-count" id="load-count">No images loaded · max 20</span>
+    </div>
+
+    <div class="drop" id="drop">
+      <div class="drop-icon">⤓</div>
+      <p><b>Drag a folder or images here</b></p>
+      <p style="font-size:12px;margin-top:6px">Nothing leaves your device until you hit Save</p>
+      <div class="drop-pickers">
+        <button class="btn" onclick="document.getElementById('folderInput').click()">Choose folder</button>
+        <button class="btn" onclick="document.getElementById('fileInput').click()">Choose files</button>
+      </div>
+    </div>
+    <input type="file" id="fileInput" accept="image/*" multiple hidden>
+    <input type="file" id="folderInput" webkitdirectory multiple hidden>
+
+    <div class="thumb-grid" id="thumbGrid"></div>
+
+    <div class="btn-row">
+      <button class="btn primary" id="readBtn" onclick="readCorpus()" disabled>Read the corpus</button>
+      <button class="btn" id="clearBtn" onclick="clearAll()" disabled>Clear all</button>
+    </div>
+
+    <div class="progress" id="progress">
+      <div class="bar"><i id="barFill"></i></div>
+      <div class="progress-label" id="pctText">Reading…</div>
+    </div>
+  </div>
+
+  <!-- ── Results ── -->
+  <div id="results">
+
+    <!-- Profile summary -->
+    <div class="section-head">
+      <h2 id="resultTitle">Color read</h2>
+      <span class="meta" id="resultMeta"></span>
+    </div>
+    <div class="profile-bar" id="profileBar"></div>
+
+    <!-- Horizontal swatch strip -->
+    <div class="swatch-row" id="swatchRow"></div>
+
+    <!-- Palette table -->
+    <table class="palette-table" id="paletteTable">
+      <thead><tr>
+        <th class="swatch-cell"></th>
+        <th>Name</th>
+        <th>Hex</th>
+        <th>RGB</th>
+        <th class="weight-cell">Share</th>
+        <th>Images</th>
+      </tr></thead>
+      <tbody id="paletteBody"></tbody>
+    </table>
+
+    <div class="export-row" style="margin-top:10px">
+      <button class="btn sm" onclick="copyAll()">Copy all hex</button>
+      <button class="btn sm" onclick="downloadCSV()">Download CSV</button>
+      <button class="btn sm" onclick="downloadPNG()">Download palette PNG</button>
+    </div>
+
+    <!-- Per-image breakdown -->
+    <div class="section-head">
+      <h2>Per-image palette</h2>
+      <span class="meta">Each image's dominant colors — compare across the corpus</span>
+    </div>
+    <div class="img-row" id="imgRow"></div>
+
+    <!-- Intelligence -->
+    <div class="section-head">
+      <h2>Intelligence layer</h2>
+      <span class="meta">Library matches, heritage signals, Atlas entries</span>
+    </div>
+    <div class="intel-grid">
+      <div class="intel-panel">
+        <div class="intel-head">✦ CultureSchool palette matches</div>
+        <div class="intel-body" id="palMatches"><div class="empty-state">Matching…</div></div>
+      </div>
+      <div class="intel-panel">
+        <div class="intel-head">◈ Heritage signals</div>
+        <div class="intel-body" id="heritagePanel"><div class="empty-state">Reading…</div></div>
+      </div>
+      <div class="intel-panel">
+        <div class="intel-head">⌕ Atlas matches</div>
+        <div class="intel-body" id="atlasMatches"><div class="empty-state">Searching…</div></div>
+      </div>
+    </div>
+
+    <!-- Notes + save -->
+    <div class="save-panel">
+      <div class="save-panel-head">Field observations</div>
+      <div class="save-panel-body">
+        <textarea class="notes-textarea" id="f-notes"
+          placeholder="What won't the data capture? Texture, hand-feel, price signals, vendor context, provenance claimed, buyer behaviour you noticed…"></textarea>
+        <div class="save-row">
+          <button class="btn primary" id="saveBtn" onclick="saveFieldLog()">Save to Atlas</button>
+          <span class="save-status" id="saveStatus"></span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /results -->
+
+  <footer>Field Log · reads run entirely in your browser · palette + signals saved to CultureSchool Intelligence Platform</footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ── Supabase ── */
+const SB_URL  = 'https://qwulthvbwujfehgdegtn.supabase.co';
+const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3dWx0aHZid3VqZmVoZ2RlZ3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQyMDcxODIsImV4cCI6MjA1OTc4MzE4Mn0.t9n4eZng6d0jggiPNK-J_DByvEE2L9tqy5Xh_1-TSoQ';
+const sb = supabase.createClient(SB_URL, SB_ANON);
+
+/* ── State ── */
+let images = [];       // {name, dataUrl, cross, note}
+let masterPalette = [];
+let perImageData = [];
+let matchedPalettes = [], heritageSignals = {}, atlasMatches = [];
+let opts = {k:5, mk:8};
+
+document.getElementById('f-date').value = new Date().toISOString().slice(0,10);
+
+/* ── Options ── */
+function step(w,d){
+  if(w==='k'){opts.k=Math.max(2,Math.min(10,opts.k+d));document.getElementById('kVal').textContent=opts.k;}
+  else{opts.mk=Math.max(3,Math.min(14,opts.mk+d));document.getElementById('mkVal').textContent=opts.mk;}
+}
+
+/* ── Image loading ── */
+const MAX=20;
+const drop=document.getElementById('drop');
+['dragenter','dragover'].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.add('hot');}));
+['dragleave','drop'].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.remove('hot');}));
+drop.addEventListener('drop',ev=>handleFiles(ev.dataTransfer.files));
+document.getElementById('fileInput').addEventListener('change',e=>handleFiles(e.target.files));
+document.getElementById('folderInput').addEventListener('change',e=>handleFiles(e.target.files));
+
+function handleFiles(fileList){
+  const files=[...fileList].filter(f=>f.type.startsWith('image/'));
+  const slots=MAX-images.length;
+  if(slots<=0){showToast('Max 20 images');return;}
+  const batch=files.slice(0,slots);
+  if(files.length>slots)showToast('Taking first '+slots+' — max 20 total');
+  let pending=batch.length;
+  if(!pending)return;
+  batch.forEach(f=>{
+    const r=new FileReader();
+    r.onload=()=>{images.push({name:f.name,dataUrl:r.result,cross:false,note:''});if(--pending===0)refreshLoad();};
+    r.onerror=()=>{if(--pending===0)refreshLoad();};
+    r.readAsDataURL(f);
+  });
+}
+function refreshLoad(){
+  const n=images.length;
+  document.getElementById('load-count').textContent=n+' image'+(n===1?'':'s')+' loaded'+(n>=MAX?' (max)':'');
+  document.getElementById('readBtn').disabled=n===0;
+  document.getElementById('clearBtn').disabled=n===0;
+  renderThumbs();
+}
+function renderThumbs(){
+  const grid=document.getElementById('thumbGrid');
+  grid.innerHTML='';
+  images.forEach((im,idx)=>{
+    const card=document.createElement('div');
+    card.className='thumb-card';
+    card.innerHTML=`<img class="thumb-img" src="${im.dataUrl}" alt="">
+      <div class="thumb-pal" id="tpal-${idx}"></div>
+      <div class="thumb-meta"><div class="thumb-name">${esc(im.name)}</div></div>
+      <textarea class="thumb-note" placeholder="Note about this image…" oninput="images[${idx}].note=this.value">${esc(im.note)}</textarea>
+      <button class="thumb-rm" onclick="removeImage(${idx})">✕ remove</button>`;
+    grid.appendChild(card);
+  });
+}
+function updateThumbPal(idx,pal){
+  const el=document.getElementById('tpal-'+idx);
+  if(el)el.innerHTML=pal.map(p=>`<span style="background:${toHex(p.c)};flex:${Math.round(p.w*100)}"></span>`).join('');
+}
+function removeImage(idx){images.splice(idx,1);refreshLoad();}
+function clearAll(){
+  images=[];masterPalette=[];perImageData=[];matchedPalettes=[];heritageSignals={};atlasMatches=[];
+  refreshLoad();
+  document.getElementById('results').classList.remove('on');
+  document.getElementById('progress').classList.remove('on');
+  document.getElementById('saveStatus').textContent='';
+  document.getElementById('saveBtn').textContent='Save to Atlas';
+  document.getElementById('saveBtn').disabled=false;
+}
+
+/* ── Color math ── */
+function loadImg(src,cross){return new Promise(res=>{const i=new Image();if(cross)i.crossOrigin='anonymous';i.onload=()=>res(i);i.onerror=()=>res(null);i.src=src;});}
+function samplePixels(img,filterNeutral){
+  const cv=document.createElement('canvas');
+  const scale=Math.min(1,90/Math.max(img.width,img.height));
+  cv.width=Math.max(1,Math.round(img.width*scale));
+  cv.height=Math.max(1,Math.round(img.height*scale));
+  const ctx=cv.getContext('2d');
+  let d;try{ctx.drawImage(img,0,0,cv.width,cv.height);d=ctx.getImageData(0,0,cv.width,cv.height).data;}catch(e){return null;}
+  const px=[];
+  for(let i=0;i<d.length;i+=4){
+    if(d[i+3]<125)continue;
+    const[r,g,b]=[d[i],d[i+1],d[i+2]];
+    if(filterNeutral){if(r>238&&g>238&&b>238)continue;if(r<16&&g<16&&b<16)continue;}
+    px.push([r,g,b]);
+  }
+  return px;
+}
+function dist2(a,b){const dr=a[0]-b[0],dg=a[1]-b[1],db=a[2]-b[2];return dr*dr+dg*dg+db*db;}
+function kmeans(pts,k,iters){
+  if(pts.length<=k)return pts.map(p=>({c:p,w:1/pts.length}));
+  let cents=[pts[Math.floor(Math.random()*pts.length)]];
+  while(cents.length<k){
+    const dists=pts.map(p=>Math.min(...cents.map(c=>dist2(p,c))));
+    const sum=dists.reduce((a,b)=>a+b,0)||1;
+    let r=Math.random()*sum,idx=0;
+    for(let i=0;i<dists.length;i++){r-=dists[i];if(r<=0){idx=i;break;}}
+    cents.push(pts[idx]);
+  }
+  let assign=new Array(pts.length).fill(0);
+  for(let it=0;it<iters;it++){
+    for(let i=0;i<pts.length;i++){let best=0,bd=Infinity;for(let c=0;c<cents.length;c++){const dd=dist2(pts[i],cents[c]);if(dd<bd){bd=dd;best=c;}}assign[i]=best;}
+    const sums=cents.map(()=>[0,0,0,0]);
+    for(let i=0;i<pts.length;i++){const a=assign[i];sums[a][0]+=pts[i][0];sums[a][1]+=pts[i][1];sums[a][2]+=pts[i][2];sums[a][3]++;}
+    cents=sums.map((s,i)=>s[3]?[s[0]/s[3],s[1]/s[3],s[2]/s[3]]:cents[i]);
+  }
+  const counts=cents.map(()=>0);
+  assign.forEach(a=>counts[a]++);
+  return cents.map((c,i)=>({c:c.map(Math.round),w:counts[i]/pts.length})).sort((a,b)=>b.w-a.w);
+}
+function aggregate(allColors,k,iters){
+  if(allColors.length<=k)return allColors.map(o=>({rgb:o.c,weight:o.w,imgCount:1})).sort((a,b)=>b.weight-a.weight);
+  let cents=[allColors[Math.floor(Math.random()*allColors.length)].c];
+  while(cents.length<k){
+    const dists=allColors.map(o=>Math.min(...cents.map(c=>dist2(o.c,c))));
+    const sum=dists.reduce((a,b)=>a+b,0)||1;
+    let r=Math.random()*sum,idx=0;
+    for(let i=0;i<dists.length;i++){r-=dists[i];if(r<=0){idx=i;break;}}
+    cents.push(allColors[idx].c);
+  }
+  let assign=new Array(allColors.length).fill(0);
+  for(let it=0;it<iters;it++){
+    for(let i=0;i<allColors.length;i++){let best=0,bd=Infinity;for(let c=0;c<cents.length;c++){const dd=dist2(allColors[i].c,cents[c]);if(dd<bd){bd=dd;best=c;}}assign[i]=best;}
+    const sums=cents.map(()=>[0,0,0,0]);
+    for(let i=0;i<allColors.length;i++){const a=assign[i],w=allColors[i].w;sums[a][0]+=allColors[i].c[0]*w;sums[a][1]+=allColors[i].c[1]*w;sums[a][2]+=allColors[i].c[2]*w;sums[a][3]+=w;}
+    cents=sums.map((s,i)=>s[3]?[s[0]/s[3],s[1]/s[3],s[2]/s[3]]:cents[i]);
+  }
+  const wsum=cents.map(()=>0),imgs=cents.map(()=>new Set());
+  for(let i=0;i<allColors.length;i++){wsum[assign[i]]+=allColors[i].w;imgs[assign[i]].add(allColors[i].img);}
+  const total=wsum.reduce((a,b)=>a+b,0)||1;
+  return cents.map((c,i)=>({rgb:c.map(Math.round),weight:wsum[i]/total,imgCount:imgs[i].size})).filter(o=>o.imgCount>0).sort((a,b)=>b.weight-a.weight);
+}
+function toHex([r,g,b]){return '#'+[r,g,b].map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join('').toUpperCase();}
+
+/* ── Textile color naming ── */
+function nameColor(rgb){
+  const[r,g,b]=rgb;
+  const max=Math.max(r,g,b)/255,min=Math.min(r,g,b)/255;
+  const l=(max+min)/2;
+  const d=max-min;
+  const s=d===0?0:d/(1-Math.abs(2*l-1));
+  let h=0;
+  if(d>0){
+    const mc=Math.max(r,g,b);
+    if(mc===r)h=((g-b)/255/d+6)%6;
+    else if(mc===g)h=(b-r)/255/d+2;
+    else h=(r-g)/255/d+4;
+    h=Math.round(h*60);
+    if(h<0)h+=360;
+  }
+  // Extremes
+  if(l>0.93)return'Ivory';
+  if(l>0.84)return'Cream';
+  if(l<0.06)return'Ebony';
+  if(l<0.14)return'Pitch';
+  // Near-neutrals
+  if(s<0.07){
+    if(l<0.25)return'Charcoal';
+    if(l<0.42)return'Slate';
+    if(l<0.62)return'Ash';
+    return'Flax';
+  }
+  // Hue-based
+  if(h<15||h>=345){if(l<0.32)return'Oxblood';if(l<0.52)return'Terracotta';return'Coral';}
+  if(h<40){if(l<0.32)return'Rust';if(s>0.55)return'Amber';return'Ochre';}
+  if(h<65){if(l<0.38)return'Bronze';if(s<0.38)return'Wheat';return'Gold';}
+  if(h<100){if(l<0.32)return'Moss';if(s<0.28)return'Sage';return'Chartreuse';}
+  if(h<150){if(l<0.28)return'Forest';if(s<0.28)return'Sage';return'Jade';}
+  if(h<185){if(l<0.35)return'Teal';return'Celadon';}
+  if(h<220){if(l<0.32)return'Steel';if(s>0.48)return'Cerulean';return'Powder';}
+  if(h<255){if(l<0.32)return'Midnight';if(s>0.58)return'Cobalt';return'Periwinkle';}
+  if(h<290){if(l<0.32)return'Indigo';if(s>0.48)return'Violet';return'Lavender';}
+  if(h<330){if(l<0.38)return'Plum';if(s>0.48)return'Violet';return'Mauve';}
+  if(l<0.38)return'Crimson';
+  return'Rose';
+}
+
+/* ── Corpus profile ── */
+function buildProfile(palette){
+  const warm=palette.filter(o=>{const[r,,b]=o.rgb;return r>b;}).reduce((s,o)=>s+o.weight,0);
+  const dominated=palette[0];
+  const colorName=nameColor(dominated.rgb);
+  const spread=palette.length;
+  return{warmPct:Math.round(warm*100),dominantName:colorName,dominantHex:toHex(dominated.rgb),spread};
+}
+
+/* ── Heritage inference ── */
+const CULTURE_MAP={
+  'ghana':'West African','nigeria':'West African','senegal':'West African','mali':'West African',
+  'côte d\'ivoire':'West African','ivory coast':'West African','accra':'West African',
+  'lagos':'West African','dakar':'West African','abidjan':'West African','kumasi':'West African',
+  'ethiopia':'East African','kenya':'East African','tanzania':'East African','nairobi':'East African',
+  'south africa':'Southern African','johannesburg':'Southern African','cape town':'Southern African',
+  'morocco':'North African','marrakech':'North African','fez':'North African','casablanca':'North African',
+  'egypt':'North African','cairo':'North African','tunis':'North African','tunisia':'North African',
+  'india':'South Asian','mumbai':'South Asian','delhi':'South Asian','jaipur':'South Asian','rajasthan':'South Asian',
+  'japan':'East Asian','tokyo':'East Asian','kyoto':'East Asian','osaka':'East Asian',
+  'indonesia':'Southeast Asian','bali':'Southeast Asian','java':'Southeast Asian','jakarta':'Southeast Asian',
+  'caribbean':'Caribbean','jamaica':'Caribbean','haiti':'Caribbean','trinidad':'Caribbean','barbados':'Caribbean',
+  'peru':'South American','bolivia':'South American','mexico':'Central American','oaxaca':'Central American',
+  // Techniques
+  'kente':'Kente','adire':'Adire','batik':'Batik','ankara':'Ankara','wax print':'Wax Print',
+  'mudcloth':'Mudcloth','bogolan':'Mudcloth','tie dye':'Tie Dye','indigo':'Indigo Dye',
+  'ikat':'Ikat','block print':'Block Print','shibori':'Shibori','adinkra':'Adinkra',
+  'kanga':'Kanga','kitenge':'Kitenge','aso oke':'Aso Oke','kuba':'Kuba Cloth',
+  'sashiko':'Sashiko','resist dye':'Resist Dye','hand woven':'Hand Woven','tapestry':'Tapestry',
+  'brocade':'Brocade','jacquard':'Jacquard','embroidery':'Embroidery','appliqué':'Appliqué',
+  // Settings
+  'market':'Market Research','souk':'Market Research','bazaar':'Market Research',
+  'supplier':'Supplier Sourcing','mill':'Mill Visit','factory':'Production Visit',
+  'archive':'Archival Research','museum':'Museum Study','vintage':'Vintage / Archive',
+  'instagram':'Social Trend','pinterest':'Social Trend',
+};
+function inferHeritage(texts){
+  const blob=texts.join(' ').toLowerCase().replace(/[_\-\.]/g,' ');
+  const markers=[],techniques=[],settings=[];const seen=new Set();
+  const REGIONS=['West African','East African','Southern African','North African','South Asian','East Asian','Southeast Asian','Caribbean','South American','Central American'];
+  const SETTINGS=['Market Research','Supplier Sourcing','Mill Visit','Production Visit','Archival Research','Museum Study','Vintage / Archive','Social Trend'];
+  Object.entries(CULTURE_MAP).forEach(([key,label])=>{
+    if(blob.includes(key)&&!seen.has(label)){
+      seen.add(label);
+      if(SETTINGS.includes(label))settings.push(label);
+      else if(REGIONS.includes(label))markers.push(label);
+      else techniques.push(label);
+    }
+  });
+  return{markers,techniques,settings};
+}
+const FEELINGS=[
+  {label:'Earthy',test:(r,g,b)=>r>100&&g>70&&b<100&&Math.abs(r-g)<60},
+  {label:'Vibrant',test:(r,g,b)=>Math.max(r,g,b)-Math.min(r,g,b)>120},
+  {label:'Muted',test:(r,g,b)=>Math.max(r,g,b)-Math.min(r,g,b)<60&&Math.max(r,g,b)<200},
+  {label:'Dark & Rich',test:(r,g,b)=>r<90&&g<90&&b<90},
+  {label:'Warm',test:(r,g,b)=>r>g&&r>b&&r>120},
+  {label:'Cool',test:(r,g,b)=>b>r&&b>100},
+  {label:'Jewel Tones',test:(r,g,b)=>Math.max(r,g,b)-Math.min(r,g,b)>80&&Math.max(r,g,b)<200},
+];
+function inferFeeling(pal){
+  if(!pal.length)return null;
+  const[r,g,b]=pal[0].rgb;
+  for(const f of FEELINGS)if(f.test(r,g,b))return f.label;
+  return'Balanced';
+}
+
+/* ── Palette matching ── */
+function hexToRgbArr(hex){const h=(hex||'').replace('#','').padStart(6,'0');return[parseInt(h.slice(0,2),16)||0,parseInt(h.slice(2,4),16)||0,parseInt(h.slice(4,6),16)||0];}
+function colorDist(a,b){return Math.sqrt((a[0]-b[0])**2+(a[1]-b[1])**2+(a[2]-b[2])**2);}
+function palSimilarity(masterRgb,palHexes){
+  if(!palHexes?.length)return Infinity;
+  const palRgb=palHexes.map(hexToRgbArr);
+  return masterRgb.slice(0,6).reduce((sum,mc)=>sum+Math.min(...palRgb.map(pc=>colorDist(mc,pc))),0)/Math.min(masterRgb.length,6);
+}
+async function runPaletteMatch(master){
+  const el=document.getElementById('palMatches');
+  try{
+    const{data}=await sb.from('palettes').select('id,name,code,colors').limit(300);
+    if(!data?.length){el.innerHTML='<div class="empty-state">No palette library found</div>';return[];}
+    const masterRgb=master.slice(0,8).map(o=>o.rgb);
+    const scored=data.filter(p=>Array.isArray(p.colors)&&p.colors.length)
+      .map(p=>({...p,score:palSimilarity(masterRgb,p.colors)}))
+      .sort((a,b)=>a.score-b.score).slice(0,4);
+    if(!scored.length){el.innerHTML='<div class="empty-state">No color matches found</div>';return[];}
+    el.innerHTML='';
+    scored.forEach(p=>{
+      const sw=(p.colors||[]).slice(0,5).map(h=>`<span style="background:${h}"></span>`).join('');
+      const s=Math.round(p.score);
+      const cls=s<80?'strong':s<140?'ok':'weak';
+      const lbl=s<80?'close match':s<140?'related':'distant';
+      const item=document.createElement('div');
+      item.className='pal-match';
+      item.innerHTML=`<div class="pal-swatches">${sw}</div>
+        <div style="flex:1;min-width:0">
+          <div class="pal-match-name">${esc(p.name||'—')}</div>
+          <div class="pal-match-code">${esc(p.code||'')}</div>
+        </div>
+        <span class="pal-score ${cls}">${lbl}</span>`;
+      el.appendChild(item);
+    });
+    matchedPalettes=scored.map(p=>({id:p.id,name:p.name,code:p.code,colors:p.colors?.slice(0,5),score:Math.round(p.score)}));
+    return matchedPalettes;
+  }catch(e){el.innerHTML='<div class="empty-state">Library unavailable</div>';return[];}
+}
+
+/* ── Atlas matching ── */
+async function runAtlasMatch(signals){
+  const el=document.getElementById('atlasMatches');
+  const terms=[...signals.markers,...signals.techniques,...(signals.settings||[])].map(t=>t.toLowerCase().trim()).filter(Boolean);
+  const freeText=[document.getElementById('f-title').value,document.getElementById('f-technique').value,document.getElementById('f-location').value,document.getElementById('f-corpus').value].join(' ').toLowerCase();
+  if(!terms.length&&!freeText.trim()){el.innerHTML='<div class="empty-state">Add location or technique for Atlas matching</div>';return[];}
+  try{
+    const{data}=await sb.from('cs_atlas_entries').select('id,title,heritage_group,key_terms,status').eq('status','published').limit(150);
+    if(!data?.length){el.innerHTML='<div class="empty-state">No Atlas entries — run atlas SQL files first</div>';return[];}
+    const scored=data.map(e=>{
+      const entryText=[e.title,e.heritage_group,...(Array.isArray(e.key_terms)?e.key_terms:[])].join(' ').toLowerCase();
+      let score=0;
+      terms.forEach(t=>{if(entryText.includes(t))score+=2;});
+      freeText.split(/\s+/).filter(w=>w.length>3).forEach(w=>{if(entryText.includes(w))score+=1;});
+      return{...e,score};
+    }).filter(e=>e.score>0).sort((a,b)=>b.score-a.score).slice(0,5);
+    if(!scored.length){el.innerHTML='<div class="empty-state">No Atlas matches — try adding location or technique</div>';return[];}
+    el.innerHTML='';
+    scored.forEach(e=>{
+      const item=document.createElement('div');
+      item.className='atlas-item';
+      item.innerHTML=`<div class="atlas-item-title">${esc(e.title)}</div>
+        <div class="atlas-item-heritage">${esc(e.heritage_group||'—')}</div>
+        <span class="atlas-item-score">${e.score} signal${e.score>1?'s':''}</span>`;
+      el.appendChild(item);
+    });
+    atlasMatches=scored.map(e=>({id:e.id,title:e.title,heritage_group:e.heritage_group,score:e.score}));
+    return atlasMatches;
+  }catch(e){el.innerHTML='<div class="empty-state">Atlas unavailable</div>';return[];}
+}
+
+/* ── Heritage panel ── */
+function renderHeritagePanel(signals,feeling){
+  heritageSignals={feeling,...signals};
+  const el=document.getElementById('heritagePanel');
+  const chips=[];
+  if(feeling)chips.push(`<span class="chip feeling">${esc(feeling)}</span>`);
+  signals.markers.forEach(m=>chips.push(`<span class="chip region">${esc(m)}</span>`));
+  signals.techniques.forEach(t=>chips.push(`<span class="chip technique">${esc(t)}</span>`));
+  signals.settings.forEach(s=>chips.push(`<span class="chip setting">${esc(s)}</span>`));
+  if(!chips.length){
+    el.innerHTML='<span class="chip empty">Name images with cultural context — e.g. kente_accra_market.jpg</span>';
+    return;
+  }
+  el.innerHTML=`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px">${chips.join('')}</div>
+    <p style="font-size:10px;color:var(--faint);line-height:1.5">From: filenames, location, technique &amp; corpus label fields.</p>`;
+}
+
+/* ── Main read ── */
+async function readCorpus(){
+  if(!images.length)return;
+  const title=document.getElementById('f-title').value.trim();
+  if(!title){showToast('Add a session title first');document.getElementById('f-title').focus();return;}
+  document.getElementById('readBtn').disabled=true;
+  const prog=document.getElementById('progress');prog.classList.add('on');
+  const fill=document.getElementById('barFill'),pct=document.getElementById('pctText');
+  const filterNeutral=document.getElementById('filterNeutral').checked;
+  const allColors=[];perImageData=[];let skipped=0;
+
+  for(let i=0;i<images.length;i++){
+    const img=await loadImg(images[i].dataUrl,images[i].cross);
+    let px=null;
+    if(img)px=samplePixels(img,filterNeutral);
+    if(px&&px.length){
+      const pal=kmeans(px,opts.k,8);
+      perImageData.push({name:images[i].name,dataUrl:images[i].dataUrl,pal,note:images[i].note});
+      pal.forEach(p=>allColors.push({c:p.c,w:p.w,img:i}));
+      updateThumbPal(i,pal);
+    }else{
+      skipped++;
+      perImageData.push({name:images[i].name,dataUrl:images[i].dataUrl,pal:[],note:images[i].note});
+    }
+    const p=Math.round((i+1)/images.length*90);
+    fill.style.width=p+'%';pct.textContent='Reading '+(i+1)+' of '+images.length+'…';
+    if(i%3===0)await new Promise(r=>setTimeout(r));
+  }
+
+  masterPalette=aggregate(allColors,opts.mk,12);
+  fill.style.width='95%';pct.textContent='Running intelligence layer…';
+
+  // Heritage signals
+  const contextTexts=[...images.map(im=>im.name),
+    document.getElementById('f-title').value,document.getElementById('f-location').value,
+    document.getElementById('f-technique').value,document.getElementById('f-corpus').value];
+  const signals=inferHeritage(contextTexts);
+  const feeling=inferFeeling(masterPalette);
+  renderHeritagePanel(signals,feeling);
+
+  renderResults(skipped);
+
+  fill.style.width='97%';
+  await Promise.all([runPaletteMatch(masterPalette),runAtlasMatch(signals)]);
+
+  prog.classList.remove('on');
+  document.getElementById('readBtn').disabled=false;
+  document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+/* ── Render results ── */
+function renderResults(skipped){
+  const label=document.getElementById('f-corpus').value.trim()||document.getElementById('f-title').value.trim();
+  const read=images.length-(skipped||0);
+
+  document.getElementById('resultTitle').textContent=label||'Color read';
+  document.getElementById('resultMeta').textContent=
+    read+' of '+images.length+' images read'+(skipped?' ('+skipped+' unreadable)':'')
+    +' · '+masterPalette.length+' dominant colors';
+
+  // Corpus profile
+  const prof=buildProfile(masterPalette);
+  document.getElementById('profileBar').innerHTML=`
+    <div class="profile-stat"><div class="label">Dominant color</div><div class="val" style="color:${prof.dominantHex};font-size:15px">■ ${prof.dominantName}</div><div class="sub">${prof.dominantHex}</div></div>
+    <div class="profile-divider"></div>
+    <div class="profile-stat"><div class="label">Warm / cool split</div><div class="val">${prof.warmPct}%</div><div class="sub">${prof.warmPct>60?'Predominantly warm':prof.warmPct<40?'Predominantly cool':'Balanced temperature'}</div></div>
+    <div class="profile-divider"></div>
+    <div class="profile-stat"><div class="label">Distinct colors</div><div class="val">${prof.spread}</div><div class="sub">across corpus</div></div>
+    <div class="profile-divider"></div>
+    <div class="profile-stat"><div class="label">Images read</div><div class="val">${read}</div><div class="sub">of ${images.length} loaded</div></div>`;
+
+  // Horizontal swatch strip (proportional widths)
+  const totalW=masterPalette.reduce((s,o)=>s+o.weight,0)||1;
+  document.getElementById('swatchRow').innerHTML=masterPalette.map(o=>{
+    const hex=toHex(o.rgb);
+    const name=nameColor(o.rgb);
+    const pct=(o.weight/totalW*100).toFixed(1);
+    return `<div class="swatch-block" style="background:${hex};flex:${Math.round(o.weight*1000)}" title="${name} · ${hex} · ${pct}%">
+      <span class="swatch-tip">${name} · ${hex} · ${pct}%</span></div>`;
+  }).join('');
+
+  // Palette table
+  const maxW=Math.max(...masterPalette.map(o=>o.weight),0.0001);
+  const tbody=document.getElementById('paletteBody');
+  tbody.innerHTML='';
+  masterPalette.forEach(o=>{
+    const hex=toHex(o.rgb);
+    const name=nameColor(o.rgb);
+    const pct=(o.weight*100).toFixed(1);
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td class="swatch-cell"><div class="swatch-sq" style="background:${hex}" onclick="copyHex('${hex}')" title="Click to copy"></div></td>
+      <td style="font-weight:500">${name}</td>
+      <td><span class="hex-mono">${hex}</span><button class="copy-btn" onclick="copyHex('${hex}')">copy</button></td>
+      <td class="hex-mono" style="color:var(--faint)">${o.rgb.join(', ')}</td>
+      <td class="weight-cell"><div class="weight-wrap">
+        <div class="weight-bar-bg"><div class="weight-bar-fill" style="width:${(o.weight/maxW*100).toFixed(0)}%"></div></div>
+        <span style="font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums">${pct}%</span>
+      </div></td>
+      <td><span class="img-pill">${o.imgCount}/${images.length}</span></td>`;
+    tbody.appendChild(tr);
+  });
+
+  // Per-image row
+  const imgRow=document.getElementById('imgRow');
+  imgRow.innerHTML='';
+  perImageData.forEach(pi=>{
+    const card=document.createElement('div');
+    card.className='img-card';
+    const sw=pi.pal.length?pi.pal.map(p=>`<span style="background:${toHex(p.c)};flex:${Math.round(p.w*100)}"></span>`).join(''):'<span style="background:var(--rule)"></span>';
+    card.innerHTML=`<img src="${pi.dataUrl}" alt="">
+      <div class="img-card-pal">${sw}</div>
+      <div class="img-card-name">${esc(pi.name)}</div>
+      ${pi.note?`<div class="img-card-note">${esc(pi.note)}</div>`:''}`;
+    imgRow.appendChild(card);
+  });
+
+  document.getElementById('results').style.display='block';
+}
+
+/* ── Save ── */
+async function saveFieldLog(){
+  const title=document.getElementById('f-title').value.trim();
+  if(!title){showToast('Add a session title first');return;}
+  if(!masterPalette.length){showToast('Read the corpus first');return;}
+  const btn=document.getElementById('saveBtn'),status=document.getElementById('saveStatus');
+  btn.disabled=true;status.textContent='Saving…';status.className='save-status';
+
+  // Collect per-image notes and append to main notes
+  const imgNotes=perImageData.filter(p=>p.note).map(p=>`[${p.name}] ${p.note}`).join('\n');
+  const mainNotes=document.getElementById('f-notes').value.trim();
+  const combinedNotes=[mainNotes,imgNotes?'— Per-image notes —\n'+imgNotes:''].filter(Boolean).join('\n\n')||null;
+
+  const payload={
+    title,
+    location:document.getElementById('f-location').value.trim()||null,
+    observed_date:document.getElementById('f-date').value||null,
+    source_type:document.getElementById('f-source').value||'field',
+    technique:document.getElementById('f-technique').value.trim()||null,
+    corpus_label:document.getElementById('f-corpus').value.trim()||null,
+    image_count:images.length,
+    master_palette:masterPalette.map(o=>({hex:toHex(o.rgb),r:o.rgb[0],g:o.rgb[1],b:o.rgb[2],name:nameColor(o.rgb),weight:parseFloat(o.weight.toFixed(4)),img_count:o.imgCount})),
+    matched_palettes:matchedPalettes,
+    heritage_signals:heritageSignals,
+    atlas_matches:atlasMatches,
+    notes:combinedNotes,
+    logged_by:document.getElementById('f-logged-by').value.trim()||null,
+  };
+
+  try{
+    const{error}=await sb.from('cs_field_logs').insert(payload);
+    if(error)throw error;
+    status.textContent='Saved — visible in Atlas → Field Logs';
+    status.className='save-status ok';
+    btn.textContent='Saved ✓';
+    showToast('Field log saved',true);
+  }catch(err){
+    status.textContent='Save failed: '+(err.message||'unknown error');
+    status.className='save-status err';
+    btn.disabled=false;
+  }
+}
+
+/* ── Exports ── */
+function copyHex(h){navigator.clipboard.writeText(h);showToast('Copied '+h);}
+function copyAll(){
+  if(!masterPalette.length)return;
+  navigator.clipboard.writeText(masterPalette.map(o=>toHex(o.rgb)+'\t'+nameColor(o.rgb)).join('\n'));
+  showToast('Copied '+masterPalette.length+' colors (hex + name)');
+}
+function downloadCSV(){
+  if(!masterPalette.length)return;
+  const label=document.getElementById('f-corpus').value.trim()||document.getElementById('f-title').value.trim()||'field-log';
+  const loc=document.getElementById('f-location').value.trim();
+  const dt=document.getElementById('f-date').value;
+  let csv='corpus,location,observed_date,rank,name,hex,R,G,B,corpus_share_pct,images_present,images_total\n';
+  masterPalette.forEach((o,i)=>{
+    const name=nameColor(o.rgb);
+    csv+=`"${label.replace(/"/g,'""')}","${loc.replace(/"/g,'""')}","${dt}",${i+1},"${name}",${toHex(o.rgb)},${o.rgb[0]},${o.rgb[1]},${o.rgb[2]},${(o.weight*100).toFixed(2)},${o.imgCount},${images.length}\n`;
+  });
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download='field-log-'+label.toLowerCase().replace(/[^a-z0-9]+/g,'-').slice(0,40)+'.csv';
+  a.click();showToast('CSV downloaded');
+}
+async function downloadPNG(){
+  if(!masterPalette.length){showToast('Read a corpus first');return;}
+  try{await document.fonts.ready;}catch(e){}
+  const label=document.getElementById('f-corpus').value.trim()||document.getElementById('f-title').value.trim()||'field log';
+  const ratio=2,W=1100,pad=52,swatchW=200,rowH=96,headerH=140,footerH=64;
+  const H=headerH+masterPalette.length*rowH+footerH;
+  const cv=document.createElement('canvas');cv.width=W*ratio;cv.height=H*ratio;
+  const ctx=cv.getContext('2d');ctx.scale(ratio,ratio);
+  ctx.fillStyle='#F5F3EF';ctx.fillRect(0,0,W,H);
+  ctx.textBaseline='alphabetic';
+  ctx.fillStyle='#2C5F3F';ctx.font='600 11px system-ui,sans-serif';
+  ctx.fillText('CULTURESCHOOL · FIELD LOG',pad,48);
+  ctx.fillStyle='#1C1713';ctx.font='400 36px Georgia,serif';
+  ctx.fillText(label.length>52?label.slice(0,51)+'…':label,pad,88);
+  ctx.fillStyle='#6E6357';ctx.font='400 13px system-ui,sans-serif';
+  ctx.fillText(masterPalette.length+' colors · '+images.length+' images · ranked by corpus share',pad,114);
+  const maxW=Math.max(...masterPalette.map(o=>o.weight),0.0001);
+  let y=headerH;
+  masterPalette.forEach(o=>{
+    const hex=toHex(o.rgb),name=nameColor(o.rgb);
+    ctx.fillStyle=hex;ctx.fillRect(pad,y,swatchW,rowH-12);
+    const tx=pad+swatchW+28;
+    ctx.fillStyle='#1C1713';ctx.font='500 14px system-ui,sans-serif';ctx.fillText(name,tx,y+22);
+    ctx.font='600 22px "SF Mono",monospace,system-ui';ctx.fillText(hex,tx,y+50);
+    const pctStr=(o.weight*100).toFixed(1)+'%';
+    ctx.font='600 13px system-ui';ctx.fillStyle='#2C5F3F';ctx.fillText(pctStr,tx,y+70);
+    const pw=ctx.measureText(pctStr).width;
+    ctx.fillStyle='#6E6357';ctx.font='400 12px system-ui';
+    ctx.fillText('  of corpus   ·   in '+o.imgCount+'/'+images.length+' images',tx+pw,y+70);
+    ctx.fillStyle='#E0DCD4';ctx.fillRect(tx,y+78,W-pad-tx,3);
+    ctx.fillStyle='#2C5F3F';ctx.fillRect(tx,y+78,(W-pad-tx)*(o.weight/maxW),3);
+    y+=rowH;
+  });
+  ctx.fillStyle='#A8A095';ctx.font='400 10px "SF Mono",monospace';
+  ctx.fillText('Generated with CultureSchool Field Log · '+new Date().toLocaleDateString(),pad,H-22);
+  cv.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='field-log-palette-'+label.toLowerCase().replace(/[^a-z0-9]+/g,'-').slice(0,40)+'.png';a.click();showToast('Palette PNG downloaded');},'image/png');
+}
+
+/* ── Utils ── */
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+let toastTimer;
+function showToast(msg,ok){
+  const t=document.getElementById('toast');t.textContent=msg;t.className='toast show'+(ok?' ok':'');
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2000);
+}
+</script>
+</body>
+</html>

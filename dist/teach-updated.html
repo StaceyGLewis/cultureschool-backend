@@ -1,0 +1,2746 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Teach · CultureSchool</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Cinzel:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --gold:   #c9a84c;
+  --glt:    #e8d48b;
+  --gdk:    #8a6030;
+  --ink:    #0a0806;
+  --warm:   #14100c;
+  --card:   rgba(255,255,255,.04);
+  --card2:  rgba(255,255,255,.07);
+  --line:   rgba(255,255,255,.08);
+  --line2:  rgba(255,255,255,.14);
+  --muted:  rgba(255,255,255,.5);
+  --dim:    rgba(255,255,255,.3);
+  --ease:   cubic-bezier(.22,1,.36,1);
+  --sp:     cubic-bezier(.16,1,.3,1);
+  --ok:     #4ade80;
+  --err:    #f87171;
+  --info:   #60a5fa;
+}
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+html { font-size:16px; }
+body {
+  background: var(--ink);
+  color: rgba(255,255,255,.9);
+  font-family: 'DM Sans', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+/* ── NAV ── */
+nav {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:14px 32px;
+  background:rgba(10,8,6,.9); backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--line);
+  position:sticky; top:0; z-index:200;
+}
+.nav-logo { font-family:'Cinzel',serif; font-size:.78rem; letter-spacing:.2em; color:var(--gold); text-decoration:none; }
+.nav-right { display:flex; align-items:center; gap:16px; }
+.nav-user { font-size:.78rem; color:var(--dim); }
+.nav-signout {
+  font-size:.7rem; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--dim); background:none; border:1px solid var(--line2);
+  border-radius:6px; padding:7px 14px; cursor:pointer;
+  transition:all .2s; font-family:'DM Sans',sans-serif;
+}
+.nav-signout:hover { color:var(--glt); border-color:rgba(201,168,76,.3); }
+
+/* ── MOBILE NAV BAR ── */
+.mobile-nav {
+  display:none;
+  position:fixed; bottom:0; left:0; right:0; z-index:300;
+  background:rgba(14,12,10,.97); border-top:1px solid var(--line2);
+  padding:10px 0 max(10px, env(safe-area-inset-bottom));
+  justify-content:space-around;
+}
+.mobile-nav-btn {
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+  background:none; border:none; color:var(--dim); cursor:pointer;
+  font-family:'DM Sans',sans-serif; font-size:.58rem;
+  letter-spacing:.06em; text-transform:uppercase; padding:4px 12px;
+  transition:color .15s;
+}
+.mobile-nav-btn.active { color:var(--glt); }
+.mobile-nav-btn span { font-size:1.15rem; }
+@media(max-width:860px){ .mobile-nav { display:flex; } body { padding-bottom:70px; } }
+
+/* ── AUTH SCREEN ── */
+#authScreen {
+  min-height:100vh; display:flex; align-items:center; justify-content:center;
+  padding:24px;
+}
+.auth-card {
+  width:100%; max-width:400px;
+  background:var(--card); border:1px solid var(--line);
+  border-radius:20px; padding:48px 40px;
+  animation: fadeUp .6s var(--ease) both;
+}
+@keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+.auth-eyebrow {
+  font-size:.6rem; letter-spacing:.28em; text-transform:uppercase;
+  color:var(--gold); margin-bottom:12px;
+}
+.auth-title {
+  font-family:'Cormorant Garamond',serif; font-size:2rem;
+  font-weight:300; color:white; margin-bottom:8px;
+}
+.auth-sub { font-size:.88rem; color:var(--dim); margin-bottom:32px; line-height:1.6; }
+
+/* ── LAYOUT ── */
+#appScreen { display:none; }
+#appScreen.visible { display:block; }
+
+.app-layout {
+  display:grid; grid-template-columns:260px 1fr;
+  min-height:calc(100vh - 53px);
+}
+@media(max-width:860px){ .app-layout { grid-template-columns:1fr; } }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  border-right:1px solid var(--line);
+  padding:28px 20px;
+  display:flex; flex-direction:column; gap:6px;
+  position:sticky; top:53px; height:calc(100vh - 53px);
+  overflow-y:auto;
+}
+@media(max-width:860px){ .sidebar { display:none; } }
+
+.sidebar-section-label {
+  font-size:.58rem; letter-spacing:.2em; text-transform:uppercase;
+  color:var(--dim); padding:8px 12px 6px; margin-top:8px;
+}
+.nav-item {
+  display:flex; align-items:center; gap:10px;
+  padding:10px 12px; border-radius:8px; cursor:pointer;
+  font-size:.88rem; color:var(--muted);
+  transition:all .15s; border:none; background:none;
+  width:100%; text-align:left; font-family:'DM Sans',sans-serif;
+}
+.nav-item:hover { background:var(--card2); color:white; }
+.nav-item.active { background:rgba(201,168,76,.1); color:var(--glt); border:1px solid rgba(201,168,76,.15); }
+.nav-item-icon { font-size:1rem; width:20px; text-align:center; }
+.nav-item-badge {
+  margin-left:auto; font-size:.58rem; font-weight:700;
+  background:var(--gold); color:var(--ink);
+  padding:2px 7px; border-radius:100px;
+}
+
+/* ── MAIN ── */
+.main { padding:40px 48px; }
+@media(max-width:860px){ .main { padding:24px 20px; } }
+
+/* ── PAGE HEADER ── */
+.page-header { margin-bottom:36px; }
+.page-eyebrow {
+  font-size:.6rem; letter-spacing:.24em; text-transform:uppercase;
+  color:var(--gold); margin-bottom:8px;
+}
+.page-title {
+  font-family:'Cormorant Garamond',serif;
+  font-size:clamp(1.8rem,3vw,2.6rem); font-weight:300;
+  color:white; line-height:1.1;
+}
+.page-sub { font-size:.9rem; color:var(--dim); margin-top:8px; }
+
+/* ── PANELS ── */
+.panel { display:none; }
+.panel.active { display:block; }
+
+/* ── COURSE LIST ── */
+.course-grid { display:flex; flex-direction:column; gap:12px; margin-bottom:24px; }
+.course-row {
+  display:grid; grid-template-columns:auto 1fr auto;
+  gap:20px; align-items:center;
+  padding:20px 24px;
+  background:var(--card); border:1px solid var(--line);
+  border-radius:12px; cursor:pointer;
+  transition:all .2s;
+}
+.course-row:hover { border-color:rgba(201,168,76,.2); background:var(--card2); }
+.course-thumb {
+  width:72px; height:52px; border-radius:8px;
+  background:linear-gradient(135deg,#2a1e10,#0e0a06);
+  overflow:hidden; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.4rem; color:rgba(201,168,76,.2);
+}
+.course-thumb img { width:100%; height:100%; object-fit:cover; }
+.course-info { min-width:0; }
+.course-name {
+  font-family:'Cormorant Garamond',serif;
+  font-size:1.1rem; font-weight:400; color:white;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  margin-bottom:4px;
+}
+.course-meta { font-size:.75rem; color:var(--dim); display:flex; gap:16px; flex-wrap:wrap; }
+.course-status {
+  display:inline-flex; align-items:center; gap:5px;
+  font-size:.62rem; font-weight:600; letter-spacing:.1em;
+  text-transform:uppercase; padding:4px 10px; border-radius:100px;
+}
+.status-published { background:rgba(74,222,128,.1); color:var(--ok); border:1px solid rgba(74,222,128,.2); }
+.status-draft     { background:rgba(255,255,255,.05); color:var(--dim); border:1px solid var(--line); }
+.course-actions { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.btn-icon {
+  width:36px; height:36px; border-radius:8px;
+  background:none; border:1px solid var(--line2);
+  color:var(--muted); cursor:pointer; display:flex;
+  align-items:center; justify-content:center; font-size:.9rem;
+  transition:all .2s; flex-shrink:0;
+}
+.btn-icon:hover { border-color:rgba(201,168,76,.3); color:var(--glt); }
+.btn-icon.danger:hover { border-color:rgba(248,113,113,.3); color:var(--err); }
+
+/* ── FORM ELEMENTS ── */
+.field { display:flex; flex-direction:column; gap:6px; }
+.field label {
+  font-size:.72rem; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--dim); font-weight:600;
+}
+.field input, .field textarea, .field select {
+  background:rgba(255,255,255,.05); border:1px solid var(--line2);
+  border-radius:10px; color:rgba(255,255,255,.9);
+  font-family:'DM Sans',sans-serif; font-size:.95rem;
+  padding:12px 16px; outline:none;
+  transition:border-color .2s; width:100%;
+  -webkit-appearance:none;
+}
+.field textarea { min-height:90px; resize:vertical; }
+.field input:focus, .field textarea:focus, .field select:focus {
+  border-color:rgba(201,168,76,.45);
+}
+.field select option { background:#1a1208; }
+.field-hint { font-size:.72rem; color:var(--dim); }
+.field-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+@media(max-width:600px){ .field-row { grid-template-columns:1fr; } }
+
+/* ── BUTTONS ── */
+.btn {
+  display:inline-flex; align-items:center; gap:8px;
+  padding:12px 24px; border-radius:10px; cursor:pointer;
+  font-family:'DM Sans',sans-serif; font-size:.82rem;
+  font-weight:600; letter-spacing:.06em;
+  transition:all .2s; border:none; text-decoration:none;
+  -webkit-appearance:none;
+}
+.btn-primary {
+  background:linear-gradient(135deg,var(--gdk),var(--gold));
+  color:var(--ink);
+  box-shadow:0 6px 20px rgba(201,168,76,.25);
+}
+.btn-primary:hover { transform:translateY(-1px); box-shadow:0 10px 28px rgba(201,168,76,.4); }
+.btn-ghost {
+  background:none; border:1px solid var(--line2); color:var(--muted);
+}
+.btn-ghost:hover { border-color:rgba(201,168,76,.3); color:var(--glt); }
+.btn-danger { background:rgba(248,113,113,.1); border:1px solid rgba(248,113,113,.2); color:var(--err); }
+.btn-danger:hover { background:rgba(248,113,113,.18); }
+.btn-sm { padding:8px 16px; font-size:.75rem; }
+.btn-full { width:100%; justify-content:center; }
+
+/* ── CARD SECTION ── */
+.card-section {
+  background:var(--card); border:1px solid var(--line);
+  border-radius:16px; padding:28px; margin-bottom:20px;
+}
+.card-section-title {
+  font-family:'Cormorant Garamond',serif;
+  font-size:1.1rem; font-style:italic;
+  color:white; margin-bottom:20px;
+  display:flex; align-items:center; justify-content:space-between;
+  gap:16px;
+}
+
+/* ── LESSON TABLE ── */
+.lesson-table { width:100%; border-collapse:collapse; }
+.lesson-table th {
+  font-size:.6rem; letter-spacing:.18em; text-transform:uppercase;
+  color:var(--dim); font-weight:600; padding:10px 12px;
+  border-bottom:1px solid var(--line); text-align:left;
+}
+.lesson-row {
+  border-bottom:1px solid var(--line);
+  transition:background .15s;
+}
+.lesson-row:last-child { border-bottom:none; }
+.lesson-row:hover { background:rgba(255,255,255,.02); }
+.lesson-row td { padding:14px 12px; vertical-align:middle; }
+.lesson-order-input {
+  width:52px; background:rgba(255,255,255,.06);
+  border:1px solid var(--line2); border-radius:6px;
+  color:white; padding:6px 8px; font-size:.85rem;
+  text-align:center; outline:none; font-family:'DM Sans',sans-serif;
+}
+.lesson-order-input:focus { border-color:rgba(201,168,76,.4); }
+.lesson-name-cell { font-size:.88rem; color:rgba(255,255,255,.8); }
+.lesson-type-pill {
+  font-size:.58rem; font-weight:700; letter-spacing:.1em;
+  text-transform:uppercase; padding:3px 8px; border-radius:4px;
+}
+.type-video    { background:rgba(201,168,76,.12); color:var(--glt); }
+.type-audio    { background:rgba(74,222,128,.1);  color:var(--ok); }
+.type-document { background:rgba(96,165,250,.12); color:var(--info); }
+.type-pdf      { background:rgba(96,165,250,.12); color:var(--info); }
+.free-toggle {
+  display:flex; align-items:center; gap:6px;
+  cursor:pointer; font-size:.78rem; color:var(--dim);
+  user-select:none;
+}
+.free-toggle input[type=checkbox] {
+  width:15px; height:15px; accent-color:var(--gold);
+  cursor:pointer;
+}
+
+/* ── UPLOAD ZONE ── */
+.upload-zone {
+  border:1px dashed var(--line2); border-radius:12px;
+  padding:32px; text-align:center; cursor:pointer;
+  transition:all .2s; background:var(--card);
+  position:relative; overflow:hidden;
+}
+.upload-zone:hover { border-color:rgba(201,168,76,.35); background:var(--card2); }
+.upload-zone.drag-over { border-color:var(--gold); background:rgba(201,168,76,.06); }
+.upload-zone-icon { font-size:2rem; color:var(--dim); margin-bottom:10px; }
+.upload-zone-text { font-size:.9rem; color:var(--muted); margin-bottom:6px; }
+.upload-zone-sub { font-size:.72rem; color:var(--dim); }
+.upload-progress {
+  position:absolute; bottom:0; left:0;
+  height:3px; background:var(--gold);
+  width:0%; transition:width .3s; border-radius:0 0 12px 12px;
+}
+
+/* ── RESOURCE LIST ── */
+.resource-list { display:flex; flex-direction:column; gap:8px; margin-top:16px; }
+.resource-item {
+  display:flex; align-items:center; gap:12px;
+  padding:12px 16px;
+  background:rgba(96,165,250,.05); border:1px solid rgba(96,165,250,.15);
+  border-radius:10px;
+}
+.resource-icon { font-size:1.2rem; flex-shrink:0; }
+.resource-info { flex:1; min-width:0; }
+.resource-name { font-size:.88rem; color:white; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.resource-meta { font-size:.7rem; color:var(--dim); margin-top:2px; }
+.resource-actions { display:flex; gap:6px; }
+
+/* ── TOAST ── */
+#toast {
+  position:fixed; bottom:24px; left:50%;
+  transform:translateX(-50%) translateY(20px);
+  background:rgba(14,12,10,.96); border:1px solid var(--line2);
+  color:var(--glt); padding:12px 24px; border-radius:8px;
+  font-size:.9rem; z-index:9999; opacity:0;
+  transition:all .3s var(--ease); pointer-events:none;
+  backdrop-filter:blur(12px); white-space:nowrap;
+}
+#toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+#toast.err { color:var(--err); border-color:rgba(248,113,113,.3); }
+@media(max-width:860px){ #toast { bottom:80px; } }
+
+/* ── STATS ROW ── */
+.stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:32px; }
+@media(max-width:700px){ .stats-row { grid-template-columns:repeat(2,1fr); } }
+.stat-card {
+  background:var(--card); border:1px solid var(--line);
+  border-radius:12px; padding:20px 22px;
+}
+.stat-num {
+  font-family:'Cormorant Garamond',serif;
+  font-size:2rem; color:var(--glt); line-height:1;
+  margin-bottom:4px;
+}
+.stat-label { font-size:.68rem; color:var(--dim); letter-spacing:.08em; text-transform:uppercase; }
+
+/* ── TOGGLE SWITCH ── */
+.toggle-row {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:14px 0; border-bottom:1px solid var(--line);
+}
+.toggle-row:last-child { border-bottom:none; }
+.toggle-label { font-size:.9rem; color:rgba(255,255,255,.75); }
+.toggle-sub { font-size:.75rem; color:var(--dim); margin-top:2px; }
+.switch {
+  position:relative; width:44px; height:24px; flex-shrink:0;
+}
+.switch input { opacity:0; width:0; height:0; }
+.slider {
+  position:absolute; inset:0; background:rgba(255,255,255,.12);
+  border-radius:100px; cursor:pointer; transition:.3s;
+}
+.slider::before {
+  content:''; position:absolute;
+  width:18px; height:18px; border-radius:50%;
+  left:3px; top:3px; background:white;
+  transition:.3s;
+}
+input:checked + .slider { background:var(--gold); }
+input:checked + .slider::before { transform:translateX(20px); }
+
+/* ── EMPTY STATE ── */
+.empty-state {
+  text-align:center; padding:60px 24px;
+  border:1px dashed var(--line); border-radius:16px;
+}
+.empty-icon { font-size:2.5rem; margin-bottom:16px; opacity:.3; }
+.empty-title {
+  font-family:'Cormorant Garamond',serif;
+  font-size:1.4rem; font-style:italic; color:white; margin-bottom:8px;
+}
+.empty-sub { font-size:.88rem; color:var(--dim); margin-bottom:24px; }
+
+/* ── MODAL ── */
+.modal-bg {
+  position:fixed; inset:0; z-index:400;
+  background:rgba(0,0,0,.85); backdrop-filter:blur(10px);
+  display:flex; align-items:center; justify-content:center;
+  padding:24px; opacity:0; pointer-events:none;
+  transition:opacity .25s;
+}
+.modal-bg.open { opacity:1; pointer-events:auto; }
+.modal-box {
+  background:#14100c; border:1px solid var(--line2);
+  border-radius:20px; width:100%; max-width:640px;
+  max-height:88vh; overflow-y:auto;
+  transform:scale(.96) translateY(12px);
+  transition:transform .3s var(--sp);
+  padding:36px;
+}
+.modal-bg.open .modal-box { transform:scale(1) translateY(0); }
+.modal-title {
+  font-family:'Cormorant Garamond',serif;
+  font-size:1.6rem; font-weight:300; color:white;
+  margin-bottom:24px;
+}
+.modal-fields { display:flex; flex-direction:column; gap:16px; }
+.modal-actions { display:flex; gap:10px; margin-top:24px; justify-content:flex-end; }
+
+/* ── CHAPTER HINT ── */
+.chapter-hint-box {
+  background:rgba(201,168,76,.05); border:1px solid rgba(201,168,76,.15);
+  border-radius:10px; padding:14px 18px; margin-bottom:16px;
+}
+.chapter-hint-box p {
+  font-size:.82rem; color:rgba(255,255,255,.6); line-height:1.65;
+}
+.chapter-hint-box strong { color:var(--glt); }
+
+/* Divider */
+.divider { height:1px; background:var(--line); margin:24px 0; }
+
+/* ── COMING SOON LOCK ── */
+.panel-lock-overlay {
+  position: absolute; inset: 0; z-index: 20;
+  background: rgba(12,10,8,.75);
+  backdrop-filter: blur(6px);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  border-radius: 20px; text-align: center;
+  padding: 40px;
+}
+.panel-lock-icon { font-size: 2rem; margin-bottom: 14px; opacity: .6; }
+.panel-lock-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic; font-size: 1.4rem;
+  color: white; margin-bottom: 8px;
+}
+.panel-lock-sub {
+  font-size: .82rem; color: var(--dim); line-height: 1.65;
+  max-width: 340px;
+}
+.panel-lock-badge {
+  margin-top: 18px; padding: 6px 16px;
+  border: 1px solid rgba(201,168,76,.35);
+  border-radius: 100px;
+  font: 700 .6rem/1 var(--sans);
+  letter-spacing: .18em; text-transform: uppercase;
+  color: var(--gold);
+}
+/* sidebar coming-soon badge */
+.nav-soon {
+  margin-left: auto; font: 600 .5rem/1 var(--sans);
+  letter-spacing: .12em; text-transform: uppercase;
+  color: var(--dim); background: rgba(255,255,255,.06);
+  padding: 3px 8px; border-radius: 4px; flex-shrink: 0;
+}
+/* sidebar active section highlight */
+.nav-item.templates-active {
+  background: rgba(201,168,76,.1);
+  border-left: 2px solid var(--gold);
+}
+
+/* ── TEMPLATE SUBMISSION ── */
+.submit-step {
+  display: flex; align-items: flex-start; gap: 16px;
+  padding: 20px 0; border-bottom: 1px solid var(--line2);
+}
+.submit-step:last-child { border-bottom: none; }
+.step-num {
+  flex-shrink: 0; width: 28px; height: 28px;
+  border-radius: 50%; background: rgba(201,168,76,.15);
+  border: 1px solid rgba(201,168,76,.3);
+  font: 700 .72rem/1 var(--sans);
+  color: var(--gold); display: flex;
+  align-items: center; justify-content: center;
+}
+.html-upload-zone {
+  border: 1.5px dashed rgba(201,168,76,.3);
+  border-radius: 12px; padding: 32px;
+  text-align: center; cursor: pointer;
+  transition: all .2s; background: rgba(201,168,76,.03);
+}
+.html-upload-zone:hover { border-color: var(--gold); background: rgba(201,168,76,.07); }
+.html-upload-zone.drag-over { border-color: var(--gold); background: rgba(201,168,76,.1); }
+.preview-frame-wrap {
+  width: 100%; border-radius: 10px; overflow: hidden;
+  border: 1px solid var(--line2); background: #fff;
+  position: relative;
+}
+.preview-frame {
+  width: 100%; height: 480px; border: none; display: block;
+}
+.status-pill {
+  display: inline-block; padding: 4px 12px; border-radius: 100px;
+  font: 700 .58rem/1 var(--sans); letter-spacing: .14em; text-transform: uppercase;
+}
+.status-pill.pending  { background: rgba(251,191,36,.15); color: #fbbf24; }
+
+/* ── ADMIN ── */
+#sidebar-admin { display: none; }
+.admin-queue-card {
+  border: 1px solid var(--line2); border-radius: 12px;
+  overflow: hidden; margin-bottom: 20px; background: var(--card);
+}
+.admin-queue-header {
+  padding: 14px 18px; border-bottom: 1px solid var(--line2);
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.admin-queue-meta { font-size: .72rem; color: var(--dim); margin-top: 3px; }
+.admin-preview { width: 100%; height: 380px; border: none; display: block; background: #fff; }
+.admin-actions { padding: 14px 18px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.btn-approve { background: rgba(74,222,128,.15); border: 1px solid rgba(74,222,128,.35); color: #4ade80; border-radius: 8px; padding: 9px 20px; font: 700 .7rem/1 var(--sans); letter-spacing: .1em; text-transform: uppercase; cursor: pointer; transition: all .2s; }
+.btn-approve:hover { background: rgba(74,222,128,.25); }
+.btn-reject  { background: rgba(248,113,113,.12); border: 1px solid rgba(248,113,113,.3);  color: #f87171; border-radius: 8px; padding: 9px 20px; font: 700 .7rem/1 var(--sans); letter-spacing: .1em; text-transform: uppercase; cursor: pointer; transition: all .2s; }
+.btn-reject:hover { background: rgba(248,113,113,.22); }
+.admin-note { flex: 1; min-width: 200px; background: var(--card2); border: 1px solid var(--line2); border-radius: 8px; padding: 9px 14px; font: 400 .85rem/1 var(--sans); color: white; outline: none; }
+.admin-note::placeholder { color: var(--dim); }
+.status-pill.approved { background: rgba(74,222,128,.15); color: #4ade80; }
+.status-pill.rejected { background: rgba(248,113,113,.15); color: #f87171; }
+.tpl-card {
+  display: grid; grid-template-columns: 64px 1fr auto;
+  gap: 14px; align-items: start;
+  padding: 16px; border-radius: 10px;
+  background: var(--card); border: 1px solid var(--line2);
+  margin-bottom: 10px;
+}
+.tpl-thumb {
+  width: 64px; height: 48px; border-radius: 6px;
+  object-fit: cover; background: var(--card2);
+}
+.tpl-thumb-placeholder {
+  width: 64px; height: 48px; border-radius: 6px;
+  background: rgba(201,168,76,.1); display: flex;
+  align-items: center; justify-content: center;
+  font-size: 1.4rem;
+}
+
+/* Tab strip for upload panel */
+.tab-strip {
+  display:flex; gap:4px; margin-bottom:24px;
+  background:var(--card); border:1px solid var(--line);
+  border-radius:10px; padding:4px;
+}
+.tab-btn {
+  flex:1; padding:10px 16px; border-radius:8px;
+  background:none; border:none; cursor:pointer;
+  font-family:'DM Sans',sans-serif; font-size:.82rem;
+  font-weight:500; color:var(--muted);
+  transition:all .2s;
+}
+.tab-btn.active {
+  background:rgba(201,168,76,.12); color:var(--glt);
+  border:1px solid rgba(201,168,76,.2);
+}
+.tab-panel { display:none; }
+.tab-panel.active { display:block; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="https://coco-teach.cultureschool.org" class="nav-logo">CultureSchool · Teach</a>
+  <div class="nav-right">
+    <span class="nav-user" id="navUser"></span>
+    <button class="nav-signout" onclick="signOut()">Sign out</button>
+  </div>
+</nav>
+
+<!-- AUTH SCREEN -->
+<div id="authScreen">
+  <div class="auth-card">
+    <div class="auth-eyebrow">Instructor Portal</div>
+    <h1 class="auth-title">Welcome back, creator.</h1>
+    <p class="auth-sub" id="authSub">Enter your email and we'll send you a sign-in link — no password needed.</p>
+    <div class="modal-fields" id="authForm">
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="authEmail" placeholder="you@cultureschool.org"
+          autocomplete="email" onkeydown="if(event.key==='Enter')signIn()">
+      </div>
+      <button class="btn btn-primary btn-full" onclick="signIn()" style="margin-top:8px;">
+        Send sign-in link →
+      </button>
+      <div id="authError" style="font-size:.8rem;color:var(--err);text-align:center;min-height:20px;"></div>
+    </div>
+    <div id="authSentState" style="display:none;text-align:center;padding:20px 0;">
+      <div style="font-size:2rem;margin-bottom:16px;">✉</div>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:1.2rem;font-style:italic;color:white;margin-bottom:10px;">
+        Check your inbox
+      </div>
+      <div style="font-size:.88rem;color:var(--dim);line-height:1.6;margin-bottom:20px;">
+        We sent a sign-in link to <strong id="authSentEmail" style="color:var(--glt)"></strong>.<br>
+        Click it to open the dashboard — no password needed.
+      </div>
+      <button class="btn btn-ghost btn-sm btn-full" onclick="resetAuthForm()">
+        Use a different email
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- APP SCREEN -->
+<div id="appScreen">
+  <div class="app-layout">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sidebar-section-label">Templates</div>
+      <button class="nav-item active templates-active" onclick="showPanel('tpl-submit',this)">
+        <span class="nav-item-icon">✦</span> Submit a Template
+      </button>
+      <button class="nav-item" onclick="showPanel('tpl-mine',this)">
+        <span class="nav-item-icon">◈</span> My Submissions
+        <span class="nav-item-badge" id="tplCount">0</span>
+      </button>
+
+      <div id="sidebar-admin">
+        <div class="sidebar-section-label" style="margin-top:8px;color:var(--gold);">Admin</div>
+        <button class="nav-item" onclick="showPanel('admin',this)">
+          <span class="nav-item-icon">◆</span> Review Queue
+          <span class="nav-item-badge" id="adminQueueCount">0</span>
+        </button>
+      </div>
+
+      <div class="sidebar-section-label" style="margin-top:8px;">Courses <span style="font-size:.55rem;letter-spacing:.1em;color:var(--dim);">· invite only</span></div>
+      <button class="nav-item" onclick="showPanel('courses',this)">
+        <span class="nav-item-icon">📚</span> My Courses
+        <span class="nav-soon">Soon</span>
+      </button>
+      <button class="nav-item" onclick="showPanel('lessons',this)">
+        <span class="nav-item-icon">🎬</span> Lessons
+        <span class="nav-soon">Soon</span>
+      </button>
+      <button class="nav-item" onclick="showPanel('resources',this)">
+        <span class="nav-item-icon">📄</span> Resources
+        <span class="nav-soon">Soon</span>
+      </button>
+      <button class="nav-item" onclick="showPanel('upload',this)">
+        <span class="nav-item-icon">⬆</span> Upload Content
+        <span class="nav-soon">Soon</span>
+      </button>
+
+      <div class="sidebar-section-label">Profile</div>
+      <button class="nav-item" onclick="showPanel('profile',this)">
+        <span class="nav-item-icon">◆</span> Instructor Profile
+      </button>
+      <button class="nav-item" onclick="showPanel('settings',this)">
+        <span class="nav-item-icon">⚙</span> Settings
+      </button>
+
+      <div class="sidebar-section-label">Earnings &amp; Community</div>
+      <button class="nav-item" onclick="showPanel('earnings',this)">
+        <span class="nav-item-icon">💰</span> Earnings
+      </button>
+      <button class="nav-item" onclick="showPanel('cocoart',this)">
+        <span class="nav-item-icon">🎨</span> Submit to CoCo Art
+      </button>
+      <div class="sidebar-section-label">Preview</div>
+      <button class="nav-item" onclick="previewCourse()">
+        <span class="nav-item-icon">↗</span> Preview Course Page
+      </button>
+    </div>
+
+    <!-- MAIN -->
+    <main class="main">
+
+      <!-- ── COURSES PANEL ── -->
+      <div class="panel active" id="panel-courses" style="position:relative;">
+        <div class="panel-lock-overlay">
+          <div class="panel-lock-icon">🔒</div>
+          <div class="panel-lock-title">Course Creator</div>
+          <div class="panel-lock-sub">The full course creation suite — videos, lessons, worksheets, and student enrollment — is coming soon. Early access by invitation.</div>
+          <div class="panel-lock-badge">Invite only · Coming soon</div>
+        </div>
+        <div class="page-header">
+          <div class="page-eyebrow">Content</div>
+          <h1 class="page-title">My Courses</h1>
+          <p class="page-sub">Create and manage your CultureSchool courses.</p>
+        </div>
+
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="stat-num" id="statCourses">0</div>
+            <div class="stat-label">Courses</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-num" id="statLessons">0</div>
+            <div class="stat-label">Lessons</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-num" id="statPublished">0</div>
+            <div class="stat-label">Published</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-num" id="statDocs">0</div>
+            <div class="stat-label">Resources</div>
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;margin-bottom:16px;">
+          <button class="btn btn-primary" onclick="openCourseModal()">+ New Course</button>
+        </div>
+
+        <a href="https://coco-invite-builder.cultureschool.org/" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 22px;border-radius:12px;margin-bottom:20px;background:linear-gradient(135deg,rgba(201,168,76,.1),rgba(201,168,76,.04));border:1px solid rgba(201,168,76,.2);text-decoration:none;" onmouseover="this.style.borderColor='rgba(201,168,76,.45)'" onmouseout="this.style.borderColor='rgba(201,168,76,.2)'">
+          <div>
+            <div style="font-size:.7rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:4px;">✦ This Month</div>
+            <div style="font-size:.95rem;color:white;font-family:'Cormorant Garamond',serif;font-style:italic;">Got a launch or event this month? Share an Invite!</div>
+          </div>
+          <div style="font-size:.75rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);white-space:nowrap;">Build one →</div>
+        </a>
+
+        <div class="course-grid" id="courseGrid">
+          <div class="empty-state">
+            <div class="empty-icon">📚</div>
+            <div class="empty-title">No courses yet</div>
+            <div class="empty-sub">Create your first course to get started.</div>
+            <button class="btn btn-primary" onclick="openCourseModal()">+ Create Course</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── LESSONS PANEL ── -->
+      <div class="panel" id="panel-lessons" style="position:relative;">
+        <div class="panel-lock-overlay">
+          <div class="panel-lock-icon">🎬</div>
+          <div class="panel-lock-title">Lesson Manager</div>
+          <div class="panel-lock-sub">Organize chapters, set free previews, and manage video order across all your courses.</div>
+          <div class="panel-lock-badge">Invite only · Coming soon</div>
+        </div>
+        <div class="page-header">
+          <div class="page-eyebrow">Content</div>
+          <h1 class="page-title">All Lessons</h1>
+          <p class="page-sub">Manage chapters, order, and free preview settings across all your courses.</p>
+        </div>
+
+        <div class="chapter-hint-box">
+          <p>
+            <strong>How chapters work:</strong> Use the order number to group lessons.
+            Orders <strong>0–9</strong> → Chapter 1 · <strong>10–19</strong> → Chapter 2 · <strong>20–29</strong> → Chapter 3, etc.<br>
+            To name a chapter, add "Ch: Your Title" in the lesson's chapter name field when uploading.
+          </p>
+        </div>
+
+        <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+          <select id="lessonCourseFilter" onchange="loadLessons()" style="background:var(--card);border:1px solid var(--line2);border-radius:8px;color:white;padding:10px 14px;font-family:'DM Sans',sans-serif;font-size:.88rem;outline:none;-webkit-appearance:none;">
+            <option value="">All courses</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" onclick="showPanel('upload',document.querySelector('[onclick*=upload]'))">⬆ Upload new lesson</button>
+        </div>
+
+        <div class="card-section">
+          <table class="lesson-table">
+            <thead>
+              <tr>
+                <th>Order</th>
+                <th>Lesson</th>
+                <th>Type</th>
+                <th>Duration</th>
+                <th>Free preview</th>
+                <th>Published</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="lessonTableBody">
+              <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--dim);font-style:italic;">Loading lessons…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── RESOURCES PANEL ── -->
+      <div class="panel" id="panel-resources" style="position:relative;">
+        <div class="panel-lock-overlay">
+          <div class="panel-lock-icon">📄</div>
+          <div class="panel-lock-title">Resources & Docs</div>
+          <div class="panel-lock-sub">Upload worksheets, guided practice PDFs, slide decks, and downloadable materials for your students.</div>
+          <div class="panel-lock-badge">Invite only · Coming soon</div>
+        </div>
+        <div class="page-header">
+          <div class="page-eyebrow">Resources</div>
+          <h1 class="page-title">Resources &amp; Documents</h1>
+          <p class="page-sub">Worksheets, guided practice PDFs, slide decks, and downloadable materials for your students.</p>
+        </div>
+
+        <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;align-items:center;">
+          <select id="resourceCourseFilter" onchange="loadResources()" style="background:var(--card);border:1px solid var(--line2);border-radius:8px;color:white;padding:10px 14px;font-family:'DM Sans',sans-serif;font-size:.88rem;outline:none;-webkit-appearance:none;">
+            <option value="">All courses</option>
+          </select>
+          <button class="btn btn-primary btn-sm" onclick="showPanel('upload',null);switchUploadTab('docs')">+ Upload Document</button>
+        </div>
+
+        <div class="card-section">
+          <div class="card-section-title">Uploaded documents</div>
+          <div id="resourceList">
+            <div style="text-align:center;padding:40px;color:var(--dim);font-style:italic;">Loading…</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── UPLOAD PANEL ── -->
+      <div class="panel" id="panel-upload" style="position:relative;">
+        <div class="panel-lock-overlay">
+          <div class="panel-lock-icon">⬆</div>
+          <div class="panel-lock-title">Upload Content</div>
+          <div class="panel-lock-sub">Add videos, audio, or documents to your courses once the course creator is live.</div>
+          <div class="panel-lock-badge">Invite only · Coming soon</div>
+        </div>
+        <div class="page-header">
+          <div class="page-eyebrow">Content</div>
+          <h1 class="page-title">Upload Content</h1>
+          <p class="page-sub">Add videos, audio, or documents to one of your courses.</p>
+        </div>
+
+        <!-- Tab strip -->
+        <div class="tab-strip">
+          <button class="tab-btn active" id="tabVideo" onclick="switchUploadTab('video')">🎬 Video / Audio</button>
+          <button class="tab-btn" id="tabDocs" onclick="switchUploadTab('docs')">📄 Document / Worksheet</button>
+        </div>
+
+        <!-- VIDEO / AUDIO TAB -->
+        <div class="tab-panel active" id="uploadTabVideo">
+          <div class="card-section">
+            <div class="card-section-title">Lesson details</div>
+            <div class="modal-fields">
+              <div class="field-row">
+                <div class="field">
+                  <label>Course</label>
+                  <select id="uploadCourse">
+                    <option value="">Select a course…</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label>Chapter order</label>
+                  <input type="number" id="uploadOrder" value="0" min="0" max="999" placeholder="0">
+                  <span class="field-hint">0–9 = Ch.1 · 10–19 = Ch.2 · 20–29 = Ch.3</span>
+                </div>
+              </div>
+              <div class="field">
+                <label>Lesson title</label>
+                <input type="text" id="uploadTitle" placeholder="Why Color Is Not Decoration">
+              </div>
+              <div class="field">
+                <label>Chapter name <span style="font-weight:300;text-transform:none;letter-spacing:0;">(optional)</span></label>
+                <input type="text" id="uploadLabel" placeholder="Ch: Color as Language">
+                <span class="field-hint">Prefix with "Ch:" to name the chapter group this lesson belongs to</span>
+              </div>
+              <div class="field">
+                <label>Duration (seconds)</label>
+                <input type="number" id="uploadDuration" placeholder="720" min="0">
+                <span class="field-hint">720 = 12 min · leave blank if unknown</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-section">
+            <div class="card-section-title">Option A — Paste a video URL</div>
+            <div class="field">
+              <label>YouTube (unlisted) or Vimeo URL</label>
+              <input type="url" id="uploadUrl" placeholder="https://www.youtube.com/watch?v=...">
+            </div>
+            <div style="margin-top:16px;">
+              <button class="btn btn-primary" onclick="saveByUrl()">Save lesson →</button>
+            </div>
+          </div>
+
+          <div class="card-section">
+            <div class="card-section-title">Option B — Upload a file directly</div>
+            <div class="upload-zone" id="uploadZone"
+                 onclick="document.getElementById('fileInput').click()"
+                 ondragover="dragOver(event,'uploadZone')" ondragleave="dragLeave('uploadZone')" ondrop="dropFile(event,'video')">
+              <input type="file" id="fileInput" accept="video/*,audio/*" style="display:none" onchange="handleVideoFile(this.files[0])">
+              <div class="upload-zone-icon">⬆</div>
+              <div class="upload-zone-text">Click or drag a video / audio file here</div>
+              <div class="upload-zone-sub">MP4, MOV, WebM, MP3 · max 500 MB</div>
+              <div class="upload-progress" id="uploadProgress"></div>
+            </div>
+            <div id="uploadStatus" style="margin-top:12px;font-size:.82rem;color:var(--glt);min-height:20px;"></div>
+          </div>
+        </div>
+
+        <!-- DOCUMENT TAB -->
+        <div class="tab-panel" id="uploadTabDocs">
+          <div class="card-section">
+            <div class="card-section-title">Document details</div>
+            <div class="modal-fields">
+              <div class="field">
+                <label>Course</label>
+                <select id="docCourse">
+                  <option value="">Select a course…</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Document title</label>
+                <input type="text" id="docTitle" placeholder="Week 1 Worksheet · Color Journaling Practice">
+              </div>
+              <div class="field">
+                <label>Description <span style="font-weight:300;text-transform:none;letter-spacing:0;">(optional)</span></label>
+                <input type="text" id="docDesc" placeholder="A guided journaling sheet for exploring your personal color associations">
+              </div>
+              <div class="field">
+                <label>Document type</label>
+                <select id="docType">
+                  <option value="worksheet">Worksheet</option>
+                  <option value="guide">Practice Guide</option>
+                  <option value="slides">Slide Deck</option>
+                  <option value="template">Template</option>
+                  <option value="reading">Reading / Article</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Visible to students?</label>
+                <select id="docPublic">
+                  <option value="true">Yes — show in course resources</option>
+                  <option value="false">No — draft only</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-section">
+            <div class="card-section-title">Option A — Paste a document URL</div>
+            <p style="font-size:.82rem;color:var(--dim);margin-bottom:16px;line-height:1.6;">
+              Link to a Google Doc, Notion page, Canva file, or any hosted PDF. Students will open it in a new tab.
+            </p>
+            <div class="field">
+              <label>Document URL</label>
+              <input type="url" id="docUrl" placeholder="https://docs.google.com/...  or  https://...">
+            </div>
+            <div style="margin-top:16px;">
+              <button class="btn btn-primary" onclick="saveDocByUrl()">Save document →</button>
+            </div>
+          </div>
+
+          <div class="card-section">
+            <div class="card-section-title">Option B — Upload a file</div>
+            <div class="upload-zone" id="docUploadZone"
+                 onclick="document.getElementById('docFileInput').click()"
+                 ondragover="dragOver(event,'docUploadZone')" ondragleave="dragLeave('docUploadZone')" ondrop="dropFile(event,'doc')">
+              <input type="file" id="docFileInput" accept=".pdf,.doc,.docx,.ppt,.pptx,.key,.pages,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation" style="display:none" onchange="handleDocFile(this.files[0])">
+              <div class="upload-zone-icon">📄</div>
+              <div class="upload-zone-text">Click or drag a document here</div>
+              <div class="upload-zone-sub">PDF, Word, PowerPoint, Keynote, Pages · max 50 MB</div>
+              <div class="upload-progress" id="docUploadProgress"></div>
+            </div>
+            <div id="docUploadStatus" style="margin-top:12px;font-size:.82rem;color:var(--glt);min-height:20px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── PROFILE PANEL ── -->
+      <div class="panel" id="panel-profile">
+        <div class="page-header">
+          <div class="page-eyebrow">Instructor</div>
+          <h1 class="page-title">Your Profile</h1>
+          <p class="page-sub">This appears on your course pages and in the community.</p>
+        </div>
+
+        <div class="card-section">
+          <div class="modal-fields">
+            <div class="field">
+              <label>Display name</label>
+              <input type="text" id="profileName" placeholder="Stacey">
+            </div>
+            <div class="field">
+              <label>Title / tagline</label>
+              <input type="text" id="profileTitle" placeholder="Founder, CultureSchool · Jamerican · Creative Director">
+            </div>
+            <div class="field">
+              <label>Bio</label>
+              <textarea id="profileBio" placeholder="Tell students who you are and why you teach…"></textarea>
+            </div>
+            <div class="field">
+              <label>Avatar image URL</label>
+              <input type="url" id="profileAvatar" placeholder="https://…">
+              <span class="field-hint">Upload your photo to Supabase storage and paste the public URL here</span>
+            </div>
+            <div class="field">
+              <label>Website or social link <span style="font-weight:300;text-transform:none;letter-spacing:0;">(optional)</span></label>
+              <input type="url" id="profileWebsite" placeholder="https://yoursite.com or https://instagram.com/yourhandle">
+            </div>
+            <div style="display:flex;gap:10px;margin-top:8px;">
+              <button class="btn btn-primary" onclick="saveProfile()">Save profile →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SETTINGS PANEL ── -->
+      <div class="panel" id="panel-settings">
+        <div class="page-header">
+          <div class="page-eyebrow">Account</div>
+          <h1 class="page-title">Settings</h1>
+        </div>
+
+        <div class="card-section">
+          <div class="card-section-title">Course visibility</div>
+          <div class="toggle-row">
+            <div>
+              <div class="toggle-label">Show courses on CultureSchool directory</div>
+              <div class="toggle-sub">Allow students to discover your courses from CoCoCreate</div>
+            </div>
+            <label class="switch"><input type="checkbox" id="settingListed" checked><span class="slider"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div>
+              <div class="toggle-label">Enable student project gallery</div>
+              <div class="toggle-sub">Show student CoCoBoards on your course page</div>
+            </div>
+            <label class="switch"><input type="checkbox" id="settingProjects" checked><span class="slider"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div>
+              <div class="toggle-label">Allow students to download resources</div>
+              <div class="toggle-sub">PDFs and documents can be downloaded by enrolled students</div>
+            </div>
+            <label class="switch"><input type="checkbox" id="settingDownloads" checked><span class="slider"></span></label>
+          </div>
+          <div style="margin-top:20px;">
+            <button class="btn btn-primary btn-sm" onclick="saveSettings()">Save settings →</button>
+          </div>
+        </div>
+
+        <div class="card-section" style="border-color:rgba(248,113,113,.15);">
+          <div class="card-section-title" style="color:var(--err);">Danger zone</div>
+          <p style="font-size:.85rem;color:var(--dim);margin-bottom:16px;">These actions are permanent.</p>
+          <button class="btn btn-danger btn-sm" onclick="toast('Contact support to delete your account','err')">
+            Delete instructor account
+          </button>
+        </div>
+      </div>
+
+      <!-- EARNINGS -->
+      <div class="panel" id="panel-earnings">
+        <div class="page-header"><div class="page-eyebrow">Earnings</div><h1 class="page-title">Your Earnings</h1><p class="page-sub">Track revenue from approved templates. Payouts via PayPal when revenue share goes live.</p></div>
+
+        <div class="stats-row" style="margin-bottom:24px;">
+          <div class="stat-card"><div class="stat-num" id="earnTotal">—</div><div class="stat-label">Total Earned</div></div>
+          <div class="stat-card"><div class="stat-num" id="earnPending">—</div><div class="stat-label">Pending</div></div>
+          <div class="stat-card"><div class="stat-num" id="earnPaid">—</div><div class="stat-label">Paid Out</div></div>
+          <div class="stat-card"><div class="stat-num" id="earnLive">—</div><div class="stat-label">Templates Live</div></div>
+        </div>
+
+        <div class="card-section" style="margin-bottom:20px;">
+          <div class="card-section-title">Projected monthly revenue</div>
+          <div style="font-size:.82rem;color:var(--dim);margin-bottom:14px;line-height:1.6;">
+            Based on your live templates × average template price × 70% contributor share.
+            This is a projection — actual revenue activates when Shopify revenue tracking goes live.
+          </div>
+          <div class="stats-row">
+            <div class="stat-card"><div class="stat-num" id="earnProjected">—</div><div class="stat-label">Projected / mo</div></div>
+            <div class="stat-card"><div class="stat-num" id="earnUsed">—</div><div class="stat-label">Total Template Uses</div></div>
+            <div class="stat-card"><div class="stat-num" id="earnRate">70%</div><div class="stat-label">Your Share</div></div>
+          </div>
+        </div>
+
+        <div id="templateEarningsBreakdown" style="margin-bottom:20px;"></div>
+        <div class="card-section">
+          <div class="card-section-title">PayPal Payout Settings</div>
+          <div class="field" style="margin-bottom:12px;"><label>PayPal Email</label><input type="email" id="paypalEmail" placeholder="your@paypal.com"><span class="field-hint">Earnings paid to this address.</span></div>
+          <button class="btn btn-primary" onclick="savePaypalEmail()">Save PayPal Email →</button>
+        </div>
+        <div class="card-section"><div class="card-section-title">Payout History</div><div id="payoutHistory"><div style="padding:32px 0;font-style:italic;font-size:.9rem;color:var(--dim);text-align:center;">Payout history will appear here once your first payout is processed.</div></div></div>
+        <div class="card-section" style="background:rgba(201,168,76,.04);border-color:rgba(201,168,76,.15);">
+          <div class="card-section-title" style="color:var(--glt);">How payouts work</div>
+          <div style="font-size:.85rem;color:var(--dim);line-height:1.9;">
+            <div>✦ You earn <strong style="color:white;">70%</strong> of every course enrollment and product sale.</div>
+            <div>✦ Payouts processed <strong style="color:white;">monthly</strong> to your PayPal email. Minimum <strong style="color:white;">$25</strong>.</div>
+            <div style="margin-top:8px;">Questions? <a href="mailto:info@cultureschool.org" style="color:var(--gold);">info@cultureschool.org</a></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- COCO ART -->
+      <div class="panel" id="panel-cocoart">
+        <div class="page-header"><div class="page-eyebrow">Community</div><h1 class="page-title">Submit to CoCo Art</h1><p class="page-sub">Human-made art only — your designs power the tools thousands of people use every day.</p></div>
+        <div class="card-section" style="background:rgba(201,168,76,.04);border-color:rgba(201,168,76,.15);margin-bottom:24px;">
+          <div style="font-size:.88rem;color:rgba(255,255,255,.7);line-height:1.9;">
+            <div>✦ Your art appears in Daily Inspo, envelope liners, vision board frames, and backgrounds.</div>
+            <div>✦ Your name and storefront link are credited. Compensation model in development — early contributors on record.</div>
+          </div>
+        </div>
+        <div class="card-section">
+          <div class="card-section-title">Submit a piece</div>
+          <div class="modal-fields">
+            <div class="field"><label>Title</label><input type="text" id="artTitle" placeholder="e.g. Indigo Tile Pattern No. 3"></div>
+            <div class="field"><label>Description / Note</label><textarea id="artDesc" style="min-height:80px;" placeholder="What inspired this? Any cultural context?"></textarea></div>
+            <div class="field-row">
+              <div class="field"><label>Art type</label><select id="artType"><option value="pattern">Pattern / Tile</option><option value="illustration">Illustration</option><option value="texture">Texture / Background</option><option value="border">Border / Frame</option><option value="motif">Motif / Symbol</option><option value="other">Other</option></select></div>
+              <div class="field"><label>Cultural tags</label><input type="text" id="artTags" placeholder="e.g. west african, geometric"><span class="field-hint">Comma-separated</span></div>
+            </div>
+            <div class="field"><label>Image URL</label><input type="url" id="artImageUrl" placeholder="https://..."><span class="field-hint">PNG or JPG, min 1000px. Upload to Supabase storage first.</span></div>
+            <button class="btn btn-primary" style="margin-top:8px;" onclick="submitCocoArt()">✦ Submit for Review →</button>
+            <div id="artSubmitStatus" style="margin-top:10px;font-size:.82rem;min-height:20px;color:var(--ok);"></div>
+          </div>
+        </div>
+        <div class="card-section"><div class="card-section-title">Your submissions</div><div id="myArtSubmissions"><div style="padding:32px 0;font-style:italic;font-size:.9rem;color:var(--dim);text-align:center;">Loading submissions…</div></div></div>
+      </div>
+
+
+      <!-- ── ADMIN REVIEW PANEL ── -->
+      <div class="panel" id="panel-admin">
+        <div class="page-header">
+          <div class="page-eyebrow">Admin</div>
+          <h1 class="page-title">Review Queue</h1>
+          <p class="page-sub">Approve or reject submitted templates. Approved templates go live in the viewers table immediately.</p>
+        </div>
+        <div class="card-section">
+          <div class="card-section-title" style="display:flex;align-items:center;justify-content:space-between;">
+            <span>Pending submissions</span>
+            <button class="btn btn-ghost btn-sm" onclick="loadAdminQueue()">↺ Refresh</button>
+          </div>
+          <div id="adminQueueList">
+            <div style="padding:40px 0;text-align:center;font-style:italic;color:var(--dim);font-size:.9rem;">Loading queue…</div>
+          </div>
+        </div>
+        <div class="card-section">
+          <div class="card-section-title" style="display:flex;align-items:center;justify-content:space-between;">
+            <span>Textile submissions <span id="cocoQueueCount" style="color:var(--gold);">0</span></span>
+            <button class="btn btn-ghost btn-sm" onclick="loadCocoArtQueue()">&#8635; Refresh</button>
+          </div>
+          <div id="cocoQueueList">
+            <div style="padding:40px 0;text-align:center;font-style:italic;color:var(--dim);font-size:.9rem;">Loading…</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SUBMIT TEMPLATE PANEL ── -->
+      <div class="panel" id="panel-tpl-submit">
+        <div class="page-header">
+          <div class="page-eyebrow">Marketplace</div>
+          <h1 class="page-title">Submit a Template</h1>
+          <p class="page-sub">Your HTML template enters a review queue. Once approved it goes live in the CoCo ecosystem under your name.</p>
+        </div>
+
+        <div class="card-section" style="background:rgba(201,168,76,.04);border-color:rgba(201,168,76,.15);margin-bottom:24px;">
+          <div style="font-size:.85rem;color:rgba(255,255,255,.7);line-height:1.9;">
+            <div>✦ Your template appears in the Flourish workspace and in CoCo packs — credited to you.</div>
+            <div>✦ Approved templates earn 70% of every sale they're included in once revenue share is live.</div>
+            <div>✦ Review takes 2–5 business days. You'll get an email when it's approved or if changes are needed.</div>
+          </div>
+        </div>
+
+        <!-- Step 1: File or URL -->
+        <div class="card-section">
+          <div class="card-section-title">Step 1 — Choose how to submit</div>
+          <div style="display:flex;gap:10px;margin-bottom:18px;">
+            <button id="modeFileBtn" class="btn btn-primary btn-sm" onclick="setSubmitMode('file')">⬆ Upload HTML file</button>
+            <button id="modeUrlBtn"  class="btn btn-ghost btn-sm"  onclick="setSubmitMode('url')">🔗 Submit a URL</button>
+          </div>
+
+          <!-- URL mode -->
+          <div id="urlSubmitMode" style="display:none;">
+            <div class="field">
+              <label>Hosted template URL</label>
+              <input type="url" id="tplUrl" placeholder="https://yourname.github.io/template  or  Figma embed URL"
+                oninput="handleUrlInput(this.value)">
+              <span class="field-hint">GitHub Pages, Netlify, Squarespace, or any public URL. Figma prototype links work too.</span>
+            </div>
+            <div id="urlPreviewSection" style="display:none;margin-top:14px;">
+              <div class="card-section-title">Preview</div>
+              <div class="preview-frame-wrap">
+                <iframe id="tplUrlPreviewFrame" class="preview-frame" sandbox="allow-scripts allow-same-origin allow-popups" title="URL preview"></iframe>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 1: Upload HTML -->
+        <div class="card-section">
+          <div class="card-section-title">Step 1 — Upload your HTML file</div>
+          <div class="html-upload-zone" id="htmlUploadZone"
+               onclick="document.getElementById('htmlFileInput').click()"
+               ondragover="dragOver(event,'htmlUploadZone')" ondragleave="dragLeave('htmlUploadZone')"
+               ondrop="dropHtmlFile(event)">
+            <input type="file" id="htmlFileInput" accept=".html,text/html" style="display:none" onchange="handleHtmlFile(this.files[0])">
+            <div style="font-size:2rem;margin-bottom:10px;">◈</div>
+            <div style="font-size:.9rem;color:var(--muted);margin-bottom:6px;">Click or drag your HTML file here</div>
+            <div style="font-size:.72rem;color:var(--dim);">.html only · self-contained · palette-reactive preferred</div>
+          </div>
+          <div id="htmlFileStatus" style="margin-top:10px;font-size:.82rem;min-height:20px;color:var(--ok);"></div>
+        </div>
+
+        <!-- Step 2: Preview -->
+        <div class="card-section" id="tplPreviewSection" style="display:none;">
+          <div class="card-section-title" style="display:flex;align-items:center;justify-content:space-between;">
+            <span>Step 2 — Preview</span>
+            <button class="btn btn-ghost btn-sm" onclick="clearHtmlFile()">✕ Remove file</button>
+          </div>
+          <p style="font-size:.82rem;color:var(--dim);margin-bottom:14px;line-height:1.6;">
+            This is exactly how your template will render in the CoCo workspace. Check it looks right before submitting.
+          </p>
+          <div class="preview-frame-wrap">
+            <iframe id="tplPreviewFrame" class="preview-frame" sandbox="allow-scripts allow-same-origin" title="Template preview"></iframe>
+          </div>
+        </div>
+
+        <!-- Step 3: Metadata -->
+        <div class="card-section" id="tplMetaSection" style="display:none;">
+          <div class="card-section-title">Step 3 — Details</div>
+          <div class="modal-fields">
+            <div class="field">
+              <label>Template name</label>
+              <input type="text" id="tplName" placeholder="e.g. Indigo Garden Wedding Invitation">
+            </div>
+            <div class="field-row">
+              <div class="field">
+                <label>Template type</label>
+                <select id="tplType">
+                  <option value="invitation">Invitation</option>
+                  <option value="landing_page">Landing Page</option>
+                  <option value="card">Card</option>
+                  <option value="greeting_card">Greeting Card</option>
+                  <option value="announcement">Announcement</option>
+                  <option value="collage">Collage / Mood Board</option>
+                  <option value="boutique">Boutique / Storefront</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Occasion</label>
+                <select id="tplOccasion">
+                  <option value="wedding">Wedding</option>
+                  <option value="birthday">Birthday</option>
+                  <option value="celebration">Celebration</option>
+                  <option value="cultural">Cultural</option>
+                  <option value="bachelorette">Bachelorette</option>
+                  <option value="graduation">Graduation</option>
+                  <option value="launch">Launch</option>
+                  <option value="community">Community</option>
+                  <option value="wellness">Wellness</option>
+                  <option value="holiday">Holiday</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+            </div>
+            <div class="field">
+              <label>Description</label>
+              <textarea id="tplDesc" placeholder="What is this template for? What makes it distinctive? Any cultural context the reviewer should know?" style="min-height:90px;"></textarea>
+            </div>
+            <div class="field-row">
+              <div class="field">
+                <label>Tags <span style="font-weight:300;text-transform:none;letter-spacing:0;">(comma-separated)</span></label>
+                <input type="text" id="tplTags" placeholder="e.g. floral, west african, modern">
+              </div>
+              <div class="field">
+                <label>Palette code <span style="font-weight:300;text-transform:none;letter-spacing:0;">(optional)</span></label>
+                <input type="text" id="tplPaletteCode" placeholder="e.g. gullah_sea_island_indigo">
+                <span class="field-hint">Links template to a CoCo palette</span>
+              </div>
+            </div>
+            <div class="field">
+              <label>Cover image URL <span style="font-weight:300;text-transform:none;letter-spacing:0;">(optional but recommended)</span></label>
+              <input type="url" id="tplThumb" placeholder="https://… — screenshot your template and host it">
+              <span class="field-hint">1200×800px ideal. Use Shopify files or any public image host.</span>
+            </div>
+            <div style="margin-top:16px;display:flex;gap:12px;flex-wrap:wrap;">
+              <button class="btn btn-primary" onclick="submitTemplate()">✦ Submit for review →</button>
+              <button class="btn btn-ghost btn-sm" onclick="clearHtmlFile()" style="align-self:center;">Start over</button>
+            </div>
+            <div id="tplSubmitStatus" style="margin-top:10px;font-size:.82rem;min-height:20px;color:var(--ok);"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── MY SUBMISSIONS PANEL ── -->
+      <div class="panel" id="panel-tpl-mine">
+        <div class="page-header">
+          <div class="page-eyebrow">Marketplace</div>
+          <h1 class="page-title">My Submissions</h1>
+          <p class="page-sub">Track the status of every template you've submitted for review.</p>
+        </div>
+
+        <div class="stats-row" style="margin-bottom:28px;">
+          <div class="stat-card"><div class="stat-num" id="tplStatTotal">—</div><div class="stat-label">Submitted</div></div>
+          <div class="stat-card"><div class="stat-num" id="tplStatPending">—</div><div class="stat-label">In Review</div></div>
+          <div class="stat-card"><div class="stat-num" id="tplStatApproved">—</div><div class="stat-label">Live</div></div>
+          <div class="stat-card"><div class="stat-num" id="tplStatUsed">—</div><div class="stat-label">Times Used</div></div>
+        </div>
+
+        <div class="card-section">
+          <div class="card-section-title">Your templates</div>
+          <div id="mySubmissionsList">
+            <div style="padding:40px 0;text-align:center;font-style:italic;color:var(--dim);font-size:.9rem;">Loading submissions…</div>
+          </div>
+        </div>
+
+        <div class="card-section" style="background:rgba(201,168,76,.04);border-color:rgba(201,168,76,.15);">
+          <div class="card-section-title" style="color:var(--glt);">Review timeline</div>
+          <div style="font-size:.85rem;color:var(--dim);line-height:1.9;">
+            <div>✦ <strong style="color:white;">2–5 days</strong> — typical review window.</div>
+            <div>✦ You'll get an email with feedback if changes are needed.</div>
+            <div>✦ Approved templates go live immediately and start earning on the next sales cycle.</div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- MOBILE NAV -->
+<div class="mobile-nav">
+  <button class="mobile-nav-btn active" id="mnCourses" onclick="showPanel('courses',this);setMobileActive(this)">
+    <span>📚</span>Courses
+  </button>
+  <button class="mobile-nav-btn" id="mnLessons" onclick="showPanel('lessons',this);setMobileActive(this)">
+    <span>🎬</span>Lessons
+  </button>
+  <button class="mobile-nav-btn" id="mnDocs" onclick="showPanel('resources',this);setMobileActive(this)">
+    <span>📄</span>Docs
+  </button>
+  <button class="mobile-nav-btn" id="mnUpload" onclick="showPanel('upload',this);setMobileActive(this)">
+    <span>⬆</span>Upload
+  </button>
+  <button class="mobile-nav-btn" id="mnProfile" onclick="showPanel('profile',this);setMobileActive(this)">
+    <span>◆</span>Profile
+  </button>
+</div>
+
+<!-- COURSE MODAL -->
+<div class="modal-bg" id="courseModal" onclick="closeModal('courseModal',event)">
+  <div class="modal-box">
+    <h2 class="modal-title" id="courseModalTitle">New Course</h2>
+    <input type="hidden" id="editCourseId">
+    <div class="modal-fields">
+      <div class="field">
+        <label>Course title</label>
+        <input type="text" id="courseTitle" placeholder="Wellness Through Color &amp; Intention">
+        <span class="field-hint">Use a dash to create a two-line hero title: "Wellness Through Color - &amp; Intention"</span>
+      </div>
+      <div class="field">
+        <label>Tagline</label>
+        <input type="text" id="courseTagline" placeholder="Learn to read color the way your body already knows how.">
+      </div>
+      <div class="field">
+        <label>Description</label>
+        <textarea id="courseDesc" placeholder="What will students walk away knowing or feeling?"></textarea>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Price (USD)</label>
+          <input type="number" id="coursePrice" placeholder="97" min="0" step="1">
+          <span class="field-hint">Enter 0 for free</span>
+        </div>
+        <div class="field">
+          <label>Cover image URL</label>
+          <input type="url" id="courseCover" placeholder="https://…">
+        </div>
+      </div>
+      <div class="field">
+        <label>Cover focal point</label>
+        <select id="courseFocal">
+          <option value="center top">Center top (default)</option>
+          <option value="center center">Center</option>
+          <option value="center bottom">Center bottom</option>
+          <option value="50% 20%">Upper center (20%)</option>
+          <option value="50% 30%">Upper center (30%)</option>
+          <option value="50% 40%">Upper center (40%)</option>
+        </select>
+        <span class="field-hint">Controls where the cover crops when the full image won't fit</span>
+      </div>
+      <div class="field">
+        <label>Cultural tags</label>
+        <input type="text" id="courseTags" placeholder="wellness, color, design, celebration, yoga, sound bath">
+        <span class="field-hint">Comma-separated — used by CoCoCreate search and discovery</span>
+      </div>
+      <div class="field">
+        <label>What students will learn</label>
+        <textarea id="courseLearning" style="min-height:140px;" placeholder="One outcome per line:&#10;How to extract a color story from any image&#10;The emotional language of color&#10;How to use CoCo Daily Inspo as a wellness ritual"></textarea>
+        <span class="field-hint">Each line becomes one bullet on the course page</span>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="document.getElementById('courseModal').classList.remove('open')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveCourse()">+ Save Course</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ── SUPABASE ── */
+const SUPA_URL = 'https://qwulthvbwujfehgdegtn.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3dWx0aHZid3VqZmVoZ2RlZ3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQyMDcxODIsImV4cCI6MjA1OTc4MzE4Mn0.t9n4eZng6d0jggiPNK-J_DByvEE2L9tqy5Xh_1-TSoQ';
+const db = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+const BUCKET = 'public-uploads';
+
+let USER    = null;
+let COURSES = [];
+
+/* ── AUTH ── */
+
+/* ══════════════════════════════════════════════════════════════
+   ADMIN — access-code gated review queue
+═══════════════════════════════════════════════════════════════ */
+let _isAdmin = false;
+
+const ADMIN_EMAILS = ['stacey.a.grant@gmail.com'];
+
+function checkAdminAccess(email) {
+  if (!email) return;
+  if (ADMIN_EMAILS.includes(email.toLowerCase().trim())) {
+    _isAdmin = true;
+    document.getElementById('sidebar-admin').style.display = 'block';
+    loadAdminQueue();
+    loadCocoArtQueue();
+  }
+}
+
+async function loadAdminQueue() {
+  const list = document.getElementById('adminQueueList');
+  if (!list) return;
+  try {
+    const { data, error } = await db
+      .from('creative_submissions')
+      .select('*')
+      .eq('status', 'pending')
+      .order('created_at', { ascending: true });
+    if (error) throw error;
+
+    document.getElementById('adminQueueCount').textContent = data.length;
+
+    if (!data.length) {
+      list.innerHTML = '<div style="padding:40px 0;text-align:center;font-style:italic;color:var(--dim);">Queue is clear ✦</div>';
+      return;
+    }
+
+    list.innerHTML = data.map(r => {
+      const date = new Date(r.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+      const tags  = Array.isArray(r.tags) ? r.tags.join(', ') : (r.tags || '');
+      return `<div class="admin-queue-card" id="qcard-${r.id}">
+        <div class="admin-queue-header">
+          <div>
+            <div style="font:600 .95rem/1.2 var(--sans);color:white;">${r.name}</div>
+            <div class="admin-queue-meta">${r.template_type} · ${r.occasion_tag} · by ${r.author_email} · ${date}</div>
+            ${r.description ? `<div style="font-size:.8rem;color:var(--dim);margin-top:6px;line-height:1.5;">${r.description}</div>` : ''}
+            ${tags ? `<div style="font-size:.72rem;color:var(--dim);margin-top:4px;">Tags: ${tags}</div>` : ''}
+          </div>
+          <span class="status-pill pending">pending</span>
+        </div>
+        ${r.html_content
+          ? `<iframe class="admin-preview" sandbox="allow-scripts allow-same-origin"
+               srcdoc="${r.html_content.replace(/"/g, '&quot;')}" title="${r.name}"></iframe>`
+          : `<div style="height:120px;display:flex;align-items:center;justify-content:center;color:var(--dim);font-style:italic;">No HTML content</div>`}
+        <div class="admin-actions">
+          <input class="admin-note" type="text" id="note-${r.id}" placeholder="Reviewer note (optional — sent to contributor if rejected)">
+          <button class="btn-approve" onclick="approveSubmission('${r.id}')">✓ Approve</button>
+          <button class="btn-reject"  onclick="rejectSubmission('${r.id}')">✕ Reject</button>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    list.innerHTML = `<div style="padding:20px;color:var(--err);font-size:.85rem;">Error loading queue: ${e.message}</div>`;
+  }
+}
+
+function slugify(str) {
+  return str.toLowerCase().trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+async function approveSubmission(id) {
+  const card = document.getElementById('qcard-' + id);
+  card.querySelectorAll('.btn-approve, .btn-reject').forEach(b => { b.disabled = true; b.style.opacity = '.4'; });
+  const note = document.getElementById('note-' + id)?.value.trim() || null;
+
+  // Fresh auth — exactly like legacy skin save
+  const { data: { user }, error: authError } = await db.auth.getUser();
+  if (authError || !user) { alert('Auth error — please sign in again.'); return; }
+
+  const { data: sub, error: fetchErr } = await db
+    .from('creative_submissions').select('*').eq('id', id).single();
+  if (fetchErr) { alert('Could not fetch submission: ' + fetchErr.message); return; }
+
+  const slug = slugify(sub.name);
+  const { data: existing } = await db.from('viewers').select('key').eq('key', slug).maybeSingle();
+  const finalSlug = existing ? slug + '-' + id.slice(0,6) : slug;
+
+  // HTML goes directly into column — no storage upload, matches legacy exactly
+  const viewerRow = {
+    key:          finalSlug,
+    slug:         finalSlug,
+    title:        sub.name,
+    viewer_key:   finalSlug,
+    author_email: user.email.toLowerCase(),
+    is_listed:    true,
+    html:         sub.html_content,
+    css:          null,
+    js:           null,
+    meta:         { source: 'contributor', submission_id: id },
+  };
+
+  const { data: viewerData, error: insertErr } = await db
+    .from('viewers')
+    .upsert(viewerRow, { onConflict: 'key' })
+    .select('key, slug, title')
+    .single();
+
+  if (insertErr) { alert('Viewer insert failed: ' + insertErr.message); return; }
+
+  await db.from('creative_submissions').update({
+    status: 'approved',
+    reviewer_note: note,
+    updated_at: new Date().toISOString(),
+  }).eq('id', id);
+
+  card.style.opacity = '0.4';
+  card.style.pointerEvents = 'none';
+  card.querySelector('.status-pill').className = 'status-pill approved';
+  card.querySelector('.status-pill').textContent = 'approved ✓';
+  card.querySelector('.admin-actions').innerHTML =
+    '<span style="color:#4ade80;font-size:.85rem;">✓ Saved as "' + (viewerData?.title || finalSlug) + '"</span>';
+
+  document.getElementById('adminQueueCount').textContent =
+    Math.max(0, parseInt(document.getElementById('adminQueueCount').textContent) - 1);
+}
+
+async function rejectSubmission(id) {
+  const note = document.getElementById('note-' + id)?.value.trim();
+  if (!note) { alert('Add a note explaining what needs to change — it will be sent to the contributor.'); return; }
+  const rejCard = document.getElementById('qcard-' + id);
+  rejCard.querySelectorAll('.btn-approve, .btn-reject').forEach(b => { b.disabled = true; b.style.opacity = '.4'; });
+
+  await db.from('creative_submissions').update({
+    status: 'rejected',
+    reviewer_note: note,
+    updated_at: new Date().toISOString(),
+  }).eq('id', id);
+
+  rejCard.style.opacity = '0.4';
+  rejCard.style.pointerEvents = 'none';
+  rejCard.querySelector('.status-pill').className = 'status-pill rejected';
+  rejCard.querySelector('.status-pill').textContent = 'rejected';
+  rejCard.querySelector('.admin-actions').innerHTML =
+    '<span style="color:#f87171;font-size:.85rem;">✕ Rejected — note saved</span>';
+
+  document.getElementById('adminQueueCount').textContent =
+    Math.max(0, parseInt(document.getElementById('adminQueueCount').textContent) - 1);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   TEMPLATE SUBMISSION
+   Creatives upload an HTML file → preview it → add metadata
+   → submit to creative_submissions table for Stacey's review.
+═══════════════════════════════════════════════════════════════ */
+
+let _htmlContent = null;   // raw HTML string of uploaded file
+let _htmlFileName = '';
+
+function dropHtmlFile(e) {
+  e.preventDefault();
+  document.getElementById('htmlUploadZone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) handleHtmlFile(file);
+}
+
+function handleHtmlFile(file) {
+  if (!file || !file.name.endsWith('.html')) {
+    toast('Please upload an .html file', 'err'); return;
+  }
+  _htmlFileName = file.name;
+  const reader = new FileReader();
+  reader.onload = e => {
+    _htmlContent = e.target.result;
+    // Show status
+    document.getElementById('htmlFileStatus').textContent =
+      '✓ ' + file.name + ' loaded (' + Math.round(file.size/1024) + ' KB)';
+    // Load into preview iframe
+    const frame = document.getElementById('tplPreviewFrame');
+    frame.srcdoc = _htmlContent;
+    document.getElementById('tplPreviewSection').style.display = 'block';
+    document.getElementById('tplMetaSection').style.display = 'block';
+    // Pre-fill name from filename
+    const nameGuess = file.name.replace('.html','').replace(/[-_]/g,' ')
+      .replace(/\b\w/g, l => l.toUpperCase());
+    if (!document.getElementById('tplName').value) {
+      document.getElementById('tplName').value = nameGuess;
+    }
+  };
+  reader.readAsText(file);
+}
+
+function clearHtmlFile() {
+  _htmlContent = null; _htmlFileName = '';
+  document.getElementById('htmlFileInput').value = '';
+  document.getElementById('htmlFileStatus').textContent = '';
+  document.getElementById('tplPreviewSection').style.display = 'none';
+  document.getElementById('tplMetaSection').style.display = 'none';
+  document.getElementById('tplSubmitStatus').textContent = '';
+}
+
+async function submitTemplate() {
+  const isUrlMode = _submitMode === 'url';
+  const tplUrl = document.getElementById('tplUrl')?.value.trim();
+  if (!isUrlMode && !_htmlContent) { toast('Upload an HTML file first', 'err'); return; }
+  if (isUrlMode && !tplUrl) { toast('Enter a template URL first', 'err'); return; }
+  const name = document.getElementById('tplName').value.trim();
+  if (!name) { toast('Give your template a name', 'err'); return; }
+  const desc = document.getElementById('tplDesc').value.trim();
+  if (!desc) { toast('Add a description', 'err'); return; }
+
+  const payload = {
+    name,
+    description:    desc,
+    template_type:  document.getElementById('tplType').value,
+    occasion_tag:   document.getElementById('tplOccasion').value,
+    tags:           document.getElementById('tplTags').value.split(',').map(t=>t.trim()).filter(Boolean),
+    palette_code:   document.getElementById('tplPaletteCode').value.trim() || null,
+    thumb_url:      document.getElementById('tplThumb').value.trim() || null,
+    html_content:   isUrlMode ? null : _htmlContent,
+    file_name:      isUrlMode ? tplUrl : _htmlFileName,
+    author_email:   _currentUser?.email || '',
+    status:         'pending',
+    created_at:     new Date().toISOString(),
+  };
+
+  const statusEl = document.getElementById('tplSubmitStatus');
+  statusEl.style.color = 'var(--dim)';
+  statusEl.textContent = 'Submitting…';
+
+  try {
+    const { error } = await db.from('creative_submissions').insert(payload);
+    if (error) throw error;
+    statusEl.style.color = 'var(--ok)';
+    statusEl.textContent = "✦ Submitted! You'll hear back within 2–5 days.";
+    toast('Template submitted for review ✦');
+    // Reset after delay and jump to My Submissions
+    setTimeout(() => {
+      clearHtmlFile();
+      ['tplName','tplDesc','tplTags','tplPaletteCode','tplThumb'].forEach(id => {
+        document.getElementById(id).value = '';
+      });
+      showPanel('tpl-mine', null);
+      loadMySubmissions();
+    }, 2000);
+  } catch(e) {
+    statusEl.style.color = 'var(--err)';
+    statusEl.textContent = 'Submission failed — ' + (e.message || 'try again');
+    toast('Submission failed', 'err');
+  }
+}
+
+let _submitMode = 'file';
+
+function setSubmitMode(mode) {
+  _submitMode = mode;
+  document.getElementById('urlSubmitMode').style.display    = mode === 'url'  ? 'block' : 'none';
+  document.getElementById('htmlUploadZone').closest('.card-section').style.display =
+    mode === 'file' ? 'block' : 'none';
+  document.getElementById('modeFileBtn').className = mode === 'file'
+    ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm';
+  document.getElementById('modeUrlBtn').className  = mode === 'url'
+    ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm';
+  if (mode === 'url') {
+    clearHtmlFile();
+    document.getElementById('tplPreviewSection').style.display = 'none';
+    document.getElementById('tplMetaSection').style.display    = 'none';
+  }
+}
+
+function handleUrlInput(val) {
+  const url = val.trim();
+  if (!url || !url.startsWith('http')) {
+    document.getElementById('urlPreviewSection').style.display = 'none';
+    return;
+  }
+  document.getElementById('tplUrlPreviewFrame').src = url;
+  document.getElementById('urlPreviewSection').style.display = 'block';
+  document.getElementById('tplMetaSection').style.display    = 'block';
+  if (!document.getElementById('tplName').value) {
+    const guess = url.split('/').pop().replace(/[-_.]/g,' ')
+      .replace(/\.html?$/,'').replace(/\b\w/g, l => l.toUpperCase()).trim();
+    if (guess) document.getElementById('tplName').value = guess;
+  }
+}
+
+async function deleteSubmission(id, btn) {
+  if (!confirm('Delete this submission? This cannot be undone.')) return;
+  btn.textContent = 'Deleting…'; btn.disabled = true;
+  const { error } = await db.from('creative_submissions').delete().eq('id', id);
+  if (error) { btn.textContent = 'Delete'; btn.disabled = false; toast('Delete failed: ' + error.message, 'err'); return; }
+  btn.closest('.tpl-card').remove();
+  toast('Submission deleted');
+  loadMySubmissions();
+}
+
+async function loadMySubmissions() {
+  const email = _currentUser?.email;
+  if (!email) return;
+  const list = document.getElementById('mySubmissionsList');
+
+  try {
+    const { data, error } = await db
+      .from('creative_submissions')
+      .select('id, name, template_type, occasion_tag, status, thumb_url, created_at, reviewer_note')
+      .eq('author_email', email)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    // Stats
+    const total    = data.length;
+    const pending  = data.filter(r=>r.status==='pending').length;
+    const approved = data.filter(r=>r.status==='approved').length;
+    document.getElementById('tplStatTotal').textContent    = total;
+    document.getElementById('tplStatPending').textContent  = pending;
+    document.getElementById('tplStatApproved').textContent = approved;
+    document.getElementById('tplStatUsed').textContent     = '—';
+    document.getElementById('tplCount').textContent        = total;
+
+    if (!total) {
+      list.innerHTML = '<div style="padding:40px 0;text-align:center;font-style:italic;color:var(--dim);font-size:.9rem;">No submissions yet — submit your first template above.</div>';
+      return;
+    }
+
+    list.innerHTML = data.map(r => {
+      const thumb = r.thumb_url
+        ? `<img src="${r.thumb_url}" class="tpl-thumb" alt="">`
+        : `<div class="tpl-thumb-placeholder">◈</div>`;
+      const date = new Date(r.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+      const note = r.reviewer_note
+        ? `<div style="font-size:.75rem;color:var(--dim);margin-top:6px;font-style:italic;">Note: ${r.reviewer_note}</div>` : '';
+      return `<div class="tpl-card">
+        ${thumb}
+        <div>
+          <div style="font:600 .9rem/1.2 var(--sans);color:white;margin-bottom:4px;">${r.name}</div>
+          <div style="font-size:.72rem;color:var(--dim);">${r.template_type} · ${r.occasion_tag} · ${date}</div>
+          ${note}
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
+          <span class="status-pill ${r.status}">${r.status}</span>
+          ${r.status === 'pending' ? `<button onclick="deleteSubmission('${r.id}',this)" style="background:none;border:1px solid rgba(248,113,113,.3);color:#f87171;border-radius:6px;padding:4px 10px;font:.6rem/1 var(--sans);cursor:pointer;letter-spacing:.08em;text-transform:uppercase;">Delete</button>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+
+  } catch(e) {
+    list.innerHTML = '<div style="padding:20px;color:var(--err);font-size:.85rem;">Could not load submissions.</div>';
+  }
+}
+
+/* Hook loadMySubmissions into panel switch */
+
+async function signIn() {
+  const email = document.getElementById('authEmail').value.trim();
+  const errEl = document.getElementById('authError');
+  errEl.textContent = '';
+  if (!email) { errEl.textContent = 'Enter your email address.'; return; }
+  const { error } = await db.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: 'https://coco-teach.cultureschool.org' }
+  });
+  if (error) { errEl.textContent = error.message; return; }
+  document.getElementById('authForm').style.display        = 'none';
+  document.getElementById('authSentState').style.display   = 'block';
+  document.getElementById('authSentEmail').textContent     = email;
+  document.getElementById('authSub').style.display         = 'none';
+}
+
+function resetAuthForm() {
+  document.getElementById('authForm').style.display      = 'block';
+  document.getElementById('authSentState').style.display = 'none';
+  document.getElementById('authSub').style.display       = 'block';
+  document.getElementById('authEmail').value             = '';
+  document.getElementById('authError').textContent       = '';
+}
+
+async function handleMagicLinkRedirect() {
+  const { data: { session } } = await db.auth.getSession();
+  if (session?.user) { await boot(session.user); return; }
+  db.auth.onAuthStateChange(async (event, session) => {
+    if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user) {
+      await boot(session.user);
+    }
+  });
+}
+
+async function signOut() {
+  await db.auth.signOut();
+  USER = null;
+  document.getElementById('authScreen').style.display = 'flex';
+  document.getElementById('appScreen').classList.remove('visible');
+}
+
+let _currentUser = null;
+async function boot(user) {
+  _currentUser = user;
+  USER = user;
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('appScreen').classList.add('visible');
+  document.getElementById('navUser').textContent = user.email;
+  checkAdminAccess(user.email);
+  await Promise.all([loadCourses(), loadProfile(), loadSettings()]);
+  loadLessons();
+  loadResources();
+}
+
+(async () => { await handleMagicLinkRedirect(); })();
+
+/* ── PANEL NAV ── */
+function showPanel(name, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sidebar .nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + name)?.classList.add('active');
+  if (btn && btn.classList.contains('nav-item')) btn.classList.add('active');
+  if (name === 'tpl-mine') loadMySubmissions();
+  if (name === 'admin')    loadAdminQueue();
+  if (name === 'lessons')   loadLessons();
+  if (name === 'resources') loadResources();
+  if (name === 'upload')    populateUploadSelects();
+  if (name === 'earnings')  loadEarnings();
+  if (name === 'cocoart')   loadMyArtSubmissions();
+}
+
+function setMobileActive(btn) {
+  document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function switchUploadTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  if (tab === 'video') {
+    document.getElementById('tabVideo').classList.add('active');
+    document.getElementById('uploadTabVideo').classList.add('active');
+  } else {
+    document.getElementById('tabDocs').classList.add('active');
+    document.getElementById('uploadTabDocs').classList.add('active');
+  }
+}
+
+/* ── COURSES ── */
+async function loadCourses() {
+  if (!USER) return;
+  const { data, error } = await db
+    .from('courses').select('*')
+    .eq('instructor_email', USER.email)
+    .order('created_at', { ascending: false });
+  if (error) { toast('Error loading courses', 'err'); return; }
+  COURSES = data || [];
+
+  document.getElementById('statCourses').textContent   = COURSES.length;
+  document.getElementById('statPublished').textContent = COURSES.filter(c => c.is_published).length;
+  document.getElementById('courseCount').textContent   = COURSES.length;
+
+  renderCourseGrid();
+  populateUploadSelects();
+  populateLessonFilter();
+  populateResourceFilter();
+
+  const { count: lCount } = await db
+    .from('studio_uploads').select('*', { count:'exact', head:true })
+    .eq('email', USER.email);
+  document.getElementById('statLessons').textContent = lCount || 0;
+
+  const { count: dCount } = await db
+    .from('course_resources').select('*', { count:'exact', head:true })
+    .eq('instructor_email', USER.email);
+  document.getElementById('statDocs').textContent = dCount || 0;
+}
+
+function renderCourseGrid() {
+  const grid = document.getElementById('courseGrid');
+  if (!COURSES.length) {
+    grid.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">📚</div>
+        <div class="empty-title">No courses yet</div>
+        <div class="empty-sub">Create your first course to get started.</div>
+        <button class="btn btn-primary" onclick="openCourseModal()">+ Create Course</button>
+      </div>`;
+    return;
+  }
+  grid.innerHTML = COURSES.map(c => `
+    <div class="course-row">
+      <div class="course-thumb">
+        ${c.cover_url ? '<img src="'+esc(c.cover_url)+'" alt="" style="object-position:'+esc(c.cover_focal||'center top')+'">' : '📚'}
+      </div>
+      <div class="course-info">
+        <div class="course-name">${esc(c.title)}</div>
+        <div class="course-meta">
+          <span>${c.price_cents ? '$'+(c.price_cents/100).toFixed(0) : 'Free'}</span>
+          <span>${(c.cultural_tags||[]).join(', ')}</span>
+        </div>
+      </div>
+      <div class="course-actions">
+        <span class="course-status ${c.is_published ? 'status-published' : 'status-draft'}">
+          ${c.is_published ? '✓ Live' : '○ Draft'}
+        </span>
+        <button class="btn-icon" onclick="editCourse('${c.id}')" title="Edit">✎</button>
+        <button class="btn-icon" onclick="togglePublish('${c.id}',${!!c.is_published})" title="${c.is_published?'Unpublish':'Publish'}">
+          ${c.is_published ? '⏸' : '▶'}
+        </button>
+        <button class="btn-icon danger" onclick="deleteCourse('${c.id}')" title="Delete">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+function openCourseModal(id) {
+  document.getElementById('courseModalTitle').textContent = id ? 'Edit Course' : 'New Course';
+  document.getElementById('editCourseId').value = id || '';
+  if (id) {
+    const c = COURSES.find(x => x.id === id);
+    if (c) {
+      document.getElementById('courseTitle').value    = c.title || '';
+      document.getElementById('courseTagline').value  = c.tagline || '';
+      document.getElementById('courseDesc').value     = c.description || '';
+      document.getElementById('coursePrice').value    = c.price_cents ? c.price_cents / 100 : '';
+      document.getElementById('courseCover').value    = c.cover_url || '';
+      document.getElementById('courseFocal').value    = c.cover_focal || 'center top';
+      document.getElementById('courseTags').value     = (c.cultural_tags || []).join(', ');
+      document.getElementById('courseLearning').value = (c.learning_outcomes || []).join('\n');
+    }
+  } else {
+    ['courseTitle','courseTagline','courseDesc','coursePrice','courseCover','courseTags','courseLearning']
+      .forEach(fid => { document.getElementById(fid).value = ''; });
+    document.getElementById('courseFocal').value = 'center top';
+  }
+  document.getElementById('courseModal').classList.add('open');
+}
+
+function editCourse(id) { openCourseModal(id); }
+
+async function saveCourse() {
+  const id      = document.getElementById('editCourseId').value;
+  const title   = document.getElementById('courseTitle').value.trim();
+  const tagline = document.getElementById('courseTagline').value.trim();
+  const desc    = document.getElementById('courseDesc').value.trim();
+  const priceVal= parseFloat(document.getElementById('coursePrice').value) || 0;
+  const cover   = document.getElementById('courseCover').value.trim();
+  const tags    = document.getElementById('courseTags').value.split(',').map(t=>t.trim()).filter(Boolean);
+  const outcomes= (document.getElementById('courseLearning').value||'').split('\n').map(t=>t.trim()).filter(Boolean);
+
+  if (!title) { toast('Title is required', 'err'); return; }
+
+  const payload = {
+    instructor_email: USER.email,
+    title, tagline, description: desc,
+    price_cents: Math.round(priceVal * 100),
+    cover_url: cover || null,
+    cover_focal: document.getElementById('courseFocal').value || 'center top',
+    cultural_tags: tags,
+    learning_outcomes: outcomes,
+  };
+
+  let error;
+  if (id) {
+    ({ error } = await db.from('courses').update(payload).eq('id', id));
+  } else {
+    ({ error } = await db.from('courses').insert([payload]));
+  }
+
+  if (error) { toast('Save failed: ' + error.message, 'err'); return; }
+  document.getElementById('courseModal').classList.remove('open');
+  toast(id ? 'Course updated ✓' : 'Course created ✓');
+  showPanel('tpl-submit', document.querySelector('.templates-active'));
+  await loadCourses();
+}
+
+async function togglePublish(id, current) {
+  const { error } = await db.from('courses').update({ is_published: !current }).eq('id', id);
+  if (error) { toast('Error: ' + error.message, 'err'); return; }
+  toast(!current ? 'Course published ✓' : 'Course set to draft');
+  await loadCourses();
+}
+
+async function deleteCourse(id) {
+  if (!confirm('Delete this course? Lessons will remain in studio_uploads.')) return;
+  const { error } = await db.from('courses').delete().eq('id', id);
+  if (error) { toast('Error: ' + error.message, 'err'); return; }
+  toast('Course deleted');
+  await loadCourses();
+}
+
+function populateUploadSelects() {
+  ['uploadCourse','docCourse'].forEach(selId => {
+    const sel = document.getElementById(selId);
+    if (!sel) return;
+    const current = sel.value;
+    sel.innerHTML = '<option value="">Select a course…</option>' +
+      COURSES.map(c => `<option value="${c.id}" ${c.id===current?'selected':''}>${esc(c.title)}</option>`).join('');
+  });
+}
+
+function populateLessonFilter() {
+  const sel = document.getElementById('lessonCourseFilter');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">All courses</option>' +
+    COURSES.map(c => `<option value="${c.id}">${esc(c.title)}</option>`).join('');
+}
+
+function populateResourceFilter() {
+  const sel = document.getElementById('resourceCourseFilter');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">All courses</option>' +
+    COURSES.map(c => `<option value="${c.id}">${esc(c.title)}</option>`).join('');
+}
+
+/* ── LESSONS ── */
+async function loadLessons() {
+  if (!USER) return;
+  const courseId = document.getElementById('lessonCourseFilter')?.value;
+  let query = db.from('studio_uploads').select('*').eq('email', USER.email).order('chapter_order');
+  if (courseId) query = query.eq('course_id', courseId);
+  const { data, error } = await query;
+  if (error) { toast('Error loading lessons', 'err'); return; }
+
+  const tbody = document.getElementById('lessonTableBody');
+  if (!data?.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--dim);font-style:italic;">No lessons yet. Upload your first one.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = data.map(l => {
+    const courseName = COURSES.find(c => c.id === l.course_id)?.title || '—';
+    const dur = l.duration_seconds ? Math.floor(l.duration_seconds/60) + ' min' : '—';
+    const mtype = l.media_type || 'video';
+    return `
+      <tr class="lesson-row">
+        <td><input class="lesson-order-input" type="number" value="${l.chapter_order||0}"
+          onchange="updateLessonOrder('${l.id}',this.value)" min="0" max="999"></td>
+        <td class="lesson-name-cell">
+          <div style="font-weight:500">${esc(l.title||l.label||'Untitled')}</div>
+          <div style="font-size:.72rem;color:var(--dim);margin-top:2px;">${esc(courseName)}</div>
+        </td>
+        <td><span class="lesson-type-pill type-${mtype}">${mtype}</span></td>
+        <td style="color:var(--dim);font-size:.82rem;">${dur}</td>
+        <td>
+          <label class="free-toggle">
+            <input type="checkbox" ${l.is_free_preview?'checked':''}
+              onchange="updateLessonField('${l.id}','is_free_preview',this.checked)">
+            Free
+          </label>
+        </td>
+        <td>
+          <label class="free-toggle">
+            <input type="checkbox" ${l.publicwall?'checked':''}
+              onchange="updateLessonField('${l.id}','publicwall',this.checked)">
+            Live
+          </label>
+        </td>
+        <td><button class="btn-icon danger btn-sm" onclick="deleteLesson('${l.id}')">✕</button></td>
+      </tr>`;
+  }).join('');
+}
+
+async function updateLessonOrder(id, val) {
+  await db.from('studio_uploads').update({ chapter_order: parseInt(val) }).eq('id', id);
+  toast('Order saved');
+}
+
+async function updateLessonField(id, field, val) {
+  const { error } = await db.from('studio_uploads').update({ [field]: val }).eq('id', id);
+  if (error) toast('Error: ' + error.message, 'err');
+  else toast('Saved ✓');
+}
+
+async function deleteLesson(id) {
+  if (!confirm('Delete this lesson?')) return;
+  await db.from('studio_uploads').delete().eq('id', id);
+  toast('Lesson deleted');
+  loadLessons();
+}
+
+/* ── RESOURCES ── */
+async function loadResources() {
+  if (!USER) return;
+  const courseId = document.getElementById('resourceCourseFilter')?.value;
+  let query = db.from('course_resources').select('*')
+    .eq('instructor_email', USER.email)
+    .order('created_at', { ascending: false });
+  if (courseId) query = query.eq('course_id', courseId);
+
+  const { data, error } = await query;
+  const container = document.getElementById('resourceList');
+  if (!container) return;
+
+  if (error || !data?.length) {
+    container.innerHTML = `
+      <div class="empty-state" style="border:none;padding:40px 24px;">
+        <div class="empty-icon">📄</div>
+        <div class="empty-title">No documents yet</div>
+        <div class="empty-sub">Upload worksheets, guides, and practice materials for your students.</div>
+        <button class="btn btn-primary btn-sm" onclick="showPanel('upload',null);switchUploadTab('docs')">+ Upload a document</button>
+      </div>`;
+    return;
+  }
+
+  const typeIcon = { worksheet:'📋', guide:'🧘', slides:'🖼', template:'📝', reading:'📖', other:'📄' };
+
+  container.innerHTML = `<div class="resource-list">` + data.map(r => {
+    const courseName = COURSES.find(c => c.id === r.course_id)?.title || '—';
+    const icon = typeIcon[r.doc_type] || '📄';
+    const isPublic = r.is_public;
+    return `
+      <div class="resource-item">
+        <div class="resource-icon">${icon}</div>
+        <div class="resource-info">
+          <div class="resource-name">${esc(r.title || 'Untitled')}</div>
+          <div class="resource-meta">${esc(courseName)} · ${esc(r.doc_type||'document')} · ${isPublic ? '✓ Visible to students' : '○ Draft'}</div>
+          ${r.description ? '<div class="resource-meta" style="margin-top:2px;font-style:italic;">' + esc(r.description) + '</div>' : ''}
+        </div>
+        <div class="resource-actions">
+          ${r.url ? `<a href="${esc(r.url)}" target="_blank" class="btn-icon" title="Open">↗</a>` : ''}
+          <button class="btn-icon" onclick="toggleResourceVisibility('${r.id}',${isPublic})" title="${isPublic?'Hide':'Publish'}">${isPublic?'⏸':'▶'}</button>
+          <button class="btn-icon danger" onclick="deleteResource('${r.id}')" title="Delete">✕</button>
+        </div>
+      </div>`;
+  }).join('') + '</div>';
+}
+
+async function saveDocByUrl() {
+  const url      = document.getElementById('docUrl').value.trim();
+  const courseId = document.getElementById('docCourse').value;
+  const title    = document.getElementById('docTitle').value.trim();
+  const desc     = document.getElementById('docDesc').value.trim();
+  const docType  = document.getElementById('docType').value;
+  const isPublic = document.getElementById('docPublic').value === 'true';
+
+  if (!url)      { toast('Paste a document URL', 'err'); return; }
+  if (!courseId) { toast('Select a course', 'err'); return; }
+  if (!title)    { toast('Add a title', 'err'); return; }
+  if (!USER)     { toast('Not signed in', 'err'); return; }
+
+  const { error } = await db.from('course_resources').insert([{
+    url, course_id: courseId,
+    instructor_email: USER.email,
+    title, description: desc || null,
+    doc_type: docType,
+    is_public: isPublic,
+  }]);
+
+  if (error) { toast('Error: ' + error.message, 'err'); return; }
+  toast('Document saved ✓');
+  clearDocForm();
+  await loadCourses();
+  loadResources();
+}
+
+async function handleDocFile(file) {
+  if (!file) return;
+  const courseId = document.getElementById('docCourse').value;
+  if (!courseId) { toast('Select a course first', 'err'); return; }
+  if (!USER) { toast('Not signed in', 'err'); return; }
+
+  const maxMB = 50;
+  if (file.size > maxMB * 1024 * 1024) { toast('Max ' + maxMB + 'MB for documents', 'err'); return; }
+
+  const ext  = file.name.split('.').pop().toLowerCase();
+  const path = 'resources/' + courseId + '/' + Date.now() + '-' + file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+  const prog = document.getElementById('docUploadProgress');
+  const stat = document.getElementById('docUploadStatus');
+
+  stat.textContent = 'Uploading…';
+  prog.style.width = '15%';
+
+  const { error: upErr } = await db.storage
+    .from(BUCKET).upload(path, file, { cacheControl: '3600', upsert: false });
+
+  if (upErr) { toast('Upload failed: ' + upErr.message, 'err'); prog.style.width = '0%'; return; }
+
+  prog.style.width = '80%';
+
+  const { data: { publicUrl } } = db.storage.from(BUCKET).getPublicUrl(path);
+  const title    = document.getElementById('docTitle').value.trim() || file.name;
+  const desc     = document.getElementById('docDesc').value.trim();
+  const docType  = document.getElementById('docType').value;
+  const isPublic = document.getElementById('docPublic').value === 'true';
+
+  const { error: dbErr } = await db.from('course_resources').insert([{
+    url: publicUrl,
+    course_id: courseId,
+    instructor_email: USER.email,
+    title, description: desc || null,
+    doc_type: docType,
+    file_name: file.name,
+    file_ext: ext,
+    is_public: isPublic,
+  }]);
+
+  prog.style.width = '100%';
+  if (dbErr) { toast('DB error: ' + dbErr.message, 'err'); return; }
+  setTimeout(() => { prog.style.width = '0%'; }, 600);
+  stat.textContent = '✓ Uploaded · visible to students in course resources';
+  stat.style.color = 'var(--ok)';
+  toast('Document uploaded ✓');
+  clearDocForm();
+  await loadCourses();
+  loadResources();
+}
+
+async function toggleResourceVisibility(id, current) {
+  const { error } = await db.from('course_resources').update({ is_public: !current }).eq('id', id);
+  if (error) { toast('Error: ' + error.message, 'err'); return; }
+  toast(!current ? 'Resource published ✓' : 'Resource hidden');
+  loadResources();
+}
+
+async function deleteResource(id) {
+  if (!confirm('Delete this resource?')) return;
+  await db.from('course_resources').delete().eq('id', id);
+  toast('Resource deleted');
+  await loadCourses();
+  loadResources();
+}
+
+function clearDocForm() {
+  ['docUrl','docTitle','docDesc'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+  const di = document.getElementById('docFileInput'); if (di) di.value = '';
+}
+
+/* ── UPLOAD — VIDEO URL ── */
+async function saveByUrl() {
+  const url      = document.getElementById('uploadUrl').value.trim();
+  const courseId = document.getElementById('uploadCourse').value;
+  const order    = parseInt(document.getElementById('uploadOrder').value) || 0;
+  const title    = document.getElementById('uploadTitle').value.trim();
+  const label    = document.getElementById('uploadLabel').value.trim();
+  const dur      = parseInt(document.getElementById('uploadDuration').value) || null;
+
+  if (!url)      { toast('Paste a video URL', 'err'); return; }
+  if (!courseId) { toast('Select a course', 'err'); return; }
+  if (!USER)     { toast('Not signed in', 'err'); return; }
+
+  const { error } = await db.from('studio_uploads').insert([{
+    url, email: USER.email,
+    media_type: 'video',
+    title: title || null,
+    label: label || null,
+    course_id: courseId,
+    chapter_order: order,
+    duration_seconds: dur,
+    publicwall: false,
+  }]);
+
+  if (error) { toast('Error: ' + error.message, 'err'); return; }
+  toast('Lesson saved ✓ — set it Live in the Lessons tab');
+  clearUploadForm();
+  await loadCourses();
+}
+
+/* ── UPLOAD — VIDEO FILE ── */
+async function handleVideoFile(file) {
+  if (!file) return;
+  const courseId = document.getElementById('uploadCourse').value;
+  if (!courseId) { toast('Select a course first', 'err'); return; }
+  if (!USER)     { toast('Not signed in', 'err'); return; }
+
+  const maxMB = 500;
+  if (file.size > maxMB * 1024 * 1024) { toast('Max ' + maxMB + 'MB', 'err'); return; }
+
+  const ext  = file.name.split('.').pop();
+  const path = 'courses/' + courseId + '/' + Date.now() + '.' + ext;
+  const prog = document.getElementById('uploadProgress');
+  const stat = document.getElementById('uploadStatus');
+
+  stat.textContent = 'Uploading…';
+  prog.style.width = '10%';
+
+  const { error: upErr } = await db.storage
+    .from(BUCKET).upload(path, file, { cacheControl: '3600', upsert: false });
+
+  if (upErr) { toast('Upload failed: ' + upErr.message, 'err'); prog.style.width = '0%'; return; }
+
+  prog.style.width = '80%';
+
+  const { data: { publicUrl } } = db.storage.from(BUCKET).getPublicUrl(path);
+  const mediaType = file.type.startsWith('audio') ? 'audio' : 'video';
+  const order = parseInt(document.getElementById('uploadOrder').value) || 0;
+  const title = document.getElementById('uploadTitle').value.trim();
+  const label = document.getElementById('uploadLabel').value.trim();
+  const dur   = parseInt(document.getElementById('uploadDuration').value) || null;
+
+  const { error: dbErr } = await db.from('studio_uploads').insert([{
+    url: publicUrl, email: USER.email,
+    media_type: mediaType,
+    title: title || file.name,
+    label: label || null,
+    course_id: courseId,
+    chapter_order: order,
+    duration_seconds: dur,
+    publicwall: false,
+  }]);
+
+  prog.style.width = '100%';
+  if (dbErr) { toast('DB error: ' + dbErr.message, 'err'); return; }
+  setTimeout(() => { prog.style.width = '0%'; }, 600);
+  stat.textContent = '✓ Uploaded · go to Lessons to set free preview and publish';
+  stat.style.color = 'var(--ok)';
+  toast('Upload complete ✓');
+  clearUploadForm();
+  await loadCourses();
+}
+
+function dragOver(e, zoneId)  { e.preventDefault(); document.getElementById(zoneId).classList.add('drag-over'); }
+function dragLeave(zoneId)    { document.getElementById(zoneId).classList.remove('drag-over'); }
+function dropFile(e, type) {
+  e.preventDefault();
+  const zoneId = type === 'doc' ? 'docUploadZone' : 'uploadZone';
+  dragLeave(zoneId);
+  const file = e.dataTransfer.files[0];
+  if (type === 'doc') handleDocFile(file);
+  else handleVideoFile(file);
+}
+
+function clearUploadForm() {
+  ['uploadUrl','uploadTitle','uploadLabel','uploadDuration'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  document.getElementById('uploadOrder').value = '0';
+  const fi = document.getElementById('fileInput'); if (fi) fi.value = '';
+}
+
+/* ── PROFILE ── */
+async function loadProfile() {
+  if (!USER) return;
+  const { data } = await db.from('profiles').select('*').eq('email', USER.email).single();
+  if (!data) return;
+  document.getElementById('profileName').value    = data.display_name || '';
+  document.getElementById('profileTitle').value   = data.title        || '';
+  document.getElementById('profileBio').value     = data.bio          || '';
+  document.getElementById('profileAvatar').value  = data.avatar_url   || '';
+  document.getElementById('profileWebsite').value = data.website      || '';
+}
+
+async function saveProfile() {
+  if (!USER) return;
+  const payload = {
+    email:        USER.email,
+    display_name: document.getElementById('profileName').value.trim(),
+    title:        document.getElementById('profileTitle').value.trim(),
+    bio:          document.getElementById('profileBio').value.trim(),
+    avatar_url:   document.getElementById('profileAvatar').value.trim(),
+    website:      document.getElementById('profileWebsite').value.trim() || null,
+  };
+  const { error } = await db.from('profiles').upsert([payload], { onConflict: 'email' });
+  if (error) { toast('Save failed: ' + error.message, 'err'); return; }
+  toast('Profile saved ✓');
+}
+
+/* ── SETTINGS ── */
+async function loadSettings() {
+  if (!USER) return;
+  const { data } = await db.from('instructor_settings').select('*').eq('email', USER.email).single();
+  if (!data) return;
+  const el1 = document.getElementById('settingListed');
+  const el2 = document.getElementById('settingProjects');
+  const el3 = document.getElementById('settingDownloads');
+  if (el1) el1.checked = data.show_in_directory !== false;
+  if (el2) el2.checked = data.show_student_projects !== false;
+  if (el3) el3.checked = data.allow_downloads !== false;
+}
+
+async function saveSettings() {
+  if (!USER) return;
+  const payload = {
+    email:                USER.email,
+    show_in_directory:    document.getElementById('settingListed').checked,
+    show_student_projects:document.getElementById('settingProjects').checked,
+    allow_downloads:      document.getElementById('settingDownloads').checked,
+  };
+  const { error } = await db.from('instructor_settings').upsert([payload], { onConflict: 'email' });
+  if (error) { toast('Error: ' + error.message, 'err'); return; }
+  toast('Settings saved ✓');
+}
+
+/* ── PREVIEW ── */
+function previewCourse() {
+  if (!COURSES.length) { toast('Create a course first', 'err'); return; }
+  const first = COURSES.find(c => c.is_published) || COURSES[0];
+  window.open('https://coco-course.cultureschool.org/?course=' + first.id, '_blank');
+}
+
+/* ── MODAL ── */
+function closeModal(id, e) {
+  if (e.target === document.getElementById(id))
+    document.getElementById(id).classList.remove('open');
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape')
+    document.querySelectorAll('.modal-bg.open').forEach(m => m.classList.remove('open'));
+});
+
+/* ── TOAST ── */
+function toast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show' + (type === 'err' ? ' err' : '');
+  clearTimeout(t._t);
+  t._t = setTimeout(() => { t.className = ''; }, 3200);
+}
+
+/* ── HELPERS ── */
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ── EARNINGS ── */
+async function loadEarnings() {
+  if (!USER) return;
+  const { data: profile } = await db.from('profiles').select('paypal_email').eq('email', USER.email).single();
+  if (profile && profile.paypal_email) document.getElementById('paypalEmail').value = profile.paypal_email;
+  // Pull live templates for this contributor
+  const { data: liveTemplates } = await db.from('viewers')
+    .select('key, title, used_count, thumb_url, occasion_tag, template_type')
+    .eq('author_email', USER.email)
+    .eq('is_listed', true);
+
+  const totalUses   = (liveTemplates||[]).reduce((a,t) => a+(t.used_count||0), 0);
+  const liveCount   = (liveTemplates||[]).length;
+  const avgPrice    = 12;  // default template price
+  const projected   = Math.round(liveCount * avgPrice * 0.7 * 1.2); // templates × price × 70% × est monthly uses
+
+  document.getElementById('earnLive').textContent     = liveCount;
+  document.getElementById('earnUsed').textContent     = totalUses;
+  document.getElementById('earnProjected').textContent = liveCount > 0 ? '$' + projected + '/mo*' : '—';
+
+  // Show per-template breakdown
+  const breakdown = document.getElementById('templateEarningsBreakdown');
+  if (breakdown && liveTemplates && liveTemplates.length) {
+    breakdown.innerHTML = '<div class="card-section"><div class="card-section-title">Your live templates</div>' +
+      liveTemplates.map(t => `
+        <div style="display:grid;grid-template-columns:48px 1fr auto;gap:12px;align-items:center;
+          padding:12px 0;border-bottom:1px solid var(--line2);">
+          ${t.thumb_url
+            ? `<img src="${t.thumb_url}" style="width:48px;height:36px;object-fit:cover;border-radius:5px;">`
+            : `<div style="width:48px;height:36px;background:rgba(201,168,76,.1);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:1rem;">◈</div>`}
+          <div>
+            <div style="font:600 .88rem/1.2 var(--sans);color:white;">${t.title||t.key}</div>
+            <div style="font-size:.7rem;color:var(--dim);margin-top:2px;">${t.template_type||''} · ${t.occasion_tag||''}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font:700 .9rem/1 var(--sans);color:var(--gold);">$${Math.round((t.used_count||0)*avgPrice*0.7)}</div>
+            <div style="font-size:.65rem;color:var(--dim);margin-top:2px;">${t.used_count||0} uses</div>
+          </div>
+        </div>`).join('') +
+      '<div style="font-size:.68rem;color:var(--dim);margin-top:10px;font-style:italic;">* Projection based on 70% share of $12 avg template price. Actual payouts begin when revenue tracking goes live.</div></div>';
+  }
+
+  const { data: earnings } = await db.from('instructor_earnings').select('*').eq('instructor_email', USER.email).order('created_at', { ascending: false });
+  if (earnings && earnings.length) {
+    const total   = earnings.reduce((a,e) => a+(e.amount_cents||0), 0);
+    const pending = earnings.filter(e => e.status==='pending').reduce((a,e) => a+(e.amount_cents||0), 0);
+    const paid    = earnings.filter(e => e.status==='paid').reduce((a,e) => a+(e.amount_cents||0), 0);
+    document.getElementById('earnTotal').textContent       = '$'+(total/100).toFixed(2);
+    document.getElementById('earnPending').textContent     = '$'+(pending/100).toFixed(2);
+    document.getElementById('earnPaid').textContent        = '$'+(paid/100).toFixed(2);
+    document.getElementById('earnEnrollments').textContent = earnings.length;
+    document.getElementById('payoutHistory').innerHTML = '<div style="display:flex;flex-direction:column;">' +
+      earnings.slice(0,20).map(e => {
+        const date = new Date(e.created_at).toLocaleDateString();
+        const amt  = '$'+((e.amount_cents||0)/100).toFixed(2);
+        const st   = e.status==='paid'
+          ? '<span style="color:var(--ok);font-size:.68rem;">✓ Paid</span>'
+          : '<span style="color:var(--gold);font-size:.68rem;">○ Pending</span>';
+        return '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--line);font-size:.85rem;">'+
+          '<div style="color:rgba(255,255,255,.7);">'+esc(e.description||'Enrollment')+'</div>'+
+          '<div style="display:flex;gap:16px;align-items:center;"><span style="color:white;font-weight:600;">'+amt+'</span>'+st+'<span style="color:var(--dim);">'+date+'</span></div>'+
+          '</div>';
+      }).join('')+'</div>';
+  }
+}
+async function savePaypalEmail() {
+  if (!USER) return;
+  const email = document.getElementById('paypalEmail').value.trim();
+  if (!email) { toast('Enter your PayPal email', 'err'); return; }
+  const { error } = await db.from('profiles').upsert([{ email: USER.email, paypal_email: email }], { onConflict: 'email' });
+  if (error) { toast('Save failed: '+error.message, 'err'); return; }
+  toast('PayPal email saved ✓');
+}
+
+/* ── COCO ART ── */
+async function loadMyArtSubmissions() {
+  if (!USER) return;
+  const { data } = await db.from('coco_art_submissions').select('*').eq('creator_email', USER.email).order('created_at', { ascending: false });
+  const container = document.getElementById('myArtSubmissions');
+  if (!container) return;
+  if (!data || !data.length) {
+    container.innerHTML = '<div style="padding:32px 0;font-style:italic;font-size:.9rem;color:var(--dim);text-align:center;">No submissions yet.</div>';
+    return;
+  }
+  container.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;">' +
+    data.map(a => {
+      const st = a.status==='approved'
+        ? '<span style="color:var(--ok);font-size:.6rem;font-weight:700;text-transform:uppercase;">✓ Live</span>'
+        : a.status==='rejected'
+        ? '<span style="color:var(--err);font-size:.6rem;font-weight:700;text-transform:uppercase;">✕ Declined</span>'
+        : '<span style="color:var(--gold);font-size:.6rem;font-weight:700;text-transform:uppercase;">○ Pending</span>';
+      return '<div style="border-radius:10px;overflow:hidden;background:var(--card);border:1px solid var(--line);">' +
+        (a.image_url ? '<img src="'+esc(a.image_url)+'" style="width:100%;aspect-ratio:1;object-fit:cover;" loading="lazy">' : '<div style="width:100%;aspect-ratio:1;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:2rem;opacity:.2;">🎨</div>') +
+        '<div style="padding:10px 12px;"><div style="font-size:.82rem;color:white;margin-bottom:4px;">'+esc(a.title||'Untitled')+'</div>'+st+'</div></div>';
+    }).join('')+'</div>';
+}
+async function submitCocoArt() {
+  if (!USER) return;
+  const title    = document.getElementById('artTitle').value.trim();
+  const desc     = document.getElementById('artDesc').value.trim();
+  const artType  = document.getElementById('artType').value;
+  const tagsRaw  = document.getElementById('artTags').value;
+  const imageUrl = document.getElementById('artImageUrl').value.trim();
+  const statusEl = document.getElementById('artSubmitStatus');
+  if (!title)    { toast('Add a title', 'err'); return; }
+  if (!imageUrl) { toast('Add an image URL', 'err'); return; }
+  const tags = tagsRaw.split(',').map(t => t.trim()).filter(Boolean);
+  const { data: prof } = await db.from('profiles').select('display_name,paypal_email').eq('email', USER.email).single();
+  const { error } = await db.from('coco_art_submissions').insert([{
+    title,
+    vibe:          artType + (tags.length ? ' · '+tags.join(', ') : ''),
+    note:          desc || null,
+    image_url:     imageUrl,
+    creator_email: USER.email,
+    creator_name:  (prof && prof.display_name) || USER.email.split('@')[0],
+    payout_email:  (prof && prof.paypal_email) || null,
+    status:        'pending',
+  }]);
+  if (error) { toast('Submit failed: '+error.message, 'err'); return; }
+  statusEl.textContent = "✓ Submitted for review — we'll be in touch.";
+  ['artTitle','artDesc','artTags','artImageUrl'].forEach(id => { document.getElementById(id).value = ''; });
+  toast('Art submitted ✓');
+  loadMyArtSubmissions();
+}
+
+/* ── EXPOSE ALL ONCLICK FUNCTIONS TO WINDOW ── */
+window.signIn                  = signIn;
+window.signOut                 = signOut;
+window.resetAuthForm           = resetAuthForm;
+window.showPanel               = showPanel;
+window.setMobileActive         = setMobileActive;
+window.switchUploadTab         = switchUploadTab;
+window.openCourseModal         = openCourseModal;
+window.saveCourse              = saveCourse;
+window.editCourse              = editCourse;
+window.deleteCourse            = deleteCourse;
+window.togglePublish           = togglePublish;
+window.saveByUrl               = saveByUrl;
+window.saveDocByUrl            = saveDocByUrl;
+window.handleVideoFile         = handleVideoFile;
+window.handleDocFile           = handleDocFile;
+window.dragOver                = dragOver;
+window.dragLeave               = dragLeave;
+window.dropFile                = dropFile;
+window.updateLessonOrder       = updateLessonOrder;
+window.updateLessonField       = updateLessonField;
+window.deleteLesson            = deleteLesson;
+window.toggleResourceVisibility= toggleResourceVisibility;
+window.deleteResource          = deleteResource;
+window.saveProfile             = saveProfile;
+window.saveSettings            = saveSettings;
+window.previewCourse           = previewCourse;
+window.closeModal              = closeModal;
+window.toast                   = toast;
+window.savePaypalEmail         = savePaypalEmail;
+window.submitCocoArt           = submitCocoArt;
+window.loadCocoArtQueue        = loadCocoArtQueue;
+window.approveCocoArt          = approveCocoArt;
+window.rejectCocoArt           = rejectCocoArt;
+
+/* ══════════════════════════════════════════════════════════════
+   COCO ART — admin review lane (coco_art_submissions → live coco_art)
+   Approve runs the full protect pipeline in the browser:
+   original → private `assets`, watermarked low-res → public `previews`,
+   print_path set, is_active = true.
+═══════════════════════════════════════════════════════════════ */
+const CA_ASSETS = 'assets';       // private bucket (originals)
+const CA_PREVIEW = 'previews';    // public bucket (watermarked low-res)
+const CA_WM_TEXT = 'CultureSchool';
+const CA_PREVIEW_MAX = 1000;      // longest edge of the preview, px
+
+function caLoadImage(url){
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';               // needed to export canvas
+    img.onload = () => res(img);
+    img.onerror = () => rej(new Error('Could not load the image (CORS or missing file).'));
+    img.src = url;
+  });
+}
+function caToBlob(canvas, type, q){
+  return new Promise((res, rej) => canvas.toBlob(b => b ? res(b) : rej(new Error('Image export failed.')), type, q));
+}
+async function caMakeRenditions(img){
+  // full-res PNG original
+  const oc = document.createElement('canvas');
+  oc.width = img.naturalWidth; oc.height = img.naturalHeight;
+  oc.getContext('2d').drawImage(img, 0, 0);
+  const originalBlob = await caToBlob(oc, 'image/png');
+
+  // watermarked low-res preview
+  const scale = Math.min(1, CA_PREVIEW_MAX / Math.max(img.naturalWidth, img.naturalHeight));
+  const pw = Math.max(1, Math.round(img.naturalWidth * scale));
+  const ph = Math.max(1, Math.round(img.naturalHeight * scale));
+  const pc = document.createElement('canvas');
+  pc.width = pw; pc.height = ph;
+  const ctx = pc.getContext('2d');
+  ctx.drawImage(img, 0, 0, pw, ph);
+  ctx.save();
+  ctx.globalAlpha = 0.5;
+  ctx.font = '26px Georgia, serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.9)';
+  ctx.strokeStyle = 'rgba(0,0,0,0.18)';
+  ctx.lineWidth = 0.8;
+  ctx.rotate(-24 * Math.PI / 180);
+  const diag = Math.ceil(Math.sqrt(pw * pw + ph * ph));
+  for (let y = -diag; y < diag; y += 180) {
+    for (let x = -diag; x < diag; x += 300) {
+      ctx.strokeText(CA_WM_TEXT, x, y);
+      ctx.fillText(CA_WM_TEXT, x, y);
+    }
+  }
+  ctx.restore();
+  const previewBlob = await caToBlob(pc, 'image/webp', 0.72);
+  return { originalBlob, previewBlob };
+}
+
+async function loadCocoArtQueue(){
+  const list = document.getElementById('cocoQueueList');
+  if (!list) return;
+  try {
+    const { data, error } = await db
+      .from('coco_art_submissions').select('*')
+      .eq('status', 'pending').order('created_at', { ascending: true });
+    if (error) throw error;
+    const badge = document.getElementById('cocoQueueCount');
+    if (badge) badge.textContent = data.length;
+    if (!data.length) {
+      list.innerHTML = '<div style="padding:40px 0;text-align:center;font-style:italic;color:var(--dim);">No textile submissions \u2726</div>';
+      return;
+    }
+    list.innerHTML = data.map(r => {
+      const date = new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      return `<div class="admin-queue-card" id="cacard-${r.id}">
+        <div class="admin-queue-header">
+          <div>
+            <div style="font:600 .95rem/1.2 var(--sans);color:white;">${esc(r.title)}</div>
+            <div class="admin-queue-meta">${esc(r.vibe || '\u2014')} · by ${esc(r.creator_name)} · ${esc(r.creator_email)} · ${date}</div>
+            ${r.note ? `<div style="font-size:.8rem;color:var(--dim);margin-top:6px;line-height:1.5;">${esc(r.note)}</div>` : ''}
+          </div>
+          <span class="status-pill pending">pending</span>
+        </div>
+        <img class="admin-preview" style="height:auto;max-height:420px;object-fit:contain;background:#111;" src="${esc(r.image_url)}" alt="${esc(r.title)}" loading="lazy">
+        <div class="admin-actions">
+          <span class="ca-status" id="castatus-${r.id}" style="flex:1;min-width:160px;font-size:.82rem;color:var(--dim);"></span>
+          <button class="btn-approve" onclick="approveCocoArt('${r.id}')">✓ Approve → Live</button>
+          <button class="btn-reject"  onclick="rejectCocoArt('${r.id}')">✕ Reject</button>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    list.innerHTML = `<div style="padding:20px;color:var(--err);font-size:.85rem;">Error loading textile queue: ${e.message}</div>`;
+  }
+}
+
+function caDecCount(){
+  const badge = document.getElementById('cocoQueueCount');
+  if (badge) badge.textContent = Math.max(0, (parseInt(badge.textContent) || 0) - 1);
+}
+
+async function approveCocoArt(id){
+  const card = document.getElementById('cacard-' + id);
+  const status = document.getElementById('castatus-' + id);
+  const btns = card ? card.querySelectorAll('button') : [];
+  btns.forEach(b => { b.disabled = true; b.style.opacity = '.5'; });
+  const setMsg = (t, c) => { if (status) { status.textContent = t; status.style.color = c || 'var(--dim)'; } };
+  try {
+    const { data: { session } } = await db.auth.getSession();
+    if (!session) throw new Error('Please sign in again.');
+
+    const { data: sub, error: subErr } = await db
+      .from('coco_art_submissions').select('image_url').eq('id', id).single();
+    if (subErr) throw subErr;
+
+    // Make the watermarked preview in the browser (canvas works fine here)…
+    setMsg('Processing image…');
+    const img = await caLoadImage(sub.image_url);
+    const { previewBlob } = await caMakeRenditions(img);
+
+    // …then hand it to the Edge Function, which does the privileged writes
+    // (uploads + coco_art insert + mark approved) with the service role.
+    setMsg('Publishing…');
+    const form = new FormData();
+    form.append('submission_id', id);
+    form.append('preview', previewBlob, 'preview.webp');
+
+    const resp = await fetch(`${SUPA_URL}/functions/v1/coco-art-approve`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${session.access_token}`, 'apikey': SUPA_KEY },
+      body: form
+    });
+    const out = await resp.json().catch(() => ({}));
+    if (!resp.ok) throw new Error(out.error || `Approve failed (${resp.status})`);
+
+    if (card) {
+      card.style.opacity = '.5'; card.style.pointerEvents = 'none';
+      const pill = card.querySelector('.status-pill'); if (pill) { pill.className = 'status-pill approved'; pill.textContent = 'approved ✓'; }
+      const acts = card.querySelector('.admin-actions'); if (acts) acts.innerHTML = '<span style="color:#4ade80;font-size:.85rem;">✓ Live in the library</span>';
+    }
+    caDecCount();
+  } catch(e) {
+    setMsg('Error: ' + e.message, '#f87171');
+    btns.forEach(b => { b.disabled = false; b.style.opacity = '1'; });
+  }
+}
+
+async function rejectCocoArt(id){
+  const card = document.getElementById('cacard-' + id);
+  if (card) card.querySelectorAll('button').forEach(b => { b.disabled = true; b.style.opacity = '.5'; });
+  const { error } = await db.from('coco_art_submissions').update({ status: 'rejected' }).eq('id', id);
+  if (error) {
+    alert('Reject failed: ' + error.message);
+    if (card) card.querySelectorAll('button').forEach(b => { b.disabled = false; b.style.opacity = '1'; });
+    return;
+  }
+  if (card) {
+    card.style.opacity = '.5'; card.style.pointerEvents = 'none';
+    const pill = card.querySelector('.status-pill'); if (pill) { pill.className = 'status-pill rejected'; pill.textContent = 'rejected'; }
+    const acts = card.querySelector('.admin-actions'); if (acts) acts.innerHTML = '<span style="color:#f87171;font-size:.85rem;">✕ Declined</span>';
+  }
+  caDecCount();
+}
+</script>
+</body>
+</html>
+

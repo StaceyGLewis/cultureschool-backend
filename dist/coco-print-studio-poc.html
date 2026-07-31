@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CoCo Print Studio — unified proof of concept</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Fraunces:opsz,wght@9..144,600;9..144,900&family=Pacifico&family=Barlow:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--berry:#8A0F42;--pink:#FF218C;--marigold:#FFD800;--sky:#21B1FF;--mist:#BCE8FF;--cream:#FBF6EC;
+        --ink:#26121b;--line:rgba(38,18,27,.16);--sans:'Barlow',system-ui,sans-serif;}
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:var(--sans);color:var(--ink);background:var(--cream);}
+  .wrap{display:flex;min-height:100vh;}
+  .stage{flex:1;display:flex;align-items:center;justify-content:center;padding:24px;}
+  .frame{width:100%;max-width:600px;aspect-ratio:1;border-radius:14px;box-shadow:0 10px 40px rgba(0,0,0,.14);overflow:hidden;
+    background-color:#fff;
+    background-image:linear-gradient(45deg,#e9e2d6 25%,transparent 25%),linear-gradient(-45deg,#e9e2d6 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#e9e2d6 75%),linear-gradient(-45deg,transparent 75%,#e9e2d6 75%);
+    background-size:24px 24px;background-position:0 0,0 12px,12px -12px,-12px 0;}
+  .frame.solid{background-image:none;}
+  #board{width:100%;height:100%;display:block;}
+  .panel{width:340px;flex:0 0 auto;background:#fff;border-left:1px solid var(--line);padding:20px;overflow-y:auto;max-height:100vh;}
+  h1{font-family:'Fraunces',serif;font-size:20px;font-weight:900;color:var(--berry);margin:0;}
+  .sub{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#aaa;font-weight:700;margin:2px 0 16px;}
+  .tabs{display:flex;gap:6px;margin-bottom:6px;}
+  .tab{flex:1;padding:9px 4px;border:1px solid var(--line);border-radius:8px;background:#fff;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;text-align:center;}
+  .tab.on{background:var(--berry);color:#fff;border-color:var(--berry);}
+  label{display:block;font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--berry);margin:14px 0 5px;}
+  input[type=text]{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;font-family:var(--sans);font-size:15px;}
+  input[type=range]{width:100%;accent-color:var(--berry);}
+  select{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;background:#fff;}
+  input[type=color]{width:100%;height:34px;border:1px solid var(--line);border-radius:8px;background:#fff;}
+  .val{float:right;color:#aaa;font-weight:600;}
+  .swatches{display:flex;gap:7px;flex-wrap:wrap;}
+  .sw{width:40px;height:40px;border-radius:8px;cursor:pointer;border:2px solid transparent;overflow:hidden;}
+  .sw.active{border-color:var(--berry);}
+  .up{display:block;margin-top:6px;font-size:11px;}
+  .sec{border-top:1px solid var(--line);margin-top:16px;padding-top:6px;}
+  .sec>span{font-family:'Fraunces',serif;font-weight:700;font-size:13px;color:var(--ink);}
+  .btns{display:flex;gap:8px;margin-top:16px;}
+  button{flex:1;padding:11px 6px;border:none;border-radius:8px;background:var(--berry);color:#fff;font-family:var(--sans);font-weight:700;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;}
+  button.ghost{background:#fff;color:var(--berry);border:1px solid var(--line);}
+  .hide{display:none;}
+  .tip{font-size:11px;line-height:1.55;color:#999;margin-top:16px;border-top:1px solid var(--line);padding-top:12px;}
+  .note{font-size:10.5px;color:#aaa;margin-top:4px;line-height:1.4;}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="stage">
+    <div class="frame" id="frame">
+      <svg id="board" viewBox="0 0 900 900" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="fill" patternUnits="userSpaceOnUse" width="120" height="120" patternTransform="scale(1)">
+            <g id="fillContent"></g>
+          </pattern>
+          <path id="arc" fill="none" d="M180 450 Q450 450 720 450"></path>
+          <mask id="artMask" style="mask-type:alpha"><image id="artImg" x="150" y="150" width="600" height="600" preserveAspectRatio="xMidYMid meet"></image></mask>
+        </defs>
+        <g id="patchG"></g>
+        <g id="subjectG"></g>
+      </svg>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h1>CoCo Print Studio</h1>
+    <div class="sub">Unified proof of concept</div>
+
+    <div class="tabs">
+      <div class="tab on" data-t="text">Text</div>
+      <div class="tab" data-t="shape">Shape</div>
+      <div class="tab" data-t="art">Your art</div>
+    </div>
+
+    <!-- TEXT controls -->
+    <div id="cText">
+      <label>Word</label>
+      <input id="txt" type="text" value="JOY" maxlength="14">
+      <label>Typeface</label>
+      <select id="font">
+        <option value="'Archivo Black',sans-serif">Archivo Black</option>
+        <option value="'Fraunces',serif">Fraunces</option>
+        <option value="'Pacifico',cursive">Pacifico (script)</option>
+        <option value="Georgia,serif">Georgia</option>
+        <option value="Impact,sans-serif">Impact</option>
+      </select>
+      <label>Size <span class="val" id="vTsize">200</span></label>
+      <input id="tsize" type="range" min="80" max="320" value="200">
+      <label>Arc the word <span class="val" id="vArc">0</span></label>
+      <input id="arcAmt" type="range" min="-220" max="220" value="0">
+    </div>
+
+    <!-- SHAPE controls -->
+    <div id="cShape" class="hide">
+      <label>Shape</label>
+      <select id="shape">
+        <option value="circle">Circle</option>
+        <option value="roundsq">Rounded square</option>
+        <option value="hex">Hexagon</option>
+        <option value="star">Star</option>
+        <option value="heart">Heart</option>
+      </select>
+      <label>Size <span class="val" id="vSsize">100%</span></label>
+      <input id="ssize" type="range" min="55" max="115" value="100">
+    </div>
+
+    <!-- ART controls -->
+    <div id="cArt" class="hide">
+      <label class="up">Upload art to fill
+        <input id="art" type="file" accept="image/*">
+      </label>
+      <div class="note">Upload a logo or drawing. If it has a solid background, turn on Remove background to knock it out.</div>
+      <div class="chk"><input type="checkbox" id="rmbg"> <span>Remove background (from corner color)</span></div>
+      <label>Knockout tolerance <span class="val" id="vTol">60</span></label>
+      <input id="tol" type="range" min="10" max="180" value="60">
+      <label>Size <span class="val" id="vAsize">100%</span></label>
+      <input id="asize" type="range" min="55" max="115" value="100">
+    </div>
+
+    <div class="sec"><span>The print (your fill)</span></div>
+    <label>Choose a print</label>
+    <div class="swatches" id="prints"></div>
+    <label class="up">…or upload your own print<input id="upload" type="file" accept="image/*"></label>
+    <label>Fill scale <span class="val" id="vScale">100%</span></label>
+    <input id="scale" type="range" min="25" max="320" value="100">
+    <label>Fill rotation <span class="val" id="vRot">0°</span></label>
+    <input id="rot" type="range" min="0" max="360" value="0">
+
+    <div class="sec"><span>Patch frame</span></div>
+    <label>Frame</label>
+    <select id="patch">
+      <option value="none">None</option>
+      <option value="circle">Circle patch</option>
+      <option value="roundsq">Rounded patch</option>
+      <option value="shield">Shield patch</option>
+    </select>
+    <div id="patchOpts" class="hide">
+      <label>Border color</label>
+      <input id="border" type="color" value="#8A0F42">
+      <label>Backing</label>
+      <select id="backing"><option value="none">Transparent</option><option value="fill">Same print</option><option value="white">White</option></select>
+    </div>
+
+    <div class="sec"><span>Output</span></div>
+    <label>Preview / export background</label>
+    <select id="bg"><option value="transparent">Transparent (heat press / patch / sublimation)</option><option value="#ffffff">White</option><option value="#FBF6EC">Cream</option><option value="#26121b">Dark</option></select>
+    <label>Patch size (at 300 DPI)</label>
+    <select id="exsize"><option value="3">3 inch</option><option value="4" selected>4 inch</option><option value="5">5 inch</option><option value="6">6 inch</option><option value="8">8 inch</option></select>
+    <div class="chk"><input type="checkbox" id="mirror"> <span>Mirror for light-fabric iron-on transfer</span></div>
+
+    <div class="btns">
+      <button id="png">PNG</button>
+      <button id="pdf">PDF</button>
+      <button class="ghost" id="rand">Surprise</button>
+    </div>
+
+    <div class="tip">One surface, one fill, one export. Text, a shape, or your own art — the print flows into all of them the same way, and the transparent PNG is ready to press, patch, or sublimate.</div>
+  </div>
+</div>
+
+<script>
+const P={berry:'#8A0F42',pink:'#FF218C',marigold:'#FFD800',sky:'#21B1FF',mist:'#BCE8FF',cream:'#FBF6EC'};
+const PRINTS={
+  dots:`<rect width="120" height="120" fill="${P.berry}"/><circle cx="30" cy="30" r="12" fill="${P.marigold}"/><circle cx="90" cy="30" r="12" fill="${P.sky}"/><circle cx="60" cy="60" r="12" fill="${P.pink}"/><circle cx="30" cy="90" r="12" fill="${P.mist}"/><circle cx="90" cy="90" r="12" fill="${P.marigold}"/>`,
+  stripes:`<rect width="120" height="120" fill="${P.mist}"/><rect width="24" height="120" x="0" fill="${P.berry}"/><rect width="24" height="120" x="24" fill="${P.pink}"/><rect width="24" height="120" x="48" fill="${P.marigold}"/><rect width="24" height="120" x="72" fill="${P.sky}"/>`,
+  diamond:`<rect width="120" height="120" fill="${P.sky}"/><path d="M60 12 L96 60 L60 108 L24 60 Z" fill="${P.marigold}"/><path d="M60 34 L78 60 L60 86 L42 60 Z" fill="${P.berry}"/><circle cx="60" cy="60" r="7" fill="${P.mist}"/>`,
+  floral:`<rect width="120" height="120" fill="${P.cream}"/><g fill="${P.pink}"><circle cx="60" cy="44" r="13"/><circle cx="44" cy="60" r="13"/><circle cx="76" cy="60" r="13"/><circle cx="60" cy="76" r="13"/></g><circle cx="60" cy="60" r="10" fill="${P.marigold}"/><g fill="${P.berry}"><circle cx="16" cy="16" r="6"/><circle cx="104" cy="104" r="6"/></g>`
+};
+let curPrint='dots', printURL=null, artURL=null, tab='text';
+const $=id=>document.getElementById(id), C=450;
+
+function poly(n,r,rot=-90){let p='';for(let i=0;i<n;i++){const a=(rot+i*360/n)*Math.PI/180;p+=(i?'L':'M')+(C+r*Math.cos(a)).toFixed(1)+' '+(C+r*Math.sin(a)).toFixed(1)+' ';}return p+'Z';}
+function star(pts,ro,ri,rot=-90){let p='';for(let i=0;i<pts*2;i++){const r=i%2?ri:ro,a=(rot+i*180/pts)*Math.PI/180;p+=(i?'L':'M')+(C+r*Math.cos(a)).toFixed(1)+' '+(C+r*Math.sin(a)).toFixed(1)+' ';}return p+'Z';}
+const HEART='M23.6,0c-3.4,0-6.3,2.7-7.6,5.6C14.7,2.7,11.8,0,8.4,0C3.8,0,0,3.8,0,8.4c0,9.4,9.5,11.9,16,21.2c6.1-9.3,16-12.1,16-21.2C32,3.8,28.2,0,23.6,0z';
+
+function shapePath(kind,sc){
+  if(kind==='circle')return `<circle cx="450" cy="450" r="${300*sc}" fill="url(#fill)"/>`;
+  if(kind==='roundsq'){const s=300*sc;return `<rect x="${450-s}" y="${450-s}" width="${2*s}" height="${2*s}" rx="${70*sc}" fill="url(#fill)"/>`;}
+  if(kind==='hex')return `<path d="${poly(6,320*sc)}" fill="url(#fill)"/>`;
+  if(kind==='star')return `<path d="${star(5,330*sc,150*sc)}" fill="url(#fill)"/>`;
+  if(kind==='heart'){const k=(9.4*sc);return `<path transform="translate(450,450) scale(${k}) translate(-16,-14.8)" d="${HEART}" fill="url(#fill)"/>`;}
+}
+function patchShape(kind,extra){
+  if(kind==='circle')return {tag:'circle',attr:`cx="450" cy="450" r="${380+extra}"`};
+  if(kind==='roundsq')return {tag:'rect',attr:`x="${90-extra}" y="${90-extra}" width="${720+2*extra}" height="${720+2*extra}" rx="110"`};
+  if(kind==='shield')return {tag:'path',attr:`d="M450 ${70-extra} L${800+extra} ${200-extra} L${800+extra} 520 Q${800+extra} 720 450 ${840+extra} Q${100-extra} 720 ${100-extra} 520 L${100-extra} ${200-extra} Z"`};
+  return null;
+}
+
+function setFill(){$('fillContent').innerHTML = printURL?`<image href="${printURL}" x="0" y="0" width="120" height="120" preserveAspectRatio="xMidYMid slice"/>`:PRINTS[curPrint];}
+
+function render(){
+  // fill transform
+  const s=+$('scale').value/100, r=$('rot').value;
+  $('fill').setAttribute('patternTransform',`rotate(${r}) scale(${s})`);
+  $('vScale').textContent=$('scale').value+'%'; $('vRot').textContent=r+'°';
+
+  // subject
+  let sub='';
+  if(tab==='text'){
+    const amt=+$('arcAmt').value; $('vArc').textContent=amt;
+    $('arc').setAttribute('d',`M180 450 Q450 ${450-amt} 720 450`);
+    const common=`font-family="${$('font').value}" font-size="${$('tsize').value}" fill="url(#fill)" text-anchor="middle"`;
+    $('vTsize').textContent=$('tsize').value;
+    if(Math.abs(amt)>6){
+      sub=`<text ${common}><textPath href="#arc" startOffset="50%">${escapeHtml($('txt').value||' ')}</textPath></text>`;
+    }else{
+      sub=`<text x="450" y="450" dominant-baseline="central" ${common}>${escapeHtml($('txt').value||' ')}</text>`;
+    }
+  }else if(tab==='shape'){
+    sub=shapePath($('shape').value,+$('ssize').value/100); $('vSsize').textContent=$('ssize').value+'%';
+  }else{
+    const sc=+$('asize').value/100; $('vAsize').textContent=$('asize').value+'%';
+    const w=600*sc,x=450-w/2;
+    $('artImg').setAttribute('x',x);$('artImg').setAttribute('y',x);$('artImg').setAttribute('width',w);$('artImg').setAttribute('height',w);
+    sub = artURL?`<rect x="0" y="0" width="900" height="900" fill="url(#fill)" mask="url(#artMask)"/>`
+                :`<text x="450" y="450" text-anchor="middle" dominant-baseline="central" font-family="'Barlow'" font-size="26" fill="#c9b8a8">↑ upload art to fill</text>`;
+  }
+  $('subjectG').innerHTML=sub;
+
+  // patch frame
+  const pk=$('patch').value, pg=$('patchG');
+  if(pk==='none'){pg.innerHTML='';$('patchOpts').classList.add('hide');}
+  else{
+    $('patchOpts').classList.remove('hide');
+    const bc=$('border').value, back=$('backing').value;
+    const outer=patchShape(pk,0), inner=patchShape(pk,-22);
+    const backFill = back==='none'?'none':(back==='white'?'#ffffff':'url(#fill)');
+    pg.innerHTML =
+      `<${outer.tag} ${outer.attr} fill="${bc}"/>`+                       // border color (outer)
+      `<${inner.tag} ${inner.attr} fill="${backFill==='none'?bc:backFill}"/>`+ // backing (or border cutout)
+      (backFill==='none'?`<${inner.tag} ${inner.attr} fill="#ffffff" fill-opacity="0"/>`:'');
+    if(backFill==='none'){
+      // just a ring border: redraw inner as transparent hole via even-odd not simple; approximate with stroke
+      pg.innerHTML=`<${outer.tag} ${outer.attr} fill="none" stroke="${bc}" stroke-width="26" stroke-linejoin="round"/>`;
+    }
+  }
+  // background
+  const bg=$('bg').value, fr=$('frame');
+  if(bg==='transparent'){fr.classList.remove('solid');fr.style.background='';fr.classList.add('checker');fr.style.backgroundColor='#fff';fr.classList.remove('solid');}
+  if(bg==='transparent'){fr.classList.remove('solid');}else{fr.classList.add('solid');fr.style.background=bg;}
+}
+function escapeHtml(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+
+// swatches
+const pr=$('prints');
+Object.keys(PRINTS).forEach((k,i)=>{const d=document.createElement('div');d.className='sw'+(i===0?' active':'');
+  d.innerHTML=`<svg viewBox="0 0 120 120" width="40" height="40">${PRINTS[k]}</svg>`;
+  d.onclick=()=>{curPrint=k;printURL=null;$('upload').value='';[...pr.children].forEach(c=>c.classList.remove('active'));d.classList.add('active');setFill();render();};
+  pr.appendChild(d);});
+
+// tabs
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+  tab=t.dataset.t;document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===t));
+  $('cText').classList.toggle('hide',tab!=='text');
+  $('cShape').classList.toggle('hide',tab!=='shape');
+  $('cArt').classList.toggle('hide',tab!=='art');
+  render();
+});
+
+$('upload').onchange=e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=ev=>{printURL=ev.target.result;[...pr.children].forEach(c=>c.classList.remove('active'));setFill();render();};rd.readAsDataURL(f);};
+let artRaw=null;
+function knockout(src,tol,cb){const im=new Image();im.onload=()=>{const c=document.createElement('canvas');c.width=im.width;c.height=im.height;const x=c.getContext('2d');x.drawImage(im,0,0);const d=x.getImageData(0,0,c.width,c.height),p=d.data,r0=p[0],g0=p[1],b0=p[2];for(let i=0;i<p.length;i+=4){const dr=p[i]-r0,dg=p[i+1]-g0,db=p[i+2]-b0;if(Math.sqrt(dr*dr+dg*dg+db*db)<tol)p[i+3]=0;}x.putImageData(d,0,0);cb(c.toDataURL('image/png'));};im.src=src;}
+function applyArt(){if(!artRaw)return;
+  if($('rmbg').checked){knockout(artRaw,+$('tol').value,u=>{artURL=u;$('artImg').setAttribute('href',u);render();});}
+  else{artURL=artRaw;$('artImg').setAttribute('href',artRaw);render();}}
+$('art').onchange=e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=ev=>{artRaw=ev.target.result;applyArt();};rd.readAsDataURL(f);};
+$('rmbg').addEventListener('change',applyArt);
+$('tol').addEventListener('input',()=>{$('vTol').textContent=$('tol').value;if($('rmbg').checked)applyArt();});
+
+['txt','font','tsize','arcAmt','shape','ssize','asize','scale','rot','patch','border','backing','bg'].forEach(id=>{const el=$(id);el&&el.addEventListener('input',render);});
+
+$('rand').onclick=()=>{$('scale').value=40+Math.random()*240;$('rot').value=Math.random()*360;
+  const ks=Object.keys(PRINTS);curPrint=ks[Math.floor(Math.random()*ks.length)];printURL=null;
+  [...pr.children].forEach((c,i)=>c.classList.toggle('active',ks[i]===curPrint));setFill();render();};
+
+function renderPNG(cb){
+  const inch=+$('exsize').value, size=inch*300, bg=$('bg').value, mir=$('mirror').checked;
+  const xml=new XMLSerializer().serializeToString($('board'));
+  const img=new Image();
+  img.onload=()=>{const c=document.createElement('canvas');c.width=size;c.height=size;const ctx=c.getContext('2d');
+    if(bg!=='transparent'){ctx.fillStyle=bg;ctx.fillRect(0,0,size,size);}
+    if(mir){ctx.translate(size,0);ctx.scale(-1,1);}
+    ctx.drawImage(img,0,0,size,size);
+    cb(c.toDataURL('image/png'),inch);};
+  img.src='data:image/svg+xml;base64,'+btoa(unescape(encodeURIComponent(xml)));
+}
+$('png').onclick=()=>renderPNG(url=>{const a=document.createElement('a');a.download='coco-print.png';a.href=url;a.click();});
+$('pdf').onclick=()=>renderPNG((url,inch)=>{
+  try{const {jsPDF}=window.jspdf;const doc=new jsPDF({unit:'in',format:[inch,inch]});doc.addImage(url,'PNG',0,0,inch,inch);doc.save('coco-print.pdf');}
+  catch(e){alert('PDF library still loading — the PNG works now, try PDF again in a moment.');}
+});
+
+setFill();render();
+</script>
+</body>
+</html>

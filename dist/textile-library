@@ -1,0 +1,648 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Textile Library · CultureSchool</title>
+<meta name="description" content="A living archive of textile designs — each named and credited. Search, sort by colour, feeling or season, and print them on what you love.">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --cream:#faf6ef; --paper:#fffdf8; --forest:#0d1f12; --forest-2:#16301f;
+    --gold:#c9a96e; --gold-deep:#a8843f; --mauve:#9a8878; --line:#e7ddcd;
+    --ink:#1d1b15; --shadow:rgba(30,26,15,.14);
+    --serif:Georgia,'Iowan Old Style','Times New Roman',serif;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;overflow-x:hidden;}
+  body{background:var(--cream);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;}
+  img{max-width:100%;display:block;}
+  a{color:inherit;}
+  button{font-family:inherit;}
+
+  /* ── TOP BAR (slim, full width) ───────────────────────────── */
+  .topbar{position:sticky;top:0;z-index:50;background:rgba(250,246,239,.9);
+    backdrop-filter:blur(12px);border-bottom:1px solid var(--line);}
+  .topbar-in{display:flex;align-items:center;gap:16px;height:58px;padding:0 22px;}
+  .brand{font-family:var(--serif);font-size:1.18rem;color:var(--forest);text-decoration:none;white-space:nowrap;}
+  .brand em{font-style:italic;color:var(--gold-deep);}
+  .search{position:relative;flex:1;max-width:440px;}
+  .search input{width:100%;height:38px;border:1px solid var(--line);background:var(--paper);
+    border-radius:99px;padding:0 16px 0 38px;font:400 .92rem/1 var(--sans);color:var(--ink);outline:none;}
+  .search input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,169,110,.15);}
+  .search svg{position:absolute;left:13px;top:11px;width:16px;height:16px;stroke:var(--mauve);}
+  .controls{display:flex;align-items:center;gap:10px;margin-left:auto;}
+  .sort{height:38px;border:1px solid var(--line);background:var(--paper);border-radius:99px;
+    padding:0 32px 0 14px;font:600 .8rem/1 var(--sans);color:var(--forest);cursor:pointer;
+    appearance:none;-webkit-appearance:none;outline:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%239a8878' stroke-width='1.5'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 13px center;}
+  .icon-btn{height:38px;padding:0 14px;border:1px solid var(--line);background:var(--paper);
+    border-radius:99px;font:600 .8rem/1 var(--sans);color:var(--forest);cursor:pointer;
+    display:flex;align-items:center;gap:6px;white-space:nowrap;}
+  .icon-btn.on{background:var(--forest);border-color:var(--forest);color:var(--cream);}
+  .icon-btn .h{color:var(--gold-deep);} .icon-btn.on .h{color:var(--gold);}
+  .top-link{font:600 .82rem/1 var(--sans);text-decoration:none;color:var(--forest);opacity:.8;white-space:nowrap;}
+  .top-link:hover{opacity:1;}
+  .auth-slot{display:flex;align-items:center;gap:12px;}
+  .whoami{font:600 .78rem/1.2 var(--sans);color:var(--forest);opacity:.82;white-space:nowrap;max-width:22vw;overflow:hidden;text-overflow:ellipsis;}
+  .whoami b{font-weight:700;}
+  .link-btn{background:none;border:0;padding:0;font:600 .8rem/1 var(--sans);color:var(--gold-deep);cursor:pointer;text-decoration:underline;}
+  .btn{font:700 .76rem/1 var(--sans);letter-spacing:.1em;text-transform:uppercase;text-decoration:none;
+    border:0;cursor:pointer;border-radius:99px;padding:11px 18px;transition:transform .15s,background .2s,color .2s;}
+  .btn-gold{background:var(--gold);color:var(--forest);} .btn-gold:hover{background:var(--gold-deep);color:var(--cream);}
+  .btn-dark{background:var(--forest);color:var(--cream);} .btn-dark:hover{background:var(--forest-2);}
+  .btn-ghost{background:transparent;color:var(--forest);border:1.5px solid var(--forest);}
+  .btn-ghost:hover{background:var(--forest);color:var(--cream);}
+
+  /* ── FILTER CHIP RAIL ─────────────────────────────────────── */
+  .chiprail{position:sticky;top:58px;z-index:40;background:var(--cream);border-bottom:1px solid var(--line);overflow:hidden;}
+  .chiprail-in{display:flex;align-items:center;gap:8px;padding:11px 22px;overflow-x:auto;scrollbar-width:none;width:100%;}
+  .chiprail-in::-webkit-scrollbar{display:none;}
+  .rail-label{font:600 .68rem/1 var(--sans);letter-spacing:.2em;text-transform:uppercase;color:var(--gold-deep);margin-right:4px;white-space:nowrap;}
+  .chip{font:600 .78rem/1 var(--sans);padding:8px 14px;border-radius:99px;border:1.5px solid var(--line);
+    background:var(--paper);color:#5c5545;cursor:pointer;transition:all .16s;text-transform:capitalize;white-space:nowrap;}
+  .chip:hover{border-color:var(--gold);color:var(--forest);}
+  .chip[aria-pressed="true"]{background:var(--forest);border-color:var(--forest);color:var(--cream);}
+  .count{margin-left:auto;font:600 .72rem/1 var(--sans);color:var(--mauve);letter-spacing:.02em;white-space:nowrap;padding-left:12px;}
+
+  /* ── GALLERY (near full viewport, masonry) ────────────────── */
+  .gallery{padding:22px 22px 60px;}
+  .grid{columns:5 300px;column-gap:18px;}
+  @media (max-width:1100px){ .grid{columns:3 280px;} }
+  @media (max-width:640px){ .grid{columns:2 160px;column-gap:12px;} }
+  .tile{break-inside:avoid;margin:0 0 18px;position:relative;animation:rise .5s ease backwards;}
+  .card-figure{position:relative;border-radius:14px;overflow:hidden;background:
+    repeating-linear-gradient(45deg,#f0e9db 0 12px,#ece3d2 12px 24px);
+    box-shadow:0 1px 0 var(--shadow);transition:box-shadow .25s,transform .25s;}
+  .tile:hover .card-figure{box-shadow:0 22px 44px -20px var(--shadow);transform:translateY(-3px);}
+  .tile-img{width:100%;height:auto;display:block;user-select:none;-webkit-user-drag:none;}
+  .wm{position:absolute;inset:0;z-index:1;pointer-events:none;opacity:.5;background-repeat:repeat;
+    background-image:url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='250'%20height='150'%3E%3Ctext%20x='12'%20y='95'%20transform='rotate(-24%2012%2095)'%20font-family='Georgia,serif'%20font-size='19'%20fill='white'%20fill-opacity='0.85'%20stroke='black'%20stroke-opacity='0.18'%20stroke-width='0.6'%3ECultureSchool%3C/text%3E%3C/svg%3E");}
+  .badge-feat{position:absolute;top:11px;left:11px;z-index:3;font:700 .6rem/1 var(--sans);letter-spacing:.1em;
+    text-transform:uppercase;color:var(--forest);background:var(--gold);padding:5px 9px;border-radius:99px;}
+  .fav{position:absolute;top:9px;right:9px;z-index:3;height:30px;padding:0 11px;border-radius:99px;border:0;cursor:pointer;
+    background:rgba(13,31,18,.5);color:rgba(255,255,255,.92);font:600 .74rem/30px var(--sans);
+    display:flex;align-items:center;gap:5px;backdrop-filter:blur(3px);transition:transform .15s,color .2s,background .2s;}
+  .fav:hover{transform:scale(1.06);}
+  .fav.on{color:#ff5a76;background:rgba(255,255,255,.94);}
+  .fav .likect{font-variant-numeric:tabular-nums;}
+  .tile-hover{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;justify-content:flex-end;
+    gap:10px;padding:14px;background:linear-gradient(to top,rgba(13,31,18,.82) 0%,rgba(13,31,18,.15) 55%,transparent 100%);
+    opacity:0;transition:opacity .22s;}
+  .tile:hover .tile-hover,.tile:focus-within .tile-hover{opacity:1;}
+  .tile-tags{display:flex;flex-wrap:wrap;gap:6px;}
+  .feel{font:600 .66rem/1 var(--sans);color:#f3ece0;background:rgba(255,255,255,.16);border-radius:99px;padding:5px 9px;text-transform:lowercase;}
+  .feel.occ{color:#0d1f12;background:var(--gold);}
+  .use{width:100%;text-align:center;background:var(--cream);color:var(--forest);font:700 .74rem/1 var(--sans);
+    letter-spacing:.08em;text-transform:uppercase;padding:12px;border-radius:10px;cursor:pointer;border:0;}
+  .use:hover{background:#fff;}
+  .tile-cap{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:9px 4px 0;}
+  .tile-title{font-family:var(--serif);font-size:1rem;line-height:1.2;color:var(--forest);}
+  .tile-by{font:400 .74rem/1 var(--sans);color:var(--mauve);white-space:nowrap;}
+
+  /* ── STATES ───────────────────────────────────────────────── */
+  .state{padding:70px 20px;text-align:center;max-width:520px;margin:40px auto;}
+  .state h3{font-family:var(--serif);font-size:1.6rem;color:var(--forest);margin:0 0 10px;font-weight:400;}
+  .state p{color:#6a6252;margin:0 0 22px;}
+  .banner{background:#fbf1d8;border:1px solid #e8d6a4;color:#7a5e20;border-radius:12px;padding:14px 18px;margin:0 0 20px;font-size:.92rem;}
+  .banner code{background:#f3e6c4;padding:1px 6px;border-radius:5px;font-size:.85em;}
+  .skeleton .card-figure{height:260px;animation:pulse 1.3s ease-in-out infinite;border-radius:14px;}
+  .colorwait{text-align:center;color:var(--mauve);font:600 .78rem/1 var(--sans);padding:8px 0 0;}
+
+  /* ── MODALS ───────────────────────────────────────────────── */
+  .overlay{position:fixed;inset:0;z-index:80;background:rgba(13,31,18,.5);backdrop-filter:blur(3px);
+    display:none;align-items:center;justify-content:center;padding:20px;}
+  .overlay.open{display:flex;}
+  .modal{background:var(--paper);border-radius:18px;max-width:460px;width:100%;padding:32px 30px;
+    box-shadow:0 30px 70px -20px rgba(13,31,18,.5);max-height:90vh;overflow:auto;animation:rise .3s ease;}
+  .modal h3{font-family:var(--serif);font-weight:400;font-size:1.7rem;color:var(--forest);margin:0 0 6px;}
+  .modal p.sub{color:#6a6252;font-size:.94rem;margin:0 0 22px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font:600 .74rem/1.4 var(--sans);letter-spacing:.06em;text-transform:uppercase;color:#6a6252;margin-bottom:6px;}
+  .field input,.field select{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:10px;font:inherit;background:#fff;color:var(--ink);}
+  .field input:focus,.field select:focus{outline:2px solid var(--gold);border-color:var(--gold);}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .modal .btn{width:100%;padding:15px;margin-top:6px;}
+  .modal-x{position:absolute;top:16px;right:18px;background:none;border:0;font-size:1.6rem;line-height:1;color:var(--mauve);cursor:pointer;}
+  .make-list{display:flex;flex-direction:column;gap:9px;margin-top:4px;}
+  .make-fabric{display:block;text-align:center;margin-bottom:14px;}
+  .make-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;border:1px solid #e6ddca;border-radius:12px;padding:10px 13px;}
+  .mr-name{font-family:var(--serif);font-size:1.02rem;color:var(--forest);}
+  .mr-acts{display:flex;gap:6px;flex-wrap:wrap;}
+  .mr-chip{font-size:.8rem;padding:6px 12px;border-radius:999px;border:1px solid #d8cdb6;background:#fff;color:var(--forest);text-decoration:none;cursor:pointer;white-space:nowrap;}
+  .mr-chip:hover{border-color:var(--forest);}
+  .mr-primary{background:var(--forest);color:#faf6ef;border-color:var(--forest);font-weight:600;}
+  .mr-primary:hover{background:#123a20;color:#faf6ef;}
+  .mr-soon{color:#a79a86;border-color:#e6ddca;cursor:default;}
+  .use.make{background:transparent;color:#faf6ef;border:1px solid rgba(250,246,239,.55);margin-top:6px;}
+  .use.make:hover{background:rgba(250,246,239,.14);}
+  .door-sec{margin-bottom:18px;}
+  .door-sec:last-child{margin-bottom:0;}
+  .door-label{font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--mauve);margin-bottom:10px;font-weight:700;}
+  .buy-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+  .buy-card{border:1px solid #e6ddca;border-radius:11px;overflow:hidden;text-decoration:none;display:block;background:#fff;transition:.15s;}
+  .buy-card:hover{border-color:var(--forest);}
+  .buy-card canvas{width:100%;aspect-ratio:210/150;display:block;background:#f6f0e2;}
+  .buy-card .bc-name{padding:7px 6px;font-size:.78rem;color:var(--forest);text-align:center;}
+  #makeOverlay .modal{max-width:480px;max-height:88vh;overflow-y:auto;}
+  .msg{font-size:.9rem;margin-top:12px;padding:12px 14px;border-radius:10px;display:none;}
+  .msg.ok{display:block;background:#e7f0e7;color:#2c5a34;} .msg.err{display:block;background:#fbe7e3;color:#8a3324;}
+  .hint{font-size:.78rem;color:var(--mauve);margin-top:8px;}
+
+  @keyframes rise{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.5;}}
+  :focus-visible{outline:2px solid var(--gold-deep);outline-offset:2px;}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
+  @media (max-width:720px){
+    .top-link{display:none;} .search{max-width:none;}
+    .whoami{max-width:38vw;}
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="https://cultureschool.org/">Culture<em>School</em></a>
+    <div class="search">
+      <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke-width="2"/><path d="M21 21l-4-4" stroke-width="2" stroke-linecap="round"/></svg>
+      <input id="searchInput" type="search" placeholder="Search designs, colours, feelings…" autocomplete="off">
+    </div>
+    <div class="controls">
+      <select id="sortSelect" class="sort" aria-label="Sort">
+        <option value="featured">Featured first</option>
+        <option value="loved">Most loved</option>
+        <option value="newest">Newest</option>
+        <option value="color">By colour</option>
+        <option value="feeling">By feeling</option>
+        <option value="season">By season</option>
+      </select>
+      <button id="favToggle" class="icon-btn" aria-pressed="false"><span class="h">&#10084;</span> Liked</button>
+      <a class="top-link" href="https://cultureschool.org/pages/pro">Make your own</a>
+      <a class="top-link" href="#" data-open="submit">Submit</a>
+      <span id="authSlot" class="auth-slot"></span>
+    </div>
+  </div>
+</header>
+
+<div class="chiprail" id="gallery">
+  <div class="chiprail-in" id="filterBar">
+    <span class="rail-label">Filter</span>
+    <button class="chip" aria-pressed="true" data-filter="*">All</button>
+    <span class="count" id="count"></span>
+  </div>
+</div>
+
+<main class="gallery">
+  <div id="configBanner" class="banner" style="display:none;">
+    Add your Supabase anon key in the <code>CONFIG</code> block to load live designs from <code>coco_art</code>.
+  </div>
+  <div class="grid" id="grid" aria-live="polite"></div>
+  <div id="state"></div>
+</main>
+
+<!-- ─── SIGN-UP MODAL ─────────────────────────────────────────── -->
+<div class="overlay" id="signupOverlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="suTitle" style="position:relative;">
+    <button class="modal-x" data-close aria-label="Close">&times;</button>
+    <h3 id="suTitle">Sign in or sign up</h3>
+    <p class="sub">Enter your email and we'll send a magic link — no password to remember.</p>
+    <div class="field">
+      <label for="suEmail">Email</label>
+      <input id="suEmail" type="email" autocomplete="email" placeholder="you@example.com">
+    </div>
+    <button class="btn btn-dark" id="suBtn">Send my magic link</button>
+    <div class="msg" id="suMsg"></div>
+  </div>
+</div>
+
+<!-- ─── SUBMIT-A-DESIGN MODAL ─────────────────────────────────── -->
+<div class="overlay" id="submitOverlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="sbTitle" style="position:relative;">
+    <button class="modal-x" data-close aria-label="Close">&times;</button>
+    <h3 id="sbTitle">Submit a design</h3>
+    <p class="sub">Share your textile art. We'll review it before it joins the Library.</p>
+    <div class="field">
+      <label for="sbTitle2">Design title</label>
+      <input id="sbTitle2" type="text" placeholder="e.g. Marigold Toss">
+    </div>
+    <div class="row2">
+      <div class="field"><label for="sbName">Your name</label><input id="sbName" type="text" placeholder="Full name"></div>
+      <div class="field"><label for="sbEmail">Your email</label><input id="sbEmail" type="email" placeholder="you@example.com"></div>
+    </div>
+    <div class="field">
+      <label for="sbImg">Image URL</label>
+      <input id="sbImg" type="url" placeholder="https://…/your-design.png">
+      <p class="hint">A link to your artwork (PNG/JPG). Direct file upload is coming soon.</p>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="sbType">Type</label>
+        <select id="sbType"><option value="">Choose…</option><option>Repeat pattern</option><option>Single motif</option><option>Panel / placement</option><option>Border</option><option>Other</option></select>
+      </div>
+      <div class="field"><label for="sbOcc">Occasion</label><input id="sbOcc" type="text" placeholder="e.g. Wedding"></div>
+    </div>
+    <div class="field"><label for="sbVibe">Vibe</label><input id="sbVibe" type="text" placeholder="One line — the feeling of it"></div>
+    <div class="field"><label for="sbFeels">Feels <span style="text-transform:none;letter-spacing:0;">(comma-separated)</span></label><input id="sbFeels" type="text" placeholder="warm, botanical, festive"></div>
+    <div class="field"><label for="sbPayout">Payout email <span style="text-transform:none;letter-spacing:0;">(optional)</span></label><input id="sbPayout" type="email" placeholder="Where royalties are sent"></div>
+    <button class="btn btn-gold" id="sbBtn">Submit for review</button>
+    <div class="msg" id="sbMsg"></div>
+  </div>
+</div>
+
+<div class="overlay" id="makeOverlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="makeTitle" style="position:relative;">
+    <button class="modal-x" data-close aria-label="Close">&times;</button>
+    <h3 id="makeTitle">Make it yourself</h3>
+    <div class="door-sec"><div class="door-label">&#9670; Buy it made</div><div class="buy-grid" id="buyGrid"></div></div>
+    <div class="door-sec"><div class="door-label">&#10022; Make it yourself</div><p class="sub" style="margin:0 0 12px">Sew it your way &mdash; fabric, sewing pattern, or a kit.</p><div class="make-list" id="makeList"></div></div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════
+   CONFIG
+   ══════════════════════════════════════════════════════════════ */
+const SUPABASE_URL = 'https://qwulthvbwujfehgdegtn.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3dWx0aHZid3VqZmVoZ2RlZ3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQyMDcxODIsImV4cCI6MjA1OTc4MzE4Mn0.t9n4eZng6d0jggiPNK-J_DByvEE2L9tqy5Xh_1-TSoQ';
+
+const configured = SUPABASE_ANON_KEY && !SUPABASE_ANON_KEY.startsWith('PASTE_');
+let sb = null;
+if (configured) sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* ---------- signed-in-as header ---------- */
+const authSlot = document.getElementById('authSlot');
+function updateAuthUI(session){
+  if(!authSlot) return;
+  const email = session?.user?.email;
+  if(email){
+    authSlot.innerHTML = '<span class="whoami">Signed in as <b></b></span>'
+      + '<button class="link-btn" id="signOut" type="button">Sign out</button>';
+    authSlot.querySelector('b').textContent = email;
+  } else {
+    authSlot.innerHTML = '<a class="btn btn-gold" href="#" data-open="signup">Sign in / Sign up</a>';
+  }
+}
+if(configured){
+  sb.auth.getSession().then(({data:{session}})=>updateAuthUI(session));
+  sb.auth.onAuthStateChange((_e, session)=>updateAuthUI(session));
+} else { updateAuthUI(null); }
+
+const grid  = document.getElementById('grid');
+const stateEl = document.getElementById('state');
+const countEl = document.getElementById('count');
+const filterBar = document.getElementById('filterBar');
+const searchInput = document.getElementById('searchInput');
+const sortSelect = document.getElementById('sortSelect');
+const favToggle = document.getElementById('favToggle');
+let ALL = [];
+let activeFilter = '*';
+let sortMode = 'featured';
+let favOnly = false;
+
+/* ---------- likes (cross-user; per-browser identity) ---------- */
+const LIKED_KEY = 'coco_liked';
+const liked = new Set(JSON.parse(localStorage.getItem(LIKED_KEY) || '[]'));
+function saveLiked(){ localStorage.setItem(LIKED_KEY, JSON.stringify([...liked])); }
+let likerKey = localStorage.getItem('coco_liker');
+if(!likerKey){ likerKey = (window.crypto&&crypto.randomUUID)?crypto.randomUUID():(Date.now()+'-'+Math.random().toString(36).slice(2)); localStorage.setItem('coco_liker', likerKey); }
+
+const esc = s => String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ---------- rendering ---------- */
+function cardHTML(a, i){
+  const feels = Array.isArray(a.feels) ? a.feels : [];
+  const feelTags = feels.slice(0,3).map(f=>`<span class="feel">${esc(f)}</span>`).join('');
+  const occ = a.occasion_tag ? `<span class="feel occ">${esc(a.occasion_tag)}</span>` : '';
+  const faved = liked.has(a.id) ? ' on' : '';
+  return `<article class="tile" data-id="${a.id}" style="animation-delay:${Math.min(i*35,350)}ms">
+    <div class="card-figure">
+      <img class="tile-img" loading="lazy" draggable="false" src="${esc(a.image_url)}" alt="${esc(a.title)}" onerror="this.closest('.tile').style.display='none'">
+      <div class="wm" aria-hidden="true"></div>
+      ${a.is_featured?'<span class="badge-feat">★ Featured</span>':''}
+      <button class="fav${faved}" data-fav="${a.id}" aria-label="Like"><span aria-hidden="true">&#10084;</span><span class="likect">${a.like_count||0}</span></button>
+      <div class="tile-hover">
+        <div class="tile-tags">${occ}${feelTags}</div>
+        <button class="use" data-download="${a.id}">Use this design &rarr;</button>
+        <button class="use make" data-make="${a.id}">\u2726 Make it</button>
+      </div>
+    </div>
+    <div class="tile-cap">
+      <span class="tile-title">${esc(a.title)}</span>
+      <span class="tile-by">${esc(a.creator_name)}</span>
+    </div>
+  </article>`;
+}
+
+function matchText(a, q){
+  const hay = [a.title, a.creator_name, a.vibe, a.occasion_tag, (Array.isArray(a.feels)?a.feels.join(' '):'')]
+    .join(' ').toLowerCase();
+  return hay.includes(q);
+}
+
+function sortRows(rows){
+  const r = rows.slice();
+  if(sortMode==='newest') r.sort((x,y)=> new Date(y.created_at)-new Date(x.created_at));
+  else if(sortMode==='featured') r.sort((x,y)=> (y.is_featured?1:0)-(x.is_featured?1:0) || new Date(y.created_at)-new Date(x.created_at));
+  else if(sortMode==='feeling') r.sort((x,y)=> ((x.feels&&x.feels[0])||'~').localeCompare((y.feels&&y.feels[0])||'~'));
+  else if(sortMode==='season') r.sort((x,y)=> (x.occasion_tag||'~').localeCompare(y.occasion_tag||'~'));
+  else if(sortMode==='loved') r.sort((x,y)=> (y.like_count||0)-(x.like_count||0) || new Date(y.created_at)-new Date(x.created_at));
+  else if(sortMode==='color') r.sort((x,y)=> (hueCache.get(x.image_url)??999)-(hueCache.get(y.image_url)??999));
+  return r;
+}
+
+function currentRows(){
+  let rows = ALL.slice();
+  const q = (searchInput.value||'').trim().toLowerCase();
+  if(q) rows = rows.filter(a=>matchText(a,q));
+  if(activeFilter!=='*') rows = rows.filter(a => a.occasion_tag===activeFilter || (Array.isArray(a.feels)&&a.feels.includes(activeFilter)));
+  if(favOnly) rows = rows.filter(a => liked.has(a.id));
+  return sortRows(rows);
+}
+
+function render(){
+  const rows = currentRows();
+  grid.innerHTML = rows.map(cardHTML).join('');
+  countEl.textContent = rows.length ? `${rows.length} design${rows.length>1?'s':''}` : '';
+  stateEl.innerHTML = rows.length ? '' :
+    `<div class="state"><h3>Nothing matches</h3>
+       <p>Try a different search, filter, or sort — or add the first one.</p>
+       <button class="btn btn-gold" data-open="submit">Submit a design &rarr;</button></div>`;
+}
+
+async function toggleLike(id, btn){
+  const row = ALL.find(a=>a.id===id); if(!row) return;
+  const wasLiked = liked.has(id);
+  // optimistic
+  if(wasLiked){ liked.delete(id); row.like_count = Math.max(0,(row.like_count||0)-1); }
+  else { liked.add(id); row.like_count = (row.like_count||0)+1; }
+  saveLiked();
+  if(btn){ btn.classList.toggle('on', !wasLiked); const c=btn.querySelector('.likect'); if(c) c.textContent=row.like_count; }
+  if(favOnly && wasLiked) render();
+  if(!configured || !sb) return;
+  try{
+    const { data, error } = await sb.rpc('like_toggle', { p_art_id:id, p_liker:likerKey });
+    if(error) throw error;
+    if(data){                                   // reconcile with server truth
+      row.like_count = data.count;
+      if(data.liked) liked.add(id); else liked.delete(id);
+      saveLiked();
+      if(btn){ btn.classList.toggle('on', !!data.liked); const c=btn.querySelector('.likect'); if(c) c.textContent=data.count; }
+    }
+  }catch(_){ /* keep the optimistic state if the call fails */ }
+}
+
+function buildFilters(){
+  const set = new Set();
+  ALL.forEach(a=>{ if(a.occasion_tag) set.add(a.occasion_tag);
+    (Array.isArray(a.feels)?a.feels:[]).forEach(f=>set.add(f)); });
+  [...set].sort().slice(0,16).forEach(tag=>{
+    const b=document.createElement('button');
+    b.className='chip'; b.dataset.filter=tag; b.textContent=tag; b.setAttribute('aria-pressed','false');
+    filterBar.insertBefore(b, countEl);
+  });
+}
+
+/* ---------- colour analysis (for "By colour" sort) ---------- */
+const hueCache = new Map();
+function rgbToHue(r,g,b){
+  r/=255;g/=255;b/=255;
+  const max=Math.max(r,g,b),min=Math.min(r,g,b),d=max-min;
+  const sat = max===0?0:d/max;
+  if(sat<0.12) return 999;           // greys sort to the end
+  let h=0;
+  if(d!==0){
+    if(max===r) h=((g-b)/d)%6;
+    else if(max===g) h=(b-r)/d+2;
+    else h=(r-g)/d+4;
+  }
+  h*=60; if(h<0) h+=360;
+  return h;
+}
+function computeHue(url){
+  return new Promise(res=>{
+    if(hueCache.has(url)) return res();
+    const img=new Image(); img.crossOrigin='anonymous';
+    img.onload=()=>{
+      try{
+        const s=24,c=document.createElement('canvas'); c.width=s;c.height=s;
+        const ctx=c.getContext('2d'); ctx.drawImage(img,0,0,s,s);
+        const d=ctx.getImageData(0,0,s,s).data;
+        let r=0,g=0,b=0,n=0;
+        for(let i=0;i<d.length;i+=4){ if(d[i+3]<125) continue; r+=d[i];g+=d[i+1];b+=d[i+2];n++; }
+        hueCache.set(url, n? rgbToHue(r/n,g/n,b/n) : 999);
+      }catch(_){ hueCache.set(url,999); }
+      res();
+    };
+    img.onerror=()=>{ hueCache.set(url,999); res(); };
+    img.src=url;
+  });
+}
+async function ensureHues(){
+  const todo = ALL.filter(a=>a.image_url && !hueCache.has(a.image_url));
+  if(!todo.length) return;
+  stateEl.innerHTML='<div class="colorwait">Arranging by colour…</div>';
+  await Promise.all(todo.map(a=>computeHue(a.image_url)));
+  stateEl.innerHTML='';
+}
+
+/* ---------- loading skeletons ---------- */
+function skeletons(n=10){
+  grid.innerHTML = Array.from({length:n}).map(()=>`<div class="tile skeleton"><div class="card-figure"></div></div>`).join('');
+}
+
+/* ---------- fetch ---------- */
+async function load(){
+  if(!configured){
+    document.getElementById('configBanner').style.display='block';
+    grid.innerHTML='';
+    stateEl.innerHTML=`<div class="state"><h3>Connect the Library</h3><p>Once your Supabase anon key is in place, live designs from <code>coco_art</code> appear here.</p></div>`;
+    return;
+  }
+  skeletons();
+  try{
+    const { data, error } = await sb.from('coco_art').select('*')
+      .eq('is_active', true)
+      .order('is_featured',{ascending:false})
+      .order('created_at',{ascending:false});
+    if(error) throw error;
+    ALL = data || [];
+    if(!ALL.length){
+      grid.innerHTML='';
+      stateEl.innerHTML=`<div class="state"><h3>The Library is just opening</h3><p>No published designs yet.</p><button class="btn btn-gold" data-open="submit">Submit a design &rarr;</button></div>`;
+      return;
+    }
+    buildFilters();
+    render();
+  }catch(err){
+    grid.innerHTML='';
+    stateEl.innerHTML=`<div class="state"><h3>Couldn't reach the Library</h3><p>${esc(err.message||'Check the Supabase connection and the coco_art read policy, then reload.')}</p></div>`;
+  }
+}
+
+/* ---------- controls ---------- */
+let _searchT;
+searchInput.addEventListener('input', ()=>{ clearTimeout(_searchT); _searchT=setTimeout(render,140); });
+sortSelect.addEventListener('change', async ()=>{
+  sortMode = sortSelect.value;
+  if(sortMode==='color'){ await ensureHues(); }
+  render();
+});
+favToggle.addEventListener('click', ()=>{
+  favOnly = !favOnly;
+  favToggle.classList.toggle('on', favOnly);
+  favToggle.setAttribute('aria-pressed', favOnly?'true':'false');
+  render();
+});
+filterBar.addEventListener('click', e=>{
+  const chip = e.target.closest('.chip'); if(!chip) return;
+  activeFilter = chip.dataset.filter;
+  filterBar.querySelectorAll('.chip').forEach(c=>c.setAttribute('aria-pressed', c===chip?'true':'false'));
+  render();
+});
+
+/* ---------- modals ---------- */
+const overlays = { signup:document.getElementById('signupOverlay'), submit:document.getElementById('submitOverlay'), make:document.getElementById('makeOverlay') };
+function openModal(k){ overlays[k]?.classList.add('open'); const inp=overlays[k]?.querySelector('input'); setTimeout(()=>inp&&inp.focus(),50); }
+function closeAll(){ Object.values(overlays).forEach(o=>o.classList.remove('open')); }
+document.addEventListener('click', e=>{
+  const fav = e.target.closest('[data-fav]');
+  if(fav){ e.preventDefault(); toggleLike(fav.dataset.fav, fav); return; }
+  if(e.target.closest('#signOut')){ e.preventDefault(); sb?.auth.signOut().then(()=>updateAuthUI(null)); return; }
+  const dl = e.target.closest('[data-download]');
+  if(dl){ e.preventDefault(); downloadDesign(dl.dataset.download); return; }
+  const mk = e.target.closest('[data-make]');
+  if(mk){ e.preventDefault(); openMakeModal(mk.dataset.make); return; }
+  const opener = e.target.closest('[data-open]');
+  if(opener){ e.preventDefault(); openModal(opener.dataset.open); return; }
+  if(e.target.closest('[data-close]') || e.target.classList.contains('overlay')) closeAll();
+});
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeAll(); });
+
+/* ---------- sign up (magic link) ---------- */
+document.getElementById('suBtn').addEventListener('click', async ()=>{
+  const email = document.getElementById('suEmail').value.trim();
+  const msg = document.getElementById('suMsg'); msg.className='msg';
+  if(!email){ msg.className='msg err'; msg.textContent='Enter your email first.'; return; }
+  if(!configured){ msg.className='msg err'; msg.textContent='Add your Supabase anon key to enable sign-up.'; return; }
+  const btn=document.getElementById('suBtn'); btn.disabled=true; btn.textContent='Sending…';
+  try{
+    const { error } = await sb.auth.signInWithOtp({ email, options:{ emailRedirectTo: window.location.href }});
+    if(error) throw error;
+    msg.className='msg ok'; msg.textContent='Check your inbox — your magic link is on its way.';
+  }catch(err){ msg.className='msg err'; msg.textContent=err.message||'Something went wrong. Try again.'; }
+  finally{ btn.disabled=false; btn.textContent='Send my magic link'; }
+});
+
+/* ---------- submit a design ---------- */
+document.getElementById('sbBtn').addEventListener('click', async ()=>{
+  const val=id=>document.getElementById(id).value.trim();
+  const msg=document.getElementById('sbMsg'); msg.className='msg';
+  const title=val('sbTitle2'), name=val('sbName'), email=val('sbEmail'), img=val('sbImg');
+  if(!title||!name||!email||!img){ msg.className='msg err'; msg.textContent='Title, name, email, and image URL are required.'; return; }
+  if(!configured){ msg.className='msg err'; msg.textContent='Add your Supabase anon key to enable submissions.'; return; }
+  const feels = val('sbFeels').split(',').map(s=>s.trim()).filter(Boolean);
+  const row = {
+    title, creator_name:name, creator_email:email, image_url:img,
+    art_type: val('sbType')||null, occasion_tag: val('sbOcc')||null,
+    vibe: val('sbVibe')||null, feels: feels.length?feels:null,
+    payout_email: val('sbPayout')||null,
+    is_active:false, is_featured:false, submitted_at:new Date().toISOString()
+  };
+  const btn=document.getElementById('sbBtn'); btn.disabled=true; btn.textContent='Submitting…';
+  try{
+    const { error } = await sb.from('coco_art').insert(row);
+    if(error) throw error;
+    msg.className='msg ok'; msg.textContent="Thank you — your design is in for review. We'll be in touch.";
+    ['sbTitle2','sbName','sbEmail','sbImg','sbOcc','sbVibe','sbFeels','sbPayout'].forEach(i=>document.getElementById(i).value='');
+    document.getElementById('sbType').value='';
+  }catch(err){ msg.className='msg err'; msg.textContent=err.message||'Submission failed. Please try again.'; }
+  finally{ btn.disabled=false; btn.textContent='Submit for review'; }
+});
+
+/* ---------- casual-save friction (gallery images only) ---------- */
+['contextmenu','dragstart'].forEach(ev =>
+  grid.addEventListener(ev, e => { if (e.target.closest('.card-figure')) e.preventDefault(); })
+);
+
+/* ---------- entitlement-gated download ---------- */
+function toast(m){
+  let t=document.getElementById('toast');
+  if(!t){ t=document.createElement('div'); t.id='toast'; document.body.appendChild(t);
+    t.style.cssText='position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#0d1f12;color:#faf6ef;padding:13px 20px;border-radius:99px;font:600 .85rem/1 -apple-system,Arial,sans-serif;box-shadow:0 12px 30px -10px rgba(13,31,18,.5);z-index:90;opacity:0;transition:opacity .2s;max-width:88vw;text-align:center;'; }
+  t.textContent=m; t.style.opacity='1';
+  clearTimeout(t._h); t._h=setTimeout(()=>{t.style.opacity='0';},3400);
+}
+async function downloadDesign(artId){
+  if(!configured){ toast('Downloads turn on once Supabase is connected.'); return; }
+  const { data:{ session } } = await sb.auth.getSession();
+  if(!session){ openModal('signup'); return; }
+  toast('Preparing your download…');
+  try{
+    const resp = await fetch(`${SUPABASE_URL}/functions/v1/coco-art-download`, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'apikey':SUPABASE_ANON_KEY, 'Authorization':`Bearer ${session.access_token}` },
+      body: JSON.stringify({ art_id: artId })
+    });
+    if(resp.status===401){ openModal('signup'); return; }
+    if(resp.status===403){ toast('Grab this design first — sending you to checkout.'); setTimeout(()=>{ window.location.href='https://cultureschool.org/pages/pro'; }, 900); return; }
+    if(resp.status===404){ toast("This design isn't ready to download yet."); return; }
+    const out = await resp.json().catch(()=>({}));
+    if(resp.ok && out.url){ window.location.href = out.url; return; }
+    toast(out.error || 'Could not start the download. Please try again.');
+  }catch(e){ toast('Could not reach the download service.'); }
+}
+
+/* ---------- Make it yourself (fabric · pattern · kit) ---------- */
+const SPOONFLOWER_SHOP = 'https://www.spoonflower.com/profiles/cultureschool';
+const MAKE_PROJECTS = [
+  { label:'Graduation stole',        url:'https://cultureschool.org/products/graduation-stole-sewing-pattern-pdf' },
+  { label:'Piped pillow cover',      url:'https://cultureschool.org/products/piped-pillow-cover-sewing-pattern-pdf-download' },
+  { label:'Tote bag',                url:'https://cultureschool.org/products/tote-bag-sewing-pattern-pdf-download' },
+  { label:'Denim jacket back panel', url:'https://cultureschool.org/products/denim-jacket-panel-sewing-pattern-pdf-download' },
+];
+
+/* ---------- Buy it made (textile composited onto finished products) ---------- */
+const ORDER_PRODUCTS = {
+  pillow:{ label:'Pillow 22×22', url:'https://cultureschool.org/products/coco-print-22-x-22-pillow', img:'https://cdn.shopify.com/s/files/1/0673/3637/2387/files/square_22_x_22_pillow_mockup.png?v=1777999891', patRect:[30,30,140,140] },
+  tote:{ label:'Tote Bag', url:'https://cultureschool.org/products/coco-print-tote', img:'https://cdn.shopify.com/s/files/1/0673/3637/2387/files/extra_large_rectangular_tote_bag_mockup_floating_on_a_blank__2_-removebg-preview.png?v=1777999364', patRect:[35,20,130,130] },
+  sheets:{ label:'Sheet Set', url:'https://cultureschool.org/products/coco-print-sheet-set', img:'https://cdn.shopify.com/s/files/1/0673/3637/2387/files/Folded_Sheet_Set_Mock_Up.png?v=1778003351', patRect:[15,8,180,95] },
+};
+const _mockCache = {};
+let _activeTextileImg = null;
+function preloadMockups(){ Object.keys(ORDER_PRODUCTS).forEach(function(k){ var im=new Image(); im.crossOrigin='anonymous'; im.onload=function(){ _mockCache[k]=im; redrawBuyMockups(); }; im.src=ORDER_PRODUCTS[k].img; }); }
+function drawTextileMockup(canvas, tex, key){
+  var prod=ORDER_PRODUCTS[key]; if(!prod) return;
+  var ctx=canvas.getContext('2d'), W=canvas.width, H=canvas.height; ctx.clearRect(0,0,W,H);
+  var photo=_mockCache[key], r=prod.patRect;
+  var off=document.createElement('canvas'); off.width=W; off.height=H; var oc=off.getContext('2d');
+  oc.fillStyle='#fff'; oc.fillRect(0,0,W,H);
+  if(tex && tex.complete && tex.naturalWidth) oc.drawImage(tex, r[0],r[1],r[2],r[3]);
+  if(photo && photo.complete){ oc.globalCompositeOperation='multiply'; oc.drawImage(photo,0,0,W,H); oc.globalCompositeOperation='destination-in'; oc.drawImage(photo,0,0,W,H); oc.globalCompositeOperation='source-over'; }
+  ctx.drawImage(off,0,0);
+}
+function redrawBuyMockups(){ Object.keys(ORDER_PRODUCTS).forEach(function(k){ var c=document.getElementById('bm-'+k); if(c) drawTextileMockup(c,_activeTextileImg,k); }); }
+function renderBuyGrid(a){
+  var grid=document.getElementById('buyGrid'); if(!grid) return;
+  grid.innerHTML=Object.keys(ORDER_PRODUCTS).map(function(k){ var p=ORDER_PRODUCTS[k]; return '<a class="buy-card" href="'+p.url+'" target="_blank" rel="noopener"><canvas id="bm-'+k+'" width="210" height="150"></canvas><div class="bc-name">'+p.label+'</div></a>'; }).join('');
+  _activeTextileImg=null; redrawBuyMockups();
+  if(a && a.image_url){ var im=new Image(); im.crossOrigin='anonymous'; im.onload=function(){ _activeTextileImg=im; redrawBuyMockups(); }; im.src=a.image_url; }
+}
+function openMakeModal(id){
+  const a = (typeof ALL !== 'undefined' ? ALL : []).find(x => String(x.id) === String(id));
+  document.getElementById('makeTitle').textContent = a ? ('Make with \u201c' + a.title + '\u201d') : 'Make it yourself';
+  document.getElementById('makeList').innerHTML =
+    '<a class="make-fabric mr-chip mr-primary" href="' + SPOONFLOWER_SHOP + '" target="_blank" rel="noopener">Get the fabric \u2014 Spoonflower \u2192</a>'
+    + MAKE_PROJECTS.map(function(pj){ return '<div class="make-row"><span class="mr-name">' + esc(pj.label) + '</span><span class="mr-acts"><a class="mr-chip mr-primary" href="' + pj.url + '" target="_blank" rel="noopener">Pattern PDF \u2192</a><span class="mr-chip mr-soon">Kit \u00b7 soon</span></span></div>'; }).join('');
+  renderBuyGrid(a);
+  openModal('make');
+}
+
+preloadMockups();
+load();
+</script>
+</body>
+</html>

@@ -1,5 +1,7 @@
 
 
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -337,7 +339,7 @@ body.lib-mode {
 body.lib-mode #paletteDetailWrap,
 body.lib-mode .topbar { background: rgba(14,11,8,.88); border-bottom-color: rgba(255,255,255,.08); }
 body.lib-mode .topbar-logo,
-body.lib-mode .topbar-back { color: rgba(255,255,255,.7); }
+body.lib-mode .topbar-back { color: rgba(255,255,255,.85); }
 
 main.is-library {
   max-width: 100%;
@@ -356,7 +358,7 @@ main.is-library {
 .library-eyebrow {
   font: 700 .65rem/1 var(--sans);
   letter-spacing: .28em; text-transform: uppercase;
-  color: var(--gold); opacity: .85; margin-bottom: 16px;
+  color: var(--gold); margin-bottom: 16px;
 }
 .library-title {
   font-family: 'DM Serif Display', var(--serif);
@@ -368,7 +370,7 @@ main.is-library {
 .library-title em { color: var(--gold-lt); font-style: italic; }
 .library-sub {
   font: 400 .88rem/1.6 var(--sans);
-  color: rgba(255,255,255,.42);
+  color: rgba(255,255,255,.68);
   max-width: 420px; margin: 0 auto;
 }
 
@@ -384,26 +386,26 @@ main.is-library {
 .lib-filter-label {
   font: 700 .55rem/1 var(--sans);
   letter-spacing: .2em; text-transform: uppercase;
-  color: rgba(255,255,255,.25); flex-shrink: 0; min-width: 64px;
+  color: rgba(255,255,255,.55); flex-shrink: 0; min-width: 64px;
 }
 .lib-filter-chips { display: flex; gap: 7px; flex-wrap: wrap; flex: 1; }
 .lib-chip {
   padding: 8px 18px; border-radius: 100px;
-  border: 1.5px solid rgba(255,255,255,.2);
+  border: 1.5px solid rgba(255,255,255,.3);
   background: rgba(14,11,8,.55);
   font: 600 .65rem/1 var(--sans); letter-spacing: .08em;
-  color: rgba(255,255,255,.72);
+  color: rgba(255,255,255,.88);
   cursor: pointer; backdrop-filter: blur(14px);
   transition: all .22s var(--ease); white-space: nowrap;
 }
 .lib-chip:hover { border-color: rgba(200,160,80,.5); color: #fff; transform: translateY(-2px); }
 .lib-chip.active { background: rgba(200,160,80,.18); border-color: var(--gold); color: var(--gold-lt); }
 .lib-sort-wrap { display: flex; align-items: center; gap: 8px; margin-left: auto; flex-shrink: 0; }
-.lib-sort-label { font: 600 .55rem/1 var(--sans); letter-spacing: .16em; text-transform: uppercase; color: rgba(255,255,255,.25); }
+.lib-sort-label { font: 600 .55rem/1 var(--sans); letter-spacing: .16em; text-transform: uppercase; color: rgba(255,255,255,.55); }
 .lib-sort {
-  background: rgba(14,11,8,.55); border: 1.5px solid rgba(255,255,255,.18);
+  background: rgba(14,11,8,.55); border: 1.5px solid rgba(255,255,255,.25);
   border-radius: 100px; padding: 7px 14px;
-  font: 600 .65rem/1 var(--sans); color: rgba(255,255,255,.65);
+  font: 600 .65rem/1 var(--sans); color: rgba(255,255,255,.85);
   cursor: pointer; backdrop-filter: blur(14px);
   outline: none; appearance: none;
 }
@@ -431,7 +433,7 @@ main.is-library {
 .lib-section-count {
   font: 400 .68rem/1 var(--sans);
   letter-spacing: .1em; text-transform: uppercase;
-  color: rgba(255,255,255,.25);
+  color: rgba(255,255,255,.52);
 }
 
 /* ── PALETTE CARDS — solid strip + dark body ── */
@@ -479,13 +481,13 @@ main.is-library {
 .lib-desc {
   font-family: 'Cormorant Garamond', var(--serif);
   font-style: italic; font-size: .8rem; line-height: 1.45;
-  color: rgba(255,255,255,.5);
+  color: rgba(255,255,255,.72);
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
 .lib-meta-row {
   display: flex; align-items: center; justify-content: space-between;
   font: 500 .58rem/1 var(--sans); letter-spacing: .08em; text-transform: uppercase;
-  color: rgba(255,255,255,.28); margin-top: auto; padding-top: 8px;
+  color: rgba(255,255,255,.52); margin-top: auto; padding-top: 8px;
 }
 .lib-meta-row .lib-cta { color: var(--gold-lt); font-weight: 600; }
 .lib-card:hover .lib-meta-row .lib-cta { color: var(--gold); }
@@ -1414,7 +1416,7 @@ main.is-library {
   /* Library grid — taller color strip */
   .lib-strip { height: clamp(90px, 28vw, 130px) !important; }
   .lib-name { font-size: 1rem !important; line-height: 1.25 !important; }
-  .lib-meta { font-size: .62rem !important; opacity: .55; }
+  .lib-meta { font-size: .62rem !important; opacity: .75; }
 
   /* Library: collapse search + chips behind a button */
   .lib-search-wrap { display: none; }
@@ -1437,6 +1439,81 @@ main.is-library {
 .gate-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(201,169,110,.35);}
 .gate-already{font-size:.6rem;font-family:var(--sans,'DM Sans',sans-serif);color:rgba(26,18,8,.4);margin-top:14px;}
 .gate-recheck{background:none;border:none;color:var(--gold-dk);font-size:.6rem;font-family:var(--sans,'DM Sans',sans-serif);cursor:pointer;text-decoration:underline;padding:0;}
+
+/* ── PALETTE REGION PANEL (library sidebar) ── */
+#palRegionPanel {
+  position: fixed;
+  left: 0; top: 58px;
+  width: 216px;
+  height: calc(100vh - 58px);
+  overflow-y: auto;
+  padding: 20px 0 40px;
+  background: rgba(14,11,8,.92);
+  border-right: 1px solid rgba(255,255,255,.06);
+  z-index: 50;
+  display: none;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(200,160,80,.15) transparent;
+}
+#palRegionPanel::-webkit-scrollbar { width: 4px; }
+#palRegionPanel::-webkit-scrollbar-thumb { background: rgba(200,160,80,.15); border-radius: 2px; }
+body.lib-mode #palRegionPanel { display: block; }
+@media (max-width: 900px) { #palRegionPanel { display: none !important; } }
+@media (min-width: 901px) {
+  body.lib-mode main { padding-left: calc(216px + clamp(20px,3vw,36px)) !important; }
+}
+.rfp-panel-label {
+  padding: 6px 16px 10px;
+  font: 700 .72rem/1 var(--sans);
+  letter-spacing: .16em; text-transform: uppercase;
+  color: rgba(255,255,255,.9);
+}
+.rfp-group { border-bottom: 1px solid rgba(255,255,255,.07); }
+.rfp-group-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px;
+  cursor: pointer;
+  font: 700 .76rem/1 var(--sans);
+  letter-spacing: .12em; text-transform: uppercase;
+  color: rgba(255,255,255,.82);
+  transition: color .18s;
+  user-select: none;
+}
+.rfp-group-head:hover { color: rgba(255,255,255,.9); }
+.rfp-group.open .rfp-group-head { color: var(--gold); }
+.rfp-arrow { font-size: .62rem; opacity: .9; transition: transform .2s var(--ease); }
+.rfp-group.open .rfp-arrow { transform: rotate(90deg); opacity: 1; }
+.rfp-group-body { display: none; padding: 2px 0 8px; }
+.rfp-group.open .rfp-group-body { display: block; }
+.rfp-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 16px 8px 24px;
+  font: 600 .92rem/1.3 var(--sans);
+  color: rgba(255,255,255,.94);
+  cursor: pointer;
+  transition: color .14s, background .14s;
+}
+.rfp-item:hover { color: rgba(255,255,255,.92); background: rgba(255,255,255,.04); }
+.rfp-item.active { color: var(--gold-lt); font-weight: 700; background: rgba(200,160,80,.09); }
+.rfp-count { font-size: .74rem; font-weight: 600; opacity: .8; flex-shrink: 0; margin-left: 4px; font-variant-numeric: tabular-nums; }
+/* Active chips row above library grid */
+#palActiveChips { width: 100%; display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 14px; min-height: 0; }
+.pal-chip-active {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 12px; border-radius: 100px;
+  background: rgba(200,160,80,.14); border: 1.5px solid var(--gold);
+  color: var(--gold-lt); font: 700 .72rem/1 var(--sans); letter-spacing: .04em;
+  cursor: pointer; transition: background .15s; white-space: nowrap;
+}
+.pal-chip-active:hover { background: rgba(200,160,80,.24); }
+.pal-chip-active span { opacity: .55; font-size: .85em; }
+.pal-chip-clear {
+  padding: 5px 12px; border-radius: 100px;
+  background: transparent; border: 1.5px solid rgba(255,255,255,.22);
+  color: rgba(255,255,255,.55); font: 500 .6rem/1 var(--sans); letter-spacing: .05em;
+  cursor: pointer; transition: border-color .15s, color .15s; white-space: nowrap;
+}
+.pal-chip-clear:hover { border-color: rgba(255,255,255,.4); color: rgba(255,255,255,.82); }
 </style>
 
 <!-- PWA -->
@@ -1708,6 +1785,12 @@ main.is-library {
   </div>
 </header>
 
+<!-- PALETTE REGION PANEL — visible in library mode only -->
+<aside id="palRegionPanel">
+  <div class="rfp-panel-label">Browse by</div>
+  <div id="rfpList"><!-- populated by buildPalRegionPanel() --></div>
+</aside>
+
 <main id="main">
   <div class="state-msg" id="loadingState">
     <span class="icon">CoCo</span>
@@ -1743,6 +1826,7 @@ let toastTimer;
    No magic link, no auth friction — just email capture for list.
 ─────────────────────────────────────────────────────────────── */
 const UC_EMAIL_KEY = 'cocoUseCardEmail';
+let _isSubscriber = false;
 
 function getStoredUCEmail() {
   try { return localStorage.getItem(UC_EMAIL_KEY) || ''; } catch(_){ return ''; }
@@ -1875,9 +1959,8 @@ function showUCGate(onConfirm) {
 async function downloadUseCard() {
   const p = window.__palette;
   if (!p) { showToast('Palette not loaded yet'); return; }
-
-  // Gate check first
-  showUCGate((email) => _renderUseCard(p, email));
+  if (!_isSubscriber) { showSubscribeGate(); return; }
+  _renderUseCard(p, null);
 }
 
 async function _renderUseCard(p, _email) {
@@ -2145,19 +2228,19 @@ async function loadPalette() {
       return;
     }
 
-    // Try descriptions table — totally non-blocking, palette renders regardless
+    // Fetch descriptions + subscriber status in parallel — both non-blocking
     let customDesc = data.description || null;
     try {
-      const { data: descData } = await db
-        .from('descriptions')
-        .select('body')
-        .eq('palette_id', id)
-        .maybeSingle();
-      if (descData?.body) customDesc = descData.body;
-    } catch(e) { /* table may not exist yet — fallback to generated mood */ }
+      const [descResult, subResult] = await Promise.all([
+        db.from('descriptions').select('body').eq('palette_id', id).maybeSingle().catch(() => ({ data: null })),
+        _isSubscriber ? Promise.resolve({ isSubscriber: true }) : getSubscriberStatus().catch(() => ({ isSubscriber: false }))
+      ]);
+      if (descResult?.data?.body) customDesc = descResult.data.body;
+      _isSubscriber = subResult.isSubscriber;
+    } catch(e) { /* non-blocking — palette renders regardless */ }
 
     window.__palette = data;
-  renderPalette(data, customDesc);
+    renderPalette(data, customDesc, _isSubscriber);
   if (typeof csTrack === 'function') csTrack('palette_view', { type: 'palette', id: data.id, slug: data.name });
 
   } catch (e) {
@@ -2254,7 +2337,7 @@ function submitSaveEmail(paletteId) {
     .catch(() => {});
 }
 
-function renderPalette(p, customDesc) {
+function renderPalette(p, customDesc, isSub = false) {
   window._currentPal = p;           // global so buttons can reference without inline JSON
 
   const main   = document.getElementById('main');
@@ -2263,10 +2346,10 @@ function renderPalette(p, customDesc) {
     ? new Date(p.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
     : '';
 
-  // Color strip
+  // Color strip — hex labels only for subscribers
   const stripHtml = colors.map(c => `
     <div class="color-swatch" style="background:${c};">
-      <span class="hex-label">${c}</span>
+      ${isSub ? `<span class="hex-label">${c}</span>` : ''}
     </div>
   `).join('');
 
@@ -2275,10 +2358,10 @@ function renderPalette(p, customDesc) {
     const role = (p.color_roles && (p.color_roles[c] || p.color_roles[c.toLowerCase()])) || '';
     const roleBadge = role ? `<span class="role-badge role-${role}">${role}</span>` : '';
     return `
-    <div class="swatch-item" onclick="copyHex('${c}')" title="Copy ${c}">
+    <div class="swatch-item" onclick="${isSub ? `copyHex('${c}')` : 'showSubscribeGate()'}" title="${isSub ? `Copy ${c}` : 'Subscribe to copy'}">
       <div class="swatch-dot" style="background:${c};"></div>
       <span class="swatch-hex">${c}</span>
-      ${roleBadge}
+      ${!isSub ? `<span style="font-size:.48rem;color:var(--gold-dk);font-weight:700;letter-spacing:.06em;text-transform:uppercase;">sub to copy</span>` : roleBadge}
     </div>
   `;
   }).join('');
@@ -2310,7 +2393,7 @@ function renderPalette(p, customDesc) {
       <div class="color-strip">${stripHtml}</div>
       <div class="palette-body">
         <div class="palette-label">◈ Color palette</div>
-        ${p.code ? `<div class="palette-code" onclick="(function(el,c){navigator.clipboard.writeText(c);el.textContent='copied!';setTimeout(()=>el.textContent=c,1200)})(this,'${escHtml(p.code)}')" title="Click to copy">${escHtml(p.code)}</div>` : ''}
+        ${p.code ? `<div class="palette-code" onclick="${isSub ? `(function(el,c){navigator.clipboard.writeText(c);el.textContent='copied!';setTimeout(()=>el.textContent=c,1200)})(this,'${escHtml(p.code)}')` : 'showSubscribeGate()'}" title="${isSub ? 'Click to copy' : 'Subscribe to copy'}">${escHtml(p.code)}</div>` : ''}
         <div class="palette-name">${escHtml(p.name)}${grabCount}</div>
         ${p.color_descriptor ? `<div style="font-family:'DM Sans',sans-serif;font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-dk);opacity:.8;margin-top:3px;margin-bottom:2px;">${escHtml(p.color_descriptor)}</div>` : ''}
         ${date ? `<div class="palette-meta">Saved ${date}</div>` : ''}
@@ -2354,24 +2437,16 @@ function renderPalette(p, customDesc) {
     letter-spacing:.12em;text-transform:uppercase;white-space:nowrap;">Explore →</span>
 </a>
         <div class="palette-divider"></div>
-        ${renderSavePrompt(p.id)}
-        <div style="height:16px;"></div>
-        <!-- Mobile: 2 primary actions + collapsed "more" -->
+        ${isSub ? renderSavePrompt(p.id) : ''}
+        <div style="height:${isSub ? 16 : 0}px;"></div>
+        ${isSub ? `
+        <!-- Subscriber: full CTA rows -->
         <div class="mobile-cta-row" style="display:none;flex-direction:column;gap:8px;margin-bottom:4px;">
-          <button class="btn-primary" onclick="openPrintModal()" style="width:100%;">
-            ✦ Order prints
-          </button>
-          <button class="btn-secondary" onclick="sharePalette()" style="width:100%;">
-            ↗ Share
-          </button>
-<button class="btn-secondary" onclick="pinPalette()" style="width:100%;">
-  ◈ Pin it
-</button>
-          <button
-            style="background:none;border:none;font:700 .62rem/1 var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);cursor:pointer;padding:10px 0;text-align:center;"
-            onclick="var panel=this.nextElementSibling;panel.classList.toggle('open');this.textContent=panel.classList.contains('open')?'▲ Less options':'▼ More options'">
-            ▼ More options
-          </button>
+          <button class="btn-primary" onclick="openPrintModal()" style="width:100%;">✦ Order prints</button>
+          <button class="btn-secondary" onclick="sharePalette()" style="width:100%;">↗ Share</button>
+          <button class="btn-secondary" onclick="pinPalette()" style="width:100%;">◈ Pin it</button>
+          <button style="background:none;border:none;font:700 .62rem/1 var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);cursor:pointer;padding:10px 0;text-align:center;"
+            onclick="var panel=this.nextElementSibling;panel.classList.toggle('open');this.textContent=panel.classList.contains('open')?'▲ Less options':'▼ More options'">▼ More options</button>
           <div class="mobile-more-panel" style="flex-direction:column;gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;">
             <button onclick="copyAllHex()" style="padding:14px 16px;border:none;border-bottom:1px solid var(--line);background:#fff;text-align:left;font:500 .8rem/1 var(--sans);color:var(--ink-soft);cursor:pointer;width:100%;">⎘ Copy hex codes →</button>
             <button onclick="downloadPaletteCard('landscape')" style="padding:14px 16px;border:none;border-bottom:1px solid var(--line);background:#fff;text-align:left;font:500 .8rem/1 var(--sans);color:var(--ink-soft);cursor:pointer;width:100%;">↓ Save palette card →</button>
@@ -2380,30 +2455,33 @@ function renderPalette(p, customDesc) {
             <button onclick="openPrintModal()" style="padding:14px 16px;border:none;background:#fff;text-align:left;font:500 .8rem/1 var(--sans);color:var(--ink-soft);cursor:pointer;width:100%;">✦ Order prints →</button>
           </div>
         </div>
-        <!-- Desktop: full button row -->
         <div class="cta-row cta-desktop-only" style="flex-wrap:wrap;gap:8px;">
-          <button class="btn-primary" onclick="sharePalette()" style="flex:1;min-width:120px;">
-            ↗ Share
-          </button>
-<button class="btn-secondary" onclick="pinPalette()" style="flex:1;min-width:110px;">
-  ◈ Pin it
-</button>
-          <button class="btn-secondary" onclick="copyAllHex()" style="flex:1;min-width:110px;">
-            ⎘ Copy hex
-          </button>
-          <button class="btn-secondary" onclick="downloadPaletteCard('landscape')" style="flex:1;min-width:110px;">
-            ↓ Save card
-          </button>
-          <button class="btn-primary" onclick="downloadUseCard()" style="flex:1;min-width:130px;background:linear-gradient(135deg,var(--gold-dk),var(--gold));color:#fff;">
-            ✦ Use Card
-          </button>
-          <button class="btn-secondary" onclick="downloadPaletteCard('stories')" style="flex:1;min-width:110px;">
-            ↓ Stories
-          </button>
-          <button class="btn-primary" onclick="openPrintModal()" style="flex:1;min-width:110px;">
-            ✦ Order prints
+          <button class="btn-primary" onclick="sharePalette()" style="flex:1;min-width:120px;">↗ Share</button>
+          <button class="btn-secondary" onclick="pinPalette()" style="flex:1;min-width:110px;">◈ Pin it</button>
+          <button class="btn-secondary" onclick="copyAllHex()" style="flex:1;min-width:110px;">⎘ Copy hex</button>
+          <button class="btn-secondary" onclick="downloadPaletteCard('landscape')" style="flex:1;min-width:110px;">↓ Save card</button>
+          <button class="btn-primary" onclick="downloadUseCard()" style="flex:1;min-width:130px;background:linear-gradient(135deg,var(--gold-dk),var(--gold));color:#fff;">✦ Use Card</button>
+          <button class="btn-secondary" onclick="downloadPaletteCard('stories')" style="flex:1;min-width:110px;">↓ Stories</button>
+          <button class="btn-primary" onclick="openPrintModal()" style="flex:1;min-width:110px;">✦ Order prints</button>
+        </div>
+        ` : `
+        <!-- Non-subscriber: share only + subscribe gate -->
+        <div style="margin-bottom:14px;">
+          <button class="btn-secondary" onclick="sharePalette()" style="width:100%;">↗ Share this palette</button>
+        </div>
+        <div style="background:linear-gradient(135deg,#1a1208,#2a1c0e);border-radius:16px;padding:24px 22px 20px;text-align:center;">
+          <div style="font:700 .55rem/1 var(--sans);letter-spacing:.28em;text-transform:uppercase;color:var(--gold);margin-bottom:10px;">✦ CoCo Subscription</div>
+          <div style="font-family:var(--serif);font-style:italic;font-size:1.3rem;color:#fff;line-height:1.2;margin-bottom:8px;">Use this palette.<br>Make something.</div>
+          <div style="font-size:.74rem;color:rgba(255,255,255,.55);line-height:1.65;margin-bottom:20px;">Copy hex · download files · pin to your library<br>100+ palettes · pattern library · textile swatches · templates</div>
+          <a href="https://cultureschool.org/collections/membership" target="_blank" rel="noopener"
+            style="display:block;padding:13px;border-radius:12px;background:linear-gradient(135deg,#c9a96e,#a07840);color:#1a1208;font:700 .7rem/1 var(--sans);letter-spacing:.1em;text-transform:uppercase;text-decoration:none;margin-bottom:12px;box-shadow:0 4px 16px rgba(201,169,110,.28);">
+            Subscribe — $9.99/mo
+          </a>
+          <button onclick="recheckSubscriber()" style="background:none;border:none;font:.65rem/1 var(--sans);color:rgba(255,255,255,.35);cursor:pointer;text-decoration:underline;padding:0;">
+            Already a subscriber? Sign in →
           </button>
         </div>
+        `}
       </div>
     </div>
   `;
@@ -2413,15 +2491,46 @@ function renderPalette(p, customDesc) {
 
   document.title = p.name + ' — CoCo Palette';
   document.body.classList.remove('lib-mode');
-  renderColorStoryButton(main, p);
-  renderPartyScene(main, colors);
-  renderRoomScene(main, colors);
-  renderLivingRoomScene(main, colors);
-  renderDiningRoomScene(main, colors);
+  if (isSub) {
+    renderColorStoryButton(main, p);
+    renderPartyScene(main, colors);
+    renderRoomScene(main, colors);
+    renderLivingRoomScene(main, colors);
+    renderDiningRoomScene(main, colors);
+  }
 }
 
 /* ── ACTIONS ── */
+function showSubscribeGate() {
+  const scrim = document.createElement('div');
+  scrim.style.cssText = 'position:fixed;inset:0;z-index:9200;background:rgba(26,18,8,.78);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:center;padding:20px;';
+  scrim.innerHTML = `
+    <div style="background:#faf6f0;border-radius:20px;padding:32px 28px 24px;width:min(420px,92vw);text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.35);">
+      <div style="font:700 .55rem/1 var(--sans);letter-spacing:.28em;text-transform:uppercase;color:var(--gold);margin-bottom:12px;">✦ CoCo Subscription</div>
+      <div style="font-family:var(--serif);font-style:italic;font-size:1.4rem;color:var(--ink);line-height:1.2;margin-bottom:8px;">Use this palette.<br>Make something.</div>
+      <div style="font-size:.78rem;color:var(--muted);line-height:1.65;margin-bottom:22px;">Copy hex codes · download files · pin to your library<br>100+ palettes · pattern library · textile swatches · templates</div>
+      <a href="https://cultureschool.org/collections/membership" target="_blank" rel="noopener"
+        style="display:block;padding:14px;border-radius:12px;background:linear-gradient(135deg,#c9a96e,#a07840);color:#fff;font:700 .72rem/1 var(--sans);letter-spacing:.1em;text-transform:uppercase;text-decoration:none;margin-bottom:12px;box-shadow:0 4px 16px rgba(201,169,110,.28);">
+        Subscribe — $9.99/mo
+      </a>
+      <button onclick="this.closest('[style*=fixed]').remove();recheckSubscriber()"
+        style="display:block;width:100%;background:none;border:none;font:.7rem/1 var(--sans);color:var(--muted);cursor:pointer;text-decoration:underline;margin-bottom:8px;">
+        Already a subscriber? Sign in →
+      </button>
+      <button onclick="this.closest('[style*=fixed]').remove()"
+        style="background:none;border:none;font:.65rem/1 var(--sans);color:var(--muted);cursor:pointer;opacity:.6;">
+        Close
+      </button>
+    </div>`;
+  document.body.appendChild(scrim);
+  scrim.addEventListener('click', e => { if (e.target === scrim) scrim.remove(); });
+  document.addEventListener('keydown', function esc(e) {
+    if (e.key === 'Escape') { scrim.remove(); document.removeEventListener('keydown', esc); }
+  }, { once: true });
+}
+
 function copyHex(hex) {
+  if (!_isSubscriber) { showSubscribeGate(); return; }
   navigator.clipboard.writeText(hex)
     .then(() => showToast(hex + ' copied'))
     .catch(() => showToast(hex));
@@ -2454,6 +2563,7 @@ function highlightColorInScenes(hex) {
 }
 
 function copyAllHex() {
+  if (!_isSubscriber) { showSubscribeGate(); return; }
   const colors = (window._currentPal && window._currentPal.colors) || [];
   navigator.clipboard.writeText(colors.join(', '))
     .then(() => showToast('All hex codes copied ✦'))
@@ -2477,6 +2587,7 @@ function sharePalette() {
   }
 }
 async function pinPalette() {
+  if (!_isSubscriber) { showSubscribeGate(); return; }
   const p      = window._currentPal || {};
   const id     = p.id || '';
   const name   = p.name || 'A CoCo color palette';
@@ -2527,6 +2638,7 @@ function copyCSSVars() {
 }
 
 function downloadPaletteCard(format, returnBlob = false) {
+  if (!_isSubscriber && !returnBlob) { showSubscribeGate(); return; }
   const p      = window._currentPal || {};
   if (typeof csTrack === 'function' && p.id && !returnBlob) csTrack('download', { type: 'palette', id: p.id, slug: p.name });
   const colors = p.colors || ['#c9a96e','#8a6020','#f0e0c0','#2a1a08','#e8c89a'];
@@ -2989,6 +3101,9 @@ async function loadLibrary() {
       </div>
     </div>
 
+    <!-- ACTIVE FILTER CHIPS -->
+    <div id="palActiveChips"></div>
+
     <!-- SECTIONS CONTAINER -->
     <div id="libSections" style="width:100%;">
     <div class="library-grid" id="libraryGrid">
@@ -3041,7 +3156,10 @@ async function loadLibrary() {
     }
 
     window._allPalettes = data;
+    window._palPanelFilters = { region: new Set() };
     buildFilterChips(data);
+    buildPalRegionPanel(data);
+    _isSubscriber = _libIsSubscriber;
     renderLibrarySections(data);
     await initPaletteLibrary(data, _libIsSubscriber);
 
@@ -3184,10 +3302,15 @@ function applyLibFilters() {
   const filters = window._libFilters || {};
   const sort    = window._libSort || 'grab_count';
   const all     = window._allPalettes || [];
+  const pf      = window._palPanelFilters;
 
   let filtered = all.filter(p => {
     if (filters.occasion && (p.occasion || '') !== filters.occasion) return false;
     if (filters.mood && (p.palette_mood || '') !== filters.mood) return false;
+    if (pf && pf.region.size > 0) {
+      const tags = Array.isArray(p.tags) ? p.tags : [];
+      if (![...pf.region].some(t => tags.includes(t))) return false;
+    }
     if (!q) return true;
     return (p.name||'').toLowerCase().includes(q)
         || (p.description||'').toLowerCase().includes(q)
@@ -3202,6 +3325,8 @@ function applyLibFilters() {
   else                            filtered.sort((a,b) => (b.grab_count||0) - (a.grab_count||0));
 
   renderLibrarySections(filtered);
+  updatePalRegionPanel(filtered);
+  renderPalActiveChips();
 }
 
 function renderLibrarySections(palettes) {
@@ -3210,8 +3335,8 @@ function renderLibrarySections(palettes) {
 
   if (!palettes.length) {
     container.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:80px 20px;">
-      <div style="font-family:'DM Serif Display',serif;font-style:italic;font-size:1.6rem;color:rgba(255,255,255,.4);margin-bottom:12px;">Nothing matches that search.</div>
-      <div style="font:.75rem/1.6 var(--sans);color:rgba(255,255,255,.2);">Try a different name, culture, or mood.</div>
+      <div style="font-family:'DM Serif Display',serif;font-style:italic;font-size:1.6rem;color:rgba(255,255,255,.7);margin-bottom:12px;">Nothing matches that search.</div>
+      <div style="font:.75rem/1.6 var(--sans);color:rgba(255,255,255,.48);">Try a different name, culture, or mood.</div>
     </div>`;
     return;
   }
@@ -3291,7 +3416,7 @@ function libCardHtml(p, i) {
   const grabs = (p.grab_count > 1) ? `✦ ${p.grab_count}` : '';
   const metaParts = [grabs, (p.occasion === 'everyday') ? 'everyday' : ''].filter(Boolean);
   const attribution = p.color_descriptor
-    ? `<div style="font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-dk);opacity:.8;margin-top:3px;">${escHtml(p.color_descriptor)}</div>`
+    ? `<div style="font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:#c9a96e;margin-top:3px;">${escHtml(p.color_descriptor)}</div>`
     : '';
   const contributorLine = p.contributed_by
     ? `<div style="font-size:.65rem;color:var(--muted);margin-top:4px;font-style:italic;">by ${escHtml(p.contributed_by)}</div>`
@@ -3484,8 +3609,8 @@ async function loadMyLibrary() {
     const subEl = document.getElementById('myLibSub');
     if (subEl) {
       subEl.innerHTML = isSubscriber
-        ? `${email} &nbsp;·&nbsp; <span style="color:var(--gold);font-weight:600;">✦ Member</span>`
-        : `${email} &nbsp;·&nbsp; <a href="https://cultureschool.org/collections/membership" style="color:var(--gold-dk);">Become a member →</a>`;
+        ? `${email} &nbsp;·&nbsp; <span style="color:var(--gold);font-weight:600;">✦ Subscriber</span>`
+        : `${email} &nbsp;·&nbsp; <a href="https://cultureschool.org/collections/membership" style="color:var(--gold-dk);">Subscribe →</a>`;
     }
 
     let data, error;
@@ -3532,7 +3657,7 @@ async function loadMyLibrary() {
       const memberStrip = document.createElement('div');
       memberStrip.style.cssText = 'width:100%;max-width:1200px;margin:32px auto 0;text-align:center;padding:24px;border-top:1px solid var(--line);';
       memberStrip.innerHTML = `
-        <div style="font-size:.6rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;">✦ Member access</div>
+        <div style="font-size:.6rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;">✦ Subscriber access</div>
         <a href="/" style="font-family:'DM Serif Display',serif;font-style:italic;font-size:1.1rem;color:var(--ink);text-decoration:none;transition:color .18s;"
           onmouseover="this.style.color='var(--gold-dk)'" onmouseout="this.style.color='var(--ink)'">
           Browse the full CoCo library →
@@ -3592,11 +3717,11 @@ async function renderUpsellStrip(container, savedCount) {
     const strip = document.createElement('div');
     strip.className = 'upsell-section';
     strip.innerHTML = `
-      <div class="upsell-eyebrow">◈ Members only</div>
+      <div class="upsell-eyebrow">◈ Subscribers only</div>
       <div class="upsell-heading">The full CoCo library</div>
       <div class="upsell-sub">
         ${countMsg} The community library has 100+ palettes —
-        and members get every new seasonal drop first.
+        and subscribers get every new seasonal drop first.
       </div>
       <div class="upsell-grid-wrap">
         <div class="upsell-grid">${lockedCards}</div>
@@ -3606,7 +3731,7 @@ async function renderUpsellStrip(container, savedCount) {
         <a href="https://cultureschool.org/collections/membership"
           target="_blank" rel="noopener"
           class="upsell-cta-btn">
-          Unlock the full library — $18/mo
+          Subscribe — $9.99/mo
         </a>
         <div class="upsell-cta-note">
           Includes seasonal frame drops, printable packs, and more
@@ -5253,6 +5378,7 @@ function pomPreloadImages() {
 pomPreloadImages();
 
 function openPrintModal() {
+  if (!_isSubscriber) { showSubscribeGate(); return; }
   const p = window._currentPal;
   if (!p) return;
   document.getElementById('printOrderModal').style.display = 'flex';
@@ -5659,16 +5785,221 @@ async function initPaletteLibrary(data, isSubscriber) {
       </div>
       <div class="gate-blur"></div>
       <div class="gate-card">
-        <p class="gate-eyebrow">✦ Members only</p>
+        <p class="gate-eyebrow">✦ Subscribers only</p>
         <h3 class="gate-title">${remaining} more palettes waiting</h3>
-        <p class="gate-sub">Every palette has a cultural origin story. Unlock all ${data.length} for $18/month — plus patterns, color stories, and a full creative archive.</p>
-        <a href="https://cultureschool.org/collections/membership" class="gate-btn">Become a member →</a>
-        <p class="gate-already">Already a member? <button onclick="recheckSubscriber()" class="gate-recheck">Sign in →</button></p>
+        <p class="gate-sub">Every palette has a cultural origin story. Unlock all ${data.length} for $9.99/mo — plus patterns, color stories, and a full creative archive.</p>
+        <a href="https://cultureschool.org/collections/membership" class="gate-btn">Subscribe →</a>
+        <p class="gate-already">Already a subscriber? <button onclick="recheckSubscriber()" class="gate-recheck">Sign in →</button></p>
       </div>`;
     document.querySelector('main.is-library').appendChild(gateEl);
   }
 }
 
+
+/* ══════════════════════════════════════════════════════════════
+   PALETTE REGION PANEL — accordion sidebar for library mode
+═══════════════════════════════════════════════════════════════ */
+
+window._palPanelFilters = window._palPanelFilters || { region: new Set() };
+
+const PALETTE_COLLECTION_GROUPS = [
+  {
+    key: 'africa',
+    label: 'Africa & Diaspora',
+    open: true,
+    tags: ['pan-african','black-american','west-african','ghana','nigeria',
+           'juneteenth','gullah-geechee','afrobeats','south-africa','ethiopia',
+           'senegal','kenya','east-african','afro-caribbean','afro-futurism',
+           'african-diaspora','african-american']
+  },
+  {
+    key: 'caribbean',
+    label: 'Caribbean',
+    open: false,
+    tags: ['caribbean','jamaica','haiti','trinidad','bahamas',
+           'barbados','dominica','cuba','west-indian','guyana','belize']
+  },
+  {
+    key: 'americas',
+    label: 'The Americas',
+    open: false,
+    tags: ['latin-america','brazil','mexico','colombia','puerto-rico',
+           'peru','argentina','venezuela','central-america','south-america',
+           'cumbia','mariachi','latin-american']
+  },
+  {
+    key: 'indigenous',
+    label: 'Indigenous Heritage',
+    open: false,
+    tags: ['native-nations','native-american','indigenous','lakota','cherokee',
+           'navajo','first-nations','pueblo','anishinaabe','creek','comanche']
+  },
+  {
+    key: 'pride',
+    label: 'LGBTQ+ Pride',
+    open: false,
+    tags: ['pride','lgbtq','trans','bisexual','lesbian','queer',
+           'rainbow','progress-pride','nonbinary','intersex']
+  },
+  {
+    key: 'coastal',
+    label: 'American Coastal',
+    open: false,
+    tags: ['mv-wedding','oak-bluffs','vineyard','coastal','hampton',
+           'sag-harbor','martha-vineyard','nantucket','highland-beach']
+  },
+  {
+    key: 'asian',
+    label: 'Asia & Pacific',
+    open: false,
+    tags: ['south-asian','southeast-asian','east-asian','indian','japanese',
+           'korean','chinese','vietnamese','filipino','pacific-islander',
+           'diwali','lunar-new-year']
+  },
+];
+
+const PAL_OCCASION_ITEMS = [
+  { key: 'wedding',     label: 'Wedding' },
+  { key: 'celebration', label: 'Celebration' },
+  { key: 'evening',     label: 'Evening' },
+  { key: 'spiritual',   label: 'Ritual & Spiritual' },
+  { key: 'lifestyle',   label: 'Lifestyle' },
+  { key: 'home',        label: 'Home' },
+  { key: 'everyday',    label: 'Everyday' },
+];
+
+function buildPalRegionPanel(palettes) {
+  const rfpList = document.getElementById('rfpList');
+  if (!rfpList) return;
+
+  const tagCounts = {}, occasionCounts = {};
+  palettes.forEach(p => {
+    if (Array.isArray(p.tags)) p.tags.forEach(t => { tagCounts[t] = (tagCounts[t]||0)+1; });
+    if (p.occasion) occasionCounts[p.occasion] = (occasionCounts[p.occasion]||0)+1;
+  });
+
+  let html = '';
+  const pf = window._palPanelFilters;
+
+  PALETTE_COLLECTION_GROUPS.forEach(group => {
+    const items = group.tags
+      .filter(tag => tagCounts[tag] > 0)
+      .map(tag => {
+        const label = tag.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+        const active = pf.region.has(tag) ? ' active' : '';
+        return `<div class="rfp-item${active}" onclick="handlePalFacet('${tag}')" data-tag="${tag}">
+          <span>${label}</span><span class="rfp-count">${tagCounts[tag]}</span>
+        </div>`;
+      }).join('');
+    if (!items) return;
+    const openCls = group.open ? ' open' : '';
+    html += `
+      <div class="rfp-group${openCls}" id="rfpg-${group.key}">
+        <div class="rfp-group-head" onclick="togglePalRfpGroup('${group.key}')">
+          <span>${group.label}</span><span class="rfp-arrow">▶</span>
+        </div>
+        <div class="rfp-group-body">${items}</div>
+      </div>`;
+  });
+
+  const occItems = PAL_OCCASION_ITEMS
+    .filter(o => occasionCounts[o.key] > 0)
+    .map(o => {
+      const active = (window._libFilters||{}).occasion === o.key ? ' active' : '';
+      return `<div class="rfp-item${active}" onclick="handlePalOccasion('${o.key}')" data-occasion="${o.key}">
+        <span>${o.label}</span><span class="rfp-count">${occasionCounts[o.key]}</span>
+      </div>`;
+    }).join('');
+
+  if (occItems) {
+    html += `
+      <div class="rfp-group" id="rfpg-occasion">
+        <div class="rfp-group-head" onclick="togglePalRfpGroup('occasion')">
+          <span>Occasion</span><span class="rfp-arrow">▶</span>
+        </div>
+        <div class="rfp-group-body">${occItems}</div>
+      </div>`;
+  }
+
+  rfpList.innerHTML = html;
+}
+
+function togglePalRfpGroup(key) {
+  const el = document.getElementById('rfpg-' + key);
+  if (el) el.classList.toggle('open');
+}
+
+function handlePalFacet(tag) {
+  const s = (window._palPanelFilters = window._palPanelFilters || { region: new Set() }).region;
+  if (s.has(tag)) s.delete(tag); else s.add(tag);
+  applyLibFilters();
+}
+
+function handlePalOccasion(occ) {
+  window._libFilters = window._libFilters || {};
+  window._libFilters.occasion = (window._libFilters.occasion === occ) ? '' : occ;
+  // Sync top-bar occasion chips
+  document.querySelectorAll('.lib-chip[data-dim="occasion"]').forEach(b =>
+    b.classList.toggle('active', b.dataset.val === window._libFilters.occasion));
+  applyLibFilters();
+}
+
+function updatePalRegionPanel(filtered) {
+  const tagCounts = {}, occCounts = {};
+  filtered.forEach(p => {
+    if (Array.isArray(p.tags)) p.tags.forEach(t => { tagCounts[t]=(tagCounts[t]||0)+1; });
+    if (p.occasion) occCounts[p.occasion]=(occCounts[p.occasion]||0)+1;
+  });
+  const pf = window._palPanelFilters;
+  document.querySelectorAll('#rfpList .rfp-item[data-tag]').forEach(el => {
+    const tag = el.dataset.tag;
+    const cnt = el.querySelector('.rfp-count');
+    if (cnt) cnt.textContent = tagCounts[tag] || 0;
+    el.classList.toggle('active', !!(pf && pf.region.has(tag)));
+  });
+  document.querySelectorAll('#rfpList .rfp-item[data-occasion]').forEach(el => {
+    const occ = el.dataset.occasion;
+    const cnt = el.querySelector('.rfp-count');
+    if (cnt) cnt.textContent = occCounts[occ] || 0;
+    el.classList.toggle('active', (window._libFilters||{}).occasion === occ);
+  });
+}
+
+function renderPalActiveChips() {
+  const bar = document.getElementById('palActiveChips');
+  if (!bar) return;
+  const pf = window._palPanelFilters;
+  const lf = window._libFilters || {};
+  const chips = [];
+
+  if (pf) {
+    [...pf.region].forEach(tag => {
+      const label = tag.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+      chips.push(`<button class="pal-chip-active" onclick="handlePalFacet('${tag}')">
+        ${label} <span>×</span></button>`);
+    });
+  }
+  if (lf.occasion) {
+    const occ = PAL_OCCASION_ITEMS.find(o => o.key === lf.occasion);
+    const label = occ ? occ.label : lf.occasion.replace(/\b\w/g,c=>c.toUpperCase());
+    chips.push(`<button class="pal-chip-active" onclick="handlePalOccasion('${lf.occasion}')">
+      ${label} <span>×</span></button>`);
+  }
+
+  bar.innerHTML = chips.length
+    ? chips.join('') + `<button class="pal-chip-clear" onclick="clearPalFilters()">Clear all</button>`
+    : '';
+}
+
+function clearPalFilters() {
+  if (window._palPanelFilters) window._palPanelFilters.region.clear();
+  window._libFilters = window._libFilters || {};
+  window._libFilters.occasion = '';
+  window._libFilters.mood = '';
+  // Reset all top-bar chips
+  document.querySelectorAll('.lib-chip').forEach(b => b.classList.remove('active'));
+  applyLibFilters();
+}
 
 // ── Re-check subscription when magic link returns ──
 db.auth.onAuthStateChange(async (event, session) => {
@@ -5679,6 +6010,7 @@ db.auth.onAuthStateChange(async (event, session) => {
         .eq('email', session.user.email.toLowerCase())
         .maybeSingle();
       if (uRow?.is_subscriber) {
+        _isSubscriber = true;
         const gate = document.getElementById('paletteGate');
         if (gate) gate.remove();
         const all = window._allPalettes || [];

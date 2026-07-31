@@ -1,0 +1,1697 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>My World — CultureSchool</title>
+<meta name="description" content="Your personal cultural world — colors, traditions, and creative tools.">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pinyon+Script&family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<style>
+
+/* ── TOKENS ───────────────────────────────────────────────────────── */
+:root {
+  --bg:        #0b0907;
+  --surface:   #141009;
+  --surface-2: #1d1710;
+  --ink:       #f0ebe0;
+  --ink-soft:  #c0b09a;
+  --muted:     #7a6a58;
+  --line:      rgba(201,169,110,.14);
+  --gold:      #c9a96e;
+  --gold-dk:   #9a7a40;
+  --gold-glow: rgba(201,169,110,.18);
+  --gold-lt:   rgba(201,169,110,.07);
+  --script:    'Pinyon Script', cursive;
+  --serif:     'DM Serif Display', Georgia, serif;
+  --sans:      'DM Sans', system-ui, sans-serif;
+  --ease:      cubic-bezier(.22,.61,.36,1);
+  --radius:    16px;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg:        #faf6f0;
+    --surface:   #ffffff;
+    --surface-2: #f5f0e8;
+    --ink:       #1e1810;
+    --ink-soft:  #5a4a38;
+    --muted:     #9a8a78;
+    --line:      #e8ddd0;
+    --gold:      #c8a050;
+    --gold-dk:   #8a6820;
+    --gold-glow: rgba(200,160,80,.15);
+    --gold-lt:   #f5ead8;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg:        #0b0907;
+  --surface:   #141009;
+  --surface-2: #1d1710;
+  --ink:       #f0ebe0;
+  --ink-soft:  #c0b09a;
+  --muted:     #7a6a58;
+  --line:      rgba(201,169,110,.14);
+  --gold:      #c9a96e;
+  --gold-dk:   #9a7a40;
+  --gold-glow: rgba(201,169,110,.18);
+  --gold-lt:   rgba(201,169,110,.07);
+}
+
+:root[data-theme="light"] {
+  --bg:        #faf6f0;
+  --surface:   #ffffff;
+  --surface-2: #f5f0e8;
+  --ink:       #1e1810;
+  --ink-soft:  #5a4a38;
+  --muted:     #9a8a78;
+  --line:      #e8ddd0;
+  --gold:      #c8a050;
+  --gold-dk:   #8a6820;
+  --gold-glow: rgba(200,160,80,.15);
+  --gold-lt:   #f5ead8;
+}
+
+/* ── RESET ───────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  -webkit-font-smoothing: antialiased;
+}
+
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 9999;
+  pointer-events: none; opacity: .025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 256px;
+}
+
+a { color: inherit; text-decoration: none; }
+button { font-family: var(--sans); cursor: pointer; }
+img { max-width: 100%; display: block; }
+
+/* ── GATE ────────────────────────────────────────────────────────── */
+#gate {
+  position: fixed; inset: 0; z-index: 8000;
+  background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  transition: opacity .4s var(--ease);
+}
+
+#gate.fade-out { opacity: 0; pointer-events: none; }
+
+.gate-inner {
+  width: min(440px, 94vw);
+  text-align: center;
+}
+
+.gate-logo {
+  font-family: var(--script);
+  font-size: 2.8rem;
+  color: var(--gold);
+  margin-bottom: 32px;
+  line-height: 1;
+}
+
+.gate-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  padding: 36px 28px 28px;
+  box-shadow: 0 24px 80px rgba(0,0,0,.35);
+}
+
+.gate-eyebrow {
+  font: 700 .55rem/1 var(--sans);
+  letter-spacing: .3em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 12px;
+}
+
+.gate-title {
+  font-family: var(--serif);
+  font-size: 1.55rem;
+  line-height: 1.2;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+
+.gate-sub {
+  font-size: .82rem;
+  color: var(--ink-soft);
+  line-height: 1.65;
+  margin-bottom: 24px;
+}
+
+.gate-input {
+  width: 100%;
+  padding: 13px 16px;
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  font: .92rem/1 var(--sans);
+  color: var(--ink);
+  background: var(--bg);
+  outline: none;
+  margin-bottom: 12px;
+  transition: border-color .18s;
+}
+
+.gate-input:focus { border-color: var(--gold); }
+
+.btn-gold {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #c9a96e, #9a7840);
+  color: #fff;
+  font: 700 .72rem/1 var(--sans);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(201,169,110,.28);
+  transition: opacity .18s, transform .12s;
+}
+
+.btn-gold:hover { opacity: .9; transform: translateY(-1px); }
+.btn-gold:active { transform: translateY(0); }
+
+.gate-alt {
+  margin-top: 14px;
+  font-size: .72rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.gate-alt a, .gate-alt button {
+  color: var(--gold);
+  background: none;
+  border: none;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+}
+
+.gate-spinner {
+  width: 28px; height: 28px;
+  border: 2.5px solid var(--line);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.gate-checking-text {
+  font-size: .85rem;
+  color: var(--muted);
+}
+
+/* ── WORLD ───────────────────────────────────────────────────────── */
+#world {
+  display: none;
+  flex-direction: column;
+  min-height: 100vh;
+  opacity: 0;
+  transition: opacity .5s var(--ease);
+}
+
+#world.visible {
+  display: flex;
+  opacity: 1;
+}
+
+/* ── TOPBAR ──────────────────────────────────────────────────────── */
+.topbar {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(11,9,7,.88);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-bottom: 1px solid var(--line);
+  padding: 0 clamp(16px,4vw,40px);
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+
+@media (prefers-color-scheme: light) {
+  .topbar { background: rgba(250,246,240,.92); }
+}
+:root[data-theme="light"] .topbar { background: rgba(250,246,240,.92); }
+:root[data-theme="dark"] .topbar  { background: rgba(11,9,7,.88); }
+
+.topbar-logo {
+  font-family: var(--script);
+  font-size: 1.75rem;
+  color: var(--gold);
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.topbar-title {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 1rem;
+  color: var(--ink);
+  letter-spacing: .01em;
+}
+
+.topbar-right {
+  display: flex; align-items: center; gap: 10px;
+  flex-shrink: 0;
+}
+
+.topbar-email {
+  font-size: .68rem;
+  color: var(--muted);
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.btn-ghost {
+  padding: 6px 14px;
+  border: 1px solid var(--line);
+  border-radius: 99px;
+  background: none;
+  color: var(--ink-soft);
+  font: .68rem/1 var(--sans);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  transition: border-color .15s, color .15s;
+}
+
+.btn-ghost:hover { border-color: var(--gold); color: var(--gold); }
+
+/* ── HERO ────────────────────────────────────────────────────────── */
+.hero {
+  position: relative;
+  min-height: 320px;
+  display: flex; align-items: flex-end;
+  padding: clamp(40px, 8vw, 80px) clamp(20px, 5vw, 60px) clamp(32px, 5vw, 52px);
+  overflow: hidden;
+}
+
+.hero-ambient {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse 80% 120% at 20% 60%, #c9763288 0%, transparent 55%),
+              radial-gradient(ellipse 70% 90% at 75% 30%, #4a8a6688 0%, transparent 50%),
+              radial-gradient(ellipse 60% 80% at 50% 80%, #8a4a2288 0%, transparent 45%),
+              linear-gradient(160deg, #1a0f06 0%, #0b0907 100%);
+  transition: background 1.2s var(--ease);
+}
+
+.hero-content {
+  position: relative; z-index: 2;
+  max-width: 680px;
+}
+
+.hero-eyebrow {
+  font: 700 .55rem/1 var(--sans);
+  letter-spacing: .3em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 14px;
+}
+
+.hero-title {
+  font-family: var(--serif);
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  color: #f5efe4;
+  line-height: 1.1;
+  margin-bottom: 12px;
+  text-wrap: balance;
+}
+
+.hero-sub {
+  font-size: clamp(.88rem, 2vw, 1rem);
+  color: rgba(240,235,224,.7);
+  line-height: 1.7;
+  max-width: 480px;
+}
+
+/* ── HERO CULTURAL MOMENT ────────────────────────────────────── */
+.hero-moment {
+  margin-top: 20px;
+  max-width: 520px;
+}
+
+.hero-moment-label {
+  font: 700 .52rem/1 var(--sans);
+  letter-spacing: .25em;
+  text-transform: uppercase;
+  color: var(--gold-dk);
+  margin-bottom: 10px;
+  opacity: .85;
+}
+
+.hero-moment-quote {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(.95rem, 2.2vw, 1.12rem);
+  color: rgba(240,235,224,.9);
+  line-height: 1.6;
+  margin-bottom: 8px;
+  text-wrap: balance;
+}
+
+.hero-moment-attr {
+  font-size: .72rem;
+  color: var(--gold);
+  letter-spacing: .04em;
+  margin-bottom: 14px;
+}
+
+.hero-moment-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font: 600 .65rem/1 var(--sans);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: rgba(201,169,110,.75);
+  border-bottom: 1px solid rgba(201,169,110,.25);
+  padding-bottom: 2px;
+  transition: color .15s, border-color .15s;
+}
+
+.hero-moment-link:hover { color: var(--gold); border-color: var(--gold); }
+
+.hero-moment-static {
+  font-size: clamp(.88rem, 2vw, 1rem);
+  color: rgba(240,235,224,.7);
+  line-height: 1.7;
+}
+
+.hero-season {
+  margin-top: 20px;
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 16px;
+  border: 1px solid rgba(201,169,110,.3);
+  border-radius: 99px;
+  font-size: .72rem;
+  color: var(--gold);
+  letter-spacing: .04em;
+  backdrop-filter: blur(8px);
+  background: rgba(201,169,110,.06);
+}
+
+/* ── TOOLS TRACK ──────────────────────────────────────────────────── */
+.tools-track {
+  position: sticky;
+  top: 56px;
+  z-index: 90;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tools-track::-webkit-scrollbar { display: none; }
+
+.tools-inner {
+  display: flex;
+  gap: 8px;
+  padding: 10px clamp(16px,4vw,48px);
+  width: max-content;
+  min-width: 100%;
+}
+
+.tool-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 15px;
+  border-radius: 99px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--ink-soft);
+  font: 600 .68rem/1 var(--sans);
+  letter-spacing: .05em;
+  text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: border-color .15s, color .15s, background .15s;
+}
+
+.tool-pill:hover { border-color: var(--gold-dk); color: var(--gold); background: var(--gold-lt); }
+
+.tool-pill-inspo {
+  border-color: rgba(201,169,110,.45);
+  color: var(--gold);
+  background: rgba(201,169,110,.09);
+  font-weight: 700;
+}
+
+.tool-pill-locked {
+  opacity: .4;
+  pointer-events: none;
+  cursor: default;
+}
+
+/* ── CONTENT GRIDS (inspo + textiles) ───────────────────────────── */
+.content-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.content-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  text-decoration: none;
+  color: var(--ink);
+  display: block;
+  transition: transform .2s var(--ease), box-shadow .2s;
+}
+
+.content-card:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(0,0,0,.22); }
+
+.content-img {
+  width: 100%;
+  aspect-ratio: 4/3;
+  object-fit: cover;
+  display: block;
+  background: var(--surface-2);
+}
+
+.content-img-sq {
+  aspect-ratio: 1;
+}
+
+.content-img-placeholder {
+  width: 100%;
+  aspect-ratio: 4/3;
+  background: var(--surface-2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.6rem;
+  color: var(--muted);
+}
+
+.content-info {
+  padding: 10px 13px 13px;
+}
+
+.content-title {
+  font-family: var(--serif);
+  font-size: .92rem;
+  line-height: 1.3;
+  color: var(--ink);
+  margin-bottom: 3px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.content-meta {
+  font-size: .68rem;
+  color: var(--muted);
+  line-height: 1.4;
+  margin-top: 2px;
+}
+
+.section-cta-row {
+  display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  margin-top: 4px;
+}
+
+.cta-pill-primary {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 10px 20px;
+  border-radius: 99px;
+  background: linear-gradient(135deg, #c9a96e, #9a7840);
+  color: #fff;
+  font: 700 .68rem/1 var(--sans);
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  text-decoration: none;
+  box-shadow: 0 3px 12px rgba(201,169,110,.28);
+  transition: opacity .18s, transform .12s;
+}
+
+.cta-pill-primary:hover { opacity: .88; transform: translateY(-1px); }
+
+.cta-pill-ghost {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 10px 20px;
+  border-radius: 99px;
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  font: 600 .68rem/1 var(--sans);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: border-color .15s, color .15s;
+}
+
+.cta-pill-ghost:hover { border-color: var(--gold); color: var(--gold); }
+
+/* ── CREATOR HUB GRID ─────────────────────────────────────────────── */
+.creator-tools-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 20px 0 0;
+  text-align: left;
+}
+
+.creator-tool {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 20px 18px 16px;
+  display: flex; flex-direction: column; gap: 5px;
+  text-decoration: none; color: var(--ink);
+  transition: transform .2s var(--ease), border-color .2s;
+}
+
+.creator-tool:hover { transform: translateY(-2px); border-color: var(--gold-dk); }
+
+.creator-tool-icon { font-size: 1.3rem; margin-bottom: 6px; }
+
+.creator-tool-name {
+  font: 600 .88rem/1.2 var(--sans);
+  color: var(--ink);
+}
+
+.creator-tool-desc {
+  font-size: .72rem;
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
+
+/* ── MAIN LAYOUT ─────────────────────────────────────────────────── */
+main {
+  flex: 1;
+  padding: clamp(40px,6vw,72px) 0 80px;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(48px,7vw,80px);
+}
+
+.section {
+  padding: 0 clamp(16px,4vw,48px);
+}
+
+.section-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.section-eyebrow {
+  font: 700 .55rem/1 var(--sans);
+  letter-spacing: .28em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 6px;
+}
+
+.section-title {
+  font-family: var(--serif);
+  font-size: clamp(1.3rem, 3vw, 1.75rem);
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+.link-all {
+  font: 600 .7rem/1 var(--sans);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--gold);
+  white-space: nowrap;
+  transition: opacity .15s;
+}
+
+.link-all:hover { opacity: .7; }
+
+/* ── PALETTE SCROLL ──────────────────────────────────────────────── */
+.palette-scroll-outer {
+  margin: 0 calc(-1 * clamp(16px,4vw,48px));
+  padding: 0 clamp(16px,4vw,48px);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.palette-scroll-outer::-webkit-scrollbar { display: none; }
+
+.palette-scroll {
+  display: flex;
+  gap: 16px;
+  width: max-content;
+  padding-bottom: 4px;
+}
+
+.pal-card {
+  width: 200px;
+  flex-shrink: 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform .2s var(--ease), box-shadow .2s var(--ease);
+  text-decoration: none;
+  color: var(--ink);
+}
+
+.pal-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px rgba(0,0,0,.28);
+}
+
+.pal-strip {
+  display: flex;
+  height: 108px;
+}
+
+.pal-strip-swatch {
+  flex: 1;
+}
+
+.pal-info {
+  padding: 12px 14px;
+}
+
+.pal-name {
+  font: 600 .82rem/1.25 var(--sans);
+  color: var(--ink);
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pal-origin {
+  font-size: .68rem;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 6px;
+}
+
+.pal-stats {
+  display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+  min-height: 16px;
+}
+
+.pal-grabs {
+  font-size: .65rem;
+  color: var(--gold);
+  letter-spacing: .04em;
+}
+
+.pal-today {
+  font-size: .63rem;
+  color: #e07a40;
+  letter-spacing: .02em;
+  font-weight: 600;
+}
+
+.pal-skeleton {
+  width: 200px;
+  height: 168px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  animation: shimmer 1.6s ease-in-out infinite alternate;
+}
+
+@keyframes shimmer {
+  from { opacity: .4; }
+  to   { opacity: .9; }
+}
+
+/* ── ATLAS GRID ──────────────────────────────────────────────────── */
+.atlas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.atlas-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 22px 20px 18px;
+  border-left: 3px solid var(--gold);
+  transition: transform .2s var(--ease);
+}
+
+.atlas-card:hover { transform: translateY(-2px); }
+
+.atlas-type {
+  font: 700 .55rem/1 var(--sans);
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--gold-dk);
+  margin-bottom: 10px;
+}
+
+.atlas-name {
+  font-family: var(--serif);
+  font-size: 1.1rem;
+  color: var(--ink);
+  line-height: 1.25;
+  margin-bottom: 8px;
+}
+
+.atlas-def {
+  font-size: .78rem;
+  color: var(--ink-soft);
+  line-height: 1.65;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.atlas-term {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.atlas-term-label {
+  font: 700 .52rem/1 var(--sans);
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--gold-dk);
+  margin-bottom: 5px;
+}
+
+.atlas-term-name {
+  font: 600 .82rem/1.2 var(--sans);
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+
+.atlas-term-def {
+  font-size: .72rem;
+  color: var(--ink-soft);
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.atlas-coming {
+  font: 700 .6rem/1 var(--sans);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--gold-dk);
+  margin-top: 14px;
+}
+
+.atlas-skeleton {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  height: 120px;
+  animation: shimmer 1.6s ease-in-out infinite alternate;
+}
+
+.atlas-note {
+  font-size: .72rem;
+  color: var(--muted);
+  line-height: 1.6;
+  text-align: center;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+/* ── CREATE: LOCKED ──────────────────────────────────────────────── */
+.section-create {
+  padding-bottom: 0;
+}
+
+.create-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  padding: clamp(36px,6vw,60px) clamp(24px,5vw,52px);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.create-card::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse 70% 60% at 50% 0%, var(--gold-glow), transparent 60%);
+  pointer-events: none;
+}
+
+.create-lock {
+  font-size: 2rem;
+  margin-bottom: 16px;
+  filter: grayscale(.3);
+}
+
+.create-title {
+  font-family: var(--serif);
+  font-size: clamp(1.3rem, 3vw, 1.75rem);
+  color: var(--ink);
+  line-height: 1.2;
+  margin: 10px 0 12px;
+}
+
+.create-sub {
+  font-size: .85rem;
+  color: var(--ink-soft);
+  line-height: 1.7;
+  max-width: 440px;
+  margin: 0 auto 24px;
+}
+
+.create-features {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 28px;
+}
+
+.create-feat {
+  padding: 6px 14px;
+  border: 1px solid var(--line);
+  border-radius: 99px;
+  font-size: .72rem;
+  color: var(--muted);
+  letter-spacing: .04em;
+}
+
+.create-apply {
+  display: inline-block;
+  padding: 14px 28px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #c9a96e, #9a7840);
+  color: #fff;
+  font: 700 .72rem/1 var(--sans);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  box-shadow: 0 4px 16px rgba(201,169,110,.25);
+  transition: opacity .18s, transform .12s;
+}
+
+.create-apply:hover { opacity: .9; transform: translateY(-1px); }
+
+/* ── FOOTER ──────────────────────────────────────────────────────── */
+.footer {
+  padding: 28px clamp(16px,4vw,48px);
+  border-top: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.footer-links {
+  display: flex; gap: 20px; flex-wrap: wrap;
+}
+
+.footer-links a {
+  font-size: .72rem;
+  color: var(--muted);
+  letter-spacing: .04em;
+  transition: color .15s;
+}
+
+.footer-links a:hover { color: var(--gold); }
+
+.footer-copy {
+  font-size: .68rem;
+  color: var(--muted);
+}
+
+/* ── TOAST ───────────────────────────────────────────────────────── */
+#toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  background: var(--ink);
+  color: var(--bg);
+  padding: 10px 20px;
+  border-radius: 99px;
+  font: 600 .75rem/1 var(--sans);
+  letter-spacing: .04em;
+  white-space: nowrap;
+  z-index: 9500;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .2s;
+  max-width: 90vw;
+}
+
+#toast.show { opacity: 1; }
+
+/* ── EMPTY STATES ────────────────────────────────────────────────── */
+.empty-msg {
+  text-align: center;
+  padding: 48px 16px;
+  color: var(--muted);
+  font-size: .82rem;
+  line-height: 1.7;
+}
+
+.empty-msg strong {
+  display: block;
+  font-family: var(--serif);
+  font-size: 1.1rem;
+  color: var(--ink-soft);
+  margin-bottom: 6px;
+}
+
+/* ── RESPONSIVE ──────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .topbar-email { display: none; }
+  .topbar-title { font-size: .9rem; }
+  .hero { min-height: 260px; }
+  .atlas-grid { grid-template-columns: 1fr; }
+  .content-grid { grid-template-columns: repeat(2, 1fr); }
+  .content-grid .content-card:nth-child(n+5) { display: none; }
+}
+
+/* ── VENDOR PREFIX COMPAT ─────────────────────────────────────────── */
+.content-title,
+.atlas-def,
+.pal-name {
+  line-clamp: 2;
+}
+
+</style>
+</head>
+<body>
+
+<!-- ── GATE ── -->
+<div id="gate">
+  <div class="gate-inner">
+    <div class="gate-logo">CultureSchool</div>
+    <div class="gate-card" id="gate-card">
+      <div class="gate-spinner"></div>
+      <p class="gate-checking-text">One moment…</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── WORLD ── -->
+<div id="world">
+
+  <header class="topbar">
+    <a href="https://cultureschool.org" class="topbar-logo" target="_blank" rel="noopener">CultureSchool</a>
+    <div class="topbar-title">My World</div>
+    <div class="topbar-right">
+      <span id="topbar-email" class="topbar-email"></span>
+      <button class="btn-ghost" onclick="signOut()">Sign out</button>
+    </div>
+  </header>
+
+  <div class="hero" id="hero">
+    <div class="hero-ambient" id="hero-ambient"></div>
+    <div class="hero-content">
+      <div class="hero-eyebrow">✦ Your Space</div>
+      <h1 class="hero-title" id="hero-title">Welcome back</h1>
+      <div id="hero-moment" class="hero-moment"></div>
+      <div class="hero-season" id="hero-season"></div>
+    </div>
+  </div>
+
+  <!-- ── TOOLS TRACK ── -->
+  <div class="tools-track">
+    <div class="tools-inner">
+      <a class="tool-pill tool-pill-inspo" href="https://coco-daily-inspo.cultureschool.org/" target="_blank" rel="noopener">✨ Daily Inspo</a>
+      <a class="tool-pill" href="https://coco-palettes.cultureschool.org/" target="_blank" rel="noopener">🎨 Colors</a>
+      <a class="tool-pill" href="https://coco-patterns-library.cultureschool.org/" target="_blank" rel="noopener">🧵 Patterns</a>
+      <a class="tool-pill" href="https://coco-textile-library.cultureschool.org/" target="_blank" rel="noopener">📸 Textiles</a>
+      <a class="tool-pill" href="#atlas-section">🌍 Atlas</a>
+      <a class="tool-pill" id="tool-teach" href="https://coco-teach.cultureschool.org/" target="_blank" rel="noopener">📐 Teach</a>
+      <a class="tool-pill" href="https://coco-public-profile.cultureschool.org" target="_blank" rel="noopener">✦ My Profile</a>
+    </div>
+  </div>
+
+  <main>
+
+    <!-- DAILY INSPO -->
+    <section class="section">
+      <div class="section-header">
+        <div>
+          <div class="section-eyebrow">✨ Fresh inspiration</div>
+          <h2 class="section-title">Today's creative moments</h2>
+        </div>
+      </div>
+      <div class="content-grid" id="inspo-grid">
+        <div class="atlas-skeleton"></div>
+        <div class="atlas-skeleton"></div>
+        <div class="atlas-skeleton"></div>
+        <div class="atlas-skeleton"></div>
+        <div class="atlas-skeleton"></div>
+        <div class="atlas-skeleton"></div>
+      </div>
+      <div class="section-cta-row">
+        <a class="cta-pill-primary" href="https://coco-daily-inspo.cultureschool.org/" target="_blank" rel="noopener">See all inspo →</a>
+        <a class="cta-pill-ghost" href="https://coco-daily-inspo.cultureschool.org/" target="_blank" rel="noopener">+ Add yours</a>
+      </div>
+    </section>
+
+    <!-- COMMUNITY TEXTILES -->
+    <section class="section">
+      <div class="section-header">
+        <div>
+          <div class="section-eyebrow">📸 From the community</div>
+          <h2 class="section-title">Textiles people are sharing</h2>
+        </div>
+      </div>
+      <div class="content-grid" id="textile-grid">
+        <div class="atlas-skeleton"></div>
+        <div class="atlas-skeleton"></div>
+        <div class="atlas-skeleton"></div>
+        <div class="atlas-skeleton"></div>
+        <div class="atlas-skeleton"></div>
+        <div class="atlas-skeleton"></div>
+      </div>
+      <div class="section-cta-row">
+        <a class="cta-pill-primary" href="https://coco-textile-library.cultureschool.org/" target="_blank" rel="noopener">Browse all textiles →</a>
+        <a class="cta-pill-ghost" href="https://coco-textile-library.cultureschool.org/" target="_blank" rel="noopener">+ Add from desktop</a>
+      </div>
+    </section>
+
+    <!-- TRENDING PALETTES -->
+    <section class="section">
+      <div class="section-header">
+        <div>
+          <div class="section-eyebrow">✦ Color</div>
+          <h2 class="section-title">What's popular right now</h2>
+        </div>
+        <a href="https://coco-palettes.cultureschool.org/" class="link-all" target="_blank" rel="noopener">See all palettes →</a>
+      </div>
+      <div class="palette-scroll-outer">
+        <div class="palette-scroll" id="palette-scroll">
+          <div class="pal-skeleton"></div>
+          <div class="pal-skeleton"></div>
+          <div class="pal-skeleton"></div>
+          <div class="pal-skeleton"></div>
+          <div class="pal-skeleton"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ATLAS TRADITIONS -->
+    <section class="section" id="atlas-section">
+      <div class="section-header">
+        <div>
+          <div class="section-eyebrow">✦ Traditions</div>
+          <h2 class="section-title">From the Cultural Graph</h2>
+        </div>
+      </div>
+      <div class="atlas-grid" id="atlas-grid">
+        <div class="atlas-skeleton"></div>
+        <div class="atlas-skeleton"></div>
+        <div class="atlas-skeleton"></div>
+        <div class="atlas-skeleton"></div>
+        <div class="atlas-skeleton"></div>
+        <div class="atlas-skeleton"></div>
+      </div>
+      <p class="atlas-note">These are a sample of the traditions in your subscription. Click any card to read more. Full subscriber Graph browser launching soon.</p>
+    </section>
+
+    <!-- CREATE: LOCKED -->
+    <section class="section section-create">
+      <div class="create-card">
+        <div class="create-lock">🔒</div>
+        <div class="section-eyebrow" style="color:var(--gold);text-align:center;">✦ Creator Tools</div>
+        <h2 class="create-title">Ready to share your knowledge?</h2>
+        <p class="create-sub">Submit projects, build courses, and manage your creator profile. Open to approved CultureSchool educators and makers.</p>
+        <div class="create-features">
+          <div class="create-feat">Upload patterns</div>
+          <div class="create-feat">Teach a class</div>
+          <div class="create-feat">Share your portfolio</div>
+          <div class="create-feat">Earn from your work</div>
+        </div>
+        <a href="https://cultureschool.org/pages/creator-application" class="create-apply" target="_blank" rel="noopener">Apply to become a creator →</a>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <div class="footer-links">
+      <a href="https://coco-palettes.cultureschool.org/" target="_blank" rel="noopener">Palettes</a>
+      <a href="https://coco-textile-library.cultureschool.org/" target="_blank" rel="noopener">Patterns</a>
+      <a href="https://cultureschool.org" target="_blank" rel="noopener">CultureSchool</a>
+    </div>
+    <div class="footer-copy">© 2026 CultureSchool · Your subscription supports cultural education</div>
+  </footer>
+
+</div>
+
+<div id="toast"></div>
+
+<!-- cs-track telemetry -->
+<script>(function(){var U='https://qwulthvbwujfehgdegtn.supabase.co',K='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3dWx0aHZid3VqZmVoZ2RlZ3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQyMDcxODIsImV4cCI6MjA1OTc4MzE4Mn0.t9n4eZng6d0jggiPNK-J_DByvEE2L9tqy5Xh_1-TSoQ',A=['search','view','download','save','share','palette_view','pattern_view','creator_view','museum_view'],R=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,SID;try{SID=localStorage.getItem('cs_sid');if(!SID){SID=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():'sid-'+Date.now()+'-'+Math.random().toString(36).slice(2);localStorage.setItem('cs_sid',SID);}}catch(e){SID='nostorage';}var _CC=null;try{_CC=localStorage.getItem('cs_cc');if(!_CC){fetch('https://ipapi.co/json/').then(function(r){return r.json();}).then(function(d){if(d&&d.country_code){localStorage.setItem('cs_cc',d.country_code);_CC=d.country_code;}}).catch(function(){});}}catch(e){}var SURF='my-world',UID=null;try{var _s=window.sb||window.supabase;if(_s&&_s.auth&&_s.auth.getSession)_s.auth.getSession().then(function(r){UID=r&&r.data&&r.data.session?r.data.session.user.id:null;}).catch(function(){});}catch(e){}window.csTrack=function(t,o){o=o||{};try{if(A.indexOf(t)===-1)return;var eid=o.id&&R.test(String(o.id))?String(o.id):null,m=o.meta||{};m.surface=o.surface||SURF;if(o.id&&!eid)m.raw_id=String(o.id);fetch(U+'/rest/v1/cs_events',{method:'POST',headers:{'Content-Type':'application/json',apikey:K,Authorization:'Bearer '+K,Prefer:'return=minimal'},body:JSON.stringify({event_type:t,query:o.query||null,entity_type:o.type||null,entity_id:eid,entity_slug:o.slug||null,user_id:UID,session_id:SID,country_code:_CC,referrer:document.referrer||null,metadata:m}),keepalive:true}).catch(function(){});}catch(e){}};})();</script>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+
+const SUPABASE_URL = 'https://qwulthvbwujfehgdegtn.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3dWx0aHZid3VqZmVoZ2RlZ3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQyMDcxODIsImV4cCI6MjA1OTc4MzE4Mn0.t9n4eZng6d0jggiPNK-J_DByvEE2L9tqy5Xh_1-TSoQ';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: { flowType: 'pkce' }
+});
+
+let _isSubscriber     = false;
+let _isFullAccess     = false;
+let _userEmail        = null;
+let _worldRevealed    = false;
+
+/* ── SEASONAL CONTEXT ─────────────────────────────────────────── */
+const SEASONS = [
+  { months:[0,1],  label:'Winter Craft Season',   detail:'Wool, cold-vat indigo, and winter weaving traditions.' },
+  { months:[2,3,4],label:'Spring Harvest Season',  detail:'Natural dye season begins — new growth brings fresh color.' },
+  { months:[5,6,7],label:'Summer Festival Season', detail:'Carnival, Juneteenth, and celebrations worldwide — the most colorful time of year.' },
+  { months:[8,9],  label:'Harvest Season',         detail:'Earth tones dominate — harvest dyes, indigo, and autumn fiber prep.' },
+  { months:[10,11],label:'Textile Gifting Season', detail:'Handmade traditions shine — winter craft and heritage gifts.' },
+];
+
+function getSeason() {
+  const m = new Date().getMonth();
+  return SEASONS.find(s => s.months.includes(m)) || SEASONS[2];
+}
+
+/* ── GREETING ─────────────────────────────────────────────────── */
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
+function greetName(email) {
+  const username = (email || '').split('@')[0];
+  const clean = username.replace(/[0-9._-]/g, ' ').trim().split(/\s+/)[0] || '';
+  if (clean.length < 2) return null;
+  return clean.charAt(0).toUpperCase() + clean.slice(1);
+}
+
+/* ── HELPERS ──────────────────────────────────────────────────── */
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function entryTypeLabel(type) {
+  const map = {
+    textile_tradition:'Textile tradition', dye_method:'Dye method',
+    weave:'Weaving tradition', motif:'Motif / Symbol',
+    print_method:'Print technique', fiber:'Fiber',
+    certification:'Certification', cultural_region:'Cultural region',
+  };
+  return map[type] || (type || 'Tradition').replace(/_/g,' ');
+}
+
+let toastTimer;
+function showToast(msg, dur = 2400) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), dur);
+}
+
+/* ── AMBIENT HERO GRADIENT ────────────────────────────────────── */
+function setHeroAmbient(colors) {
+  if (!colors || !colors.length) return;
+
+  function sat(h) {
+    const r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);
+    const M=Math.max(r,g,b),m=Math.min(r,g,b);
+    return M?(M-m)/M:0;
+  }
+  function lum(h) {
+    const r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);
+    return (0.299*r+0.587*g+0.114*b)/255;
+  }
+
+  const bySat = [...colors].sort((a,b) => sat(b)-sat(a));
+  const v = bySat[0] || colors[0];
+  const a = bySat[1] || colors[1] || colors[0];
+  const lt = [...colors].sort((a,b) => lum(b)-lum(a))[0];
+
+  const ambient = document.getElementById('hero-ambient');
+  if (ambient) {
+    ambient.style.background = [
+      `radial-gradient(ellipse 80% 100% at 15% 70%,${v}99,transparent 55%)`,
+      `radial-gradient(ellipse 70% 80% at 78% 25%,${lt}77,transparent 50%)`,
+      `radial-gradient(ellipse 55% 70% at 50% 55%,${a}66,transparent 45%)`,
+      'linear-gradient(160deg,#1a0f06 0%,#0b0907 100%)',
+    ].join(',');
+  }
+}
+
+/* ── PALETTE CARD HTML ────────────────────────────────────────── */
+function palCardHtml(p, todayCount) {
+  const colors = (p.colors || []).slice(0, 5);
+  const strip  = colors.map(c => `<div class="pal-strip-swatch" style="background:${esc(c)}"></div>`).join('');
+  const origin = [p.cultural_origin, p.location].filter(Boolean).join(' · ');
+  const grabs  = (p.grab_count || 0) > 1 ? `✦ ${p.grab_count.toLocaleString()} grabs` : '';
+  const today  = todayCount > 1 ? `🔥 ${todayCount} active today` : '';
+  const dest   = `https://coco-palettes.cultureschool.org/?id=${esc(p.id)}`;
+
+  return `
+    <a class="pal-card" href="${dest}" target="_blank" rel="noopener"
+       aria-label="${esc(p.name)} palette"
+       onclick="csTrack&&csTrack('palette_view',{id:'${esc(p.id)}',surface:'my-world'})">
+      <div class="pal-strip">${strip}</div>
+      <div class="pal-info">
+        <div class="pal-name">${esc(p.name)}</div>
+        ${origin ? `<div class="pal-origin">${esc(origin)}</div>` : ''}
+        <div class="pal-stats">
+          ${grabs  ? `<span class="pal-grabs">${grabs}</span>` : ''}
+          ${today  ? `<span class="pal-today">${today}</span>` : ''}
+        </div>
+      </div>
+    </a>`;
+}
+
+/* ── INSPO CARD HTML ──────────────────────────────────────────── */
+function inspoCardHtml(post) {
+  const title   = post.title || '';
+  const caption = post.caption || '';
+  const img     = post.image || '';
+  const imgEl   = img
+    ? `<img class="content-img" src="${esc(img)}" alt="${esc(title)}" loading="lazy">`
+    : `<div class="content-img-placeholder">✨</div>`;
+  return `
+    <a class="content-card" href="https://coco-daily-inspo.cultureschool.org/" target="_blank" rel="noopener">
+      ${imgEl}
+      <div class="content-info">
+        ${title   ? `<div class="content-title">${esc(title)}</div>` : ''}
+        ${caption ? `<div class="content-meta">${esc(caption.slice(0,80))}${caption.length>80?'…':''}</div>` : ''}
+      </div>
+    </a>`;
+}
+
+/* ── TEXTILE CARD HTML ────────────────────────────────────────── */
+function textileCardHtml(art) {
+  const title   = art.title || 'Untitled';
+  const creator = art.creator_name || '';
+  const type    = art.art_type || art.occasion_tag || '';
+  const img     = art.image_url || '';
+  const imgEl   = img
+    ? `<img class="content-img content-img-sq" src="${esc(img)}" alt="${esc(title)}" loading="lazy">`
+    : `<div class="content-img-placeholder" style="aspect-ratio:1">📸</div>`;
+  const meta = [creator, type].filter(Boolean).map(esc).join(' · ');
+  return `
+    <a class="content-card" href="https://coco-textile-library.cultureschool.org/" target="_blank" rel="noopener">
+      ${imgEl}
+      <div class="content-info">
+        <div class="content-title">${esc(title)}</div>
+        ${meta ? `<div class="content-meta">${meta}</div>` : ''}
+      </div>
+    </a>`;
+}
+
+/* ── HERO CULTURAL MOMENT ─────────────────────────────────────── */
+function renderHeroMoment(entries) {
+  const el = document.getElementById('hero-moment');
+  if (!el) return;
+
+  const seeded = (entries || []).filter(e => e.hook);
+  if (!seeded.length) {
+    el.innerHTML = `<p class="hero-moment-static">Explore color palettes from cultural traditions around the world, discover textile history, and build your creative practice.</p>`;
+    return;
+  }
+
+  // Rotate daily — changes at midnight UTC
+  const entry = seeded[Math.floor(Date.now() / 86400000) % seeded.length];
+
+  el.innerHTML = `
+    <div class="hero-moment-label">Today's cultural moment</div>
+    <div class="hero-moment-quote">“${esc(entry.hook)}”</div>
+    <div class="hero-moment-attr">— ${esc(entry.name)}</div>
+    <a class="hero-moment-link" href="#atlas-section">Explore this tradition →</a>`;
+}
+
+/* ── ATLAS CARD HTML ──────────────────────────────────────────── */
+function atlasCardHtml(e) {
+  const label   = entryTypeLabel(e.entry_type);
+  const body    = e.hook || e.short_definition || '';
+  const hasTerm = e.key_term && e.key_term_def;
+  return `
+    <div class="atlas-card">
+      <div class="atlas-type">${esc(label)}</div>
+      <div class="atlas-name">${esc(e.name)}</div>
+      ${body ? `<div class="atlas-def">${esc(body)}</div>` : ''}
+      ${hasTerm ? `
+        <div class="atlas-term">
+          <div class="atlas-term-label">Key term</div>
+          <div class="atlas-term-name">${esc(e.key_term)}</div>
+          <div class="atlas-term-def">${esc(e.key_term_def)}</div>
+        </div>` : ''}
+      <div class="atlas-coming">Full entry coming soon →</div>
+    </div>`;
+}
+
+/* ── LOAD WORLD DATA ──────────────────────────────────────────── */
+async function loadWorld() {
+  const name   = greetName(_userEmail);
+  const greet  = getGreeting();
+  const season = getSeason();
+
+  const titleEl = document.getElementById('hero-title');
+  if (titleEl) titleEl.textContent = name ? `${greet}, ${name}` : greet;
+
+  const seasonEl = document.getElementById('hero-season');
+  if (seasonEl) seasonEl.innerHTML = `🌿 ${esc(season.label)} — ${esc(season.detail)}`;
+
+  const emailEl = document.getElementById('topbar-email');
+  if (emailEl) emailEl.textContent = _userEmail || '';
+
+  try {
+    const yesterday = new Date(Date.now() - 24*60*60*1000).toISOString();
+
+    const [palRes, atlasRes, activityRes, inspoRes, textileRes] = await Promise.all([
+      db.from('palettes')
+        .select('id,name,colors,grab_count,cultural_origin,location,color_descriptor,occasion')
+        .eq('is_public', true)
+        .order('grab_count', { ascending: false })
+        .limit(24),
+      db.from('cs_atlas_entries')
+        .select('id,name,slug,entry_type,short_definition,hook,key_term,key_term_def')
+        .eq('is_public', true)
+        .eq('source_status', 'published')
+        .order('name', { ascending: true })
+        .limit(12),
+      db.from('cs_events')
+        .select('entity_id')
+        .in('event_type', ['palette_view','download','save'])
+        .gte('created_at', yesterday)
+        .limit(1000)
+        .then(r => r)
+        .catch(() => ({ data: [] })),
+      db.from('inspo_wall')
+        .select('row_id,title,caption,image,email,featured_at')
+        .eq('is_public', true)
+        .order('featured_at', { ascending: false })
+        .limit(6)
+        .then(r => r)
+        .catch(() => ({ data: [] })),
+      db.from('coco_art')
+        .select('id,title,creator_name,image_url,art_type,occasion_tag,created_at')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(6)
+        .then(r => r)
+        .catch(() => ({ data: [] })),
+    ]);
+
+    const palettes = palRes.data || [];
+    const entries  = atlasRes.data || [];
+    const inspos   = inspoRes.data || [];
+    const textiles = textileRes.data || [];
+
+    renderHeroMoment(entries);
+
+    // Build today-count map (fails silently if RLS blocks cs_events for subscribers)
+    const todayMap = {};
+    (activityRes.data || []).forEach(e => {
+      if (e.entity_id) todayMap[e.entity_id] = (todayMap[e.entity_id] || 0) + 1;
+    });
+
+    // Render inspo grid
+    const inspoGrid = document.getElementById('inspo-grid');
+    if (inspoGrid) {
+      inspoGrid.innerHTML = inspos.length
+        ? inspos.map(inspoCardHtml).join('')
+        : `<div class="empty-msg" style="grid-column:1/-1"><strong>No posts yet</strong>Be the first to share your inspiration.</div>`;
+    }
+
+    // Render textile grid
+    const textileGrid = document.getElementById('textile-grid');
+    if (textileGrid) {
+      textileGrid.innerHTML = textiles.length
+        ? textiles.map(textileCardHtml).join('')
+        : `<div class="empty-msg" style="grid-column:1/-1"><strong>No textiles yet</strong>Share your first piece with the community.</div>`;
+    }
+
+    if (palettes.length > 0) {
+      setHeroAmbient(palettes[0].colors || []);
+    }
+
+    const palScroll = document.getElementById('palette-scroll');
+    if (palScroll) {
+      if (palettes.length === 0) {
+        palScroll.innerHTML = `<div class="empty-msg"><strong>No palettes yet</strong>Check back soon.</div>`;
+      } else {
+        palScroll.innerHTML = palettes.map(p => palCardHtml(p, todayMap[p.id] || 0)).join('');
+      }
+    }
+
+    const atlasGrid = document.getElementById('atlas-grid');
+    if (atlasGrid) {
+      if (entries.length === 0) {
+        atlasGrid.innerHTML = `<div class="empty-msg" style="grid-column:1/-1"><strong>Atlas coming soon</strong>Traditions are being reviewed and added.</div>`;
+      } else {
+        atlasGrid.innerHTML = entries.map(atlasCardHtml).join('');
+      }
+    }
+
+    // Unlock Create section for all-access / admin
+    const createCard = document.querySelector('.create-card');
+    if (createCard && _isFullAccess) {
+      createCard.innerHTML = `
+        <div class="section-eyebrow" style="color:var(--gold);text-align:center;">✦ Creator Hub</div>
+        <h2 class="create-title">Your tools, all in one place</h2>
+        <p class="create-sub">You have full access. Build lessons, manage your creator profile, and share your work with the CultureSchool community.</p>
+        <div class="creator-tools-grid">
+          <a href="https://coco-teach.cultureschool.org/" target="_blank" rel="noopener" class="creator-tool">
+            <div class="creator-tool-icon">📐</div>
+            <div class="creator-tool-name">Teach</div>
+            <div class="creator-tool-desc">Build lessons, upload patterns, manage your class schedule</div>
+          </a>
+          <a href="https://coco-patterns-library.cultureschool.org/" target="_blank" rel="noopener" class="creator-tool">
+            <div class="creator-tool-icon">🧵</div>
+            <div class="creator-tool-name">Pattern Library</div>
+            <div class="creator-tool-desc">See palettes pre-applied to cultural patterns — filter by region and technique</div>
+          </a>
+          <a href="https://coco-textile-library.cultureschool.org/" target="_blank" rel="noopener" class="creator-tool">
+            <div class="creator-tool-icon">📸</div>
+            <div class="creator-tool-name">Textile Library</div>
+            <div class="creator-tool-desc">Upload and share your garments, swatches, and heirloom textiles</div>
+          </a>
+          <a href="https://coco-public-profile.cultureschool.org" target="_blank" rel="noopener" class="creator-tool">
+            <div class="creator-tool-icon">✦</div>
+            <div class="creator-tool-name">Your Profile</div>
+            <div class="creator-tool-desc">Your public creator page — share your work and your story</div>
+          </a>
+          <a href="https://cultureschool.org" target="_blank" rel="noopener" class="creator-tool">
+            <div class="creator-tool-icon">🛍</div>
+            <div class="creator-tool-name">Shop</div>
+            <div class="creator-tool-desc">Curated culturally-rooted products and resources</div>
+          </a>
+        </div>`;
+    }
+
+    // Lock Teach pill in tools track for basic subscribers
+    const toolTeach = document.getElementById('tool-teach');
+    if (toolTeach && !_isFullAccess) {
+      toolTeach.classList.add('tool-pill-locked');
+      toolTeach.removeAttribute('href');
+      toolTeach.textContent = '🔒 Teach';
+    }
+
+  } catch(e) {
+    console.error('[my-world] loadWorld', e);
+    showToast('Could not load some content — refresh to try again');
+  }
+}
+
+/* ── SHOW / HIDE WORLD ────────────────────────────────────────── */
+function revealWorld() {
+  if (_worldRevealed) return;
+  _worldRevealed = true;
+  const gate  = document.getElementById('gate');
+  const world = document.getElementById('world');
+  if (gate) gate.classList.add('fade-out');
+  world.style.display = 'flex';
+  requestAnimationFrame(() => world.classList.add('visible'));
+  setTimeout(() => gate?.remove(), 500);
+}
+
+/* ── GATE STATES ──────────────────────────────────────────────── */
+function renderGateSignIn() {
+  document.getElementById('gate-card').innerHTML = `
+    <div class="gate-eyebrow">✦ My World</div>
+    <h2 class="gate-title">Sign in to continue</h2>
+    <p class="gate-sub">Enter the email linked to your CultureSchool membership.</p>
+    <input id="gate-email" class="gate-input" type="email" placeholder="your@email.com" autocomplete="email">
+    <button class="btn-gold" onclick="sendMagicLink()">Send sign-in link</button>
+    <p class="gate-alt">
+      Not a subscriber yet?
+      <a href="https://cultureschool.org/collections/membership" target="_blank" rel="noopener">Subscribe for $9.99/mo →</a>
+    </p>`;
+  setTimeout(() => document.getElementById('gate-email')?.focus(), 80);
+}
+
+function renderGateSubscribe() {
+  document.getElementById('gate-card').innerHTML = `
+    <div class="gate-eyebrow">✦ My World</div>
+    <h2 class="gate-title">Your world is waiting</h2>
+    <p class="gate-sub">This space is for CultureSchool subscribers — color palettes, cultural traditions, creative tools, and more. All for $9.99/month.</p>
+    <a class="btn-gold" href="https://cultureschool.org/collections/membership" target="_blank" rel="noopener">Subscribe to unlock →</a>
+    <p class="gate-alt">
+      Already a subscriber?
+      <button onclick="renderGateSignIn()">Sign in →</button>
+    </p>`;
+}
+
+/* ── MAGIC LINK ───────────────────────────────────────────────── */
+async function sendMagicLink() {
+  const input = document.getElementById('gate-email');
+  const email = (input?.value || '').toLowerCase().trim();
+  if (!email || !email.includes('@')) {
+    showToast('Enter a valid email address');
+    input?.focus();
+    return;
+  }
+
+  const btn = document.querySelector('#gate-card .btn-gold');
+  if (btn) { btn.textContent = 'Sending…'; btn.disabled = true; }
+
+  const { error } = await db.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: window.location.href },
+  });
+
+  if (error) {
+    showToast('Could not send sign-in link — try again');
+    if (btn) { btn.textContent = 'Send sign-in link'; btn.disabled = false; }
+  } else {
+    document.getElementById('gate-card').innerHTML = `
+      <div class="gate-eyebrow">✦ Check your inbox</div>
+      <h2 class="gate-title">Link sent!</h2>
+      <p class="gate-sub">We sent a sign-in link to <strong>${esc(email)}</strong>.<br>Click it to open your world.</p>
+      <p class="gate-alt" style="margin-top:24px;">Wrong email? <button onclick="renderGateSignIn()">Try again →</button></p>`;
+  }
+}
+
+window.sendMagicLink  = sendMagicLink;
+window.renderGateSignIn = renderGateSignIn;
+
+/* ── SIGN OUT ─────────────────────────────────────────────────── */
+async function signOut() {
+  await db.auth.signOut();
+  showToast('Signed out');
+  setTimeout(() => location.reload(), 800);
+}
+
+window.signOut = signOut;
+
+/* ── AUTH STATE CHANGE ────────────────────────────────────────── */
+// Catches SIGNED_IN (magic link return) and INITIAL_SESSION (existing session on reload)
+db.auth.onAuthStateChange(async (event, session) => {
+  if (!session?.user) return;
+  if (!['SIGNED_IN','TOKEN_REFRESHED','INITIAL_SESSION'].includes(event)) return;
+  if (_worldRevealed) return;
+
+  try {
+    const { data: uRow } = await db.from('users')
+      .select('is_subscriber, subscription_tier, admin')
+      .eq('email', session.user.email.toLowerCase())
+      .maybeSingle();
+
+    if (uRow?.is_subscriber) {
+      _isSubscriber = true;
+      _isFullAccess = uRow.subscription_tier === 'all-access' || !!uRow.admin;
+      _userEmail    = session.user.email;
+      revealWorld();
+      loadWorld();
+    } else if (uRow) {
+      // Signed in but not a subscriber
+      renderGateSubscribe();
+    }
+    // If uRow is null (RLS or no row), fall through — init() will handle it
+  } catch(_) {}
+});
+
+/* ── INIT ─────────────────────────────────────────────────────── */
+(async function init() {
+  try {
+    // If Supabase is mid-exchange (magic link return with ?code= or #access_token),
+    // let onAuthStateChange handle SIGNED_IN — just wait with a fallback timeout
+    const hasPendingAuth = location.search.includes('code=') ||
+                           location.hash.includes('access_token=') ||
+                           location.hash.includes('error=');
+    if (hasPendingAuth) {
+      setTimeout(() => { if (!_worldRevealed) renderGateSignIn(); }, 8000);
+      return;
+    }
+
+    const { data: { session } } = await Promise.race([
+      db.auth.getSession(),
+      new Promise(resolve => setTimeout(() => resolve({ data: { session: null } }), 4000)),
+    ]).catch(() => ({ data: { session: null } }));
+
+    if (_worldRevealed) return; // onAuthStateChange beat us
+
+    if (!session?.user) {
+      renderGateSignIn();
+      return;
+    }
+
+    _userEmail = session.user.email;
+
+    const { data: uRow } = await db.from('users')
+      .select('is_subscriber, subscription_tier, admin')
+      .eq('email', _userEmail.toLowerCase())
+      .maybeSingle();
+
+    if (!uRow?.is_subscriber) {
+      renderGateSubscribe();
+      return;
+    }
+
+    _isSubscriber = true;
+    _isFullAccess = uRow.subscription_tier === 'all-access' || !!uRow.admin;
+    revealWorld();
+    loadWorld();
+
+  } catch(e) {
+    console.error('[my-world] init', e);
+    if (!_worldRevealed) renderGateSignIn();
+  }
+})();
+
+</script>
+</body>
+</html>

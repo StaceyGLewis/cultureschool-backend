@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="en">
 <head>
@@ -304,7 +305,7 @@
     <div id="stripActions">
       <p class="ws-empty-hint">Drop a photo to translate its colors.</p>
       <button class="strip-upload-btn"
-              onclick="document.getElementById('fileInput').click()"
+              onclick="showUploadConsent('click')"
               aria-label="Upload a photo to create your palette">
         📷 &nbsp;Upload a photo →
       </button>
@@ -431,7 +432,7 @@
   <div class="ws-ps">
     <div class="ws-ps-label">Photo</div>
     <div class="ws-upload-zone"
-         onclick="document.getElementById('fileInput').click()"
+         onclick="showUploadConsent('click')"
          ondragover="event.preventDefault()" ondrop="handleDrop(event)"
          role="button" tabindex="0"
          onkeydown="if(event.key==='Enter')document.getElementById('fileInput').click()">
@@ -514,10 +515,12 @@
   <span class="orb-icon" aria-hidden="true">✨</span>
 </a>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ── Supabase + Shopify config ── */
 const SUPABASE_URL = 'https://qwulthvbwujfehgdegtn.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3dWx0aHZid3VqZmVoZ2RlZ3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQyMDcxODIsImV4cCI6MjA1OTc4MzE4Mn0.t9n4eZng6d0jggiPNK-J_DByvEE2L9tqy5Xh_1-TSoQ';
+const _clSb = window.supabase?.createClient ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 const SHOPIFY_DOMAIN = 'cultureschool.org';
 const SHOPIFY_STOREFRONT_TOKEN = '77ae611efdb2627903f15ac942c42a24';
 
@@ -753,8 +756,57 @@ function handleDragLeave(e){if(!document.getElementById('hero').contains(e.relat
 function handleDrop(e){
   e.preventDefault();e.stopPropagation();document.getElementById('hero').classList.remove('drag-over');
   const file=e.dataTransfer.files[0];
-  if(file&&file.type.startsWith('image/'))handleFile(file);else showToast('Please drop an image file.');
+  if(file&&file.type.startsWith('image/')){
+    // Store dropped file and show consent modal first
+    _pendingDropFile = file;
+    showUploadConsent('drop');
+  } else {
+    showToast('Please drop an image file.');
+  }
 }
+
+// ── Upload consent flow ───────────────────────────────────────────────────────
+let _pendingDropFile = null;
+let _consentSource   = null; // 'click' | 'drop'
+
+function showUploadConsent(source) {
+  _consentSource = source;
+  const modal = document.getElementById('uploadConsentModal');
+  modal.style.display = 'flex';
+  // Trap focus on agree button
+  setTimeout(() => {
+    const btn = modal.querySelector('button:last-child');
+    if (btn) btn.focus();
+  }, 60);
+}
+
+function consentAgree() {
+  document.getElementById('uploadConsentModal').style.display = 'none';
+  if (_consentSource === 'drop' && _pendingDropFile) {
+    const file = _pendingDropFile;
+    _pendingDropFile = null;
+    handleFile(file);
+  } else {
+    // Trigger native file picker
+    document.getElementById('fileInput').click();
+  }
+}
+
+function consentDecline() {
+  document.getElementById('uploadConsentModal').style.display = 'none';
+  _pendingDropFile = null;
+  _consentSource   = null;
+}
+
+// Close on backdrop click
+document.addEventListener('click', e => {
+  const modal = document.getElementById('uploadConsentModal');
+  if (modal && e.target === modal) consentDecline();
+});
+// Close on Escape
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') consentDecline();
+});
 
 /* ── Extraction ── */
 function handleFile(file){
@@ -1278,8 +1330,13 @@ async function submitPhotoOrder(){
       if(uploadRes.ok)photoStorageUrl=`${SUPABASE_URL}/storage/v1/object/public/public-uploads/${filename}`;
     }catch(uploadErr){console.warn('[photoOrder] Storage upload failed',uploadErr);}
     const orderPayload={customer_name:name,customer_email:email,product:p.productKey,product_label:p.label,palette_name:palName,palette_colors:_lastColors,back_style:_selectedBackStyle,strip_on:stripOn==='yes',photo_url:photoStorageUrl,status:'pending',notes:`Photo print · ${palName} · Back: ${_selectedBackStyle} · Strip: ${stripOn}`,created_at:new Date().toISOString()};
-    const orderRes=await fetch(`${SUPABASE_URL}/rest/v1/photo_orders`,{method:'POST',headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify(orderPayload)});
-    if(!orderRes.ok){const errText=await orderRes.text();if(orderRes.status!==404&&!errText.includes('does not exist'))throw new Error(`Order save failed (${orderRes.status})`);console.warn('[photoOrder] photo_orders table may not exist yet');}
+    // Use Supabase client so the session token is sent automatically (not anon key)
+    if(!_clSb) throw new Error('Supabase client not available');
+    const{error:orderErr}=await _clSb.from('photo_orders').insert(orderPayload);
+    if(orderErr&&!(orderErr.code==='42P01'||orderErr.message?.includes('does not exist'))){
+      throw new Error(`Order save failed (${orderErr.status||orderErr.code})`);
+    }
+    if(orderErr) console.warn('[photoOrder] photo_orders table may not exist yet');
     document.getElementById('ppOrder').innerHTML=`
       <div class="pp-success"><p class="pp-success-icon">✦</p>
       <p class="pp-success-title">Your order is in.</p>
@@ -1291,19 +1348,26 @@ async function submitPhotoOrder(){
 
 /* ── Subscriber gating ── */
 async function getSubscriberStatus(){
-  const email=(localStorage.getItem('coco_email')||localStorage.getItem('userEmail')||'').toLowerCase().trim();
-  if(!email.includes('@'))return{email:null,isSubscriber:false};
+  if(!_clSb)return{email:null,isSubscriber:false};
   try{
-    const res=await fetch(`${SUPABASE_URL}/rest/v1/users?select=is_subscriber&email=eq.${encodeURIComponent(email)}&limit=1`,{headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY}});
-    if(!res.ok)return{email,isSubscriber:false};
-    const rows=await res.json();return{email,isSubscriber:!!(rows[0]?.is_subscriber)};
-  }catch(e){return{email,isSubscriber:false};}
+    const{data:{session}}=await _clSb.auth.getSession();
+    if(!session?.user)return{email:null,isSubscriber:false};
+    const{data:uRow}=await _clSb.from('users')
+      .select('is_subscriber')
+      .eq('email',session.user.email.toLowerCase())
+      .maybeSingle();
+    return{email:session.user.email,isSubscriber:!!(uRow?.is_subscriber)};
+  }catch(e){return{email:null,isSubscriber:false};}
 }
 async function recheckSubscriber(){
+  if(!_clSb){showToast('Sign in unavailable — refresh and try again');return;}
   const email=await promptEmailForSave();if(!email)return;
-  localStorage.setItem('coco_email',email);
-  const{isSubscriber}=await getSubscriberStatus();
-  if(isSubscriber){restoreFullActions();showToast('✦ Full access unlocked');}else{showToast('No membership found for that email');}
+  const{error}=await _clSb.auth.signInWithOtp({
+    email:email.toLowerCase().trim(),
+    options:{emailRedirectTo:window.location.href}
+  });
+  if(error){showToast('Could not send sign-in link — try again');}
+  else{showToast('✦ Check your email for a sign-in link');}
 }
 function restoreFullActions(){
   const actionsEl=document.getElementById('msecActions');if(!actionsEl||!_lastColors)return;
@@ -1329,6 +1393,97 @@ async function checkAndGateActions(){
     </div>
     <a href="https://coco-patterns-library.cultureschool.org/?palette=${cp}&name=${np}" class="msec-btn-ghost">More patterns</a>`;
 }
+
+// ── Lift gate when magic link returns ─────────────────────────
+if(_clSb){
+  _clSb.auth.onAuthStateChange(async(event,session)=>{
+    if((event==='SIGNED_IN'||event==='TOKEN_REFRESHED')&&session?.user){
+      try{
+        const{data:uRow}=await _clSb.from('users')
+          .select('is_subscriber')
+          .eq('email',session.user.email.toLowerCase())
+          .maybeSingle();
+        if(uRow?.is_subscriber){
+          restoreFullActions();
+          showToast('✦ Full access unlocked');
+        }
+      }catch(_){}
+    }
+  });
+}
 </script>
+<!-- ══ UPLOAD CONSENT MODAL ════════════════════════════════ -->
+<div id="uploadConsentModal" role="dialog" aria-modal="true" aria-labelledby="consentTitle"
+  style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.72);
+  display:none;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#1a1208;border:1px solid rgba(201,169,110,.22);border-radius:14px;
+    max-width:480px;width:100%;padding:32px 28px;position:relative;
+    box-shadow:0 24px 64px rgba(0,0,0,.6);">
+
+    <!-- Close -->
+    <button onclick="consentDecline()" aria-label="Cancel"
+      style="position:absolute;top:14px;right:16px;background:none;border:none;
+      color:rgba(255,255,255,.35);font-size:1.1rem;cursor:pointer;line-height:1;">✕</button>
+
+    <!-- Header -->
+    <p style="font-family:'Jost',sans-serif;font-size:.6rem;font-weight:700;
+      letter-spacing:.22em;text-transform:uppercase;color:#c9a96e;margin-bottom:10px;">
+      ✦ Before you upload
+    </p>
+    <h2 id="consentTitle"
+      style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.5rem;
+      font-weight:400;color:#fff;margin-bottom:16px;line-height:1.2;">
+      Let's create something beautiful. ✨
+    </h2>
+
+    <!-- Body -->
+    <p style="font-family:'Jost',sans-serif;font-size:.82rem;font-weight:300;
+      line-height:1.75;color:rgba(255,255,255,.65);margin-bottom:12px;">
+      By uploading a photo, you confirm that you have permission to use it and
+      agree to CultureSchool's
+      <a href="https://cultureschool.org/policies/terms-of-service"
+        target="_blank" rel="noopener"
+        style="color:#c9a96e;text-decoration:underline;">Terms of Service</a>.
+    </p>
+    <p style="font-family:'Jost',sans-serif;font-size:.78rem;font-weight:300;
+      line-height:1.75;color:rgba(255,255,255,.5);margin-bottom:20px;">
+      Please upload only original content or images you have the right to use.
+      Do not include celebrities, fictional characters, designers, brands, logos,
+      copyrighted or trademarked material, films, TV, music, or sports teams.
+      Accounts that repeatedly violate these guidelines may be suspended, and
+      royalties earned from infringing content may be withheld.
+    </p>
+
+    <!-- Footer note -->
+    <p style="font-family:'Jost',sans-serif;font-size:.7rem;font-weight:400;
+      color:rgba(255,255,255,.35);margin-bottom:24px;line-height:1.6;">
+      Thank you for helping us build a creative community rooted in originality,
+      respect, and culture. 🌍🎨
+    </p>
+
+    <!-- CTAs -->
+    <div style="display:flex;gap:10px;">
+      <button onclick="consentDecline()"
+        style="flex:1;padding:12px;border:1px solid rgba(255,255,255,.15);
+        background:transparent;color:rgba(255,255,255,.5);border-radius:40px;
+        font-family:'Jost',sans-serif;font-size:.72rem;font-weight:600;
+        letter-spacing:.12em;text-transform:uppercase;cursor:pointer;transition:all .2s;">
+        Cancel
+      </button>
+      <button onclick="consentAgree()"
+        style="flex:2;padding:12px;border:none;
+        background:linear-gradient(135deg,#e8d5a8,#c9a96e);
+        color:#1a1208;border-radius:40px;
+        font-family:'Jost',sans-serif;font-size:.72rem;font-weight:700;
+        letter-spacing:.12em;text-transform:uppercase;cursor:pointer;transition:filter .2s;"
+        onmouseover="this.style.filter='brightness(1.08)'"
+        onmouseout="this.style.filter=''">
+        I Agree — Choose Photo
+      </button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
+

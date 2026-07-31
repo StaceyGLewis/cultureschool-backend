@@ -1,0 +1,2839 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CoCo Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Gloock&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:#0b0d14;font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+
+/* ── Base ── */
+#pm-overlay {
+  position: fixed; inset: 0;
+  background: #0b0d14;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+
+/* ── Header ── */
+.pm-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 24px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  background: rgba(11,13,20,0.97);
+  position: sticky; top: 0; z-index: 10;
+  backdrop-filter: blur(10px);
+  flex-shrink: 0;
+}
+.pm-logo { height: 26px; opacity: 0.9; }
+.pm-badge {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.2em;
+  text-transform: uppercase; color: #a278e6;
+  background: rgba(162,120,230,0.1);
+  border: 1px solid rgba(162,120,230,0.22);
+  border-radius: 20px; padding: 3px 10px;
+}
+.pm-header-spacer { flex: 1; }
+.pm-step-indicator {
+  font-size: 11px; letter-spacing: 0.08em;
+  color: rgba(255,255,255,0.28);
+}
+.pm-step-indicator b { color: #a278e6; }
+.pm-exit-btn {
+  background: none;
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 20px; color: rgba(255,255,255,0.38);
+  font-size: 11px; letter-spacing: 0.07em;
+  padding: 5px 14px; cursor: pointer; transition: all 0.2s;
+}
+.pm-exit-btn:hover { border-color: rgba(255,255,255,0.22); color: rgba(255,255,255,0.6); }
+
+/* ── Step 1: Drop ── */
+#pm-step-1 {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 48px 24px 72px;
+}
+.pm-drop-headline {
+  font-size: clamp(26px, 4vw, 38px); font-weight: 300;
+  color: #f6f7ff; text-align: center; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+.pm-drop-sub {
+  font-size: 14px; color: rgba(246,247,255,0.4);
+  text-align: center; line-height: 1.65;
+  max-width: 440px; margin-bottom: 40px;
+}
+.pm-dropzone {
+  width: min(520px, 90vw); min-height: 240px;
+  border: 2px dashed rgba(162,120,230,0.28);
+  border-radius: 20px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 14px;
+  padding: 44px 28px; cursor: pointer; transition: all 0.25s;
+  background: rgba(162,120,230,0.025);
+  position: relative;
+}
+.pm-dropzone:hover, .pm-dropzone.pm-drag-over {
+  border-color: rgba(162,120,230,0.65);
+  background: rgba(162,120,230,0.055);
+}
+.pm-drop-icon { font-size: 40px; color: #a278e6; opacity: 0.5; line-height: 1; }
+.pm-dropzone p { font-size: 15px; color: rgba(246,247,255,0.5); text-align: center; }
+.pm-drop-or { font-size: 11px !important; color: rgba(246,247,255,0.2) !important; letter-spacing: 0.1em; }
+.pm-url-row {
+  display: flex; gap: 8px; margin-top: 18px;
+  width: min(520px, 90vw);
+}
+.pm-url-input {
+  flex: 1;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 10px; padding: 11px 16px;
+  color: #f6f7ff; font-size: 13px; outline: none;
+  transition: border-color 0.2s;
+}
+.pm-url-input:focus { border-color: rgba(162,120,230,0.5); }
+.pm-url-input::placeholder { color: rgba(246,247,255,0.18); }
+.pm-btn-primary {
+  background: #a278e6; color: #fff; border: none;
+  border-radius: 10px; padding: 11px 22px;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: all 0.2s; letter-spacing: 0.03em; white-space: nowrap;
+}
+.pm-btn-primary:hover { background: #b590f0; transform: translateY(-1px); }
+.pm-progress-wrap {
+  width: min(520px, 90vw); margin-top: 16px; display: none;
+}
+.pm-progress-bar {
+  width: 100%; height: 2px;
+  background: rgba(162,120,230,0.1); border-radius: 2px; overflow: hidden;
+}
+.pm-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #7c4de0, #a278e6, #c4a0ff);
+  border-radius: 2px; transition: width 0.4s ease; width: 0%;
+}
+.pm-progress-label {
+  font-size: 11px; color: rgba(246,247,255,0.3);
+  letter-spacing: 0.08em; margin-top: 8px; text-align: center;
+}
+
+/* ── Step 2: Analysis ── */
+#pm-step-2 {
+  display: none; flex-direction: column; align-items: center;
+  padding: 0 0 100px;
+}
+#pm-step-2.pm-visible { display: flex; }
+
+/* Hero image */
+.pm-possible-strip {
+  background: linear-gradient(135deg, rgba(201,169,110,.14), rgba(201,169,110,.05));
+  border: 1px solid rgba(201,169,110,.28);
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin-bottom: 20px;
+}
+.pm-possible-title {
+  font: 600 11px 'DM Sans', sans-serif;
+  letter-spacing: .04em;
+  color: #c9a96e;
+  margin-bottom: 14px;
+  line-height: 1.4;
+}
+.pm-possible-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+.pm-possible-item {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  font: 400 11px 'DM Sans', sans-serif;
+  color: rgba(246,247,255,.5);
+  line-height: 1.45;
+}
+.pm-possible-item b { color: rgba(246,247,255,.85); font-weight: 600; }
+.pm-possible-icon {
+  color: #c9a96e;
+  font-size: 14px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.pm-hero-wrap {
+  width: 100%; max-height: 58vh; overflow: hidden;
+  position: relative; background: #000; flex-shrink: 0;
+}
+.pm-hero-img {
+  width: 100%; max-height: 58vh;
+  object-fit: cover; display: block;
+  transition: opacity 0.3s ease;
+}
+.pm-hero-overlay {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 20px 24px 16px;
+  background: linear-gradient(to top, rgba(11,13,20,0.9) 0%, transparent 100%);
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 12px;
+}
+.pm-hero-style-label {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.14em;
+  text-transform: uppercase; color: rgba(246,247,255,0.75);
+  background: rgba(162,120,230,0.25);
+  border: 1px solid rgba(162,120,230,0.3);
+  border-radius: 6px; padding: 4px 10px;
+}
+.pm-hero-feeling {
+  font-size: 11px; letter-spacing: 0.1em;
+  color: rgba(246,247,255,0.45);
+  display: flex; align-items: center; gap: 6px;
+}
+.pm-hero-feeling-dot {
+  width: 5px; height: 5px; border-radius: 50%; background: #a278e6;
+}
+
+/* Filmstrip */
+.pm-filmstrip-section {
+  width: 100%; padding: 16px 0 8px;
+  border-bottom: none;
+}
+/* When filmstrip is inside pm-section-block, suppress its extra padding */
+.pm-section-block.pm-filmstrip-section { padding-left: 0; padding-right: 0; }
+.pm-filmstrip-label {
+  font-size: 9px; letter-spacing: 0.28em; text-transform: uppercase;
+  color: #c9a96e; font-weight: 700;
+  padding: 0 24px; margin-bottom: 12px;
+}
+.pm-filmstrip {
+  display: flex; gap: 10px;
+  overflow-x: auto; padding: 0 24px 4px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(162,120,230,0.2) transparent;
+  -webkit-overflow-scrolling: touch;
+}
+.pm-filmstrip::-webkit-scrollbar { height: 3px; }
+.pm-filmstrip::-webkit-scrollbar-track { background: transparent; }
+.pm-filmstrip::-webkit-scrollbar-thumb { background: rgba(162,120,230,0.2); border-radius: 3px; }
+.pm-film-card {
+  flex-shrink: 0; cursor: pointer;
+  border-radius: 10px; overflow: hidden;
+  border: 2px solid rgba(255,255,255,0.06);
+  transition: all 0.2s; position: relative;
+  width: 120px;
+}
+.pm-film-card:hover { border-color: rgba(162,120,230,0.4); }
+.pm-film-card.pm-film-selected {
+  border-color: #a278e6;
+  box-shadow: 0 0 0 1px rgba(162,120,230,0.5);
+}
+.pm-film-img {
+  width: 120px; height: 80px; object-fit: cover; display: block;
+}
+.pm-film-shimmer {
+  width: 120px; height: 80px;
+  background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.07) 50%, rgba(255,255,255,0.04) 75%);
+  background-size: 200% 100%;
+  animation: pm-shimmer 1.2s infinite;
+}
+@keyframes pm-shimmer { to { background-position: -200% 0; } }
+.pm-film-name {
+  font-size: 10px; letter-spacing: 0.08em; font-weight: 500;
+  color: rgba(246,247,255,0.5); text-align: center;
+  padding: 5px 4px 6px; background: rgba(11,13,20,0.85);
+}
+.pm-film-card.pm-film-selected .pm-film-name { color: #c4a0ff; }
+
+/* Insights grid — stacked column (lives inside pm-palette-row) */
+.pm-insights-grid {
+  display: flex; flex-direction: column; gap: 16px;
+}
+
+.pm-card {
+  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 14px; padding: 16px 18px;
+}
+.pm-card-label {
+  font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase;
+  color: rgba(246,247,255,0.3); font-weight: 600; margin-bottom: 10px;
+  display: flex; align-items: center; gap: 6px;
+}
+.pm-card-label-icon { color: #a278e6; font-size: 12px; }
+
+/* CoCo Sees card */
+.pm-coco-sees {
+  font-size: 13px; line-height: 1.6; color: rgba(246,247,255,0.7);
+}
+.pm-coco-chip {
+  display: inline-block;
+  background: rgba(162,120,230,0.12);
+  border: 1px solid rgba(162,120,230,0.2);
+  border-radius: 20px; padding: 2px 10px;
+  font-size: 12px; font-weight: 600; color: #c4a0ff;
+  margin: 2px 3px 2px 0;
+}
+.pm-coco-confidence {
+  font-size: 10px; letter-spacing: 0.1em;
+  color: rgba(246,247,255,0.25); margin-top: 8px;
+  display: flex; align-items: center; gap: 5px;
+}
+.pm-coco-no-read {
+  font-size: 12px; color: rgba(246,247,255,0.3);
+  font-style: italic; line-height: 1.55;
+}
+
+/* Palette card */
+.pm-palette-dots {
+  display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;
+}
+.pm-dot-wrap {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.pm-dot {
+  width: 32px; height: 32px; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.08);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+.pm-dot-name {
+  font-size: 8px; letter-spacing: 0.04em;
+  color: rgba(246,247,255,0.3);
+  text-align: center; max-width: 36px; line-height: 1.3;
+}
+
+/* Patterns section */
+.pm-patterns-section {
+  width: 100%; max-width: 780px; align-self: center;
+  padding: 24px 24px 0;
+  border-top: 1px solid rgba(201,169,110,.14);
+}
+.pm-patterns-header {
+  font-size: 9px; letter-spacing: 0.28em; text-transform: uppercase;
+  color: #c9a96e; font-weight: 700; margin-bottom: 14px;
+  display: flex; align-items: center; gap: 8px;
+}
+.pm-patterns-header::after {
+  content: ''; flex: 1; height: 1px;
+  background: rgba(201,169,110,.14);
+}
+.pm-patterns-with-lib .pm-patt-row { margin-top: 16px; }
+.pm-pattern-chips {
+  display: flex; flex-wrap: wrap; gap: 8px;
+}
+.pm-pattern-chip {
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(255,255,255,0.035);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 20px; padding: 7px 14px;
+  font-size: 12px; color: rgba(246,247,255,0.55);
+  cursor: pointer; transition: all 0.2s; letter-spacing: 0.04em;
+  user-select: none;
+}
+.pm-pattern-chip:hover {
+  border-color: rgba(162,120,230,0.35);
+  color: rgba(246,247,255,0.8);
+  background: rgba(162,120,230,0.06);
+}
+.pm-pattern-chip.pm-chip-selected {
+  border-color: #a278e6;
+  background: rgba(162,120,230,0.12);
+  color: #c4a0ff;
+}
+.pm-pattern-chip-icon { font-size: 14px; }
+
+/* CTA section — removed from layout, kept hidden for backwards compat */
+.pm-cta-section { display: none !important; }
+.pm-btn-flourish {
+  background: linear-gradient(135deg, #6c3fd0, #a278e6);
+  color: #fff; border: none; border-radius: 14px;
+  padding: 17px 44px; font-size: 15px; font-weight: 600;
+  letter-spacing: 0.04em; cursor: pointer;
+  box-shadow: 0 8px 32px rgba(108,63,208,0.38);
+  transition: all 0.25s; width: 100%; max-width: 420px;
+}
+.pm-btn-flourish:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 44px rgba(108,63,208,0.5);
+}
+.pm-cta-note {
+  font-size: 11px; line-height: 1.6;
+  color: rgba(246,247,255,0.28);
+  text-align: center; max-width: 360px;
+  margin-top: 12px; letter-spacing: 0.02em;
+}
+.pm-btn-ghost {
+  background: none; border: none;
+  color: rgba(246,247,255,0.3);
+  font-size: 12px; letter-spacing: 0.06em;
+  cursor: pointer; padding: 10px 8px; transition: color 0.2s; margin-top: 4px;
+}
+.pm-btn-ghost:hover { color: rgba(246,247,255,0.6); }
+
+/* ── AI Context Visualizer ── */
+.pm-ai-context-section { margin: 16px 0 6px; }
+.pm-ai-badge {
+  font-size: .55rem; font-weight: 700; letter-spacing: .08em;
+  background: #a278e6; color: #fff;
+  padding: 2px 6px; border-radius: 10px; margin-left: 7px;
+  vertical-align: middle; text-transform: uppercase;
+}
+.pm-context-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 8px; }
+.pm-context-chip {
+  padding: 6px 13px; border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.07);
+  color: rgba(246,247,255,0.8);
+  font-size: .72rem; font-family: inherit;
+  cursor: pointer; transition: background .15s, border-color .15s, opacity .15s;
+  line-height: 1.2;
+}
+.pm-context-chip:hover { background: rgba(255,255,255,0.14); border-color: rgba(255,255,255,0.28); }
+.pm-context-chip.active { background: #a278e6; border-color: #a278e6; color: #fff; }
+.pm-context-chip.loading { opacity: .45; pointer-events: none; }
+.pm-ai-status {
+  font-size: .7rem; color: rgba(246,247,255,0.38); min-height: 16px;
+  text-align: center; margin-bottom: 4px; font-style: italic;
+}
+.pm-ai-result { margin-top: 4px; }
+.pm-ai-img {
+  width: 100%; border-radius: 10px; display: block;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.pm-ai-caption {
+  font-size: .65rem; color: rgba(246,247,255,0.35);
+  text-align: center; margin: 7px 0 6px; font-style: italic;
+}
+.pm-ai-result-btns { display: flex; gap: 8px; margin-top: 2px; }
+.pm-ai-use-btn { flex: 1; text-align: center; }
+.pm-ai-save-btn { flex: 1; text-align: center; text-decoration: none; display: flex; align-items: center; justify-content: center; }
+.pm-ai-custom-row { display: flex; gap: 7px; margin: 10px 0 2px; }
+.pm-ai-custom-input {
+  flex: 1; padding: 7px 11px; border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.07);
+  color: rgba(246,247,255,0.88); font-size: .72rem; font-family: inherit;
+  outline: none;
+}
+.pm-ai-custom-input::placeholder { color: rgba(246,247,255,0.3); }
+.pm-ai-custom-input:focus { border-color: rgba(162,120,230,0.6); }
+.pm-ai-custom-btn {
+  padding: 7px 14px; border-radius: 20px; border: 1px solid #a278e6;
+  background: rgba(162,120,230,0.15); color: #c8aaf7;
+  font-size: .72rem; font-family: inherit; cursor: pointer; white-space: nowrap;
+  transition: background .15s;
+}
+.pm-ai-custom-btn:hover { background: rgba(162,120,230,0.28); }
+.pm-ai-custom-btn:disabled { opacity: .4; pointer-events: none; }
+
+/* Loading spinner */
+.pm-spinner {
+  width: 13px; height: 13px;
+  border: 2px solid rgba(162,120,230,0.2);
+  border-top-color: #a278e6;
+  border-radius: 50%;
+  animation: pm-spin 0.7s linear infinite;
+  display: inline-block; flex-shrink: 0;
+}
+@keyframes pm-spin { to { transform: rotate(360deg); } }
+
+/* ── Planner Library Steps 2–6 ── */
+.pm-library-wrap {
+  width: 100%;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 0 24px;
+}
+.pm-library-wrap.pm-lib-visible { display: flex; }
+.pm-library-section { margin-bottom: 0; }
+.pm-library-divider { display: none; }
+.pm-library-heading {
+  font: 700 9px 'DM Sans', sans-serif;
+  letter-spacing: .28em;
+  text-transform: uppercase;
+  color: #c9a96e;
+  margin-bottom: 14px;
+}
+
+/* ── Palette two-column row ── */
+.pm-palette-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  width: 100%; max-width: 780px; align-self: center;
+  padding: 20px 24px 0;
+}
+@media (max-width: 640px) { .pm-palette-row { grid-template-columns: 1fr; } }
+
+/* Section block (inside library wrap) */
+.pm-section-block {
+  width: 100%; max-width: 780px;
+  padding: 24px 24px 0;
+  border-top: 1px solid rgba(201,169,110,.14);
+}
+
+/* ── AI collapsible ── */
+.pm-ai-toggle {
+  background: none; border: none;
+  font: 700 9px 'DM Sans', sans-serif;
+  letter-spacing: .28em; text-transform: uppercase;
+  color: #c9a96e; cursor: pointer; padding: 0;
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 12px; line-height: 1.4;
+}
+.pm-ai-toggle:hover { opacity: .75; }
+.pm-ai-arrow { font-size: 11px; }
+
+/* ── Flourish fallback ── */
+.pm-flourish-fallback {
+  text-align: center; padding: 20px 24px 0;
+  width: 100%; max-width: 780px;
+}
+.pm-flourish-fallback .pm-btn-flourish { max-width: none; }
+
+/* ── Sticky footer ── */
+.pm-sticky-footer {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: rgba(15,18,32,.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 12px 24px;
+  border-top: 1px solid rgba(255,255,255,.08);
+  z-index: 99950;
+  display: none;
+}
+.pm-sticky-inner {
+  display: flex; align-items: center; gap: 10px; max-width: 780px; margin: 0 auto;
+}
+.pm-sticky-ghost {
+  background: none; border: none;
+  color: rgba(246,247,255,0.38);
+  font: 500 12px 'DM Sans', sans-serif;
+  letter-spacing: 0.04em;
+  cursor: pointer; padding: 10px 0;
+  transition: color 0.2s; white-space: nowrap; flex-shrink: 0;
+}
+.pm-sticky-ghost:hover { color: rgba(246,247,255,0.7); }
+.pm-sticky-save {
+  flex: 1;
+  background: linear-gradient(135deg, #c9a96e, #d4b07a);
+  color: #fff; border: none; border-radius: 10px;
+  padding: 13px 0; font: 600 13px 'DM Sans', sans-serif;
+  letter-spacing: .04em; cursor: pointer; transition: all .2s;
+  box-shadow: 0 4px 16px rgba(201,169,110,.3);
+}
+.pm-sticky-save:hover { transform: translateY(-1px); box-shadow: 0 6px 22px rgba(201,169,110,.45); }
+.pm-sticky-save:disabled { opacity: .5; cursor: default; transform: none; box-shadow: none; }
+.pm-sticky-copy-btn {
+  flex: 1; padding: 12px 0; border-radius: 10px;
+  font: 600 12px 'DM Sans', sans-serif;
+  letter-spacing: .04em; cursor: pointer; transition: all .15s;
+  background: rgba(201,169,110,.15);
+  border: 1px solid rgba(201,169,110,.3);
+  color: #c9a96e;
+}
+.pm-sticky-copy-btn:hover { background: rgba(201,169,110,.25); }
+.pm-sticky-flourish-btn {
+  flex: 1; padding: 12px 0; border-radius: 10px;
+  font: 600 12px 'DM Sans', sans-serif;
+  letter-spacing: .04em; cursor: pointer; border: none; transition: all .15s;
+  background: linear-gradient(135deg, #6c3fd0, #a278e6);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(108,63,208,.3);
+}
+.pm-sticky-flourish-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(108,63,208,.45); }
+.pm-lib-loading {
+  display: flex; align-items: center; gap: 10px;
+  font: 400 13px 'DM Sans', sans-serif;
+  color: rgba(26,23,20,.35); font-style: italic; padding: 8px 0;
+}
+.pm-lib-spinner {
+  width: 12px; height: 12px; flex-shrink: 0;
+  border: 2px solid rgba(201,169,110,.2);
+  border-top-color: #c9a96e;
+  border-radius: 50%;
+  animation: pm-spin 0.8s linear infinite;
+}
+
+/* Palette match cards */
+
+/* More ideas bar */
+.pm-more-ideas-bar { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:14px; padding:10px 14px; background:rgba(201,169,110,.08); border:1px solid rgba(201,169,110,.2); border-radius:10px; flex-wrap:wrap; }
+.pm-more-ideas-now { font:400 12px 'DM Sans',sans-serif; color:rgba(246,247,255,.55); }
+.pm-more-ideas-now strong { color:#c9a96e; font-weight:700; }
+.pm-more-ideas-btn { display:inline-flex; align-items:center; gap:6px; padding:8px 18px; border:none; border-radius:99px; background:linear-gradient(135deg,#e8d5a8,#c9a96e); color:#1a1208; font:700 11px 'DM Sans',sans-serif; letter-spacing:.06em; cursor:pointer; transition:transform .15s; }
+.pm-more-ideas-btn:hover { transform:translateY(-1px); }
+
+.pm-pal-match-row {
+  display: flex; gap: 12px;
+  overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 6px;
+}
+.pm-pal-card {
+  flex-shrink: 0; width: 180px;
+  background: #fff;
+  border: 1px solid rgba(201,169,110,.18);
+  border-radius: 14px; overflow: hidden;
+  box-shadow: 0 2px 14px rgba(0,0,0,.07);
+}
+.pm-pal-swatches { display: flex; height: 36px; }
+.pm-pal-swatch { flex: 1; height: 36px; }
+.pm-pal-info { padding: 10px 12px 12px; }
+.pm-pal-code {
+  font: 700 9px 'DM Sans', sans-serif;
+  letter-spacing: .2em; text-transform: uppercase;
+  color: #c9a96e; margin-bottom: 4px;
+}
+.pm-pal-name {
+  font: 600 13px 'Cormorant Garamond', Georgia, serif;
+  color: #1a1714; margin-bottom: 3px; line-height: 1.3;
+}
+.pm-pal-origin {
+  font: 400 11px 'DM Sans', sans-serif;
+  color: rgba(26,23,20,.45); margin-bottom: 10px;
+}
+.pm-pal-use-btn {
+  display: block; width: 100%;
+  background: #c9a96e; color: #fff; border: none;
+  border-radius: 8px; padding: 7px 0;
+  font: 600 11px 'DM Sans', sans-serif;
+  letter-spacing: .06em; cursor: pointer; transition: background .15s;
+}
+.pm-pal-vary-btn {
+  display: block; width: 100%; margin-top: 5px;
+  background: transparent; color: #8b6a3a;
+  border: 1px solid rgba(201,169,110,.35);
+  border-radius: 8px; padding: 6px 0;
+  font: 600 10px 'DM Sans', sans-serif;
+  letter-spacing: .06em; cursor: pointer; transition: all .15s;
+}
+.pm-pal-vary-btn:hover { background: rgba(201,169,110,.1); border-color: #c9a96e; color: #c9a96e; }
+.pm-pal-use-btn:hover { background: #b8956a; }
+.pm-pal-use-btn.pm-pal-active { background: #1a1714; cursor: default; }
+
+/* Pattern cards */
+.pm-patt-row {
+  display: flex; gap: 10px;
+  overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 6px;
+}
+.pm-patt-card {
+  flex-shrink: 0; width: 130px;
+  background: #fff;
+  border: 1px solid rgba(201,169,110,.16);
+  border-radius: 12px; overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0,0,0,.05);
+  cursor: pointer; transition: box-shadow .15s;
+}
+.pm-patt-card:hover { box-shadow: 0 4px 18px rgba(201,169,110,.2); }
+.pm-patt-img-wrap { width: 130px; height: 130px; background: #f5f0e8; overflow: hidden; }
+.pm-patt-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pm-patt-info { padding: 7px 9px 9px; }
+.pm-patt-code {
+  font: 700 8px 'DM Sans', sans-serif;
+  letter-spacing: .2em; text-transform: uppercase;
+  color: #c9a96e; margin-bottom: 3px;
+}
+.pm-patt-name {
+  font: 500 11px 'DM Sans', sans-serif;
+  color: #1a1714; line-height: 1.3;
+  display: -webkit-box; -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical; overflow: hidden;
+}
+.pm-patt-heritage {
+  font: 400 9px 'DM Sans', sans-serif;
+  color: rgba(26,23,20,.4); margin-top: 3px;
+}
+
+/* Product grid */
+.pm-product-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.pm-prod-card {
+  background: #fff;
+  border: 1px solid rgba(201,169,110,.16);
+  border-radius: 12px; overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0,0,0,.05);
+}
+.pm-prod-img-wrap { height: 130px; background: #f5f0e8; overflow: hidden; }
+.pm-prod-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pm-prod-info { padding: 10px 11px 11px; }
+.pm-prod-name {
+  font: 500 12px 'DM Sans', sans-serif;
+  color: #1a1714; margin-bottom: 4px; line-height: 1.3;
+}
+.pm-prod-price {
+  font: 600 12px 'DM Sans', sans-serif;
+  color: #c9a96e; margin-bottom: 8px;
+}
+.pm-prod-link {
+  display: inline-block;
+  font: 600 10px 'DM Sans', sans-serif;
+  letter-spacing: .08em; text-transform: uppercase;
+  color: #1a1714; text-decoration: none;
+  border-bottom: 1px solid rgba(26,23,20,.2);
+}
+.pm-prod-empty {
+  grid-column: 1/-1; text-align: center; padding: 20px;
+  font: 400 13px 'DM Sans', sans-serif; color: rgba(26,23,20,.4);
+}
+.pm-prod-empty a { color: #c9a96e; text-decoration: none; }
+
+/* Suite cards */
+.pm-suite-row {
+  display: flex; gap: 12px;
+  overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 6px;
+}
+.pm-suite-card {
+  flex-shrink: 0; width: 190px;
+  background: #0f1220;
+  border: 1px solid rgba(201,169,110,.2);
+  border-radius: 12px; overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0,0,0,.3);
+}
+.pm-suite-img-wrap { height: 110px; background: #1a1f35; overflow: hidden; }
+.pm-suite-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pm-suite-info { padding: 10px 12px 12px; }
+.pm-suite-name {
+  font: 600 13px 'Cormorant Garamond', Georgia, serif;
+  color: rgba(246,247,255,0.9); margin-bottom: 4px; line-height: 1.3;
+}
+.pm-suite-occasion {
+  display: inline-block;
+  font: 600 9px 'DM Sans', sans-serif;
+  letter-spacing: .12em; text-transform: uppercase;
+  color: #c9a96e; border: 1px solid rgba(201,169,110,.25);
+  border-radius: 20px; padding: 2px 8px; margin-bottom: 10px;
+}
+.pm-suite-open-btn {
+  display: block; width: 100%;
+  background: linear-gradient(135deg, #b8956a, #c9a96e);
+  border: none;
+  border-radius: 8px; padding: 9px 0;
+  font: 600 11px 'DM Sans', sans-serif;
+  letter-spacing: .06em; color: #fff;
+  cursor: pointer; transition: all .15s;
+  box-shadow: 0 2px 8px rgba(201,169,110,.2);
+}
+.pm-suite-open-btn:hover { background: linear-gradient(135deg, #c9a96e, #d4b07a); transform: translateY(-1px); }
+
+/* Save board section */
+.pm-save-inner { text-align: center; }
+.pm-btn-save {
+  background: #1a1714; color: #fff; border: none;
+  border-radius: 12px; padding: 15px 44px;
+  font: 600 14px 'DM Sans', sans-serif;
+  letter-spacing: .04em; cursor: pointer;
+  transition: all .2s; margin-bottom: 16px; display: inline-block;
+}
+.pm-btn-save:hover { background: #2d2825; transform: translateY(-1px); }
+.pm-btn-save:disabled { opacity: .5; cursor: default; transform: none; }
+.pm-board-link-wrap {
+  background: rgba(201,169,110,.06);
+  border: 1px solid rgba(201,169,110,.2);
+  border-radius: 12px; padding: 16px 18px; text-align: left;
+}
+.pm-board-link-label {
+  font: 700 9px 'DM Sans', sans-serif;
+  letter-spacing: .2em; text-transform: uppercase;
+  color: #c9a96e; margin-bottom: 8px;
+}
+.pm-board-link-url {
+  font: 400 12px 'DM Sans', sans-serif;
+  color: #1a1714; word-break: break-all; margin-bottom: 10px;
+}
+.pm-board-link-btns { display: flex; gap: 8px; }
+.pm-board-copy-btn, .pm-board-flourish-btn {
+  flex: 1; padding: 9px 0; border-radius: 8px;
+  font: 600 11px 'DM Sans', sans-serif;
+  letter-spacing: .04em; cursor: pointer; border: none; transition: all .15s;
+}
+.pm-board-copy-btn { background: #c9a96e; color: #fff; }
+.pm-board-copy-btn:hover { background: #b8956a; }
+.pm-board-flourish-btn {
+  background: none; border: 1px solid rgba(26,23,20,.14);
+  color: #1a1714;
+}
+.pm-board-flourish-btn:hover { background: rgba(26,23,20,.05); }
+
+/* Pattern preview modal */
+.pm-patt-modal-overlay {
+  position: fixed; inset: 0; z-index: 100200;
+  background: rgba(11,13,20,.75);
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+}
+.pm-patt-modal-inner {
+  background: #fff; border-radius: 18px; overflow: hidden;
+  max-width: 380px; width: 100%;
+  box-shadow: 0 24px 80px rgba(0,0,0,.25);
+}
+.pm-patt-modal-img { width: 100%; height: 220px; object-fit: cover; display: block; }
+.pm-patt-modal-info { padding: 16px 18px 18px; }
+.pm-patt-modal-code {
+  font: 700 9px 'DM Sans', sans-serif;
+  letter-spacing: .2em; text-transform: uppercase;
+  color: #c9a96e; margin-bottom: 4px;
+}
+.pm-patt-modal-name {
+  font: 600 18px 'Cormorant Garamond', Georgia, serif;
+  color: #1a1714; margin-bottom: 3px;
+}
+.pm-patt-modal-heritage {
+  font: 400 12px 'DM Sans', sans-serif;
+  color: rgba(26,23,20,.45); margin-bottom: 14px;
+}
+.pm-patt-modal-btns { display: flex; gap: 8px; }
+.pm-patt-modal-flourish {
+  flex: 1; padding: 10px 0; background: #c9a96e; color: #fff;
+  border: none; border-radius: 8px;
+  font: 600 11px 'DM Sans', sans-serif; cursor: pointer; transition: background .15s;
+}
+.pm-patt-modal-flourish:hover { background: #b8956a; }
+.pm-patt-modal-close {
+  flex: 1; padding: 10px 0; background: none;
+  border: 1px solid rgba(26,23,20,.14); color: #1a1714;
+  border-radius: 8px; font: 600 11px 'DM Sans', sans-serif; cursor: pointer;
+}
+.pm-patt-modal-close:hover { background: rgba(26,23,20,.04); }
+
+</style>
+</head>
+<body>
+
+<div id="pm-overlay" role="dialog" aria-modal="true" aria-label="CoCo Planner">
+
+  <!-- Header -->
+  <header class="pm-header">
+    <img class="pm-logo"
+      src="https://cdn.shopify.com/s/files/1/0673/3637/2387/files/CultureSchool_x_Coco_logo2.png?v=1769441790"
+      alt="CultureSchool x CoCo">
+    <span class="pm-badge">Planner Mode</span>
+    <span class="pm-header-spacer"></span>
+    <span class="pm-step-indicator">Step <b id="pm-step-num">1</b> of 2</span>
+    <button class="pm-exit-btn" onclick="window.__plannerExit()">Exit</button>
+  </header>
+
+  <!-- Step 1: Drop -->
+  <div id="pm-step-1">
+    <h1 class="pm-drop-headline">Drop your client's inspo</h1>
+    <p class="pm-drop-sub">Any image — a venue, a sunset, a fabric, a Pinterest pin. CoCo reads the culture, extracts your palette, and shows you what's possible.</p>
+
+    <div class="pm-dropzone" id="pm-dropzone" onclick="document.getElementById('pm-file-input').click()" role="button" tabindex="0">
+      <div class="pm-drop-icon">◈</div>
+      <p>Drop image here or click to browse</p>
+      <p class="pm-drop-or">— or paste a URL below —</p>
+    </div>
+    <input type="file" id="pm-file-input" accept="image/*" style="display:none" aria-label="Upload inspo image">
+
+    <div class="pm-progress-wrap" id="pm-progress-wrap">
+      <div class="pm-progress-bar"><div class="pm-progress-fill" id="pm-progress-fill"></div></div>
+      <p class="pm-progress-label" id="pm-progress-label">Reading image…</p>
+    </div>
+
+    <div class="pm-url-row">
+      <input type="text" class="pm-url-input" id="pm-url-input" placeholder="Paste image URL and press Enter…" aria-label="Image URL">
+      <button class="pm-btn-primary" onclick="window.__plannerFromUrl()">→</button>
+    </div>
+  </div>
+
+  <!-- Step 2: Analysis -->
+  <div id="pm-step-2">
+
+    <!-- ✦ What's possible — persona-aware capability strip -->
+    <div class="pm-possible-strip" id="pm-possible-strip">
+      <div class="pm-possible-title">Here's your complete color story — everything below is ready to use or send to a client</div>
+      <div class="pm-possible-grid">
+        <div class="pm-possible-item">
+          <span class="pm-possible-icon">◈</span>
+          <div><b>Named palette</b><br>Matched to your library, or make a variation tuned to your client</div>
+        </div>
+        <div class="pm-possible-item">
+          <span class="pm-possible-icon">◉</span>
+          <div><b>Cultural patterns</b><br>Generated live in your palette — kente, adinkra, ikat & more</div>
+        </div>
+        <div class="pm-possible-item">
+          <span class="pm-possible-icon">■</span>
+          <div><b>Products & suites</b><br>Pillows, textiles, and digital templates in this color story</div>
+        </div>
+        <div class="pm-possible-item">
+          <span class="pm-possible-icon">✦</span>
+          <div><b>Client proposal</b><br>Save it, get a branded link to send — the full vision in one page</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hero image -->
+    <div class="pm-hero-wrap">
+      <img class="pm-hero-img" id="pm-hero-img" alt="Inspo preview">
+      <div class="pm-hero-overlay">
+        <span class="pm-hero-style-label" id="pm-hero-style-label">Original</span>
+        <span class="pm-hero-feeling" id="pm-hero-feeling">
+          <span class="pm-hero-feeling-dot"></span>
+          <span id="pm-feeling-text">Analyzing…</span>
+        </span>
+      </div>
+    </div>
+
+    <!-- 2. Palette row: extracted + closest matches side by side -->
+    <div class="pm-palette-row">
+      <div class="pm-insights-grid">
+        <div class="pm-card">
+          <div class="pm-card-label"><span class="pm-card-label-icon">◈</span> CoCo Sees</div>
+          <div class="pm-coco-sees" id="pm-coco-sees">
+            <span class="pm-spinner"></span>
+          </div>
+        </div>
+        <div class="pm-card" style="margin-top:16px">
+          <div class="pm-card-label"><span class="pm-card-label-icon">●</span> Extracted Palette</div>
+          <div class="pm-palette-dots" id="pm-palette-dots">
+            <span class="pm-spinner"></span>
+          </div>
+        </div>
+      </div>
+      <div id="pm-lib-pal-section">
+        <div class="pm-library-heading">✦ Closest CultureSchool palettes</div>
+        <div class="pm-pal-match-row" id="pm-pal-matches">
+          <div class="pm-lib-loading"><span class="pm-lib-spinner"></span> Reading the culture in your palette…</div>
+        </div>
+        <div class="pm-more-ideas-bar" id="pm-more-ideas-bar">
+          <span class="pm-more-ideas-now">Showing: <strong id="pm-more-ideas-current">—</strong></span>
+          <button class="pm-more-ideas-btn" id="pm-more-ideas-btn" onclick="pmMoreIdeas()" style="display:none;">
+            More ideas ↻
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Patterns: style chips + library cards merged -->
+    <div class="pm-patterns-section pm-patterns-with-lib">
+      <div class="pm-patterns-header">✦ Patterns in this palette</div>
+      <div class="pm-pattern-chips" id="pm-pattern-chips">
+        <span class="pm-spinner"></span>
+      </div>
+      <div id="pm-lib-patt-section" style="display:none">
+        <div class="pm-patt-row" id="pm-patt-row">
+          <div class="pm-lib-loading"><span class="pm-lib-spinner"></span> Finding patterns…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Library content — revealed after extraction -->
+    <div class="pm-library-wrap" id="pm-library-wrap">
+
+      <!-- 4. Products -->
+      <div class="pm-section-block pm-library-section" id="pm-lib-prod-section" style="display:none">
+        <div class="pm-library-heading">✦ Shop this palette</div>
+        <div class="pm-product-grid" id="pm-prod-grid">
+          <div class="pm-lib-loading" style="grid-column:1/-1"><span class="pm-lib-spinner"></span> Finding products…</div>
+        </div>
+      </div>
+
+      <!-- 5. AI context (collapsible, closed by default) -->
+      <div class="pm-section-block">
+        <button class="pm-ai-toggle" id="pm-ai-toggle" onclick="(function(btn){var c=document.getElementById('pm-ai-context-section');var open=c.style.display!=='none';c.style.display=open?'none':'block';btn.querySelector('.pm-ai-arrow').textContent=open?'▸':'▾';})(this)">
+          <span class="pm-ai-arrow">▸</span>&nbsp;See it in context&nbsp;<span class="pm-ai-badge">AI</span>
+        </button>
+        <div class="pm-ai-context-section" id="pm-ai-context-section" style="display:none">
+          <div class="pm-context-chips" id="pm-context-chips"></div>
+          <!-- ✦ CultureSchool Prompt Presets -->
+          <div id="pmPromptPresets" style="margin-bottom:10px;">
+            <button id="pmPresetToggle"
+              onclick="(function(btn){var p=document.getElementById('pmPresetPanel');var open=p.style.display!=='none';p.style.display=open?'none':'block';btn.querySelector('.ppp-arrow').textContent=open?'▸':'▾';if(!window.__PMBuilt){window.__PMBuilt=true;if(window.__pmBuild)window.__pmBuild();}})(this)"
+              style="width:100%;text-align:left;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:7px 12px;font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:rgba(240,236,228,.5);cursor:pointer;display:flex;align-items:center;justify-content:space-between;">
+              <span>✦ Prompt presets</span><span class="ppp-arrow">▸</span>
+            </button>
+            <div id="pmPresetPanel" style="display:none;margin-top:6px;border:1px solid rgba(255,255,255,.08);border-radius:8px;overflow:hidden;">
+              <div style="display:flex;border-bottom:1px solid rgba(255,255,255,.08);">
+                <button class="ppp-tab ppp-active" data-cat="brand" onclick="pmSwitchCat('brand',this)" style="flex:1;padding:6px 2px;font-size:8px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;border:none;cursor:pointer;background:rgba(201,169,110,.12);color:#c9a96e;">Brand</button>
+                <button class="ppp-tab" data-cat="b2b" onclick="pmSwitchCat('b2b',this)" style="flex:1;padding:6px 2px;font-size:8px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;border:none;cursor:pointer;background:transparent;color:rgba(240,236,228,.3);">B2B</button>
+                <button class="ppp-tab" data-cat="lifestyle" onclick="pmSwitchCat('lifestyle',this)" style="flex:1;padding:6px 2px;font-size:8px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;border:none;cursor:pointer;background:transparent;color:rgba(240,236,228,.3);">Lifestyle</button>
+                <button class="ppp-tab" data-cat="event" onclick="pmSwitchCat('event',this)" style="flex:1;padding:6px 2px;font-size:8px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;border:none;cursor:pointer;background:transparent;color:rgba(240,236,228,.3);">Event</button>
+                <button class="ppp-tab" data-cat="product" onclick="pmSwitchCat('product',this)" style="flex:1;padding:6px 2px;font-size:8px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;border:none;cursor:pointer;background:transparent;color:rgba(240,236,228,.3);">Product</button>
+              </div>
+              <div id="ppp-brand" class="ppp-cat" style="padding:6px;display:block;max-height:220px;overflow-y:auto;"></div>
+              <div id="ppp-b2b"   class="ppp-cat" style="padding:6px;display:none;max-height:220px;overflow-y:auto;"></div>
+              <div id="ppp-lifestyle" class="ppp-cat" style="padding:6px;display:none;max-height:220px;overflow-y:auto;"></div>
+              <div id="ppp-event" class="ppp-cat" style="padding:6px;display:none;max-height:220px;overflow-y:auto;"></div>
+              <div id="ppp-product" class="ppp-cat" style="padding:6px;display:none;max-height:220px;overflow-y:auto;"></div>
+            </div>
+          </div>
+
+          <div class="pm-ai-custom-row">
+            <input class="pm-ai-custom-input" id="pm-ai-custom-input" type="text" placeholder="Describe your own context… e.g. on a yoga mat" maxlength="120">
+            <button class="pm-ai-custom-btn" id="pm-ai-custom-btn">Generate →</button>
+          </div>
+          <div class="pm-ai-status" id="pm-ai-status"></div>
+          <div class="pm-ai-result" id="pm-ai-result" style="display:none;">
+            <img class="pm-ai-img" id="pm-ai-img" alt="AI context visualization">
+            <div class="pm-ai-caption" id="pm-ai-caption"></div>
+            <div class="pm-ai-result-btns">
+              <button class="pm-btn-ghost pm-ai-use-btn" id="pm-ai-use-btn">Use as inspo →</button>
+              <a class="pm-btn-ghost pm-ai-save-btn" id="pm-ai-save-btn" download="coco-ai-context.png">Save image ↓</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6. Digital suites (primary CTA) -->
+      <div class="pm-section-block pm-library-section" id="pm-lib-suite-section" style="display:none">
+        <div class="pm-library-heading">✦ Digital suites for this moment</div>
+        <div class="pm-suite-row" id="pm-suite-row">
+          <div class="pm-lib-loading"><span class="pm-lib-spinner"></span> Matching templates…</div>
+        </div>
+      </div>
+      <!-- Fallback: shown until suite cards load -->
+      <div class="pm-flourish-fallback" id="pm-flourish-fallback">
+        <button class="pm-btn-flourish" id="pm-flourish-btn" onclick="window.__plannerSendToFlourish()">
+          Build with this palette in Flourish →
+        </button>
+      </div>
+
+      <!-- 7. Style variations filmstrip (moved to bottom) -->
+      <div class="pm-section-block pm-filmstrip-section">
+        <div class="pm-filmstrip-label">✦ Style variations</div>
+        <div class="pm-filmstrip" id="pm-filmstrip"><!-- cards injected --></div>
+      </div>
+
+      <!-- 8. Board link display (save button lives in sticky footer) -->
+      <div class="pm-section-block pm-library-section" id="pm-lib-save-section" style="display:none">
+        <div id="pm-board-link" style="display:none" class="pm-board-link-wrap">
+          <div class="pm-board-link-label">Your planning board</div>
+          <div class="pm-board-link-url" id="pm-board-link-url"></div>
+          <div class="pm-board-link-btns">
+            <button class="pm-board-copy-btn" id="pm-board-copy-btn">Copy board link</button>
+            <button class="pm-board-flourish-btn" id="pm-board-flourish-btn">Continue in Flourish →</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /pm-library-wrap -->
+
+  </div><!-- /pm-step-2 -->
+
+</div><!-- /pm-overlay -->
+
+
+<script>
+/* ── Supabase — single clean init, no duplicates ── */
+const SB_URL  = "https://qwulthvbwujfehgdegtn.supabase.co";
+const SB_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3dWx0aHZid3VqZmVoZ2RlZ3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQyMDcxODIsImV4cCI6MjA1OTc4MzE4Mn0.t9n4eZng6d0jggiPNK-J_DByvEE2L9tqy5Xh_1-TSoQ";
+const sb = window.supabase.createClient(SB_URL, SB_ANON, {
+  auth: { persistSession: true, autoRefreshToken: true }
+});
+window.sb = sb;
+window.db = sb;
+window.SUPABASE_URL  = SB_URL;
+window.SUPABASE_ANON = SB_ANON;
+window.FLOURISH_BASE = 'https://flourish-ultimate.cultureschool.org';
+
+/* ── roundRect — defined once globally so all canvas code can use it ── */
+function roundRect(ctx, x, y, w, h, r) {
+  const rr = Math.min(r, w/2, h/2);
+  ctx.beginPath();
+  ctx.moveTo(x+rr, y);
+  ctx.lineTo(x+w-rr, y); ctx.arcTo(x+w, y, x+w, y+rr, rr);
+  ctx.lineTo(x+w, y+h-rr); ctx.arcTo(x+w, y+h, x+w-rr, y+h, rr);
+  ctx.lineTo(x+rr, y+h); ctx.arcTo(x, y+h, x, y+h-rr, rr);
+  ctx.lineTo(x, y+rr); ctx.arcTo(x, y, x+rr, y, rr);
+  ctx.closePath();
+}
+
+/* ── postMessage bridge — receive init data from parent collector ── */
+window.addEventListener('message', function(e) {
+  const d = e.data;
+  if (!d || !d.kind) return;
+
+  if (d.kind === 'COCO_PLANNER_INIT') {
+    // Email
+    if (d.email) {
+      localStorage.setItem('coco_planner_email', d.email);
+      localStorage.setItem('userEmail', d.email);
+      window.userEmail = d.email;
+    }
+
+    // Reconstruct CocoMuse palette state from parent collector
+    if (d.currentPalette && d.currentPalette.length) {
+      window.CocoMuse = window.CocoMuse || {};
+      window.CocoMuse.currentPalette     = d.currentPalette;
+      window.CocoMuse.currentPaletteName = d.currentPaletteName || '';
+      window.CocoMuse.currentPaletteCode = d.currentPaletteCode || '';
+      window.CocoMuse.currentPaletteStory= d.currentPaletteStory || '';
+    }
+
+    // Seed palette library if parent passed it
+    if (d.allPalettes && d.allPalettes.length) {
+      window._allPalettes = d.allPalettes;
+      // Also seed into planner session if it's ready
+      if (window.plannerSession) {
+        window.plannerSession.paletteLib = d.allPalettes;
+      }
+    }
+
+    // Pre-seed planner session with active palette
+    if (d.currentPaletteCode && window.plannerSession) {
+      window.plannerSession.activePaletteCode   = d.currentPaletteCode;
+      window.plannerSession.activePaletteName   = d.currentPaletteName || '';
+      window.plannerSession.activePaletteColors = d.currentPalette || [];
+      window.plannerSession.activePaletteStory  = d.currentPaletteStory || '';
+    }
+
+    // Show the overlay
+    const ov = document.getElementById('pm-overlay');
+    if (ov) ov.style.display = 'flex';
+  }
+});
+
+/* ── Outbound bridge helpers — override exit/save to message parent ── */
+function _bridgeExit() {
+  window.parent.postMessage({ kind: 'COCO_PLANNER_EXIT' }, '*');
+}
+function _bridgeSaved(boardId, shareUrl) {
+  window.parent.postMessage({ kind: 'COCO_PLANNER_SAVED', boardId, shareUrl }, '*');
+}
+function _bridgeFlourish(boardId) {
+  window.parent.postMessage({ kind: 'COCO_PLANNER_FLOURISH', boardId }, '*');
+}
+function _bridgeCopy(url) {
+  window.parent.postMessage({ kind: 'COCO_COPY', url }, '*');
+  if (navigator.clipboard?.writeText) navigator.clipboard.writeText(url).catch(()=>{});
+}
+</script>
+
+<script>
+/* ══════════════════════════════════════════════════════════════
+   PLANNER MODE — extracted from collector desktop
+   All functions are in the same scope — no window exposure hacks
+════════════════════════════════════════════════════════════════ */
+(function plannerMode(){
+  'use strict';
+
+  const FLOURISH_URL = 'https://flourish-ultimate.cultureschool.org/';
+
+  const STYLES = [
+    { key:'original', label:'Original',  emoji:'◯' },
+    { key:'warm',     label:'Warm',      emoji:'☀' },
+    { key:'romantic', label:'Romantic',  emoji:'✿' },
+    { key:'bw',       label:'Editorial', emoji:'◑' },
+    { key:'duotone',  label:'Duotone',   emoji:'◈' },
+    { key:'bright',   label:'Vivid',     emoji:'✦' },
+    { key:'hearth',   label:'Hearth',    emoji:'▲' },
+    { key:'sunfade',  label:'Sun Fade',  emoji:'◌' },
+  ];
+
+  const FEELING_STYLE_DEFAULT = {
+    dramatic: 'bw', grounded: 'hearth', airy: 'bright', calm: 'romantic', balanced: 'warm',
+  };
+
+  const CULTURE_PATTERNS = {
+    japanese:    [['◈','Sashiko'],['◌','Crane Motif'],['▪','Indigo Print']],
+    indian:      [['◈','Block Print'],['✿','Rangoli Motif'],['▲','Ikat']],
+    african:     [['▲','Kente'],['◈','Ankara'],['▪','Mudcloth']],
+    moroccan:    [['◈','Zellige Tile'],['◌','Arabesque'],['▪','Hammered Brass']],
+    caribbean:   [['✿','Tropical Floral'],['◈','Batik']],
+    korean:      [['◌','Pojagi Patchwork'],['◈','Hanji Paper']],
+    chinese:     [['◈','Chinoiserie'],['◌','Cloud Lattice']],
+    wedding:     [['✿','Watercolor Floral'],['◌','Linen Weave'],['◈','Damask']],
+    bachelorette:[['◌','Champagne Silk'],['◈','Velvet']],
+    birthday:    [['✦','Festive Print'],['◈','Confetti']],
+    graduation:  [['▪','Classic Stripe'],['◈','Herringbone']],
+    quinceanera: [['✿','Tulle Floral'],['◈','Lace']],
+    wellness:    [['◌','French Linen'],['✿','Botanical'],['◈','Rattan']],
+    cultural:    [['◈','Heritage Textile'],['▲','Folk Pattern'],['◌','Woven']],
+  };
+
+  const FEELING_PATTERNS = {
+    dramatic: [['▪','Black Velvet'],['◈','Deep Geometric'],['◌','Hammered Metal']],
+    grounded: [['◌','Raw Linen'],['▲','Woven Rattan'],['◈','Brushed Cotton']],
+    airy:     [['◌','Watercolor Wash'],['✿','Sheer Gauze'],['◈','Soft Botanical']],
+    calm:     [['◌','French Linen'],['✿','Silk Charmeuse'],['◈','Pressed Floral']],
+    balanced: [['◈','Canvas Weave'],['▪','Ticking Stripe'],['◌','Soft Jacquard']],
+  };
+
+  // ── State ──
+  let state = {
+    imageSrc: null, palette: [], feeling: null,
+    inference: null, selectedStyle: 'original',
+    selectedPattern: null, filename: '',
+    renderedStyles: {}, lastAiContextUrl: null, lastAiContextLabel: null,
+  };
+
+  // ── Utility ──
+  function hexToRgbStr(hex) {
+    const n = parseInt(hex.replace('#',''), 16);
+    return ((n>>16)&255) + ',' + ((n>>8)&255) + ',' + (n&255);
+  }
+
+  function setProgress(pct, label) {
+    const wrap = document.getElementById('pm-progress-wrap');
+    const fill = document.getElementById('pm-progress-fill');
+    const lbl  = document.getElementById('pm-progress-label');
+    if (!wrap) return;
+    if (pct === 0) { wrap.style.display = 'none'; return; }
+    wrap.style.display = 'block';
+    if (fill) fill.style.width = pct + '%';
+    if (lbl && label) lbl.textContent = label;
+    if (pct >= 100) setTimeout(() => { wrap.style.display = 'none'; fill && (fill.style.width = '0%'); }, 600);
+  }
+
+  function goStep(n) {
+    document.getElementById('pm-step-1').style.display = n === 1 ? 'flex' : 'none';
+    const s2 = document.getElementById('pm-step-2');
+    s2.style.display = n === 2 ? 'flex' : 'none';
+    s2.style.flexDirection = 'column';
+    document.getElementById('pm-step-num').textContent = n;
+  }
+
+  // ── Filmstrip ──
+  function buildFilmstrip() {
+    const strip = document.getElementById('pm-filmstrip');
+    strip.innerHTML = '';
+    STYLES.forEach(s => {
+      const card = document.createElement('div');
+      card.className = 'pm-film-card' + (s.key === 'original' ? ' pm-film-selected' : '');
+      card.dataset.style = s.key;
+      card.innerHTML =
+        '<div class="pm-film-shimmer" id="pm-film-shimmer-' + s.key + '"></div>' +
+        '<div class="pm-film-name">' + s.emoji + ' ' + s.label + '</div>';
+      card.addEventListener('click', () => selectStyle(s.key, card));
+      strip.appendChild(card);
+    });
+
+    // Set original immediately
+    if (state.imageSrc) {
+      const shimmer = document.getElementById('pm-film-shimmer-original');
+      if (shimmer) {
+        const img = document.createElement('img');
+        img.className = 'pm-film-img';
+        img.src = state.imageSrc;
+        shimmer.replaceWith(img);
+      }
+      state.renderedStyles['original'] = state.imageSrc;
+    }
+
+    // Render other styles async
+    renderStylesAsync();
+  }
+
+  async function renderStylesAsync() {
+    const styleFn = window.styleImage; // canvas-based fallback, no worker dependency
+    if (!styleFn || !state.imageSrc) return;
+
+    for (const s of STYLES) {
+      if (s.key === 'original') continue;
+      (async () => {
+        try {
+          const styledSrc = await styleFn(state.imageSrc, s.key);
+          state.renderedStyles[s.key] = styledSrc;
+          const shimmer = document.getElementById('pm-film-shimmer-' + s.key);
+          if (shimmer) {
+            const img = document.createElement('img');
+            img.className = 'pm-film-img';
+            img.src = styledSrc;
+            shimmer.replaceWith(img);
+          }
+          // Update hero if this style is currently selected
+          if (state.selectedStyle === s.key) {
+            updateHero(styledSrc, s.label);
+          }
+        } catch(e) {
+          const shimmer = document.getElementById('pm-film-shimmer-' + s.key);
+          if (shimmer) shimmer.style.background = 'rgba(255,255,255,0.04)';
+        }
+      })();
+    }
+  }
+
+  function selectStyle(key, cardEl) {
+    document.querySelectorAll('.pm-film-card').forEach(c => c.classList.remove('pm-film-selected'));
+    cardEl.classList.add('pm-film-selected');
+    state.selectedStyle = key;
+
+    const styleObj = STYLES.find(s => s.key === key);
+    const label = styleObj ? styleObj.label : key;
+
+    if (state.renderedStyles[key]) {
+      updateHero(state.renderedStyles[key], label);
+    } else {
+      updateHero(state.imageSrc, 'Rendering…');
+    }
+  }
+
+  function updateHero(src, label) {
+    const hero = document.getElementById('pm-hero-img');
+    const lbl  = document.getElementById('pm-hero-style-label');
+    if (hero) {
+      hero.style.opacity = '0.6';
+      hero.src = src;
+      hero.onload = () => { hero.style.opacity = '1'; };
+    }
+    if (lbl) lbl.textContent = label;
+  }
+
+  // ── Cultural read ──
+  function renderCocoSees(inf) {
+    const el = document.getElementById('pm-coco-sees');
+    if (!inf) {
+      el.innerHTML = '<span class="pm-coco-no-read">Name your file with cultural context for a deeper read — e.g. <em>moroccan_wedding_inspo.jpg</em></span>';
+      return;
+    }
+    const chips = [];
+    if (inf.occasion) chips.push(inf.occasion);
+    if (inf.vibe && inf.vibe !== inf.occasion) chips.push(inf.vibe);
+    (inf.cultural_markers || []).filter(m => m !== inf.occasion && m !== inf.vibe).slice(0,3).forEach(m => chips.push(m));
+    const chipHtml = chips.map(c => '<span class="pm-coco-chip">' + c + '</span>').join('');
+    const conf = inf.confidence >= 60 ? '✦ strong signal' : inf.confidence >= 30 ? '◈ moderate signal' : '◇ light signal';
+    el.innerHTML = chipHtml + '<div class="pm-coco-confidence">' + conf + '</div>';
+  }
+
+  // ── Palette ──
+  function renderPalette(palette) {
+    const el = document.getElementById('pm-palette-dots');
+    el.innerHTML = '';
+    palette.forEach(hex => {
+      const rgbStr = hexToRgbStr(hex);
+      const name = (typeof nameColor === 'function') ? nameColor(rgbStr) : hex;
+      const wrap = document.createElement('div');
+      wrap.className = 'pm-dot-wrap';
+      wrap.innerHTML = '<div class="pm-dot" style="background:' + hex + '" title="' + name + '"></div><span class="pm-dot-name">' + name + '</span>';
+      el.appendChild(wrap);
+    });
+  }
+
+  // ── Pattern chips ──
+  function renderPatternChips(inf, feeling) {
+    const el = document.getElementById('pm-pattern-chips');
+    el.innerHTML = '';
+
+    const seen = new Set();
+    const suggestions = [];
+
+    // From cultural markers
+    if (inf) {
+      const keys = [inf.occasion, inf.vibe, ...(inf.cultural_markers || [])].filter(Boolean);
+      keys.forEach(k => {
+        const patterns = CULTURE_PATTERNS[k] || [];
+        patterns.forEach(p => { if (!seen.has(p[1])) { seen.add(p[1]); suggestions.push(p); } });
+      });
+    }
+
+    // From feeling
+    const feelingPatterns = FEELING_PATTERNS[feeling] || FEELING_PATTERNS.balanced;
+    feelingPatterns.forEach(p => { if (!seen.has(p[1])) { seen.add(p[1]); suggestions.push(p); } });
+
+    // Cap at 8
+    suggestions.slice(0, 8).forEach(([icon, name]) => {
+      const chip = document.createElement('div');
+      chip.className = 'pm-pattern-chip';
+      chip.innerHTML = '<span class="pm-pattern-chip-icon">' + icon + '</span> ' + name;
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('.pm-pattern-chip').forEach(c => c.classList.remove('pm-chip-selected'));
+        chip.classList.add('pm-chip-selected');
+        state.selectedPattern = name;
+      });
+      el.appendChild(chip);
+    });
+
+    if (!suggestions.length) {
+      el.innerHTML = '<span style="font-size:12px;color:rgba(246,247,255,0.25)">Drop a culturally-named image for pattern suggestions</span>';
+    }
+  }
+
+  // ── Main analyze flow ──
+  async function analyzeImage(src, filename) {
+    state.imageSrc = src;
+    state.filename = filename || '';
+    state.renderedStyles = {};
+    state.selectedStyle = 'original';
+    state.renderedStyles['original'] = src;
+
+    // Show step 2 immediately with hero
+    document.getElementById('pm-hero-img').src = src;
+    document.getElementById('pm-hero-style-label').textContent = 'Original';
+    document.getElementById('pm-feeling-text').textContent = 'Analyzing…';
+    goStep(2);
+    _mountContextChips();
+    setProgress(15, 'Reading image…');
+
+    // Build filmstrip (shimmer state, renders async)
+    buildFilmstrip();
+    setProgress(30, 'Running cultural read…');
+
+    // Cultural inference from filename
+    try {
+      const inf = window.cocoInfer ? window.cocoInfer(filename || 'inspo.jpg') : null;
+      state.inference = inf;
+      renderCocoSees(inf);
+    } catch(e) { renderCocoSees(null); }
+
+    setProgress(55, 'Extracting palette…');
+
+    // Palette + feeling
+    try {
+      const palette = await extractPaletteFromImage(src, 5);
+      state.palette = palette;
+      renderPalette(palette);
+
+      const feeling = inferFeelingFromPalette(palette);
+      state.feeling = feeling;
+      document.getElementById('pm-feeling-text').textContent = feeling;
+
+      // Auto-select default style based on feeling
+      const defaultStyle = FEELING_STYLE_DEFAULT[feeling] || 'warm';
+      const defaultCard = document.querySelector('.pm-film-card[data-style="' + defaultStyle + '"]');
+      if (defaultCard) {
+        document.querySelectorAll('.pm-film-card').forEach(c => c.classList.remove('pm-film-selected'));
+        defaultCard.classList.add('pm-film-selected');
+        state.selectedStyle = defaultStyle;
+      }
+
+      renderPatternChips(state.inference, feeling);
+    } catch(e) {
+      document.getElementById('pm-palette-dots').innerHTML = '<span style="font-size:12px;color:rgba(246,247,255,0.3)">Could not extract palette</span>';
+      document.getElementById('pm-feeling-text').textContent = '—';
+      renderPatternChips(state.inference, 'balanced');
+    }
+
+    setProgress(100, 'Done');
+
+    // Update global session state and trigger library steps
+    if (window.plannerSession) {
+      window.plannerSession.sourceImageUrl = src.startsWith('data:') && src.length > 50000 ? '' : src;
+      window.plannerSession.extractedColors = state.palette.slice();
+      window.plannerSession.inferred.occasion = state.inference?.occasion || '';
+      window.plannerSession.inferred.vibe     = state.inference?.vibe     || '';
+      window.plannerSession.inferred.feels    = state.inference?.feels    || [];
+    }
+    if (typeof window.__plannerRunLibrarySteps === 'function') {
+      window.__plannerRunLibrarySteps(state.palette, state.inference);
+    }
+  }
+
+  // ── Send to Flourish ──
+  window.__plannerSendToFlourish = function(templateKey) {
+    const src = state.renderedStyles[state.selectedStyle] || state.imageSrc;
+    const styleObj = STYLES.find(s => s.key === state.selectedStyle);
+    const styleName = styleObj ? styleObj.label : state.selectedStyle;
+
+    const title = state.inference
+      ? ([state.inference.occasion, state.inference.vibe].filter(Boolean).join(' ') || 'Planner Inspo')
+      : 'Planner Inspo';
+
+    const tiles = [{ image_url: src || '', title, caption: styleName + ' treatment', type: 'image', media_url: '', buy_link: '' }];
+    const seed  = { title, tiles };
+    const sess  = window.plannerSession || {};
+
+    try {
+      localStorage.setItem('cocoSeed', JSON.stringify(seed));
+      localStorage.setItem('coco_flourish_seed_title', title);
+      localStorage.setItem('coco_flourish_seed_tiles', JSON.stringify(tiles));
+      if (state.palette.length) {
+        localStorage.setItem('coco_palette_seed', JSON.stringify(state.palette));
+        localStorage.setItem('coco_planner_feeling', state.feeling || '');
+      }
+      if (state.selectedPattern) {
+        localStorage.setItem('coco_planner_pattern', state.selectedPattern);
+      }
+    } catch {}
+
+    const payload = { kind: 'COCO_SEED', title, tiles,
+      aiContextUrl:    state.lastAiContextUrl  || null,
+      aiContextLabel:  state.lastAiContextLabel || null,
+      palette:         state.palette.length ? state.palette : null,
+      feeling:         state.feeling        || null,
+      occasion:        state.inference?.occasion || null,
+      vibe:            state.inference?.vibe     || null,
+      paletteCode:     sess.activePaletteCode   || null,
+      paletteName:     sess.activePaletteName   || null,
+      template:        templateKey              || null,
+      boardId:         sess.boardId             || null,
+    };
+
+    // Build full URL with params for standalone open
+    function buildFlourishUrl(base) {
+      const u = new URL(base);
+      if (sess.activePaletteCode) u.searchParams.set('palette', sess.activePaletteCode);
+      const colors = (sess.activePaletteColors && sess.activePaletteColors.length ? sess.activePaletteColors : state.palette);
+      colors.slice(0, 5).forEach((h, i) => u.searchParams.set('p' + (i + 1), h.replace('#', '')));
+      if (state.inference?.occasion) u.searchParams.set('occasion', state.inference.occasion);
+      if (state.inference?.vibe)     u.searchParams.set('vibe', state.inference.vibe);
+      if (templateKey)               u.searchParams.set('template', templateKey);
+      if (sess.boardId)              u.searchParams.set('board_id', sess.boardId);
+      return u.toString();
+    }
+
+    if (window !== window.parent) {
+      /* ── embedded in Flourish modal — send directly to parent, no tab switch ── */
+      window.parent.postMessage(payload, '*');
+      const btn = document.getElementById('pm-flourish-btn');
+      if (btn) { btn.textContent = '✦ Palette sent to canvas'; btn.disabled = true; }
+    } else {
+      /* ── standalone — open Flourish in new tab ── */
+      const targetUrl = buildFlourishUrl(FLOURISH_URL);
+      const win = window.open(targetUrl, '_blank', 'noopener');
+      if (win) {
+        let tries = 20;
+        const tick = setInterval(() => {
+          if (!win || win.closed || tries-- <= 0) return clearInterval(tick);
+          try { win.postMessage(payload, '*'); } catch {}
+        }, 300);
+      }
+    }
+  };
+
+  /* ── AI Context Visualizer ── */
+  const CONTEXT_CHIPS = [
+    { label: '🛋 Room',        scene: 'a luxurious living room interior with layered textiles, art on the walls, and soft furnishings' },
+    { label: '◈ Cushion',      scene: 'decorative throw cushions and soft furnishings arranged on a sofa, overhead flat-lay angle' },
+    { label: '✦ Apparel',      scene: 'a fashion editorial flat lay with garments, accessories, shoes and draped fabric' },
+    { label: '◌ Tablescape',   scene: 'an elegant table setting with linen napkins, ceramics, candles, and botanicals' },
+    { label: '◈ Stationery',   scene: 'premium wedding stationery, invitations, wax seals, envelopes, and paper goods arranged on marble' },
+    { label: '▲ Packaging',    scene: 'artisan product packaging, ribbon-tied boxes, tissue paper, and branded labels' },
+    { label: '✿ Garden',       scene: 'a garden party setup with draped fabric, florals, lanterns, and outdoor dining details' },
+    { label: '◌ Bedroom',      scene: 'a calm styled bedroom with layered bedding, decorative pillows, and warm morning light' },
+    // ── CultureSchool brand chips ─────────────────────────────
+    { label: '✦ Kente Pillow',  scene: 'a premium throw pillow with bold kente textile print on a minimal palette-toned background, professional lighting, pattern reads clearly' },
+    { label: '✦ Tablescape',    scene: 'a styled summer table with cloth napkins, candle, and a throw pillow all in the same cultural color story, Cape Cod afternoon light' },
+    { label: '✦ Sundress',      scene: 'a woman wearing a sundress with cultural textile print at a New England vineyard, summer editorial, pattern and palette visible' },
+    { label: '✦ Renovation',    scene: 'a renovated New England home interior staged with cultural textiles, throw pillows and soft goods all in palette, real home warm light' },
+    { label: '✦ Pattern Hero',  scene: 'a flat lay of fabric swatches and textile samples on a dark linen surface, kente, adinkra, ikat, mudcloth, all color-coordinated' },
+    { label: '✦ Winery Popup',  scene: 'a small artisan popup table at a New England winery with curated home goods, pillows, napkins and candle, summer vineyard setting' },
+    // ── B2B chips ─────────────────────────────────────────────
+    { label: '◆ Design Spec',   scene: 'a high-end interior living space styled with culturally intentional throw pillows and soft goods, pattern-rich textiles, design firm quality' },
+    { label: '◆ Event Board',   scene: 'an editorial event design mood board with styled table setting, florals, textiles and stationery in the same cultural color story' },
+    { label: '◆ Wedding Suite', scene: 'a multicultural wedding table with invitation suite, cultural textiles and florals, kente or adinkra pattern details visible, warm ceremony light' },
+    { label: '◆ Naming Ceremony',scene:'a West African naming ceremony with kente cloth and ankara textiles, family celebration atmosphere, authentic cultural specificity, warm interior light' },
+    { label: '◆ Collection',    scene: 'a styled brand presentation of a home goods collection, throw pillow, cloth napkin set and candle in matching cultural print, licensing pitch quality' },
+    // ── Pattern-led lifestyle chips (palette auto-attaches; print named in a styled scene) ──
+    { label: '◈ Kente Room',     scene: 'a styled living room with throw pillows and a table runner in bold kente cloth weave, the geometric interlocking strip pattern clearly visible on the fabric, layered lived-in interior' },
+    { label: '◈ Adinkra Table',  scene: 'an elegant table setting with cloth napkins and a runner in adinkra-stamped cloth, repeating symbol motifs visible on the textile, styled with ceramics and candles' },
+    { label: '◈ Mudcloth Bed',   scene: 'a styled bedroom with bogolan mudcloth throw pillows and a folded blanket, hand-painted geometric mudcloth motifs visible, warm natural light' },
+    { label: '◈ Ankara Flatlay', scene: 'an editorial flat lay of folded garments and a fanny pack in ankara wax-print fabric, bold concentric floral wax-print motifs visible, styled with accessories' },
+    { label: '◈ Ikat Sofa',      scene: 'a styled sofa dressed with ikat-pattern cushions, the soft-edged feathered diamond ikat repeat visible on the fabric, warm editorial interior' },
+    { label: '◈ Kente Sundress', scene: 'a woman wearing a sundress in bold kente cloth print at a summer vineyard, the geometric strip pattern visible on the garment, lifestyle editorial' },
+  ];
+
+  function _palLum(hex) {
+    const r = parseInt(hex.slice(1,3),16)/255, g = parseInt(hex.slice(3,5),16)/255, b = parseInt(hex.slice(5,7),16)/255;
+    return 0.2126*r + 0.7152*g + 0.0722*b;
+  }
+
+  function _buildContextPrompt(scene, palette) {
+    const colorList = palette.slice(0,5).map(h => {
+      const lum = _palLum(h);
+      const shade = lum < 0.06 ? 'near-black' : lum < 0.18 ? 'dark' : lum < 0.4 ? 'mid-tone' : lum < 0.7 ? 'light' : 'near-white';
+      return h + ' (' + shade + ')';
+    }).join(', ');
+    const mood  = state.feeling || 'refined';
+    const occ   = state.inference?.occasion ? ', ' + state.inference.occasion + ' sensibility' : '';
+    return 'Editorial lifestyle photograph of ' + scene + '. Color palette: ' + colorList + '. Mood: ' + mood + occ + '. Natural soft light, magazine quality, no visible text, no faces, photorealistic, highly detailed.';
+  }
+
+  async function _generateContextImage(chipEl, scene, label) {
+    if (!state.palette.length) return;
+    const statusEl = document.getElementById('pm-ai-status');
+    const resultEl = document.getElementById('pm-ai-result');
+    const imgEl    = document.getElementById('pm-ai-img');
+    const captionEl = document.getElementById('pm-ai-caption');
+
+    document.querySelectorAll('.pm-context-chip').forEach(c => c.classList.remove('active', 'loading'));
+    chipEl.classList.add('active', 'loading');
+    statusEl.textContent = 'Generating… (~10–20s)';
+    resultEl.style.display = 'none';
+
+    try {
+      const prompt = _buildContextPrompt(scene, state.palette);
+      const res = await fetch('https://cultureschool-backend.onrender.com/api/images', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt, size: '1024x1024', n: 1 }),
+      });
+      if (!res.ok) throw new Error('Server ' + res.status);
+      const data = await res.json();
+      let url = data?.images?.[0]?.url || (data?.images?.[0]?.b64 ? 'data:image/png;base64,' + data.images[0].b64 : null) || data?.url || (data?.b64 ? 'data:image/png;base64,' + data.b64 : null);
+      if (!url) throw new Error('No image in response');
+
+      imgEl.src = url;
+      captionEl.textContent = label.replace(/^[^\w]+/, '') + ' · ' + (state.feeling || 'palette') + ' · AI';
+      resultEl.style.display = 'block';
+      statusEl.textContent = '';
+      chipEl.classList.remove('loading');
+
+      state.lastAiContextUrl = url;
+      state.lastAiContextLabel = label.replace(/^[^\w]+/, '') + ' (AI)';
+
+      document.getElementById('pm-ai-use-btn').onclick = () => {
+        state.renderedStyles['ai_context'] = url;
+        state.selectedStyle = 'ai_context';
+        document.getElementById('pm-hero-img').src = url;
+        document.getElementById('pm-hero-style-label').textContent = label.replace(/^[^\w]+/, '') + ' (AI)';
+      };
+
+      const saveBtn = document.getElementById('pm-ai-save-btn');
+      if (saveBtn) { saveBtn.href = url; saveBtn.download = 'coco-ai-' + label.replace(/[^\w]+/g, '-').toLowerCase() + '.png'; }
+    } catch (err) {
+      statusEl.textContent = 'Generation failed — check connection and try again';
+      chipEl.classList.remove('active', 'loading');
+      console.error('[AI Context]', err);
+    }
+  }
+
+  function _mountContextChips() {
+    const wrap = document.getElementById('pm-context-chips');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+    CONTEXT_CHIPS.forEach(({ label, scene }) => {
+      const btn = document.createElement('button');
+      btn.className = 'pm-context-chip';
+      btn.textContent = label;
+      btn.onclick = () => _generateContextImage(btn, scene, label);
+      wrap.appendChild(btn);
+    });
+
+    const customBtn = document.getElementById('pm-ai-custom-btn');
+    const customInput = document.getElementById('pm-ai-custom-input');
+    if (customBtn && customInput) {
+      const runCustom = async () => {
+        const val = customInput.value.trim();
+        if (!val) return;
+        customBtn.disabled = true;
+        const fakeChip = { classList: { add: () => {}, remove: () => {} } };
+        await _generateContextImage(fakeChip, val, val);
+        customBtn.disabled = false;
+      };
+      customBtn.onclick = runCustom;
+      customInput.onkeydown = e => { if (e.key === 'Enter') runCustom(); };
+    }
+  }
+
+  // ── Image intake ──
+  function fileToDataURL(file) {
+    return new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(r.result);
+      r.onerror = rej;
+      r.readAsDataURL(file);
+    });
+  }
+
+  async function handleFile(file) {
+    if (!file?.type.startsWith('image/')) return;
+    setProgress(8, 'Loading image…');
+    const dataUrl = await fileToDataURL(file);
+    await analyzeImage(dataUrl, file.name);
+  }
+
+  window.__plannerFromUrl = async function() {
+    const input = document.getElementById('pm-url-input');
+    const url = input?.value?.trim();
+    if (!url) return;
+    const filename = url.split('/').pop()?.split('?')[0] || 'inspo.jpg';
+    setProgress(8, 'Loading image…');
+    await analyzeImage(url, filename);
+  };
+
+  window.__plannerRestart = function() {
+    state = { imageSrc:null, palette:[], feeling:null, inference:null, selectedStyle:'original', selectedPattern:null, filename:'', renderedStyles:{} };
+    document.getElementById('pm-url-input').value = '';
+    document.getElementById('pm-hero-img').src = '';
+    setProgress(0);
+    // Reset library wrap
+    const lw = document.getElementById('pm-library-wrap');
+    if (lw) { lw.classList.remove('pm-lib-visible'); }
+    ['pm-lib-patt-section','pm-lib-prod-section','pm-lib-suite-section','pm-lib-save-section'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    });
+    const boardLink = document.getElementById('pm-board-link');
+    if (boardLink) boardLink.style.display = 'none';
+    const saveBtn = document.getElementById('pm-save-btn');
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save this board →'; }
+    if (window.plannerSession) {
+      window.plannerSession.activePaletteCode = '';
+      window.plannerSession.activePaletteName = '';
+      window.plannerSession.activePaletteColors = [];
+      window.plannerSession.matchedPatternIds = [];
+      window.plannerSession.boardId = null;
+    }
+    goStep(1);
+  };
+
+  window.__plannerExit = function() {
+    document.getElementById('pm-overlay').classList.remove('pm-active');
+    document.body.style.overflow = '';
+    const url = new URL(location.href);
+    url.searchParams.delete('mode');
+    history.replaceState({}, '', url);
+  };
+
+  // ── Mount ──
+  function mount() {
+    // Standalone file — always mount the planner (no URL param check needed)
+    const overlay = document.getElementById('pm-overlay');
+    if (!overlay) return;
+
+    overlay.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    goStep(1);
+
+    // Drop zone
+    const dz = document.getElementById('pm-dropzone');
+    dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('pm-drag-over'); });
+    dz.addEventListener('dragleave', () => dz.classList.remove('pm-drag-over'));
+    dz.addEventListener('drop', e => {
+      e.preventDefault(); dz.classList.remove('pm-drag-over');
+      const file = e.dataTransfer?.files?.[0];
+      if (file) handleFile(file);
+    });
+
+    document.getElementById('pm-file-input').addEventListener('change', e => {
+      const file = e.target.files?.[0];
+      if (file) handleFile(file);
+    });
+
+    document.getElementById('pm-url-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') window.__plannerFromUrl();
+    });
+
+    console.log('[CoCo Planner v2] active — drop an inspo image to begin');
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', mount);
+  } else {
+    mount();
+  }
+
+  /* iframe label patch — outside mount() so the large-file TS parser doesn't choke */
+  window.addEventListener('load', function() {
+    if (window === window.parent) return;
+    var b = document.getElementById('pm-flourish-btn');
+    if (b) b.textContent = 'Apply to workspace ✦';
+    var n = document.querySelector('.pm-cta-note');
+    if (n) n.textContent = 'Your palette and image are sent directly to the Flourish canvas — no tab switch needed.';
+  });
+
+})();
+</script>
+
+<script>
+/* =========================================================
+   CoCo Planner — Library Steps 2–6
+   Runs after palette extraction; reads palettes, patterns,
+   viewers, and writes to cocoboards.
+   ========================================================= */
+(function plannerLibrary() {
+  'use strict';
+
+  // ── Session state ──────────────────────────────────────────
+  window.plannerSession = {
+    sourceImageUrl:      '',
+    extractedColors:     [],
+    activePaletteCode:   '',
+    activePaletteName:   '',
+    activePaletteColors: [],
+    matchedPatternIds:   [],
+    inferred: { occasion: '', vibe: '', feels: [] },
+    boardId: null,
+  };
+
+  // ── Supabase helper ────────────────────────────────────────
+  function getSB() {
+    return window.sb || window.db || window.supabaseClient || null;
+  }
+
+  // ── Pixel color extraction (ported from start-with-photo) ──
+  function _pmColorDist(a, b) {
+    return Math.sqrt((a.r-b.r)**2 + (a.g-b.g)**2 + (a.b-b.b)**2);
+  }
+  function _pmRgbToHex(r, g, b) {
+    return '#' + [r,g,b].map(v => v.toString(16).padStart(2,'0')).join('');
+  }
+  function _pmExtractColors(img) {
+    const canvas = document.createElement('canvas');
+    const size = 120; canvas.width = size; canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, size, size);
+    const data = ctx.getImageData(0, 0, size, size).data;
+    const samples = [];
+    const step = Math.floor(size/8);
+    for (let y=0; y<size; y+=step) { for (let x=0; x<size; x+=step) {
+      const i = (y*size+x)*4;
+      if (data[i+3] > 200) samples.push({ r:data[i], g:data[i+1], b:data[i+2] });
+    }}
+    if (!samples.length) return ['#c9a96e','#e8d5a8','#8b6a3a','#1a1208','#faf6ef'];
+    const chosen = [samples[Math.floor(samples.length/2)]];
+    for (let k=1; k<5; k++) {
+      let maxDist=0, best=samples[0];
+      for (const s of samples) {
+        let minDist=Infinity;
+        for (const c of chosen) { const d=_pmColorDist(s,c); if (d<minDist) minDist=d; }
+        if (minDist>maxDist) { maxDist=minDist; best=s; }
+      }
+      chosen.push(best);
+    }
+    return chosen.map(c => _pmRgbToHex(c.r, c.g, c.b));
+  }
+  // Extract colors from a File via image load
+  function _pmExtractFromFile(file) {
+    return new Promise(function(resolve) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() { try { resolve(_pmExtractColors(img)); } catch(err) { resolve(null); } };
+        img.onerror = function() { resolve(null); };
+        img.src = e.target.result;
+      };
+      reader.onerror = function() { resolve(null); };
+      reader.readAsDataURL(file);
+    });
+  }
+  // Expose to window so handleFile (outer scope) can call it
+  window._pmExtractFromFile = _pmExtractFromFile;
+
+  // Extract colors from an image SRC (URL or data URL) — used by the workspace drop
+  function _pmExtractFromSrc(src) {
+    return new Promise(function(resolve) {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = function() { try { resolve(_pmExtractColors(img)); } catch(err) { resolve(null); } };
+      img.onerror = function() { resolve(null); };
+      img.src = src;
+    });
+  }
+
+  // Public bridge: workspace drop → extract → auto-apply closest palette
+  window.__pmExtractAndApply = async function(src) {
+    if (!src) return;
+    try {
+      const hexes = await _pmExtractFromSrc(src);
+      if (!hexes || !hexes.length) return;
+      if (window.plannerSession) {
+        window.plannerSession.extractedColors = hexes.slice();
+        window.plannerSession.sourceImageUrl = src;
+      }
+      const wrap = document.getElementById('pm-library-wrap');
+      if (wrap) wrap.classList.add('pm-lib-visible');
+      // Call the ranking/apply logic which lives in the main planner IIFE
+      if (window.__pmRankAndAutoApply) {
+        await window.__pmRankAndAutoApply(hexes);
+      }
+    } catch(e) {
+      console.warn('[Planner] extract-and-apply failed:', e.message);
+    }
+  };
+
+
+  // ── Inline LAB / deltaE (no chroma.js needed) ─────────────
+  function hexToLab(hex) {
+    let h = hex.replace('#', '');
+    if (h.length === 3) h = h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+    let r = parseInt(h.slice(0,2),16)/255;
+    let g = parseInt(h.slice(2,4),16)/255;
+    let b = parseInt(h.slice(4,6),16)/255;
+    r = r > 0.04045 ? Math.pow((r+0.055)/1.055, 2.4) : r/12.92;
+    g = g > 0.04045 ? Math.pow((g+0.055)/1.055, 2.4) : g/12.92;
+    b = b > 0.04045 ? Math.pow((b+0.055)/1.055, 2.4) : b/12.92;
+    let X = (r*0.4124 + g*0.3576 + b*0.1805)/0.95047;
+    let Y = (r*0.2126 + g*0.7152 + b*0.0722)/1.00000;
+    let Z = (r*0.0193 + g*0.1192 + b*0.9505)/1.08883;
+    function f(t) { return t > 0.008856 ? Math.cbrt(t) : (7.787*t + 16/116); }
+    return [116*f(Y)-16, 500*(f(X)-f(Y)), 200*(f(Y)-f(Z))];
+  }
+
+  function deltaE76(hex1, hex2) {
+    try {
+      const [L1,a1,b1] = hexToLab(hex1);
+      const [L2,a2,b2] = hexToLab(hex2);
+      return Math.sqrt((L1-L2)**2 + (a1-a2)**2 + (b1-b2)**2);
+    } catch { return 100; }
+  }
+
+  function parseLibraryColors(raw) {
+    if (!raw) return [];
+    if (Array.isArray(raw)) {
+      return raw.map(c => typeof c === 'string' ? c : (c.hex || c.color || '')).filter(Boolean);
+    }
+    if (typeof raw === 'string') {
+      try { return parseLibraryColors(JSON.parse(raw)); } catch { return []; }
+    }
+    return [];
+  }
+
+  function paletteDistance(extractedHexes, libraryColors) {
+    const ext = extractedHexes.slice(0, 5).filter(Boolean);
+    const lib = parseLibraryColors(libraryColors).slice(0, 5).filter(Boolean);
+    if (!ext.length || !lib.length) return 999;
+    let total = 0, pairs = Math.min(ext.length, lib.length);
+    for (let i = 0; i < pairs; i++) total += deltaE76(ext[i], lib[i]);
+    return total / pairs;
+  }
+
+  // ── Palette library cache ──────────────────────────────────
+  const PALETTE_CACHE_KEY = 'pm_palette_lib_v1';
+
+  async function fetchPaletteLib() {
+    try {
+      const cached = sessionStorage.getItem(PALETTE_CACHE_KEY);
+      if (cached) return JSON.parse(cached);
+    } catch {}
+
+    const sb = getSB();
+    if (!sb) return [];
+
+    const { data, error } = await sb
+      .from('palettes')
+      .select('id, name, code, colors, cultural_origin, color_roles')
+      .limit(2000);
+
+    if (error || !data) return [];
+
+    try { sessionStorage.setItem(PALETTE_CACHE_KEY, JSON.stringify(data)); } catch {}
+    return data;
+  }
+
+  // ── Step 2: Match palettes ─────────────────────────────────
+  async function runStep2(extractedHexes) {
+    const el = document.getElementById('pm-pal-matches');
+    if (!el) return;
+
+    const lib = await fetchPaletteLib();
+    if (!lib.length) {
+      el.innerHTML = '<span style="font:400 13px DM Sans,sans-serif;color:rgba(26,23,20,.4)">Library unavailable</span>';
+      return;
+    }
+
+    const scored = lib
+      .map(p => ({ ...p, dist: paletteDistance(extractedHexes, p.colors) }))
+      .sort((a, b) => a.dist - b.dist)
+      .slice(0, 3);
+
+    el.innerHTML = '';
+    scored.forEach(p => {
+      const colors = parseLibraryColors(p.colors).slice(0, 5);
+      const swatchHtml = colors.map(c => `<div class="pm-pal-swatch" style="background:${escHtml(c)}"></div>`).join('');
+      const card = document.createElement('div');
+      card.className = 'pm-pal-card';
+      card.innerHTML = `
+        <div class="pm-pal-swatches">${swatchHtml}</div>
+        <div class="pm-pal-info">
+          ${p.code ? `<div class="pm-pal-code">${escHtml(p.code)}</div>` : ''}
+          <div class="pm-pal-name">${escHtml(p.name || 'Unnamed palette')}</div>
+          ${p.cultural_origin ? `<div class="pm-pal-origin">${escHtml(p.cultural_origin)}</div>` : ''}
+          <button class="pm-pal-use-btn" data-pid="${escHtml(String(p.id))}"
+            data-code="${escHtml(p.code||'')}"
+            data-name="${escHtml(p.name||'')}"
+            data-story="${escHtml(p.cultural_origin||p.story||p.description||'')}"
+            data-colors="${escHtml(JSON.stringify(colors))}">Use this palette</button>
+          <button class="pm-pal-vary-btn" data-pid="${escHtml(String(p.id))}"
+            data-code="${escHtml(p.code||'')}"
+            data-name="${escHtml(p.name||'')}"
+            data-story="${escHtml(p.cultural_origin||p.story||p.description||'')}"
+            data-colors="${escHtml(JSON.stringify(colors))}">Make a variation</button>
+        </div>`;
+
+      card.querySelector('.pm-pal-use-btn').addEventListener('click', function() {
+        const chosen = {
+          id:     this.dataset.pid,
+          code:   this.dataset.code,
+          name:   this.dataset.name,
+          colors: JSON.parse(this.dataset.colors || '[]'),
+        };
+        activatePalette(chosen);
+        // Mark button active
+        document.querySelectorAll('.pm-pal-use-btn').forEach(b => b.classList.remove('pm-pal-active'));
+        this.textContent = '✦ Active';
+        this.classList.add('pm-pal-active');
+      });
+
+      card.querySelector('.pm-pal-vary-btn').addEventListener('click', function() {
+        openVariationEditor({
+          id:     this.dataset.pid,
+          code:   this.dataset.code,
+          name:   this.dataset.name,
+          story:  this.dataset.story,
+          colors: JSON.parse(this.dataset.colors || '[]'),
+        });
+      });
+
+      el.appendChild(card);
+    });
+  }
+
+  // ── VARIATION EDITOR ───────────────────────────────────────
+  function openVariationEditor(base) {
+    var existing = document.getElementById('pm-vary-overlay');
+    if (existing) existing.remove();
+
+    var colors = (base.colors || []).slice(0, 5);
+    while (colors.length < 5) colors.push('#cccccc');
+
+    var overlay = document.createElement('div');
+    overlay.id = 'pm-vary-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(11,13,20,.85);z-index:100000;display:flex;align-items:center;justify-content:center;padding:20px;';
+
+    var swatchHtml = colors.map(function(c, i) {
+      return '<div style="flex:1;text-align:center;">'
+        + '<input type="color" value="' + c + '" data-idx="' + i + '" class="pm-vary-swatch" style="width:100%;height:64px;border:none;border-radius:10px;cursor:pointer;background:none;padding:0;">'
+        + '<input type="text" value="' + c + '" data-idx="' + i + '" class="pm-vary-hex" style="width:100%;margin-top:6px;text-align:center;font:600 10px DM Sans,sans-serif;letter-spacing:.05em;text-transform:uppercase;color:#c9a96e;background:rgba(255,255,255,.06);border:1px solid rgba(201,169,110,.2);border-radius:6px;padding:5px 0;">'
+        + '</div>';
+    }).join('');
+
+    overlay.innerHTML = '<div style="background:#1a1208;border:1px solid rgba(201,169,110,.25);border-radius:18px;padding:30px 34px;width:min(540px,94vw);font-family:DM Sans,sans-serif;max-height:90vh;overflow-y:auto;">'
+      + '<div style="font:700 9px DM Sans,sans-serif;letter-spacing:.28em;text-transform:uppercase;color:#c9a96e;margin-bottom:8px;">\u2726 Create a variation</div>'
+      + '<div style="font:400 26px Pinyon Script,cursive;color:#faf6ef;margin-bottom:2px;">' + (base.name || 'Palette') + '</div>'
+      + '<div style="font:600 9px DM Sans,sans-serif;letter-spacing:.18em;text-transform:uppercase;color:rgba(201,169,110,.6);margin-bottom:14px;">' + (base.code ? base.code + ' \u00b7 variation' : 'custom variation') + '</div>'
+      + '<p style="font:400 13px DM Sans,sans-serif;color:rgba(250,246,239,.5);line-height:1.55;margin-bottom:20px;">Adjust any color to fit your client. This keeps the cultural lineage and name while tuning the palette to their exact vision.</p>'
+      + '<div style="display:flex;gap:10px;margin-bottom:22px;">' + swatchHtml + '</div>'
+      + '<div style="display:flex;gap:10px;">'
+      + '<button id="pm-vary-cancel" style="flex:1;padding:12px;background:transparent;border:1px solid rgba(255,255,255,.14);border-radius:10px;color:rgba(250,246,239,.5);font:600 11px DM Sans,sans-serif;cursor:pointer;">Cancel</button>'
+      + '<button id="pm-vary-apply" style="flex:2;padding:12px;background:linear-gradient(135deg,#e8d5a8,#c9a96e);border:none;border-radius:10px;color:#1a1208;font:700 11px DM Sans,sans-serif;letter-spacing:.08em;cursor:pointer;">Use this variation \u2192</button>'
+      + '</div></div>';
+
+    document.body.appendChild(overlay);
+
+    overlay.querySelectorAll('.pm-vary-swatch').forEach(function(picker) {
+      picker.addEventListener('input', function() {
+        var idx = this.dataset.idx;
+        colors[idx] = this.value;
+        var hexField = overlay.querySelector('.pm-vary-hex[data-idx="' + idx + '"]');
+        if (hexField) hexField.value = this.value;
+      });
+    });
+    overlay.querySelectorAll('.pm-vary-hex').forEach(function(hexField) {
+      hexField.addEventListener('change', function() {
+        var idx = this.dataset.idx;
+        var v = this.value.trim();
+        if (!/^#/.test(v)) v = '#' + v;
+        if (/^#[0-9a-fA-F]{6}$/.test(v)) {
+          colors[idx] = v;
+          var picker = overlay.querySelector('.pm-vary-swatch[data-idx="' + idx + '"]');
+          if (picker) picker.value = v;
+        }
+      });
+    });
+
+    overlay.querySelector('#pm-vary-cancel').onclick = function() { overlay.remove(); };
+    overlay.querySelector('#pm-vary-apply').onclick = function() {
+      activatePalette({
+        id:     base.id,
+        code:   base.code ? (base.code + '-v') : '',
+        name:   base.name,
+        story:  base.story,
+        colors: colors.slice(),
+      });
+      if (window.plannerSession) {
+        window.plannerSession.isVariation = true;
+        window.plannerSession.baseCode = base.code || null;
+      }
+      overlay.remove();
+    };
+  }
+
+  function activatePalette(p) {
+    window.plannerSession.activePaletteCode   = p.code   || '';
+    window.plannerSession.activePaletteId     = p.id     || null;
+    window.plannerSession.activePaletteName   = p.name   || '';
+    window.plannerSession.activePaletteColors = p.colors || [];
+    window.plannerSession.activePaletteStory  = p.story  || p.cultural_origin || p.description || '';
+    // Re-run dependent steps
+    runStep3(p.id, p.colors);
+    runStep4(p.name, p.code);
+    runStep5(window.plannerSession.inferred.occasion || '');
+    showSection('pm-lib-patt-section');
+    showSection('pm-lib-prod-section');
+    showSection('pm-lib-suite-section');
+    showSection('pm-lib-save-section');
+  }
+
+  // ── Step 3: Match patterns ─────────────────────────────────
+  async function runStep3(paletteId, paletteColors) {
+    const el = document.getElementById('pm-patt-row');
+    if (!el) return;
+    el.innerHTML = '<div class="pm-lib-loading"><span class="pm-lib-spinner"></span> Finding patterns…</div>';
+
+    const sb = getSB();
+    if (!sb) { el.innerHTML = noDataMsg('Patterns unavailable'); return; }
+
+    let data = null;
+    // Step A: exact palette_id match
+    if (paletteId) {
+      const res = await sb
+        .from('patterns')
+        .select('id, name, code, colors, heritage_name, thumb_url, palette_id')
+        .eq('palette_id', paletteId)
+        .eq('is_public', true)
+        .limit(6);
+      if (!res.error && res.data && res.data.length) data = res.data;
+    }
+    // Step B: palette_name match (pattern library stores name not UUID)
+    if (!data || !data.length) {
+      const palName = window.plannerSession && window.plannerSession.activePaletteName;
+      if (palName) {
+        const res = await sb
+          .from('patterns')
+          .select('id, name, code, colors, heritage_name, thumb_url')
+          .eq('is_public', true)
+          .ilike('palette_name', '%' + palName + '%')
+          .limit(6);
+        if (!res.error && res.data && res.data.length) data = res.data;
+      }
+    }
+    // Step C: deltaE fallback with safe limit
+    if (!data || !data.length) {
+      const res = await sb
+        .from('patterns')
+        .select('id, name, code, colors, heritage_name, thumb_url')
+        .eq('is_public', true)
+        .not('colors', 'is', null)
+        .limit(150);
+      if (!res.error && res.data) {
+        const cols = paletteColors && paletteColors.length ? paletteColors : window.plannerSession.extractedColors;
+        const scored = res.data
+          .map(r => ({ ...r, dist: paletteDistance(cols, r.colors) }))
+          .sort((a, b) => a.dist - b.dist);
+        data = scored.slice(0, 6);
+      }
+    }
+
+    if (!data || !data.length) {
+      el.innerHTML = noDataMsg('No patterns found for this palette');
+      return;
+    }
+
+    window.plannerSession.matchedPatternIds = data.map(r => r.id);
+    // Capture compact pattern data for the proposal bundle
+    window.plannerSession.matchedPatterns = data.slice(0, 6).map(function(r) {
+      return {
+        name: r.name || 'Pattern',
+        code: r.code || '',
+        heritage: r.heritage_name || '',
+        colors: parseLibraryColors(r.colors).slice(0, 5),
+      };
+    });
+    el.innerHTML = '';
+    data.forEach(r => {
+      const card = document.createElement('div');
+      card.className = 'pm-patt-card';
+      card.innerHTML = `
+        <div class="pm-patt-img-wrap">
+          ${r.thumb_url ? `<img class="pm-patt-img" src="${escHtml(r.thumb_url)}" loading="lazy" alt="${escHtml(r.name||'')}">` : ''}
+        </div>
+        <div class="pm-patt-info">
+          ${r.code ? `<div class="pm-patt-code">${escHtml(r.code)}</div>` : ''}
+          <div class="pm-patt-name">${escHtml(r.name||'Pattern')}</div>
+          ${r.heritage_name ? `<div class="pm-patt-heritage">${escHtml(r.heritage_name)}</div>` : ''}
+        </div>`;
+      card.addEventListener('click', () => openPatternModal(r));
+      el.appendChild(card);
+    });
+  }
+
+  function openPatternModal(r) {
+    const modal = document.getElementById('pm-patt-modal');
+    if (!modal) return;
+    const img = document.getElementById('pm-patt-modal-img');
+    if (img) img.src = r.thumb_url || '';
+    document.getElementById('pm-patt-modal-code').textContent  = r.code || '';
+    document.getElementById('pm-patt-modal-name').textContent  = r.name || '';
+    document.getElementById('pm-patt-modal-heritage').textContent = r.heritage_name || '';
+    const flourishBtn = document.getElementById('pm-patt-modal-flourish');
+    if (flourishBtn) {
+      flourishBtn.onclick = () => {
+        modal.style.display = 'none';
+        window.__plannerSendToFlourish();
+      };
+    }
+    modal.style.display = 'flex';
+  }
+
+  // ── Step 4: Products ───────────────────────────────────────
+  async function runStep4(paletteName, paletteCode) {
+    const el = document.getElementById('pm-prod-grid');
+    if (!el) return;
+    el.innerHTML = '<div class="pm-lib-loading" style="grid-column:1/-1"><span class="pm-lib-spinner"></span> Finding products…</div>';
+
+    const sb = getSB();
+    if (!sb) { el.innerHTML = noProductsMsg(); return; }
+
+    let data = null;
+
+    // Primary match: exact palette_code (safe, no special-char issues)
+    if (paletteCode) {
+      const res = await sb
+        .from('viewers')
+        .select('key, name, viewer_name, thumb_url, viewer_url, meta, template_type')
+        .in('template_type', ['product', 'pillow', 'textile'])
+        .eq('palette_code', paletteCode)
+        .limit(4);
+      if (!res.error && res.data && res.data.length) data = res.data;
+    }
+
+    // Secondary match: tags array contains the palette name
+    // (palette_tag column does not exist; viewers has a 'tags' text[] and 'palette_code')
+    if ((!data || !data.length) && paletteName) {
+      const res = await sb
+        .from('viewers')
+        .select('key, name, viewer_name, thumb_url, viewer_url, meta, template_type')
+        .in('template_type', ['product', 'pillow', 'textile'])
+        .contains('tags', [paletteName])
+        .limit(4);
+      if (!res.error && res.data && res.data.length) data = res.data;
+    }
+
+    // Fallback: any product viewers
+    if (!data || !data.length) {
+      const res = await sb
+        .from('viewers')
+        .select('key, name, viewer_name, thumb_url, viewer_url, meta, template_type')
+        .in('template_type', ['product', 'pillow', 'textile'])
+        .eq('is_active', true)
+        .limit(4);
+      if (!res.error) data = res.data;
+    }
+
+    el.innerHTML = '';
+    if (!data || !data.length) {
+      el.innerHTML = noProductsMsg(paletteName);
+      return;
+    }
+
+    // Capture products for the proposal bundle
+    window.plannerSession.matchedProducts = data.slice(0, 4).map(function(r) {
+      var m = r.meta || {};
+      return {
+        name: r.viewer_name || r.name || r.key || 'Product',
+        thumb: r.thumb_url || m.thumb_url || '',
+        type: r.template_type || '',
+      };
+    });
+    data.forEach(r => {
+      const displayName = r.viewer_name || r.name || r.key || 'Product';
+      const meta = r.meta || {};
+      const price = meta.price ? '$' + meta.price : '';
+      const handle = r.key || (r.viewer_url || '').split('/').pop();
+      const shopUrl = `https://cultureschool.org/products/${handle}`;
+      const thumb = r.thumb_url || '';
+      const card = document.createElement('div');
+      card.className = 'pm-prod-card';
+      card.innerHTML = `
+        <div class="pm-prod-img-wrap">
+          ${thumb ? `<img class="pm-prod-img" src="${escHtml(thumb)}" loading="lazy" alt="${escHtml(displayName)}">` : ''}
+        </div>
+        <div class="pm-prod-info">
+          <div class="pm-prod-name">${escHtml(displayName)}</div>
+          ${price ? `<div class="pm-prod-price">${escHtml(price)}</div>` : ''}
+          <a class="pm-prod-link" href="${escHtml(shopUrl)}" target="_blank" rel="noopener">Shop →</a>
+        </div>`;
+      el.appendChild(card);
+    });
+  }
+
+  function noProductsMsg(paletteName) {
+    // Link to the palette's color story by id; fall back to code, then concierge
+    var sess = window.plannerSession || {};
+    var url;
+    if (sess.activePaletteId) {
+      url = 'https://color-stories.cultureschool.org/?id=' + encodeURIComponent(sess.activePaletteId);
+    } else if (sess.activePaletteCode) {
+      url = 'https://color-stories.cultureschool.org/?code=' + encodeURIComponent(sess.activePaletteCode);
+    } else {
+      url = 'https://cultureschool.org/pages/coco-concierge';
+    }
+    return `<div class="pm-prod-empty">
+      No products matched this palette yet.<br>
+      <a href="${escHtml(url)}" target="_blank" rel="noopener">Shop this palette on a product →</a>
+    </div>`;
+  }
+
+  // ── Step 5: Digital suites ─────────────────────────────────
+  async function runStep5(occasion) {
+    const el = document.getElementById('pm-suite-row');
+    if (!el) return;
+    el.innerHTML = '<div class="pm-lib-loading"><span class="pm-lib-spinner"></span> Matching templates…</div>';
+
+    const sb = getSB();
+    if (!sb) { el.innerHTML = noDataMsg('Templates unavailable'); return; }
+
+    let data = null;
+
+    // Step A: occasion match
+    if (occasion) {
+      const res = await sb
+        .from('viewers')
+        .select('key, name, viewer_name, thumb_url, viewer_url, meta, template_type, occasion_tag, palette_enabled')
+        .eq('palette_enabled', true)
+        .ilike('occasion_tag', '%' + occasion + '%')
+        .order('sort', { ascending: true })
+        .limit(6);
+      if (!res.error && res.data && res.data.length) data = res.data;
+    }
+
+    // Step B: any palette-enabled viewers
+    if (!data || !data.length) {
+      const res = await sb
+        .from('viewers')
+        .select('key, name, viewer_name, thumb_url, viewer_url, meta, template_type, occasion_tag, palette_enabled')
+        .eq('palette_enabled', true)
+        .order('sort', { ascending: true })
+        .limit(6);
+      if (!res.error && res.data && res.data.length) data = res.data;
+    }
+
+    // Step C: anything at all
+    if (!data || !data.length) {
+      const res = await sb
+        .from('viewers')
+        .select('key, name, viewer_name, thumb_url, viewer_url, meta, template_type, occasion_tag, palette_enabled')
+        .order('sort', { ascending: true })
+        .limit(6);
+      if (!res.error) data = res.data;
+    }
+
+    el.innerHTML = '';
+    if (!data || !data.length) {
+      el.innerHTML = noDataMsg('No digital suite templates found');
+      return;
+    }
+
+    data.forEach(r => {
+      const displayName = r.viewer_name || r.name || r.key || 'Template';
+      const occasionTag = r.occasion_tag || '';
+      const thumb = r.thumb_url || '';
+      const card = document.createElement('div');
+      card.className = 'pm-suite-card';
+      card.innerHTML = `
+        <div class="pm-suite-img-wrap">
+          ${thumb ? `<img class="pm-suite-img" src="${escHtml(thumb)}" loading="lazy" alt="${escHtml(displayName)}">` : ''}
+        </div>
+        <div class="pm-suite-info">
+          <div class="pm-suite-name">${escHtml(displayName)}</div>
+          ${occasionTag ? `<span class="pm-suite-occasion">${escHtml(occasionTag)}</span>` : ''}
+          <button class="pm-suite-open-btn">Use this suite →</button>
+        </div>`;
+      card.querySelector('.pm-suite-open-btn').addEventListener('click', function() {
+        // Capture selected suite for the proposal bundle
+        window.plannerSession.activeSuiteKey  = r.key || '';
+        window.plannerSession.activeSuiteName = displayName;
+        window.plannerSession.activeSuiteThumb = thumb;
+        // Mark active
+        document.querySelectorAll('.pm-suite-open-btn').forEach(function(b){ b.textContent = 'Use this suite \u2192'; b.classList.remove('pm-suite-active'); });
+        this.textContent = '\u2726 Selected';
+        this.classList.add('pm-suite-active');
+        window.__plannerSendToFlourish(r.key || '');
+      });
+      el.appendChild(card);
+    });
+  }
+
+  // ── Step 6: Save board ─────────────────────────────────────
+  window.__plannerSaveBoard = async function() {
+    const btn = document.getElementById('pm-save-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+
+    const sb = getSB();
+    if (!sb) {
+      if (btn) { btn.disabled = false; btn.textContent = 'Save this board →'; }
+      alert('Unable to save — Supabase not ready');
+      return;
+    }
+
+    // Email required — inline modal (window.prompt blocked in iframes)
+    var _email = (localStorage.getItem('coco_planner_email') || '').trim();
+    if (!_email || !_email.includes('@')) {
+      _email = await new Promise(function(resolve) {
+        var scrim = document.createElement('div');
+        scrim.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;display:flex;align-items:center;justify-content:center;';
+        scrim.innerHTML = '<div style="background:#1a1208;border:1px solid rgba(201,169,110,.3);border-radius:14px;padding:28px 32px;width:min(340px,88vw);font-family:DM Sans,sans-serif;">'
+          + '<div style="font-size:10px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:#c9a96e;margin-bottom:10px;">✦ Save this board</div>'
+          + '<p style="font-size:13px;color:rgba(250,246,239,.55);line-height:1.55;margin-bottom:16px;">Enter your email to save and generate a shareable client link.</p>'
+          + '<input id="_cemail" type="email" placeholder="your@email.com" style="width:100%;padding:10px 14px;background:rgba(255,255,255,.07);border:1px solid rgba(201,169,110,.3);border-radius:8px;color:#faf6ef;font-size:14px;margin-bottom:12px;box-sizing:border-box;">'
+          + '<div style="display:flex;gap:8px;">'
+          + '<button id="_ccancel" style="flex:1;padding:10px;background:transparent;border:1px solid rgba(255,255,255,.12);border-radius:8px;color:rgba(250,246,239,.4);font-size:12px;cursor:pointer;">Cancel</button>'
+          + '<button id="_csave" style="flex:2;padding:10px;background:linear-gradient(135deg,#e8d5a8,#c9a96e);border:none;border-radius:8px;color:#1a1208;font-size:12px;font-weight:700;cursor:pointer;">Save board →</button>'
+          + '</div></div>';
+        document.body.appendChild(scrim);
+        setTimeout(function(){ var i=document.getElementById('_cemail');if(i)i.focus(); },50);
+        function submit(){
+          var v=(document.getElementById('_cemail').value||'').trim();
+          document.body.removeChild(scrim); resolve(v);
+        }
+        document.getElementById('_csave').onclick = submit;
+        document.getElementById('_ccancel').onclick = function(){ document.body.removeChild(scrim); resolve(''); };
+        document.getElementById('_cemail').onkeydown = function(e){ if(e.key==='Enter') submit(); };
+      });
+      if (!_email || !_email.includes('@')) {
+        if (btn) { btn.disabled = false; btn.textContent = 'Save planning board →'; }
+        return;
+      }
+      localStorage.setItem('coco_planner_email', _email);
+    }
+
+    const sess = window.plannerSession;
+    const boardId = crypto.randomUUID ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).slice(2));
+    const imageUrl = sess.sourceImageUrl && !sess.sourceImageUrl.startsWith('data:')
+      ? sess.sourceImageUrl : null;
+
+    const row = {
+      title:        (sess.activePaletteName || 'Planning Board') + ' — CoCo Planner',
+      slug:         'planner-' + boardId.slice(0, 8),
+      description:  'Created with CoCo Planner Mode',
+      creator_email: _email,
+      email:        _email,
+      created_by:   _email,
+      viewer_template: 'flourish-live-viewer',
+      viewer_html:  '',
+      show_on_profile: false,
+      publicwall:   false,
+      is_public:    false,
+      tiles: {
+        _type: 'planner',
+        palette_code:     sess.activePaletteCode   || null,
+        palette_id:       sess.activePaletteId     || null,
+        palette_name:     sess.activePaletteName   || null,
+        palette_colors:   sess.activePaletteColors || [],
+        palette_story:    sess.activePaletteStory  || null,
+        is_variation:     sess.isVariation         || false,
+        base_palette_code: sess.baseCode           || null,
+        source_image_url: imageUrl,
+        matched_pattern_keys: sess.matchedPatternIds || [],
+        bundle_patterns:  (sess.matchedPatterns || []).slice(0, 6),
+        bundle_products:  (sess.matchedProducts || []).slice(0, 4),
+        bundle_suite:     sess.activeSuiteKey ? { key: sess.activeSuiteKey, name: sess.activeSuiteName || '', thumb: sess.activeSuiteThumb || '' } : null,
+        inferred_occasion: sess.inferred && sess.inferred.occasion || null,
+        inferred_vibe:    sess.inferred && sess.inferred.vibe     || null,
+      },
+      flags: {
+        planner: true,
+        palette_code:  sess.activePaletteCode || null,
+        palette_name:  sess.activePaletteName || null,
+        source_image:  imageUrl,
+      },
+    };
+
+    // Hard guard: email is NOT NULL in the table — never insert without it
+    if (!row.email || !row.email.includes('@')) {
+      if (btn) { btn.disabled = false; btn.textContent = 'Save this board →'; }
+      alert('Please enter a valid email to save.');
+      return;
+    }
+
+    let data, error;
+    try {
+      const res = await sb
+        .from('cocoboards')
+        .insert([row])
+        .select('id, slug')
+        .single();
+      data = res.data; error = res.error;
+    } catch (e) {
+      error = e;
+    }
+
+    if (error) {
+      console.error('[CoCo Planner] Save board error:', error);
+      if (btn) { btn.disabled = false; btn.textContent = 'Save this board →'; }
+      const errMsg = error.message || error.hint || error.details || JSON.stringify(error);
+      console.error('[CoCo Planner] Full error:', JSON.stringify(error, null, 2));
+      alert('Could not save board: ' + errMsg);
+      return;
+    }
+
+    sess.boardId = data?.id || boardId;
+
+    // Full proposal URL with all palette context
+    const _sp = new URLSearchParams();
+    _sp.set('board_id', sess.boardId);
+    if (sess.activePaletteId)    _sp.set('palette_id',   sess.activePaletteId);
+    if (sess.activePaletteCode)  _sp.set('code',         sess.activePaletteCode);
+    if (sess.activePaletteName)  _sp.set('palette_name', sess.activePaletteName);
+    if (sess.activePaletteStory) _sp.set('story',        sess.activePaletteStory);
+    (sess.activePaletteColors||[]).forEach((c,i)=>{ if(c) _sp.set('p'+(i+1),c); });
+    const imageUrl2 = sess.sourceImageUrl && !sess.sourceImageUrl.startsWith('data:') ? sess.sourceImageUrl : null;
+    if (imageUrl2) _sp.set('img', imageUrl2);
+    const shareUrl = 'https://coco-proposal.cultureschool.org/?' + _sp.toString();
+
+    // Reset the save button (success)
+    if (btn) { btn.disabled = false; btn.textContent = '✦ Saved — open proposal'; btn.onclick = function(){ window.open(shareUrl, '_blank'); }; }
+
+    // Show link UI + a clear launch button
+    const linkWrap = document.getElementById('pm-board-link');
+    const linkUrl  = document.getElementById('pm-board-link-url');
+    if (linkWrap && linkUrl) {
+      linkUrl.textContent = shareUrl;
+      linkWrap.style.display = 'block';
+      // Inject an "Open proposal" button if not present
+      if (!document.getElementById('pm-open-proposal-btn')) {
+        var ob = document.createElement('button');
+        ob.id = 'pm-open-proposal-btn';
+        ob.textContent = 'Open client proposal →';
+        ob.style.cssText = 'margin-top:10px;width:100%;padding:11px;border:none;border-radius:8px;background:linear-gradient(135deg,#e8d5a8,#c9a96e);color:#1a1208;font:700 12px DM Sans,sans-serif;letter-spacing:.06em;cursor:pointer;';
+        ob.onclick = function(){ window.open(shareUrl, '_blank'); };
+        linkWrap.appendChild(ob);
+      }
+    }
+    const copyBtn = document.getElementById('pm-board-copy-btn');
+    if (copyBtn) {
+      copyBtn.onclick = function() {
+        if (window.parent && window.parent !== window) {
+          try { window.parent.postMessage({ kind: 'COCO_COPY', url: shareUrl }, '*'); } catch(e){}
+        }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(shareUrl).catch(function(){});
+        }
+        var prev = copyBtn.textContent;
+        copyBtn.textContent = '✦ Copied!';
+        setTimeout(function() { copyBtn.textContent = prev; }, 1400);
+      };
+    }
+    const flourishBtn = document.getElementById('pm-board-flourish-btn');
+    if (flourishBtn) {
+      flourishBtn.onclick = () => window.__plannerSendToFlourish();
+    }
+    if (btn) { btn.textContent = '✦ Board saved'; }
+  };
+
+  // ── Helpers ────────────────────────────────────────────────
+  function escHtml(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function noDataMsg(msg) {
+    return `<span style="font:400 12px 'DM Sans',sans-serif;color:rgba(26,23,20,.35);font-style:italic">${escHtml(msg)}</span>`;
+  }
+  function showSection(id) {
+    const el = document.getElementById(id);
+    if (el) el.style.display = '';
+  }
+
+  // ── Entry point (called from analyzeImage) ─────────────────
+  window.__plannerRunLibrarySteps = async function(extractedHexes, inference) {
+    const wrap = document.getElementById('pm-library-wrap');
+    if (wrap) wrap.classList.add('pm-lib-visible');
+
+    // Update session
+    const sess = window.plannerSession;
+    sess.extractedColors = extractedHexes ? extractedHexes.slice() : [];
+    sess.inferred.occasion = inference?.occasion || '';
+    sess.inferred.vibe     = inference?.vibe     || '';
+
+    // Step 2: run immediately
+    await runStep2(extractedHexes || []);
+
+    // Auto-pick top palette match and trigger Steps 3–5
+    const firstBtn = document.querySelector('.pm-pal-use-btn');
+    if (firstBtn) firstBtn.click();
+  };
+
+})();
+</script>
+
+<script>
+/* ============================================================
+   CoCo Inference Engine (filename → tags)
+
+   HOW IT WORKS:
+   1. Intercepts every image drop / file input / URL paste
+   2. Parses filename against your vocabulary
+   3. Returns occasion, vibe, feels, cultural markers
+   4. Toast + pre-fills relevant controls
+
+   NO API. NO COST. Pure filename → tag matching.
+============================================================ */
+
+(function () {
+  'use strict';
+
+  const OCCASION_SIGNALS = {
+    wedding:     ['wedding','bridal','bride','groom','engagement','eloped','vow','married','bachelorette'],
+    birthday:    ['birthday','bday','born','milestone','turning','sweet16'],
+    babyshower:  ['baby','shower','gender','reveal','sprinkle','newborn'],
+    graduation:  ['grad','graduation','graduate','commencement','class','diploma'],
+    quinceanera: ['quinceanera','quinceañera','xv','fifteen'],
+    cultural:    ['cultural','heritage','traditional','ceremonial','folk','ancestral','diaspora',
+                  'japanese','yuzen','kimono','sakura','crane','cherry','blossom',
+                  'chinese','lunar','beijing','guilin','hangzhou',
+                  'african','ghana','yoruba','igbo','kente','ankara','batik',
+                  'indian','sari','diwali','rangoli','henna','mehndi',
+                  'caribbean','jamaican','trinidadian',
+                  'mexican','latina','hispanic',
+                  'korean','hanbok','thai','vietnamese'],
+    wellness:    ['yoga','meditation','wellness','mindful','healing','retreat','calm','zen','spa'],
+    launch:      ['launch','brand','business','boutique','studio','portfolio','shop','editorial'],
+    community:   ['community','reunion','gathering','block','market','festival','cookout','juneteenth'],
+    holiday:     ['christmas','holiday','winter','snow','valentine','halloween','thanksgiving'],
+    romantic:    ['love','romantic','romance','anniversary','couples','heart'],
+  };
+
+  const VIBE_SIGNALS = {
+    bold:       ['bold','dramatic','vibrant','vivid','intense','maximalist'],
+    warm:       ['warm','golden','amber','cozy','soft','glow','honey','sunset'],
+    editorial:  ['editorial','minimal','clean','modern','sleek','refined'],
+    cultural:   ['cultural','heritage','traditional','folk','textile','pattern','ornate'],
+    romantic:   ['romantic','intimate','moody','vintage','antique','blush','rose'],
+    dark:       ['dark','noir','midnight','shadow','deep','obsidian'],
+    wellness:   ['calm','organic','earthy','natural','linen','clay','sage'],
+  };
+
+  const TEXTURE_MAP = {
+    'tex:linen':  ['linen','fabric','textile','cloth','weave','woven','silk','satin'],
+    'tex:paper':  ['paper','parchment','aged','antique','weathered','kraft'],
+    'tex:grit':   ['grit','grain','concrete','urban','raw','rough'],
+    warm:         ['watercolor','painted','brushstroke','wash','soft'],
+  };
+
+  const NOISE = new Set([
+    'a','an','the','and','or','of','in','on','at','to','for','with',
+    'style','aesthetic','inspired','pattern','design','background',
+    'wallpaper','texture','image','photo','picture','illustration',
+    'beautiful','elegant','luxury','stunning','seamless','hand',
+    'painted','flowing','motifs','soft','subtle','abstract','artistic',
+    'color','colour','palette','tones','hues','shades',
+    'jpg','jpeg','png','webp','avif','svg','gif',
+  ]);
+
+  function parseFilename(filename) {
+    if (!filename) return null;
+
+    const clean = filename
+      .replace(/\.[^.]+$/, '')
+      .replace(/[-_]/g, ' ')
+      .replace(/[^a-zA-Z0-9\s]/g, ' ')
+      .toLowerCase();
+
+    const words = clean.split(/\s+/).filter(w => w.length > 1 && !NOISE.has(w));
+    const tokens = [...words];
+    for (let i = 0; i < words.length - 1; i++) {
+      tokens.push(words[i] + ' ' + words[i + 1]);
+    }
+
+    const result = {
+      occasion: null, vibe: null, feels: [],
+      cultural_markers: [], texture: null,
+      confidence: 0, matched_terms: [],
+    };            
+
+    // Score occasions
+    const occScores = {};
+    for (const [occ, sigs] of Object.entries(OCCASION_SIGNALS)) {
+      let score = 0;
+      for (const sig of sigs) {
+        if (tokens.some(t => t.includes(sig) || sig.includes(t))) {
+          score++;
+          result.matched_terms.push(sig);
+          if (occ === 'cultural') result.cultural_markers.push(sig);
+        }
+      }
+      if (score > 0) occScores[occ] = score;
+    }
+    if (Object.keys(occScores).length) {
+      result.occasion = Object.entries(occScores).sort((a,b) => b[1]-a[1])[0][0];
+      result.confidence += Math.min(40, Object.values(occScores).sort((a,b)=>b-a)[0] * 15);
+    }
+
+    // Score vibes
+    const vibeScores = {};
+    for (const [vibe, sigs] of Object.entries(VIBE_SIGNALS)) {
+      let score = 0;
+      for (const sig of sigs) {
+        if (tokens.some(t => t.includes(sig) || sig.includes(t))) score++;
+      }
+      if (score > 0) vibeScores[vibe] = score;
+    }
+    if (Object.keys(vibeScores).length) {
+      result.vibe = Object.entries(vibeScores).sort((a,b) => b[1]-a[1])[0][0];
+      result.confidence += Math.min(30, Object.values(vibeScores).sort((a,b)=>b-a)[0] * 10);
+      result.feels = Object.keys(vibeScores).slice(0, 3);
+    }
+
+    // Score textures
+    for (const [tex, sigs] of Object.entries(TEXTURE_MAP)) {
+      if (sigs.some(s => tokens.some(t => t.includes(s)))) {
+        result.texture = tex;
+        result.confidence += 15;
+        break;
+      }
+    }
+
+    result.confidence = Math.min(100, result.confidence + result.matched_terms.length * 5);
+    result.matched_terms    = [...new Set(result.matched_terms)];
+    result.cultural_markers = [...new Set(result.cultural_markers)];
+
+    return result.confidence > 0 ? result : null;
+  }
+
+  function applyInference(inference, filename) {
+    if (!inference) return;
+    console.log('[CoCo Infer]', inference);
+
+    // Pre-fill search input and auto-fire search
+    const searchTerm = inference.cultural_markers[0] || inference.occasion || inference.vibe;
+    if (searchTerm) {
+      const input = document.getElementById('pasteInput');
+      if (input) {
+        input.value = searchTerm;
+        // Auto-trigger search — same as user typing and hitting the button
+        setTimeout(() => {
+          const searchBtn = document.getElementById('searchBtn');
+          if (searchBtn) {
+            searchBtn.click();
+          } else {
+            // Fallback: dispatch Enter keydown on the input
+            input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+          }
+        }, 400); // small delay so the image lands first
+      }
+    }
+
+    // Pre-select workspace style
+    if (inference.vibe) {
+      const styleMap = {
+        warm:'warm', romantic:'romantic', dark:'bw',
+        wellness:'tex:linen', editorial:'clarity',
+        cultural:'warm', bold:'focus',
+      };
+      const sel = document.getElementById('workspaceStyle');
+      if (sel && styleMap[inference.vibe]) sel.value = styleMap[inference.vibe];
+    }
+
+    // Toast
+    const parts = [];
+    if (inference.occasion) parts.push(inference.occasion);
+    if (inference.vibe && inference.vibe !== inference.occasion) parts.push(inference.vibe);
+    if (inference.cultural_markers.length) parts.push(inference.cultural_markers.slice(0,2).join(', '));
+
+    const confidence = inference.confidence >= 60 ? '✦'
+      : inference.confidence >= 30 ? '◈' : '◇';
+    const msg = confidence + ' ' + (parts.join(' · ') || 'no strong signals');
+
+    if (typeof window.showToast === 'function') {
+      window.showToast(msg);
+    } else {
+      let t = document.getElementById('cocoInferToast');
+      if (!t) {
+        t = document.createElement('div');
+        t.id = 'cocoInferToast';
+        t.style.cssText = 'position:fixed;bottom:140px;left:50%;transform:translateX(-50%);background:rgba(17,22,38,.92);color:#f6f7ff;border:1px solid rgba(162,120,230,.4);border-radius:12px;padding:10px 18px;font:600 12px/1.4 Inter,system-ui;letter-spacing:.04em;z-index:9999;pointer-events:none;opacity:0;transition:opacity .3s ease;white-space:nowrap';
+        document.body.appendChild(t);
+      }
+      t.textContent = msg;
+      t.style.opacity = '1';
+      clearTimeout(t._t);
+      t._t = setTimeout(() => { t.style.opacity = '0'; }, 3500);
+    }
+
+    window.__cocoInference = inference;
+  }
+
+  function handleFile(file) {
+    if (!file || !file.type.startsWith('image/')) return;
+    const result = parseFilename(file.name);
+    if (result) applyInference(result, file.name);
+  }
+
+  function handleUrl(url) {
+    try {
+      const filename = new URL(url).pathname.split('/').pop();
+      if (filename?.includes('.')) {
+        const result = parseFilename(filename);
+        if (result) applyInference(result, filename);
+      }
+    } catch (_) {}
+  }
+
+  function init() {
+    // Drop targets
+    ['workStage','coco-main'].forEach(id => {
+      const el = document.getElementById(id) || document.body;
+      el.addEventListener('drop', e => {
+        const file = e.dataTransfer?.files?.[0];
+        if (file) handleFile(file);
+      }, { capture: true, passive: true });
+    });
+
+    // File inputs
+    document.querySelectorAll('input[type="file"]').forEach(input => {
+      input.addEventListener('change', e => handleFile(e.target.files?.[0]));
+    });
+
+    // URL paste
+    const pi = document.getElementById('pasteInput');
+    if (pi) {
+      pi.addEventListener('keydown', e => { if (e.key === 'Enter') handleUrl(pi.value); });
+      pi.addEventListener('change',  () => handleUrl(pi.value));
+    }
+
+    console.log('[CoCo Infer] v1 ready — window.cocoInfer(filename) to test');
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+  // Test from console: cocoInfer('Traditional_Japanese_yuzen_kimono_textile.jpg')
+  window.cocoInfer = filename => {
+    const r = parseFilename(filename);
+    console.log('[cocoInfer]', r);
+    if (r) applyInference(r, filename);
+    return r;
+  };
+
+  // Expose inner functions needed by outer-scope callers
+  if (typeof fetchPaletteLib    === 'function') window.fetchPaletteLib    = fetchPaletteLib;
+  if (typeof activatePalette    === 'function') window.activatePalette    = activatePalette;
+  if (typeof pmRankAndAutoApply === 'function') window.pmRankAndAutoApply = pmRankAndAutoApply;
+  if (typeof applyInference     === 'function') window.applyInference     = applyInference;
+  if (typeof parseFilename      === 'function') window.parseFilename      = parseFilename;
+  if (typeof renderPalette      === 'function') window.renderPalette      = renderPalette;
+
+})();
+
+</script>
+
+<script>
+/* ── Wire bridge overrides after plannerMode has initialised ── */
+document.addEventListener('DOMContentLoaded', function() {
+  // Override exit
+  const origExit = window.__plannerExit;
+  window.__plannerExit = function() {
+    _bridgeExit();
+    if (typeof origExit === 'function') origExit();
+  };
+
+  // Override save — let original run (it builds proposal URL + updates DOM),
+  // then notify parent so it can open the proposal link
+  const origSave = window.__plannerSaveBoard;
+  window.__plannerSaveBoard = async function() {
+    if (typeof origSave === 'function') await origSave.apply(this, arguments);
+    // Read share URL the original save wrote to the DOM
+    const linkEl   = document.getElementById('pm-board-link-url');
+    const shareUrl = linkEl?.textContent?.trim() || '';
+    const boardId  = window.plannerSession?.boardId || '';
+    if (shareUrl) _bridgeSaved(boardId, shareUrl);
+  };
+
+  // Override send-to-Flourish
+  const origFlourish = window.__plannerSendToFlourish;
+  window.__plannerSendToFlourish = function(key) {
+    _bridgeFlourish(window.plannerSession?.boardId || '');
+    if (typeof origFlourish === 'function') origFlourish(key);
+  };
+
+  // Override copy button
+  const copyBtn = document.getElementById('pm-board-copy-btn');
+  if (copyBtn) {
+    copyBtn.onclick = function() {
+      const url = document.getElementById('pm-board-link-url')?.textContent?.trim() || '';
+      if (url) _bridgeCopy(url);
+    };
+  }
+});
+</script>
+
+</body>
+</html>

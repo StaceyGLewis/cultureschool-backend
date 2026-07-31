@@ -1,0 +1,2153 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CoCo · Creator Hub</title>
+<meta name="theme-color" content="#0d0a07">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Pinyon+Script&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!--
+  ══════════════════════════════════════════════════════
+  SUPABASE TABLE NEEDED (run once):
+
+  CREATE TABLE IF NOT EXISTS creator_posts (
+    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+    creator_email text NOT NULL,
+    image_url text,
+    caption text,
+    occasion text,
+    palette_code text,
+    hearts_count integer DEFAULT 0,
+    views_count integer DEFAULT 0,
+    created_at timestamptz DEFAULT now()
+  );
+  ALTER TABLE creator_posts ENABLE ROW LEVEL SECURITY;
+  CREATE POLICY "public read" ON creator_posts FOR SELECT USING (true);
+  CREATE POLICY "creator insert" ON creator_posts FOR INSERT
+    WITH CHECK (creator_email = current_setting('request.jwt.claims', true)::json->>'email');
+
+  CREATE TABLE IF NOT EXISTS creator_inquiries (
+    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+    creator_email text NOT NULL,
+    sender_name text,
+    sender_email text,
+    message text,
+    occasion text,
+    created_at timestamptz DEFAULT now(),
+    read boolean DEFAULT false
+  );
+  ══════════════════════════════════════════════════════
+-->
+
+<style>
+:root {
+  --gold:      #c8a050;
+  --gold-lt:   #e8d4a0;
+  --gold-dk:   #8a6820;
+  --ink:       #faf6f0;
+  --ink-soft:  #a89070;
+  --ink-dim:   #5a4a38;
+  --paper:     #0d0a07;
+  --surface:   #181410;
+  --surface-2: #221e18;
+  --surface-3: #2e2820;
+  --glass:     rgba(30,24,16,.88);
+  --line:      rgba(200,160,80,.15);
+  --line-soft: rgba(200,160,80,.08);
+  --ok:        #6fba8a;
+  --ease:      cubic-bezier(.22,.61,.36,1);
+  --radius:    14px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+/* Grain */
+body::before {
+  content: ''; position: fixed; inset: 0; z-index: 1000;
+  pointer-events: none; opacity: .025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 256px;
+}
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+img { display: block; }
+
+/* ══ CLAIM BANNER ═════════════════════════════════════ */
+.claim-banner {
+  background: linear-gradient(135deg, rgba(200,160,80,.12), rgba(200,160,80,.06));
+  border-bottom: 1px solid rgba(200,160,80,.2);
+  padding: 14px clamp(16px,4vw,36px);
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 14px; flex-wrap: wrap;
+  animation: fadeUp .4s var(--ease) both;
+}
+.claim-banner-text {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic; font-size: .95rem;
+  color: var(--ink-soft); line-height: 1.5;
+}
+.claim-banner-text strong { color: var(--gold); font-style: normal; }
+.claim-btn {
+  padding: 9px 20px; border-radius: 999px; flex-shrink: 0;
+  background: linear-gradient(135deg,var(--gold-dk),var(--gold));
+  color: #1e1610; font: 700 .63rem/1 'DM Sans',sans-serif;
+  letter-spacing: .1em; text-transform: uppercase;
+  transition: all .2s; cursor: pointer;
+}
+.claim-btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.topbar {
+  position: sticky; top: 0; z-index: 200;
+  padding: calc(env(safe-area-inset-top,0px) + 12px) clamp(16px,4vw,36px) 12px;
+  background: linear-gradient(to bottom, rgba(13,10,7,.97) 75%, transparent);
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.topbar-logo {
+  font-family: 'Pinyon Script', cursive;
+  font-size: 1.6rem; line-height: 1; color: var(--gold);
+  text-shadow: 0 0 20px rgba(200,160,80,.28);
+}
+.topbar-right { display: flex; align-items: center; gap: 10px; }
+.topbar-btn {
+  padding: 7px 16px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--glass);
+  backdrop-filter: blur(12px);
+  font: 600 .63rem/1 'DM Sans',sans-serif;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--ink-soft); transition: all .2s;
+}
+.topbar-btn:hover { border-color: var(--gold); color: var(--gold); }
+.topbar-btn-primary {
+  background: linear-gradient(135deg,var(--gold-dk),var(--gold));
+  border-color: transparent; color: #1e1610;
+}
+.topbar-btn-primary:hover { filter: brightness(1.08); color: #1e1610; }
+
+/* ══ HERO ══════════════════════════════════════════════════ */
+.hero { position: relative; animation: fadeUp .55s var(--ease) both; }
+.hero-cover {
+  width: 100%; height: clamp(160px,24vw,280px);
+  object-fit: cover; filter: brightness(.65) saturate(.85);
+}
+.hero-cover-empty {
+  width: 100%; height: clamp(160px,24vw,280px);
+  background: linear-gradient(135deg,var(--surface),var(--surface-2));
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Pinyon Script',cursive; font-size: 5rem;
+  color: var(--gold); opacity: .18;
+}
+.hero-cover-fade {
+  position: absolute; top: 0; left: 0; right: 0;
+  height: clamp(160px,24vw,280px);
+  background: linear-gradient(to bottom, transparent 35%, rgba(13,10,7,.85) 100%);
+  pointer-events: none;
+}
+.hero-body {
+  max-width: 860px; margin: 0 auto;
+  padding: 0 clamp(16px,4vw,36px);
+  position: relative;
+}
+.hero-identity {
+  display: flex; align-items: flex-end; gap: 18px;
+  margin-top: -48px; margin-bottom: 16px;
+}
+.hero-avatar {
+  width: 90px; height: 90px; border-radius: 50%;
+  object-fit: cover; flex-shrink: 0;
+  border: 3px solid var(--gold);
+  box-shadow: 0 0 0 4px rgba(200,160,80,.14), 0 8px 24px rgba(0,0,0,.5);
+}
+.hero-avatar-empty {
+  width: 90px; height: 90px; border-radius: 50%;
+  background: var(--surface-2); border: 3px solid var(--gold);
+  box-shadow: 0 0 0 4px rgba(200,160,80,.14); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Pinyon Script',cursive; font-size: 2.2rem; color: var(--gold);
+}
+.hero-name-block { padding-bottom: 4px; }
+.hero-name {
+  font-family: 'Pinyon Script',cursive;
+  font-size: clamp(2rem,5.5vw,3rem); line-height: .95;
+  color: var(--ink); text-shadow: 0 2px 18px rgba(0,0,0,.5);
+}
+.hero-location {
+  font: 500 .7rem/1 'DM Sans',sans-serif;
+  letter-spacing: .07em; color: var(--ink-dim); margin-top: 5px;
+}
+.hero-social {
+  display: flex; gap: 9px; margin-top: 12px; flex-wrap: wrap;
+}
+.social-dot {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--surface-2); border: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: center;
+  font-size: .88rem; transition: all .2s;
+}
+.social-dot:hover { border-color: var(--gold); transform: translateY(-2px); }
+
+/* Availability badge */
+.avail-badge {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 14px; border-radius: 999px;
+  font: 600 .62rem/1 'DM Sans',sans-serif;
+  letter-spacing: .1em; text-transform: uppercase;
+  margin-top: 12px;
+}
+.avail-badge-open {
+  background: rgba(111,186,138,.12);
+  border: 1px solid rgba(111,186,138,.3);
+  color: var(--ok);
+}
+.avail-badge-closed {
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--line);
+  color: var(--ink-dim);
+}
+.avail-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: currentColor; flex-shrink: 0;
+}
+.avail-badge-open .avail-dot { animation: pulse 2s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.45;transform:scale(.65)} }
+
+.hero-chips {
+  display: flex; gap: 7px; flex-wrap: wrap; margin-top: 10px;
+}
+.chip {
+  padding: 5px 12px; border-radius: 999px;
+  background: rgba(200,160,80,.1);
+  border: 1px solid rgba(200,160,80,.24);
+  font: 600 .59rem/1 'DM Sans',sans-serif;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--gold-dk);
+}
+.hero-bio {
+  margin-top: 16px; padding-top: 16px;
+  border-top: 1px solid var(--line-soft);
+  font-family: 'Cormorant Garamond',serif;
+  font-style: italic; font-weight: 300;
+  font-size: clamp(.9rem,1.8vw,1.02rem);
+  color: var(--ink-soft); line-height: 1.75; max-width: 580px;
+}
+.hero-actions {
+  display: flex; gap: 8px; flex-wrap: wrap; margin-top: 18px;
+}
+.hero-btn {
+  padding: 9px 20px; border-radius: 999px;
+  font: 600 .63rem/1 'DM Sans',sans-serif;
+  letter-spacing: .1em; text-transform: uppercase; transition: all .2s;
+}
+.hero-btn-gold {
+  background: linear-gradient(135deg,var(--gold-dk),var(--gold));
+  color: #1e1610; box-shadow: 0 4px 16px rgba(200,160,80,.24);
+}
+.hero-btn-gold:hover { transform: translateY(-1px); box-shadow: 0 6px 22px rgba(200,160,80,.36); }
+.hero-btn-ghost {
+  background: var(--surface-2); border: 1px solid var(--line); color: var(--ink-soft);
+}
+.hero-btn-ghost:hover { border-color: var(--gold); color: var(--gold); }
+
+/* ══ DASHBOARD STATS BAR ═══════════════════════════════════ */
+.stats-bar {
+  max-width: 860px; margin: 28px auto 0;
+  padding: 0 clamp(16px,4vw,36px);
+  display: grid; grid-template-columns: repeat(4,1fr); gap: 10px;
+}
+.stat-card {
+  background: var(--surface); border: 1px solid var(--line-soft);
+  border-radius: var(--radius); padding: 16px 18px;
+  text-align: center;
+}
+.stat-num {
+  font-family: 'Cormorant Garamond',serif;
+  font-size: 2rem; font-weight: 300; color: var(--gold);
+  line-height: 1;
+}
+.stat-label {
+  font: 600 .58rem/1 'DM Sans',sans-serif;
+  letter-spacing: .14em; text-transform: uppercase;
+  color: var(--ink-dim); margin-top: 5px;
+}
+@media (max-width:560px) { .stats-bar { grid-template-columns: 1fr 1fr; } }
+.stat-card-clickable { cursor: pointer; transition: border-color .2s, background .2s; }
+.stat-card-clickable:hover { border-color: rgba(200,160,80,.3); background: var(--surface-2); }
+.stat-card-alert { border-color: rgba(111,186,138,.3); }
+.stat-card-alert .stat-num { color: var(--ok); }
+.stat-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--ok); margin: 4px auto 0;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ══ INQUIRIES INBOX ══════════════════════════════════════ */
+.inbox-wrap {
+  max-width: 860px; margin: 0 auto 8px;
+  padding: 0 clamp(16px,4vw,36px);
+}
+.inbox-card {
+  background: var(--surface); border: 1px solid var(--line-soft);
+  border-radius: var(--radius); overflow: hidden;
+  animation: fadeUp .3s var(--ease) both;
+}
+.inbox-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px; border-bottom: 1px solid var(--line-soft);
+}
+.inbox-title {
+  font: 700 .68rem/1 'DM Sans',sans-serif;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--gold);
+}
+.inbox-close {
+  font-size: .75rem; color: var(--ink-dim); cursor: pointer;
+  padding: 4px 8px; border-radius: 6px; transition: color .15s;
+}
+.inbox-close:hover { color: var(--ink); }
+.inq-item {
+  padding: 16px 18px; border-bottom: 1px solid var(--line-soft);
+  transition: background .15s;
+}
+.inq-item:last-child { border-bottom: none; }
+.inq-item.unread { background: rgba(200,160,80,.04); }
+.inq-item-top {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  margin-bottom: 7px;
+}
+.inq-sender {
+  font: 600 .78rem/1 'DM Sans',sans-serif; color: var(--ink);
+}
+.inq-time {
+  font: 400 .63rem/1 'DM Sans',sans-serif; color: var(--ink-dim); white-space: nowrap;
+}
+.inq-email {
+  font: 400 .68rem/1 'DM Sans',sans-serif; color: var(--gold-dk); margin-bottom: 8px;
+}
+.inq-message {
+  font-family: 'Cormorant Garamond',serif; font-style: italic;
+  font-size: .9rem; color: var(--ink-soft); line-height: 1.65;
+}
+.inq-reply-btn {
+  margin-top: 10px; padding: 6px 14px; border-radius: 999px;
+  background: none; border: 1px solid var(--line);
+  font: 600 .6rem/1 'DM Sans',sans-serif; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-dim);
+  cursor: pointer; transition: all .2s; text-decoration: none; display: inline-block;
+}
+.inq-reply-btn:hover { border-color: var(--gold); color: var(--gold); }
+.inbox-section-label {
+  font: 700 .58rem/1 var(--sans);
+  letter-spacing: .16em; text-transform: uppercase;
+  color: rgba(200,160,80,.55);
+  padding: 10px 0 8px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 4px;
+}
+
+.inbox-empty {
+  padding: 28px; text-align: center;
+  font-family: 'Cormorant Garamond',serif;
+  font-style: italic; color: var(--ink-dim); font-size: .9rem;
+}
+
+/* ══ SHARE MOMENT BUTTON ═══════════════════════════════════ */
+.share-bar {
+  max-width: 860px; margin: 20px auto 0;
+  padding: 0 clamp(16px,4vw,36px);
+}
+.share-prompt {
+  width: 100%; padding: 16px 22px;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 999px; cursor: pointer;
+  display: flex; align-items: center; justify-content: space-between;
+  transition: border-color .2s, background .2s;
+}
+.share-prompt:hover { border-color: rgba(200,160,80,.4); background: var(--surface-2); }
+.share-prompt-text {
+  font-family: 'Cormorant Garamond',serif;
+  font-style: italic; font-size: 1rem; color: var(--ink-dim);
+}
+.share-prompt-icon {
+  width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+  background: linear-gradient(135deg,var(--gold-dk),var(--gold));
+  display: flex; align-items: center; justify-content: center;
+  font-size: .75rem; color: #1e1610; font-weight: 700;
+}
+
+/* ══ AVAILABILITY TOGGLE (dashboard) ══════════════════════ */
+.avail-panel {
+  max-width: 860px; margin: 20px auto 0;
+  padding: 0 clamp(16px,4vw,36px);
+}
+.avail-row {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--surface); border: 1px solid var(--line-soft);
+  border-radius: var(--radius); padding: 16px 20px; gap: 16px;
+  flex-wrap: wrap;
+}
+.avail-left { display: flex; flex-direction: column; gap: 4px; }
+.avail-title {
+  font: 600 .82rem/1 'DM Sans',sans-serif; color: var(--ink);
+}
+.avail-sub { font-size: .72rem; color: var(--ink-dim); }
+.toggle-wrap { display: flex; align-items: center; gap: 12px; }
+.toggle-label { font-size: .72rem; color: var(--ink-dim); }
+.toggle {
+  width: 48px; height: 26px; border-radius: 999px;
+  background: var(--surface-3); border: 1px solid var(--line);
+  position: relative; cursor: pointer; transition: background .25s, border-color .25s;
+  flex-shrink: 0; outline: none;
+}
+.toggle::after {
+  content: ''; position: absolute; top: 3px; left: 3px;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--ink-dim); transition: transform .25s, background .25s;
+}
+.toggle.on { background: rgba(111,186,138,.2); border-color: rgba(111,186,138,.4); }
+.toggle.on::after { transform: translateX(22px); background: var(--ok); }
+.specialty-chips-edit {
+  display: flex; gap: 7px; flex-wrap: wrap; margin-top: 12px; width: 100%;
+}
+.chip-add-btn {
+  padding: 5px 12px; border-radius: 999px;
+  background: none; border: 1px dashed rgba(200,160,80,.3);
+  font: 600 .59rem/1 'DM Sans',sans-serif;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--gold-dk); cursor: pointer; transition: all .2s;
+}
+.chip-add-btn:hover { border-color: var(--gold); color: var(--gold); background: rgba(200,160,80,.08); }
+.chip-removable {
+  display: flex; align-items: center; gap: 5px;
+}
+.chip-x {
+  font-size: .7rem; color: var(--ink-dim); cursor: pointer;
+  transition: color .15s; line-height: 1;
+}
+.chip-x:hover { color: #e07070; }
+
+/* ══ DIVIDER ══════════════════════════════════════════════ */
+.divider {
+  display: flex; align-items: center; gap: 14px;
+  max-width: 860px; margin: 36px auto 20px;
+  padding: 0 clamp(16px,4vw,36px);
+}
+.divider-line { flex: 1; height: 1px; background: linear-gradient(90deg,transparent,var(--line),transparent); }
+.divider-text {
+  font: 700 .57rem/1 'DM Sans',sans-serif;
+  letter-spacing: .22em; text-transform: uppercase;
+  color: var(--gold); opacity: .55; white-space: nowrap;
+}
+.divider-gem { font-size: .5rem; color: var(--gold); opacity: .4; }
+
+/* ══ POSTS GRID ═══════════════════════════════════════════ */
+.posts-wrap {
+  max-width: 860px; margin: 0 auto 40px;
+  padding: 0 clamp(16px,4vw,36px);
+}
+.posts-grid {
+  display: grid;
+  grid-template-columns: repeat(3,1fr);
+  gap: 10px;
+}
+@media(max-width:560px) { .posts-grid { grid-template-columns: repeat(2,1fr); gap: 8px; } }
+.post-card {
+  position: relative; border-radius: 12px; overflow: hidden;
+  background: var(--surface); border: 1px solid var(--line-soft);
+  aspect-ratio: 1/1; cursor: pointer;
+  transition: transform .25s var(--ease), border-color .2s;
+}
+.post-card:hover { transform: translateY(-3px); border-color: rgba(200,160,80,.28); }
+.post-card img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  transition: transform .4s var(--ease);
+}
+.post-card:hover img { transform: scale(1.04); }
+.post-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(13,10,7,.82) 0%, transparent 55%);
+  display: flex; flex-direction: column;
+  justify-content: flex-end; padding: 12px;
+  opacity: 0; transition: opacity .2s;
+}
+.post-card:hover .post-overlay { opacity: 1; }
+.post-occasion {
+  font: 700 .55rem/1 'DM Sans',sans-serif;
+  letter-spacing: .16em; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 4px;
+}
+.post-caption {
+  font-family: 'Cormorant Garamond',serif;
+  font-size: .85rem; color: rgba(250,246,240,.85); line-height: 1.35;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.post-hearts {
+  position: absolute; top: 10px; right: 10px;
+  display: flex; align-items: center; gap: 4px;
+  background: rgba(13,10,7,.6); backdrop-filter: blur(6px);
+  padding: 4px 8px; border-radius: 999px;
+  font: 600 .65rem/1 'DM Sans',sans-serif; color: rgba(250,246,240,.8);
+}
+.post-placeholder {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Pinyon Script',cursive; font-size: 2.5rem;
+  color: var(--gold); opacity: .18;
+  flex-direction: column; gap: 8px;
+}
+.post-placeholder-label {
+  font-family: 'DM Sans',sans-serif; font-family: 'DM Sans',sans-serif;
+  font-size: .6rem; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--ink-dim); font-style: normal;
+}
+.post-delete {
+  position: absolute; top: 8px; right: 8px;
+  width: 26px; height: 26px; border-radius: 50%;
+  background: rgba(13,10,7,.75); backdrop-filter: blur(6px);
+  border: 1px solid rgba(255,255,255,.15);
+  color: rgba(250,246,240,.7); font-size: .65rem;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; opacity: 0; transition: opacity .2s, background .2s;
+  z-index: 10;
+}
+.post-card:hover .post-delete { opacity: 1; }
+.post-delete:hover { background: rgba(180,60,60,.8); color: #fff; border-color: transparent; }
+@media(hover:none){ .post-delete { opacity: 1; } }
+
+/* Video in post card */
+.post-card video {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+}
+.post-video-badge {
+  position: absolute; top: 10px; left: 10px;
+  background: rgba(13,10,7,.65); backdrop-filter: blur(6px);
+  padding: 3px 8px; border-radius: 999px;
+  font: 700 .55rem/1 'DM Sans',sans-serif;
+  letter-spacing: .1em; color: rgba(250,246,240,.8);
+}
+/* On touch devices always show overlay */
+@media (hover: none) {
+  .post-overlay { opacity: 1; background: linear-gradient(to top, rgba(13,10,7,.72) 0%, transparent 50%); }
+}
+
+/* ══ BOARDS GRID ══════════════════════════════════════════ */
+.templates-wrap { max-width: 860px; margin: 0 auto 40px; padding: 0 clamp(16px,4vw,36px); }
+.templates-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px,1fr)); gap: 14px; }
+.template-card { border-radius: 12px; overflow: hidden; border: 1px solid var(--line); background: var(--surface); text-decoration: none; color: inherit; display: block; transition: transform .2s, box-shadow .2s; }
+.template-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,.1); }
+.template-thumb { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; background: var(--line); }
+.template-thumb-empty { width: 100%; aspect-ratio: 4/3; background: linear-gradient(135deg,#f0e8d820,var(--line)); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; color: var(--gold); }
+.template-card-body { padding: 10px 12px 12px; }
+.template-card-name { font: 600 .85rem/1.2 var(--sans); color: var(--ink); margin-bottom: 4px; }
+.template-card-meta { font: 400 .7rem/1 var(--sans); color: var(--muted); }
+
+.boards-wrap {
+  max-width: 860px; margin: 0 auto 40px;
+  padding: 0 clamp(16px,4vw,36px);
+}
+.boards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px,1fr));
+  gap: 14px;
+}
+@media(max-width:560px) { .boards-grid { grid-template-columns: 1fr 1fr; gap: 10px; } }
+.board-card {
+  border-radius: var(--radius); overflow: hidden;
+  background: var(--surface); border: 1px solid var(--line-soft);
+  transition: transform .25s var(--ease), border-color .2s;
+  display: block; text-decoration: none; color: inherit;
+}
+.board-card:hover { transform: translateY(-3px); border-color: rgba(200,160,80,.28); }
+.board-card-img {
+  width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block;
+}
+.board-card-empty {
+  width: 100%; aspect-ratio: 4/3;
+  background: var(--surface-2);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Pinyon Script',cursive; font-size: 2.2rem;
+  color: var(--gold); opacity: .2;
+}
+.board-card-body { padding: 12px 14px 14px; }
+.board-card-title {
+  font-family: 'Cormorant Garamond',serif;
+  font-size: .95rem; font-weight: 400; color: var(--ink);
+  margin-bottom: 3px; line-height: 1.3;
+}
+.board-card-sub { font-size: .68rem; color: var(--ink-dim); line-height: 1.4; }
+
+/* Visibility toggle */
+.board-card-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 10px; padding-top: 8px;
+  border-top: 1px solid var(--line-soft);
+}
+.board-vis-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: 999px; cursor: pointer;
+  font: 600 .58rem/1 'DM Sans',sans-serif; letter-spacing: .1em;
+  text-transform: uppercase; transition: all .2s;
+  border: none; background: none;
+}
+.board-vis-btn.shown {
+  color: var(--ok);
+  background: rgba(111,186,138,.12);
+  border: 1px solid rgba(111,186,138,.3);
+}
+.board-vis-btn.hidden {
+  color: var(--ink-dim);
+  background: var(--surface-3);
+  border: 1px solid var(--line);
+}
+.board-vis-btn:hover { filter: brightness(1.15); }
+.board-card.is-hidden { opacity: .45; }
+.board-card.is-hidden:hover { opacity: .8; }
+
+/* ══ EMPTY STATE ══════════════════════════════════════════ */
+.empty-state {
+  text-align: center; padding: 48px 20px;
+  font-family: 'Cormorant Garamond',serif;
+  font-style: italic; color: var(--ink-dim);
+  font-size: 1rem;
+}
+
+/* ══ SHARE MODAL ══════════════════════════════════════════ */
+.modal-backdrop {
+  position: fixed; inset: 0; z-index: 500;
+  background: rgba(7,5,3,.82); backdrop-filter: blur(8px);
+  display: none; align-items: flex-end; justify-content: center;
+  padding: 0;
+}
+.modal-backdrop.open { display: flex; animation: fadeIn .2s ease; }
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+.modal {
+  width: 100%; max-width: 520px;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 24px 24px 0 0;
+  padding: 28px 28px calc(28px + env(safe-area-inset-bottom,0px));
+  animation: slideUp .3s var(--ease) both;
+  max-height: 92vh; overflow-y: auto;
+}
+@keyframes slideUp { from{transform:translateY(40px);opacity:0} to{transform:translateY(0);opacity:1} }
+.modal-handle {
+  width: 36px; height: 4px; border-radius: 2px;
+  background: var(--line); margin: 0 auto 24px;
+}
+.modal-title {
+  font-family: 'Cormorant Garamond',serif;
+  font-size: 1.5rem; font-weight: 400; color: var(--ink);
+  margin-bottom: 20px;
+}
+.modal-field { margin-bottom: 16px; }
+.modal-field label {
+  display: block; font: 600 .62rem/1 'DM Sans',sans-serif;
+  letter-spacing: .12em; text-transform: uppercase;
+  color: var(--ink-dim); margin-bottom: 7px;
+}
+.modal-input, .modal-textarea, .modal-select {
+  width: 100%;
+  background: rgba(255,255,255,.05); border: 1px solid var(--line);
+  border-radius: 10px; color: var(--ink);
+  font-family: 'Cormorant Garamond',serif; font-style: italic; font-size: 1rem;
+  padding: 11px 16px; outline: none; transition: border-color .2s;
+  -webkit-appearance: none;
+}
+.modal-input:focus, .modal-textarea:focus, .modal-select:focus {
+  border-color: rgba(200,160,80,.5);
+}
+.modal-input::placeholder, .modal-textarea::placeholder { color: rgba(200,160,80,.35); }
+.modal-textarea { min-height: 80px; resize: vertical; font-size: .95rem; }
+.modal-select option { background: #181410; }
+.occasion-pills {
+  display: flex; gap: 7px; flex-wrap: wrap; margin-top: 4px;
+}
+.occasion-pill {
+  padding: 6px 14px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--line); background: none;
+  font: 600 .6rem/1 'DM Sans',sans-serif;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--ink-soft); transition: all .2s;
+}
+.occasion-pill.sel {
+  border-color: rgba(200,160,80,.5);
+  background: rgba(200,160,80,.12); color: var(--gold);
+}
+.modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+.modal-btn {
+  flex: 1; padding: 14px; border-radius: 10px; cursor: pointer;
+  font: 700 .72rem/1 'DM Sans',sans-serif; letter-spacing: .1em;
+  text-transform: uppercase; transition: all .2s;
+}
+.modal-btn-post {
+  background: linear-gradient(135deg,var(--gold-dk),var(--gold));
+  color: #1e1610; box-shadow: 0 4px 16px rgba(200,160,80,.24);
+}
+.modal-btn-post:hover { filter: brightness(1.07); transform: translateY(-1px); }
+.modal-btn-cancel {
+  background: var(--surface-2); border: 1px solid var(--line); color: var(--ink-soft);
+}
+.modal-btn-cancel:hover { border-color: var(--line); color: var(--ink); }
+
+/* ══ UPLOAD ZONE ══════════════════════════════════════════ */
+.upload-zone {
+  width: 100%; border-radius: 12px;
+  border: 1.5px dashed rgba(200,160,80,.3);
+  background: rgba(255,255,255,.03);
+  cursor: pointer; overflow: hidden;
+  transition: border-color .2s, background .2s;
+  position: relative; min-height: 100px;
+}
+.upload-zone:hover { border-color: rgba(200,160,80,.55); background: rgba(200,160,80,.04); }
+.upload-zone-inner {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 8px; padding: 28px 20px;
+}
+.upload-zone-icon { font-size: 1.6rem; opacity: .55; }
+.upload-zone-text {
+  font-family: 'Cormorant Garamond',serif; font-style: italic;
+  font-size: .92rem; color: var(--ink-dim);
+}
+.upload-preview {
+  width: 100%; max-height: 220px; object-fit: cover; display: block;
+  border-radius: 10px;
+}
+.upload-zone.has-file { border-style: solid; border-color: rgba(200,160,80,.4); }
+.url-toggle {
+  margin-top: 8px; font: 500 .65rem/1 'DM Sans',sans-serif;
+  letter-spacing: .06em; color: var(--ink-dim);
+  text-decoration: underline; background: none; border: none;
+  cursor: pointer; padding: 0; display: block;
+  transition: color .2s;
+}
+.url-toggle:hover { color: var(--gold); }
+
+/* ══ PHOTO UPLOAD IN EDIT ═════════════════════════════════ */
+.photo-edit-row {
+  display: flex; gap: 16px; align-items: center; margin-bottom: 22px;
+}
+.avatar-upload {
+  position: relative; width: 80px; height: 80px;
+  border-radius: 50%; flex-shrink: 0; cursor: pointer;
+}
+.avatar-upload img, .avatar-empty {
+  width: 80px; height: 80px; border-radius: 50%;
+  object-fit: cover; border: 2px solid var(--line); display: block;
+}
+.avatar-empty {
+  background: var(--surface-3);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Pinyon Script',cursive; font-size: 1.8rem; color: var(--gold);
+}
+.cover-upload {
+  position: relative; flex: 1; height: 80px;
+  border-radius: 10px; overflow: hidden; cursor: pointer;
+}
+.cover-upload img, .cover-empty {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+}
+.cover-empty {
+  background: var(--surface-3); height: 80px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Cormorant Garamond',serif; font-style: italic;
+  font-size: .8rem; color: var(--ink-dim);
+}
+.photo-overlay {
+  position: absolute; inset: 0; border-radius: inherit;
+  background: rgba(13,10,7,.6);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity .2s; pointer-events: none;
+  font: 700 .58rem/1 'DM Sans',sans-serif;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--ink);
+}
+.avatar-upload:hover .photo-overlay,
+.cover-upload:hover .photo-overlay,
+.avatar-upload.uploading .photo-overlay,
+.cover-upload.uploading .photo-overlay { opacity: 1; }
+
+/* ══ PROFILE EDIT PANEL ═══════════════════════════════════ */
+.edit-panel {
+  max-width: 860px; margin: 0 auto 40px;
+  padding: 0 clamp(16px,4vw,36px);
+  display: none;
+}
+.edit-panel.open { display: block; }
+.edit-card {
+  background: var(--surface); border: 1px solid var(--line-soft);
+  border-radius: 18px; padding: 28px;
+}
+.edit-title {
+  font-family: 'Cormorant Garamond',serif;
+  font-size: 1.3rem; font-style: italic; color: var(--ink);
+  margin-bottom: 22px;
+}
+.edit-field { margin-bottom: 16px; }
+.edit-field label {
+  display: block; font: 600 .62rem/1 'DM Sans',sans-serif;
+  letter-spacing: .12em; text-transform: uppercase;
+  color: var(--ink-dim); margin-bottom: 7px;
+}
+.edit-input, .edit-textarea {
+  width: 100%;
+  background: rgba(255,255,255,.05); border: 1px solid var(--line);
+  border-radius: 10px; color: var(--ink);
+  font-family: 'DM Sans',sans-serif; font-size: .92rem;
+  padding: 11px 16px; outline: none; transition: border-color .2s;
+}
+.edit-input:focus, .edit-textarea:focus { border-color: rgba(200,160,80,.5); }
+.edit-textarea { min-height: 80px; resize: vertical; }
+.edit-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media(max-width:480px) { .edit-row { grid-template-columns: 1fr; } }
+.edit-actions { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+.edit-btn {
+  padding: 12px 24px; border-radius: 10px;
+  font: 700 .7rem/1 'DM Sans',sans-serif; letter-spacing: .1em; text-transform: uppercase;
+  transition: all .2s; cursor: pointer;
+}
+.edit-btn-save {
+  background: linear-gradient(135deg,var(--gold-dk),var(--gold));
+  color: #1e1610;
+}
+.edit-btn-save:hover { filter: brightness(1.07); }
+.edit-btn-cancel {
+  background: none; border: 1px solid var(--line); color: var(--ink-soft);
+}
+.edit-btn-cancel:hover { border-color: var(--gold); color: var(--gold); }
+
+/* ══ TOAST ════════════════════════════════════════════════ */
+.toast {
+  position: fixed; bottom: calc(24px + env(safe-area-inset-bottom,0px));
+  left: 50%; transform: translateX(-50%) translateY(16px);
+  background: var(--surface-3); border: 1px solid var(--line);
+  border-radius: 999px; padding: 10px 22px;
+  font: 600 .68rem/1 'DM Sans',sans-serif; letter-spacing: .08em;
+  color: var(--ink-soft); z-index: 800;
+  opacity: 0; transition: opacity .25s, transform .25s;
+  white-space: nowrap; pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.ok { color: var(--ok); border-color: rgba(111,186,138,.3); }
+
+/* ══ LOADER ═══════════════════════════════════════════════ */
+.loader {
+  position: fixed; inset: 0; z-index: 600;
+  background: var(--paper);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+  transition: opacity .45s var(--ease);
+}
+.loader.fade { opacity: 0; pointer-events: none; }
+.loader-logo {
+  font-family: 'Pinyon Script',cursive; font-size: 3.8rem; color: var(--gold);
+  animation: glow 2s ease-in-out infinite;
+}
+@keyframes glow { 0%,100%{opacity:.4;text-shadow:none} 50%{opacity:1;text-shadow:0 0 28px rgba(200,160,80,.4)} }
+.loader-text {
+  font: 600 .57rem/1 'DM Sans',sans-serif; letter-spacing: .26em;
+  text-transform: uppercase; color: var(--ink-dim);
+}
+
+/* ══ PAGE FOOT ════════════════════════════════════════════ */
+.page-foot {
+  padding: clamp(40px,7vh,72px) 20px;
+  text-align: center;
+  font-family: 'Pinyon Script',cursive;
+  font-size: 2.2rem; color: var(--gold); opacity: .2;
+}
+
+/* ══ ANIMATIONS ══════════════════════════════════════════ */
+@keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+.anim   { animation: fadeUp .55s var(--ease) both; }
+.anim-1 { animation-delay: .08s; }
+.anim-2 { animation-delay: .16s; }
+.anim-3 { animation-delay: .24s; }
+.anim-4 { animation-delay: .32s; }
+
+@media(max-width:600px) {
+  .hero-avatar, .hero-avatar-empty { width: 74px; height: 74px; }
+  .hero-identity { margin-top: -38px; }
+  .modal { border-radius: 20px 20px 0 0; }
+}
+</style>
+</head>
+<body>
+
+<!-- LOADER -->
+<div class="loader" id="loader">
+  <div class="loader-logo">CoCo</div>
+  <div class="loader-text">One moment</div>
+</div>
+
+<!-- CLAIM BANNER (shown when arriving via invite link) -->
+<div id="claimBanner"></div>
+
+<!-- TOPBAR -->
+<header class="topbar" id="topbar">
+  <a href="https://coco-daily-inspo.cultureschool.org" class="topbar-logo">CoCo</a>
+  <div class="topbar-right" id="topbarRight">
+    <!-- populated by JS -->
+  </div>
+</header>
+
+<!-- HERO -->
+<div id="heroMount"></div>
+
+<!-- DASHBOARD STATS (only when own profile + logged in) -->
+<div id="statsMount"></div>
+
+<!-- INQUIRIES INBOX (dashboard only, toggled by stats click) -->
+<div id="inquiriesMount"></div>
+
+<!-- SHARE PROMPT (dashboard only) -->
+<div id="shareMount"></div>
+
+<!-- AVAILABILITY PANEL (dashboard only) -->
+<div id="availMount"></div>
+
+<!-- PROFILE EDIT PANEL -->
+<div class="edit-panel" id="editPanel"></div>
+
+<!-- POSTS -->
+<div id="postsMount"></div>
+
+<!-- BOARDS / COLLECTIONS -->
+<div id="templatesMount"></div>
+<div id="boardsMount"></div>
+
+<!-- PAGE FOOT -->
+<div class="page-foot">CoCo</div>
+
+<!-- SHARE MOMENT MODAL -->
+<div class="modal-backdrop" id="shareModal" onclick="closeModal('shareModal',event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Share a moment ✦</div>
+
+    <div class="modal-field">
+      <label>Photo</label>
+      <!-- Upload zone -->
+      <div class="upload-zone" id="uploadZone" onclick="document.getElementById('postFileInput').click()">
+        <div class="upload-zone-inner" id="uploadZoneInner">
+          <span class="upload-zone-icon">📷</span>
+          <span class="upload-zone-text">Tap to choose a photo</span>
+        </div>
+        <img class="upload-preview" id="uploadPreview" style="display:none" alt="Preview">
+      </div>
+      <input type="file" id="postFileInput" accept="image/*" style="display:none" onchange="handleFileSelect(event)">
+      <!-- URL fallback -->
+      <button type="button" class="url-toggle" id="urlToggle" onclick="toggleUrlInput()">Or paste a URL instead</button>
+      <input class="modal-input" id="postImageUrl" type="url" placeholder="https://…" style="display:none;margin-top:8px">
+    </div>
+
+    <div class="modal-field">
+      <label>Caption</label>
+      <textarea class="modal-textarea" id="postCaption" placeholder="What's the story here…"></textarea>
+    </div>
+
+    <div class="modal-field">
+      <label>Occasion</label>
+      <div class="occasion-pills" id="occasionPills">
+        <button class="occasion-pill" data-val="Wedding">💍 Wedding</button>
+        <button class="occasion-pill" data-val="Cultural">🏮 Cultural</button>
+        <button class="occasion-pill" data-val="At the Table">🍽 At the Table</button>
+        <button class="occasion-pill" data-val="Wellness">🌿 Wellness</button>
+        <button class="occasion-pill" data-val="Travel">✈ Travel</button>
+        <button class="occasion-pill" data-val="Home">🏡 Home</button>
+        <button class="occasion-pill" data-val="Milestone">🎉 Milestone</button>
+        <button class="occasion-pill" data-val="Baby & Bridal">🌸 Baby &amp; Bridal</button>
+      </div>
+    </div>
+
+    <div class="modal-field">
+      <label>Palette code (optional)</label>
+      <input class="modal-input" id="postPaletteCode" type="text" placeholder="e.g. CS-P-046">
+    </div>
+
+    <div class="modal-actions">
+      <button class="modal-btn modal-btn-cancel" onclick="closeModal('shareModal')">Cancel</button>
+      <button class="modal-btn modal-btn-post" onclick="submitPost()">Post →</button>
+    </div>
+  </div>
+</div>
+
+<!-- INQUIRY MODAL (public) -->
+<div class="modal-backdrop" id="inquiryModal" onclick="closeModal('inquiryModal',event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="inquiryTitle">Get in touch ✦</div>
+
+    <div class="modal-field">
+      <label>Your name</label>
+      <input class="modal-input" id="inqName" type="text" placeholder="Your name">
+    </div>
+    <div class="modal-field">
+      <label>Your email</label>
+      <input class="modal-input" id="inqEmail" type="email" placeholder="you@email.com">
+    </div>
+    <div class="modal-field">
+      <label>What are you planning?</label>
+      <textarea class="modal-textarea" id="inqMessage" placeholder="Tell them a little about your event or project…"></textarea>
+    </div>
+
+    <div class="modal-actions">
+      <button class="modal-btn modal-btn-cancel" onclick="closeModal('inquiryModal')">Cancel</button>
+      <button class="modal-btn modal-btn-post" onclick="submitInquiry()">Send →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD SPECIALTY MODAL -->
+<div class="modal-backdrop" id="specialtyModal" onclick="closeModal('specialtyModal',event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Add a specialty</div>
+    <div class="occasion-pills" id="specialtyPills" style="margin-bottom:20px">
+      <button class="occasion-pill" data-val="Photographer">📷 Photographer</button>
+      <button class="occasion-pill" data-val="Florist">💐 Florist</button>
+      <button class="occasion-pill" data-val="Party Planner">🎊 Party Planner</button>
+      <button class="occasion-pill" data-val="Life Coach">🌟 Life Coach</button>
+      <button class="occasion-pill" data-val="Wellness Coach">🌿 Wellness Coach</button>
+      <button class="occasion-pill" data-val="Food Stylist">🍽 Food Stylist</button>
+      <button class="occasion-pill" data-val="Event Designer">✨ Event Designer</button>
+      <button class="occasion-pill" data-val="Videographer">🎬 Videographer</button>
+      <button class="occasion-pill" data-val="Textile Artist">🧵 Textile Artist</button>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn modal-btn-cancel" onclick="closeModal('specialtyModal')">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- SIGN IN MODAL -->
+<div class="modal-backdrop" id="signInModal" onclick="closeModal('signInModal',event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Sign in to CoCo ✦</div>
+    <p style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:.95rem;color:var(--ink-soft);margin-bottom:20px;line-height:1.6">
+      Enter the email address on your CultureSchool account.
+    </p>
+    <div class="modal-field">
+      <label>Email address</label>
+      <input class="modal-input" id="signInEmail" type="email" placeholder="you@email.com"
+             onkeydown="if(event.key==='Enter')doSignIn()">
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn modal-btn-cancel" onclick="closeModal('signInModal')">Cancel</button>
+      <button class="modal-btn modal-btn-post" onclick="doSignIn()">Enter →</button>
+    </div>
+    <p style="font:400 .65rem/1.6 'DM Sans',sans-serif;color:var(--ink-dim);margin-top:16px;text-align:center">
+      Manage your CultureSchool account at
+      <a href="https://account.cultureschool.org/" target="_blank" rel="noopener"
+         style="color:var(--gold-dk);text-decoration:underline">account.cultureschool.org</a>
+    </p>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ══════════════════════════════════════════════════════
+   CONFIG
+══════════════════════════════════════════════════════ */
+window.SUPABASE_URL  = 'https://qwulthvbwujfehgdegtn.supabase.co';
+window.SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3dWx0aHZid3VqZmVoZ2RlZ3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQyMDcxODIsImV4cCI6MjA1OTc4MzE4Mn0.t9n4eZng6d0jggiPNK-J_DByvEE2L9tqy5Xh_1-TSoQ';
+
+let db;
+try {
+  db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+} catch(e) {
+  console.error('[init] Supabase failed to load:', e);
+}
+
+/* ══════════════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════════════ */
+const params        = new URLSearchParams(location.search);
+const viewEmail     = params.get('email');
+const isClaim       = params.get('claim') === 'true';
+const signedInEmail = (localStorage.getItem('userEmail') || '').toLowerCase();
+const isOwnProfile  = signedInEmail && (!viewEmail || viewEmail.toLowerCase() === signedInEmail);
+const targetEmail   = viewEmail || signedInEmail;
+
+let CREATOR    = null;
+let postOccasion = '';
+
+/* ══════════════════════════════════════════════════════
+   UTILS
+══════════════════════════════════════════════════════ */
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function hideLoader(){
+  const l = document.getElementById('loader');
+  if(!l) return;
+  l.classList.add('fade');
+  setTimeout(()=>{ if(l) l.style.display='none'; }, 450);
+}
+
+// Safety net — always show something after 6s even if Supabase hangs
+const _loaderTimeout = setTimeout(()=>{
+  const l = document.getElementById('loader');
+  if(l && l.style.display !== 'none' && !l.classList.contains('fade')){
+    hideLoader();
+    document.getElementById('heroMount').innerHTML = `
+      <div style="text-align:center;padding:80px 20px">
+        <p style="font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--ink-dim);font-size:1.05rem;line-height:1.7">
+          Taking too long to load.<br>
+          ${location.protocol === 'file:' ? 'Local file preview has limits — <strong style="color:var(--gold-dk)">deploy to Netlify to test fully</strong>.' : 'Check your connection and try again.'}
+        </p>
+        <button class="hero-btn hero-btn-ghost" style="margin-top:20px" onclick="location.reload()">Reload</button>
+      </div>`;
+  }
+}, 6000);
+
+// Global error fallback — script error never leaves loader spinning
+window.addEventListener('error', ()=> hideLoader());
+window.addEventListener('unhandledrejection', ()=> hideLoader());
+function showToast(msg,ok){ const t=document.getElementById('toast'); t.textContent=msg; t.className='toast show'+(ok?' ok':''); clearTimeout(t._t); t._t=setTimeout(()=>t.className='toast',2800); }
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id,e){ if(!e||!document.querySelector('#'+id+' .modal').contains(e.target)) document.getElementById(id).classList.remove('open'); }
+
+/* ══════════════════════════════════════════════════════
+   CLAIM BANNER — shown when arriving via invite link
+══════════════════════════════════════════════════════ */
+function renderClaimBanner(c){
+  if(!isClaim || isOwnProfile) return;
+  const name = c.display_name || 'your profile';
+  document.getElementById('claimBanner').innerHTML = `
+    <div class="claim-banner">
+      <div class="claim-banner-text">
+        <strong>Stacey</strong> built this for you — ${esc(name)}, this is how the world finds you.
+      </div>
+      <button class="claim-btn" onclick="claimProfile()">Make it yours →</button>
+    </div>`;
+}
+
+function claimProfile(){
+  // Pre-fill email from the URL and open sign-in
+  const el = document.getElementById('signInEmail');
+  if(el && viewEmail) el.value = viewEmail;
+  openModal('signInModal');
+}
+function renderTopbar(){
+  const r = document.getElementById('topbarRight');
+  if(isOwnProfile){
+    r.innerHTML = `
+      <button class="topbar-btn" onclick="toggleEditPanel()">Edit Profile</button>
+      <button class="topbar-btn" onclick="signOut()">Sign out</button>`;
+  } else if(!signedInEmail){
+    r.innerHTML = `<button class="topbar-btn topbar-btn-primary" onclick="goSignIn()">Sign in →</button>`;
+  } else {
+    r.innerHTML = `<a class="topbar-btn" href="?email=${encodeURIComponent(signedInEmail)}">My Profile</a>`;
+  }
+}
+function signOut(){ localStorage.removeItem('userEmail'); localStorage.removeItem('USER_EMAIL'); location.reload(); }
+function goSignIn(){ openModal('signInModal'); }
+function goShopifyAccount(){ window.open('https://account.cultureschool.org/','_blank'); }
+
+/* ══════════════════════════════════════════════════════
+   HERO
+══════════════════════════════════════════════════════ */
+function renderHero(c){
+  const name = c.display_name || c.username || (c.email||'').split('@')[0];
+  const cover = c.cover_image||c.preview_image
+    ? `<img class="hero-cover" src="${esc(c.cover_image||c.preview_image)}" alt=""><div class="hero-cover-fade"></div>`
+    : `<div class="hero-cover-empty">✦</div><div class="hero-cover-fade"></div>`;
+  const avatar = (c.avatar_url||c.profile_pic)
+    ? `<img class="hero-avatar" src="${esc(c.avatar_url||c.profile_pic)}" alt="${esc(name)}">`
+    : `<div class="hero-avatar-empty">${esc(name.charAt(0).toUpperCase())}</div>`;
+  const isOpen = !!c.available_for_hire;
+  const availHtml = `<div class="avail-badge ${isOpen?'avail-badge-open':'avail-badge-closed'}">
+    <span class="avail-dot"></span>
+    ${isOpen ? 'Open for projects' : 'Not taking projects'}
+  </div>`;
+  const chips = (c.available_for||[]).map(a=>`<span class="chip">${esc(a)}</span>`).join('');
+  const social = [
+    c.website   && `<a class="social-dot" href="${esc(c.website)}"   target="_blank" rel="noopener" title="Website">🌐</a>`,
+    c.instagram && `<a class="social-dot" href="${esc(c.instagram)}" target="_blank" rel="noopener" title="Instagram">📸</a>`,
+    c.link      && `<a class="social-dot" href="${esc(c.link)}"      target="_blank" rel="noopener" title="Link">✨</a>`,
+  ].filter(Boolean).join('');
+
+  const publicActions = !isOwnProfile ? `
+    ${isOpen?`<button class="hero-btn hero-btn-gold" onclick="openModal('inquiryModal')">✦ Inquire</button>`:''}
+    <button class="hero-btn hero-btn-ghost" onclick="copyProfileLink()">↗ Share</button>` : '';
+  const ownerActions = isOwnProfile ? `
+    <button class="hero-btn hero-btn-gold" onclick="openModal('shareModal')">✦ Share a moment</button>
+    <a class="hero-btn hero-btn-ghost" href="?email=${encodeURIComponent(c.email)}" target="_blank">Preview →</a>` : '';
+
+  document.getElementById('heroMount').innerHTML = `
+    <div class="hero anim">
+      ${cover}
+      <div class="hero-body">
+        <div class="hero-identity anim">
+          ${avatar}
+          <div class="hero-name-block">
+            <div class="hero-name">${esc(name)}</div>
+            ${c.location?`<div class="hero-location">📍 ${esc(c.location)}</div>`:''}
+          </div>
+        </div>
+        ${social?`<div class="hero-social anim anim-1">${social}</div>`:''}
+        <div class="anim anim-1">${availHtml}</div>
+        ${chips?`<div class="hero-chips anim anim-1">${chips}</div>`:''}
+        ${c.bio?`<div class="hero-bio anim anim-2">${esc(c.bio)}</div>`:''}
+        <div class="hero-actions anim anim-3">${publicActions}${ownerActions}</div>
+      </div>
+    </div>`;
+  document.title = name + ' · CoCo';
+}
+
+/*
+  SQL to run once in Supabase:
+  ALTER TABLE creators ADD COLUMN IF NOT EXISTS profile_views integer DEFAULT 0;
+  ALTER TABLE creator_inquiries ENABLE ROW LEVEL SECURITY;
+  CREATE POLICY "anon insert inquiries" ON creator_inquiries FOR INSERT WITH CHECK (true);
+  CREATE POLICY "creator read own inquiries" ON creator_inquiries FOR SELECT USING (true);
+  CREATE POLICY "creator update own inquiries" ON creator_inquiries FOR UPDATE USING (true);
+*/
+
+/* ══════════════════════════════════════════════════════
+   STATS (dashboard only)
+══════════════════════════════════════════════════════ */
+async function renderStats(email){
+  if(!isOwnProfile) return;
+
+  // Post count — always works
+  const postsRes = await db
+    .from('inspo_wall')
+    .select('row_id', {count:'exact', head:true})
+    .eq('email', email)
+    .eq('is_public', true);
+
+  const postCount = postsRes.count || 0;
+  const views     = CREATOR?.profile_views || 0;
+
+  // Notification count — fails gracefully if table doesn't exist yet
+  let notifCount = 0;
+  try {
+    const notifRes = await db
+      .from('creator_notifications')
+      .select('id', {count:'exact', head:true})
+      .eq('creator_email', email)
+      .eq('read', false);
+    notifCount = notifRes.count || 0;
+  } catch(_){}
+
+  document.getElementById('statsMount').innerHTML = `
+    <div class="stats-bar anim anim-2">
+      <div class="stat-card">
+        <div class="stat-num">${postCount}</div>
+        <div class="stat-label">Moments</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">${views}</div>
+        <div class="stat-label">Profile views</div>
+      </div>
+      <div class="stat-card stat-card-clickable ${notifCount>0?'stat-card-alert':''}" onclick="toggleNotifications()">
+        <div class="stat-num">${notifCount}</div>
+        <div class="stat-label">Notifications</div>
+        ${notifCount>0?'<div class="stat-dot"></div>':''}
+      </div>
+    </div>`;
+}
+
+/* ══════════════════════════════════════════════════════
+   SHARE PROMPT (dashboard)
+══════════════════════════════════════════════════════ */
+function renderSharePrompt(c){
+  if(!isOwnProfile) return;
+  const name = c.display_name || c.username || c.email.split('@')[0];
+  document.getElementById('shareMount').innerHTML = `
+    <div class="share-bar anim anim-2">
+      <button class="share-prompt" onclick="openModal('shareModal')">
+        <span class="share-prompt-text">What did you make lately, ${esc(name.split(' ')[0])}?</span>
+        <span class="share-prompt-icon">+</span>
+      </button>
+    </div>`;
+}
+
+/* ══════════════════════════════════════════════════════
+   AVAILABILITY PANEL (dashboard)
+══════════════════════════════════════════════════════ */
+function renderAvailPanel(c){
+  if(!isOwnProfile) return;
+  const isOpen = !!c.available_for_hire;
+  const chips  = (c.available_for||[]);
+  document.getElementById('availMount').innerHTML = `
+    <div class="avail-panel anim anim-3">
+      <div class="avail-row">
+        <div class="avail-left">
+          <div class="avail-title">Available for projects</div>
+          <div class="avail-sub">When on, your profile shows as open and you appear in creator search.</div>
+        </div>
+        <div class="toggle-wrap">
+          <span class="toggle-label">${isOpen?'Open':'Closed'}</span>
+          <button class="toggle ${isOpen?'on':''}" id="availToggle" onclick="toggleAvailability()" aria-pressed="${isOpen}"></button>
+        </div>
+        <div class="specialty-chips-edit" id="specialtyChipsEdit">
+          ${chips.map(a=>`
+            <span class="chip chip-removable">
+              ${esc(a)}
+              <span class="chip-x" onclick="removeSpecialty('${esc(a)}')" title="Remove">✕</span>
+            </span>`).join('')}
+          <button class="chip-add-btn" onclick="openModal('specialtyModal')">+ Add specialty</button>
+        </div>
+      </div>
+    </div>`;
+  // Wire specialty pills
+  document.querySelectorAll('#specialtyModal .occasion-pill').forEach(btn => {
+    const v = btn.dataset.val;
+    if(chips.includes(v)) btn.classList.add('sel');
+    btn.onclick = () => { toggleSpecialty(v); btn.classList.toggle('sel'); };
+  });
+}
+
+async function toggleAvailability(){
+  const btn    = document.getElementById('availToggle');
+  const isOpen = btn.classList.contains('on');
+  const newVal = !isOpen;
+  btn.classList.toggle('on', newVal);
+  btn.setAttribute('aria-pressed', newVal);
+  btn.previousElementSibling.textContent = newVal ? 'Open' : 'Closed';
+  CREATOR.available_for_hire = newVal;
+  await db.from('creators').update({ available_for_hire: newVal }).eq('email', CREATOR.email);
+  // Refresh hero badge
+  const badge = document.querySelector('.avail-badge');
+  if(badge){
+    badge.className = 'avail-badge ' + (newVal?'avail-badge-open':'avail-badge-closed');
+    badge.innerHTML = `<span class="avail-dot"></span> ${newVal?'Open for projects':'Not taking projects'}`;
+  }
+  showToast(newVal ? 'You\'re open for projects ✦' : 'Availability turned off', newVal);
+}
+
+async function toggleSpecialty(val){
+  const chips = CREATOR.available_for || [];
+  const idx   = chips.indexOf(val);
+  if(idx > -1) chips.splice(idx,1); else chips.push(val);
+  CREATOR.available_for = chips;
+  await db.from('creators').update({ available_for: chips }).eq('email', CREATOR.email);
+  renderChipsEdit();
+}
+async function removeSpecialty(val){ await toggleSpecialty(val); }
+function renderChipsEdit(){
+  const el = document.getElementById('specialtyChipsEdit');
+  if(!el) return;
+  const chips = CREATOR.available_for || [];
+  el.innerHTML = chips.map(a=>`
+    <span class="chip chip-removable">
+      ${esc(a)}
+      <span class="chip-x" onclick="removeSpecialty('${esc(a)}')" title="Remove">✕</span>
+    </span>`).join('') +
+    `<button class="chip-add-btn" onclick="openModal('specialtyModal')">+ Add specialty</button>`;
+  // Also update hero chips
+  const heroChips = document.querySelector('.hero-chips');
+  if(heroChips) heroChips.innerHTML = chips.map(a=>`<span class="chip">${esc(a)}</span>`).join('');
+}
+
+/* ══════════════════════════════════════════════════════
+   POSTS GRID — reads inspo_wall so Daily Inspo posts
+   and creator hub posts both show up
+══════════════════════════════════════════════════════ */
+function isVideo(url){
+  return url && /\.(mp4|mov|webm|ogg)(\?|$)/i.test(url);
+}
+
+async function renderPosts(email){
+  const { data: posts } = await db
+    .from('inspo_wall')
+    .select('row_id, title, image, caption, type, tags, featured_at, source_url')
+    .eq('email', email)
+    .eq('is_public', true)
+    .order('featured_at', { ascending: false })
+    .limit(30);
+
+  const divHtml = `
+    <div class="divider anim">
+      <div class="divider-line"></div>
+      <span class="divider-gem">◈</span>
+      <div class="divider-text">Moments</div>
+      <span class="divider-gem">◈</span>
+      <div class="divider-line"></div>
+    </div>`;
+
+  if(!posts || !posts.length){
+    document.getElementById('postsMount').innerHTML = divHtml + `
+      <div class="posts-wrap anim anim-1">
+        ${isOwnProfile
+          ? `<div class="posts-grid">
+              <div class="post-card post-card-empty" onclick="openModal('shareModal')">
+                <div class="post-placeholder">
+                  <span>✦</span>
+                  <span class="post-placeholder-label">Share your first moment</span>
+                </div>
+              </div>
+            </div>`
+          : `<div class="empty-state">No moments shared yet.</div>`}
+      </div>`;
+    return;
+  }
+
+  const cards = posts.map(p => {
+    const imgUrl = p.image || p.source_url || '';
+    let media;
+    if(!imgUrl){
+      media = `<div class="post-placeholder"><span>✦</span></div>`;
+    } else if(isVideo(imgUrl)){
+      media = `<video src="${esc(imgUrl)}" autoplay muted loop playsinline></video>
+               <div class="post-video-badge">▶ Video</div>`;
+    } else {
+      media = `<img src="${esc(imgUrl)}" alt="${esc(p.type||'')}" loading="lazy">`;
+    }
+    const deleteBtn = isOwnProfile
+      ? `<button class="post-delete" onclick="deletePost('${esc(p.row_id)}',event)" title="Delete post">✕</button>`
+      : '';
+    return `
+      <div class="post-card">
+        ${media}
+        ${deleteBtn}
+        <div class="post-overlay">
+          ${p.type    ? `<div class="post-occasion">${esc(p.type)}</div>` : ''}
+          ${p.caption ? `<div class="post-caption">${esc(p.caption)}</div>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+
+  document.getElementById('postsMount').innerHTML = divHtml + `
+    <div class="posts-wrap anim anim-1">
+      <div class="posts-grid">${cards}</div>
+    </div>`;
+}
+
+async function deletePost(rowId, e){
+  e.stopPropagation();
+  if(!confirm('Remove this post from your profile?')) return;
+
+  const { error } = await db
+    .from('inspo_wall')
+    .delete()
+    .eq('row_id', rowId)
+    .eq('email', signedInEmail);
+
+  if(error){ showToast('Could not delete — try again'); console.error(error); return; }
+
+  showToast('Post removed', false);
+  await renderPosts(signedInEmail);
+  await renderStats(signedInEmail);
+}
+
+/* ══════════════════════════════════════════════════════
+   BOARDS / COLLECTIONS
+   SQL needed once: ALTER TABLE cocoboards
+     ADD COLUMN IF NOT EXISTS show_on_profile boolean DEFAULT true;
+══════════════════════════════════════════════════════ */
+async function renderTemplates(email){
+  let query = db
+    .from('viewers')
+    .select('key, title, name, thumb_url, template_type, occasion_tag, viewer_url')
+    .eq('author_email', email)
+    .eq('is_listed', true)
+    .order('updated_at', { ascending: false })
+    .limit(24);
+
+  const { data: templates } = await query;
+  if (!templates || !templates.length) return;
+
+  const divHtml = `
+    <div class="divider anim">
+      <div class="divider-line"></div>
+      <span class="divider-gem">◈</span>
+      <div class="divider-text">Templates</div>
+      <span class="divider-gem">◈</span>
+      <div class="divider-line"></div>
+    </div>`;
+
+  function buildTemplateCard(t) {
+    const url = t.viewer_url
+      ? t.viewer_url
+      : `https://flourish-ultimate.cultureschool.org/?viewer=${encodeURIComponent(t.key)}`;
+    const thumb = t.thumb_url
+      ? `<img class="template-thumb" src="${esc(t.thumb_url)}" alt="${esc(t.title||t.name||'')}" loading="lazy">`
+      : `<div class="template-thumb-empty">◈</div>`;
+    return `
+      <a class="template-card" href="${esc(url)}" target="_blank" rel="noopener"
+         aria-label="${esc(t.title||t.name||'Template')}">
+        ${thumb}
+        <div class="template-card-body">
+          <div class="template-card-name">${esc(t.title||t.name||'Untitled')}</div>
+          <div class="template-card-meta">${esc(t.template_type||'')}${t.occasion_tag?' · '+esc(t.occasion_tag):''}</div>
+        </div>
+      </a>`;
+  }
+
+  document.getElementById('templatesMount').innerHTML = divHtml + `
+    <div class="templates-wrap anim anim-1">
+      <div class="templates-grid">${templates.map(buildTemplateCard).join('')}</div>
+    </div>`;
+}
+
+async function renderBoards(email){
+  let query = db
+    .from('cocoboards')
+    .select('id, title, subtitle, hero_image_url, banner_url, event_date, show_on_profile')
+    .eq('creator_email', email)
+    .is('deleted_at', null)
+    .order('created_at', { ascending: false })
+    .limit(30);
+
+  // Public view: only show boards marked visible
+  if(!isOwnProfile) query = query.eq('show_on_profile', true);
+
+  const { data: boards } = await query;
+  if(!boards || !boards.length) return;
+
+  const divHtml = `
+    <div class="divider anim">
+      <div class="divider-line"></div>
+      <span class="divider-gem">◈</span>
+      <div class="divider-text">Collections</div>
+      <span class="divider-gem">◈</span>
+      <div class="divider-line"></div>
+    </div>`;
+
+  function buildCard(b){
+    const shown   = b.show_on_profile !== false; // default true if null
+    const img     = b.hero_image_url || b.banner_url || '';
+    const url     = `https://showcase-viewer.cultureschool.org/?board_id=${encodeURIComponent(b.id)}`;
+    const imgHtml = img
+      ? `<img class="board-card-img" src="${esc(img)}" alt="${esc(b.title||'')}" loading="lazy">`
+      : `<div class="board-card-empty">✦</div>`;
+
+    const footer = isOwnProfile ? `
+      <div class="board-card-footer">
+        <button
+          class="board-vis-btn ${shown?'shown':'hidden'}"
+          data-board-id="${esc(b.id)}"
+          data-shown="${shown}"
+          onclick="event.preventDefault();toggleBoardVisibility(this)"
+          title="${shown?'Visible on your profile — click to hide':'Hidden from your profile — click to show'}">
+          ${shown ? '● Shown' : '○ Hidden'}
+        </button>
+        <a href="${esc(url)}" target="_blank" rel="noopener"
+           style="font:.7rem/1 'DM Sans',sans-serif;color:var(--gold-dk);text-decoration:none;"
+           onclick="event.stopPropagation()">Open →</a>
+      </div>` : '';
+
+    return `
+      <div class="board-card ${shown?'':'is-hidden'}" data-board-id="${esc(b.id)}">
+        <a href="${esc(url)}" target="_blank" rel="noopener" style="display:block;text-decoration:none;color:inherit">
+          ${imgHtml}
+        </a>
+        <div class="board-card-body">
+          <div class="board-card-title">${esc(b.title||'Untitled Collection')}</div>
+          ${b.subtitle   ? `<div class="board-card-sub">${esc(b.subtitle)}</div>` : ''}
+          ${b.event_date ? `<div class="board-card-sub" style="margin-top:4px;color:var(--gold-dk)">📅 ${esc(b.event_date)}</div>` : ''}
+          ${footer}
+        </div>
+      </div>`;
+  }
+
+  document.getElementById('boardsMount').innerHTML = divHtml + `
+    <div class="boards-wrap anim anim-1">
+      <div class="boards-grid">${boards.map(buildCard).join('')}</div>
+    </div>`;
+}
+
+async function toggleBoardVisibility(btn){
+  const boardId  = btn.dataset.boardId;
+  const wasShown = btn.dataset.shown === 'true';
+  const nowShown = !wasShown;
+
+  // Optimistic UI
+  btn.dataset.shown   = nowShown;
+  btn.className       = `board-vis-btn ${nowShown?'shown':'hidden'}`;
+  btn.textContent     = nowShown ? '● Shown' : '○ Hidden';
+  btn.title           = nowShown ? 'Visible on your profile — click to hide' : 'Hidden from your profile — click to show';
+  const card = document.querySelector(`.board-card[data-board-id="${boardId}"]`);
+  if(card) card.classList.toggle('is-hidden', !nowShown);
+
+  const { error } = await db
+    .from('cocoboards')
+    .update({ show_on_profile: nowShown })
+    .eq('id', boardId);
+
+  if(error){
+    // Revert on failure
+    btn.dataset.shown  = wasShown;
+    btn.className      = `board-vis-btn ${wasShown?'shown':'hidden'}`;
+    btn.textContent    = wasShown ? '● Shown' : '○ Hidden';
+    if(card) card.classList.toggle('is-hidden', !wasShown);
+    showToast('Couldn\'t update — try again');
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   FILE UPLOAD
+══════════════════════════════════════════════════════ */
+let selectedFile = null;
+
+function handleFileSelect(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  selectedFile = file;
+  const preview = document.getElementById('uploadPreview');
+  const inner   = document.getElementById('uploadZoneInner');
+  const zone    = document.getElementById('uploadZone');
+  preview.src = URL.createObjectURL(file);
+  preview.style.display = 'block';
+  inner.style.display   = 'none';
+  zone.classList.add('has-file');
+}
+
+function toggleUrlInput(){
+  const input  = document.getElementById('postImageUrl');
+  const toggle = document.getElementById('urlToggle');
+  const showing = input.style.display !== 'none';
+  input.style.display  = showing ? 'none' : 'block';
+  toggle.textContent   = showing ? 'Or paste a URL instead' : 'Hide URL input';
+}
+
+async function uploadToStorage(file){
+  const ext  = file.name.split('.').pop() || 'jpg';
+  const path = `creator-posts/${signedInEmail}/${Date.now()}.${ext}`;
+  const { data, error } = await db.storage
+    .from('public-uploads')
+    .upload(path, file, { cacheControl: '3600', upsert: false });
+  if(error) throw error;
+  const { data: urlData } = db.storage.from('public-uploads').getPublicUrl(data.path);
+  return urlData.publicUrl;
+}
+
+/* ══════════════════════════════════════════════════════
+   SUBMIT POST
+══════════════════════════════════════════════════════ */
+document.querySelectorAll('#occasionPills .occasion-pill').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('#occasionPills .occasion-pill').forEach(b=>b.classList.remove('sel'));
+    btn.classList.add('sel');
+    postOccasion = btn.dataset.val;
+  };
+});
+
+async function submitPost(){
+  const caption     = document.getElementById('postCaption').value.trim();
+  const paletteCode = document.getElementById('postPaletteCode').value.trim();
+  const urlInput    = document.getElementById('postImageUrl').value.trim();
+  const postBtn     = document.querySelector('.modal-btn-post');
+
+  if(!caption && !selectedFile && !urlInput){
+    showToast('Add a photo or caption first'); return;
+  }
+
+  postBtn.textContent = 'Posting…';
+  postBtn.disabled    = true;
+
+  let imageUrl = null;
+  try {
+    if(selectedFile){
+      imageUrl = await uploadToStorage(selectedFile);
+    } else if(urlInput){
+      imageUrl = urlInput;
+    }
+  } catch(err){
+    console.error(err);
+    showToast('Upload failed — try again');
+    postBtn.textContent = 'Post →'; postBtn.disabled = false; return;
+  }
+
+  const { error } = await db.from('creator_posts').insert([{
+    creator_email: signedInEmail,
+    image_url:     imageUrl || null,
+    caption:       caption  || null,
+    occasion:      postOccasion || null,
+    palette_code:  paletteCode || null,
+  }]);
+
+  postBtn.textContent = 'Post →'; postBtn.disabled = false;
+
+  if(error){ showToast('Couldn\'t post — try again'); console.error(error); return; }
+
+  // ── Also post to Daily Inspo feed (inspo_wall) ──────────────────
+  const creatorName = CREATOR?.display_name || CREATOR?.username ||
+                      signedInEmail.split('@')[0];
+  const specialties = (CREATOR?.available_for || []).join(', ');
+  const tagStr = [
+    postOccasion,
+    paletteCode,
+    'made with coco',
+    specialties,
+  ].filter(Boolean).join(',').toLowerCase();
+
+  await db.from('inspo_wall').insert([{
+    title:       postOccasion || 'A moment',
+    caption:     caption || null,
+    image:       imageUrl || null,
+    email:       signedInEmail,
+    source_url:  `${location.origin}${location.pathname}?email=${encodeURIComponent(signedInEmail)}`,
+    is_public:   true,
+    publicwall:  true,
+    type:        postOccasion || 'Community',
+    tags:        tagStr || 'community,made with coco',
+    featured_at: new Date().toISOString(),
+  }]);
+
+  // Reset modal
+  closeModal('shareModal');
+  selectedFile = null;
+  document.getElementById('postCaption').value    = '';
+  document.getElementById('postPaletteCode').value = '';
+  document.getElementById('postImageUrl').value    = '';
+  document.getElementById('postImageUrl').style.display = 'none';
+  document.getElementById('urlToggle').textContent = 'Or paste a URL instead';
+  document.getElementById('uploadPreview').style.display = 'none';
+  document.getElementById('uploadZoneInner').style.display = 'flex';
+  document.getElementById('uploadZone').classList.remove('has-file');
+  document.getElementById('postFileInput').value = '';
+  document.querySelectorAll('#occasionPills .occasion-pill').forEach(b=>b.classList.remove('sel'));
+  postOccasion = '';
+
+  showToast('Moment shared ✦', true);
+  await renderPosts(signedInEmail);
+  await renderStats(signedInEmail);
+}
+
+/* ══════════════════════════════════════════════════════
+   SUBMIT INQUIRY
+══════════════════════════════════════════════════════ */
+async function submitInquiry(){
+  const name    = document.getElementById('inqName').value.trim();
+  const email   = document.getElementById('inqEmail').value.trim();
+  const message = document.getElementById('inqMessage').value.trim();
+  if(!email || !message){ showToast('Email and message required'); return; }
+
+  const { error } = await db.from('creator_inquiries').insert([{
+    creator_email: CREATOR.email,
+    sender_name:   name || null,
+    sender_email:  email,
+    message:       message
+  }]);
+
+  if(error){ showToast('Couldn\'t send — try again'); console.error(error); return; }
+  closeModal('inquiryModal');
+  showToast('Message sent ✦', true);
+  document.getElementById('inqName').value = document.getElementById('inqEmail').value = document.getElementById('inqMessage').value = '';
+}
+
+/* ══════════════════════════════════════════════════════
+   PROFILE EDIT
+══════════════════════════════════════════════════════ */
+function toggleEditPanel(){
+  const panel = document.getElementById('editPanel');
+  if(panel.classList.contains('open')){ panel.classList.remove('open'); return; }
+
+  const c = CREATOR;
+  const avatarSrc = c.avatar_url || c.profile_pic || '';
+  const coverSrc  = c.cover_image || c.preview_image || '';
+  const avatarEl  = avatarSrc
+    ? `<img src="${esc(avatarSrc)}" alt="Avatar">`
+    : `<div class="avatar-empty">${esc((c.display_name||'?').charAt(0))}</div>`;
+  const coverEl   = coverSrc
+    ? `<img src="${esc(coverSrc)}" alt="Cover">`
+    : `<div class="cover-empty">Tap to add a cover photo</div>`;
+
+  panel.innerHTML = `
+    <div class="edit-card anim">
+      <div class="edit-title">Edit profile</div>
+
+      <!-- Photo uploads -->
+      <div class="photo-edit-row">
+        <div class="avatar-upload" id="avatarUpload" onclick="document.getElementById('avatarFileInput').click()" title="Change profile photo">
+          ${avatarEl}
+          <div class="photo-overlay">📷 Change</div>
+        </div>
+        <div class="cover-upload" id="coverUpload" onclick="document.getElementById('coverFileInput').click()" title="Change cover photo">
+          ${coverEl}
+          <div class="photo-overlay">📷 Change cover</div>
+        </div>
+      </div>
+      <input type="file" id="avatarFileInput" accept="image/*" style="display:none" onchange="uploadProfilePhoto(event,'avatar')">
+      <input type="file" id="coverFileInput"  accept="image/*" style="display:none" onchange="uploadProfilePhoto(event,'cover')">
+
+      <!-- Text fields -->
+      <div class="edit-row">
+        <div class="edit-field">
+          <label>Display name</label>
+          <input class="edit-input" id="eName" value="${esc(c.display_name||'')}">
+        </div>
+        <div class="edit-field">
+          <label>Location</label>
+          <input class="edit-input" id="eLocation" value="${esc(c.location||'')}">
+        </div>
+      </div>
+      <div class="edit-field">
+        <label>Bio</label>
+        <textarea class="edit-textarea" id="eBio">${esc(c.bio||'')}</textarea>
+      </div>
+      <div class="edit-row">
+        <div class="edit-field">
+          <label>Website</label>
+          <input class="edit-input" id="eWebsite" value="${esc(c.website||'')}">
+        </div>
+        <div class="edit-field">
+          <label>Instagram or other link</label>
+          <input class="edit-input" id="eLink" value="${esc(c.link||'')}">
+        </div>
+      </div>
+      <div class="edit-actions">
+        <button class="edit-btn edit-btn-save" onclick="saveProfile()">Save changes</button>
+        <button class="edit-btn edit-btn-cancel" onclick="toggleEditPanel()">Cancel</button>
+      </div>
+    </div>`;
+  panel.classList.add('open');
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+async function uploadProfilePhoto(e, type){
+  const file = e.target.files[0];
+  if(!file) return;
+
+  const zone    = document.getElementById(type === 'avatar' ? 'avatarUpload' : 'coverUpload');
+  const overlay = zone.querySelector('.photo-overlay');
+  zone.classList.add('uploading');
+  overlay.textContent = 'Uploading…';
+
+  try {
+    const ext    = file.name.split('.').pop() || 'jpg';
+    const folder = type === 'avatar' ? 'creator-avatars' : 'creator-covers';
+    const path   = `${folder}/${signedInEmail}/${Date.now()}.${ext}`;
+
+    const { data, error: upErr } = await db.storage
+      .from('public-uploads')
+      .upload(path, file, { cacheControl: '3600', upsert: true });
+    if(upErr) throw upErr;
+
+    const { data: urlData } = db.storage.from('public-uploads').getPublicUrl(data.path);
+    const url = urlData.publicUrl;
+
+    // Update DB immediately
+    const col     = type === 'avatar' ? 'avatar_url' : 'cover_image';
+    const { error: dbErr } = await db.from('creators').update({ [col]: url }).eq('email', signedInEmail);
+    if(dbErr) throw dbErr;
+
+    // Update local state and preview
+    CREATOR[col] = url;
+    if(type === 'avatar'){
+      zone.querySelector('img,div.avatar-empty').outerHTML = `<img src="${url}" alt="Avatar" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:2px solid var(--line)">`;
+    } else {
+      zone.querySelector('img,div.cover-empty').outerHTML = `<img src="${url}" alt="Cover" style="width:100%;height:100%;object-fit:cover;display:block">`;
+    }
+
+    // Refresh hero
+    renderHero(CREATOR);
+    showToast(type === 'avatar' ? 'Profile photo updated ✦' : 'Cover updated ✦', true);
+
+  } catch(err){
+    console.error('[photo upload]', err);
+    showToast('Upload failed — try again');
+  } finally {
+    zone.classList.remove('uploading');
+    overlay.textContent = type === 'avatar' ? '📷 Change' : '📷 Change cover';
+  }
+}
+
+async function saveProfile(){
+  const updates = {
+    display_name: document.getElementById('eName').value.trim()    || null,
+    location:     document.getElementById('eLocation').value.trim()|| null,
+    bio:          document.getElementById('eBio').value.trim()     || null,
+    website:      document.getElementById('eWebsite').value.trim() || null,
+    link:         document.getElementById('eLink').value.trim()    || null,
+  };
+  const { error } = await db.from('creators').update(updates).eq('email', CREATOR.email);
+  if(error){ showToast('Save failed — try again'); console.error(error); return; }
+  Object.assign(CREATOR, updates);
+  renderHero(CREATOR);
+  toggleEditPanel();
+  showToast('Profile updated ✦', true);
+}
+
+/* ══════════════════════════════════════════════════════
+   SIGN IN
+══════════════════════════════════════════════════════ */
+async function doSignIn(){
+  const email = (document.getElementById('signInEmail').value || '').trim().toLowerCase();
+  const btn   = document.querySelector('#signInModal .modal-btn-post');
+
+  if(!email || !email.includes('@') || !email.includes('.')){
+    showToast('Enter a valid email address'); return;
+  }
+
+  btn.textContent = 'Signing in…';
+  btn.disabled    = true;
+
+  try {
+    localStorage.setItem('userEmail',   email);
+    localStorage.setItem('USER_EMAIL',  email);
+    closeModal('signInModal');
+    // location.origin is "null" on file:// — use href split instead
+    const base = location.href.split('?')[0];
+    location.href = base + '?email=' + encodeURIComponent(email);
+  } catch(err){
+    console.error('[signIn]', err);
+    showToast('Something went wrong — try again');
+    btn.textContent = 'Enter →';
+    btn.disabled    = false;
+  }
+}
+function copyProfileLink(){
+  const base = location.href.split('?')[0];
+  const url  = base + '?email=' + encodeURIComponent(CREATOR.email);
+  if(navigator.share){ navigator.share({ title: (CREATOR.display_name||'CoCo Creator') + ' on CoCo', url }); }
+  else { navigator.clipboard.writeText(url).then(()=>showToast('Link copied ✦', true)); }
+}
+
+/* ══════════════════════════════════════════════════════
+   PROFILE VIEW TRACKING
+══════════════════════════════════════════════════════ */
+async function recordProfileView(email){
+  if(isOwnProfile) return;
+  // Debounce: only record once per session per profile
+  const key = 'pv_' + email;
+  if(sessionStorage.getItem(key)) return;
+  sessionStorage.setItem(key, '1');
+  await db.rpc('increment_profile_views', { creator_email: email })
+    .catch(() => {
+      // Fallback if RPC doesn't exist yet: direct increment
+      db.from('creators')
+        .update({ profile_views: (CREATOR?.profile_views||0) + 1 })
+        .eq('email', email);
+    });
+}
+
+/* ══════════════════════════════════════════════════════
+   NOTIFICATIONS — saves, inquiries, claps unified
+══════════════════════════════════════════════════════ */
+let notifOpen = false;
+
+async function toggleNotifications(){
+  const mount = document.getElementById('inquiriesMount');
+  if(notifOpen){ mount.innerHTML = ''; notifOpen = false; return; }
+  notifOpen = true;
+  mount.innerHTML = `<div class="inbox-wrap"><div class="inbox-card"><div class="inbox-header"><span class="inbox-title">Notifications</span><span class="inbox-close" onclick="toggleNotifications()">✕ Close</span></div><div class="inbox-empty">Loading…</div></div></div>`;
+
+  const [notifRes, inqRes, myListingsRes] = await Promise.all([
+    db.from('creator_notifications').select('*').eq('creator_email',signedInEmail).order('created_at',{ascending:false}).limit(20),
+    db.from('creator_inquiries').select('*').eq('creator_email',signedInEmail).order('created_at',{ascending:false}).limit(10),
+    db.from('listings').select('id,title,listing_type,listing_responses(id,responder_email,created_at)').eq('poster_email',signedInEmail).eq('status','open'),
+  ]);
+
+  // Mark notifications read
+  db.from('creator_notifications').update({read:true}).eq('creator_email',signedInEmail).eq('read',false);
+
+  const notifs    = notifRes.data || [];
+  const inquiries = inqRes.data   || [];
+
+  // Flatten listing responses from all of this creator's listings
+  const listingResps = (myListingsRes.data || []).flatMap(listing =>
+    (listing.listing_responses || []).map(r => ({ ...r, listing }))
+  ).sort((a,b) => new Date(b.created_at) - new Date(a.created_at)).slice(0,10);
+
+  if(!notifs.length && !inquiries.length && !listingResps.length){
+    mount.innerHTML = `<div class="inbox-wrap"><div class="inbox-card"><div class="inbox-header"><span class="inbox-title">Notifications</span><span class="inbox-close" onclick="toggleNotifications()">✕ Close</span></div><div class="inbox-empty">Nothing yet — when someone saves or inquires, it shows up here.</div></div></div>`;
+    return;
+  }
+
+  function typeIcon(t){ return t==='save'?'⊕ Collected': t==='clap'?'♡ Liked': t==='inquiry'?'✉ Inquired': t==='listing_response'?'✦ Interested':'✦'; }
+  function timeAgo(ts){
+    const d = Date.now() - new Date(ts).getTime();
+    const m = Math.floor(d/60000), h = Math.floor(m/60), dy = Math.floor(h/24);
+    if(dy>0) return dy+'d ago'; if(h>0) return h+'h ago'; if(m>0) return m+'m ago'; return 'just now';
+  }
+
+  const notifItems = notifs.map(n => `
+    <div class="inq-item ${n.read?'':'unread'}">
+      <div class="inq-item-top">
+        <div class="inq-sender">${typeIcon(n.type)}</div>
+        <div class="inq-time">${timeAgo(n.created_at)}</div>
+      </div>
+      ${n.actor_location ? `<div class="inq-email">📍 ${esc(n.actor_location)}</div>` : ''}
+      <div class="inq-message">${
+        n.type==='save'
+          ? `Someone collected your post${n.post_title?' <em>"${esc(n.post_title)}"</em>':''}${n.actor_location?' from '+esc(n.actor_location):''}.`
+          : n.type==='clap'
+          ? `Someone liked your post${n.post_title?' <em>"${esc(n.post_title)}"</em>':''}.`
+          : n.type==='listing_response'
+          ? `Someone is interested in your listing${n.post_title?' <em>"${esc(n.post_title)}"</em>':''}.`
+          : esc(n.message||'New notification')
+      }</div>
+      ${n.post_image ? `<img src="${esc(n.post_image)}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;margin-top:8px;border:1px solid var(--line)">` : ''}
+    </div>`).join('');
+
+  const inqItems = inquiries.map(inq => `
+    <div class="inq-item ${inq.read?'':'unread'}">
+      <div class="inq-item-top">
+        <div class="inq-sender">✉ ${esc(inq.sender_name||'Someone')} wants to work with you</div>
+        <div class="inq-time">${timeAgo(inq.created_at)}</div>
+      </div>
+      <div class="inq-email">${esc(inq.sender_email||'')}</div>
+      <div class="inq-message">${esc(inq.message||'')}</div>
+      <a class="inq-reply-btn" href="mailto:${esc(inq.sender_email||'')}?subject=Re: Your inquiry via CoCo">Reply →</a>
+    </div>`).join('');
+
+  const listingRespItems = listingResps.map(r => {
+    const responderName = r.responder_email.split('@')[0]
+      .replace(/[._-]+/g,' ').replace(/\w/g, x => x.toUpperCase());
+    const profileUrl = 'https://coco-public-profile.cultureschool.org/?email='
+      + encodeURIComponent(r.responder_email);
+    const typeLabel = r.listing.listing_type === 'available' ? '◉ Available' : '✦ Looking For';
+    return `
+    <div class="inq-item unread">
+      <div class="inq-item-top">
+        <div class="inq-sender">✦ Interested in your listing</div>
+        <div class="inq-time">${timeAgo(r.created_at)}</div>
+      </div>
+      <div class="inq-message">
+        <em>${esc(r.listing.title)}</em>
+        <span style="display:block;margin-top:3px;font-size:.75em;opacity:.6;">${typeLabel}</span>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+        <a class="inq-reply-btn" href="${esc(profileUrl)}" target="_blank" rel="noopener">View their profile →</a>
+        <a class="inq-reply-btn" href="mailto:${esc(r.responder_email)}?subject=Re: Your interest in my CoCo listing&body=Hi, I saw you expressed interest in my listing — ${esc(r.listing.title)}." style="background:transparent;border:1px solid var(--line);">Email them →</a>
+      </div>
+    </div>`;
+  }).join('');
+
+  const totalCount = notifs.length + inquiries.length + listingResps.length;
+
+  mount.innerHTML = `
+    <div class="inbox-wrap">
+      <div class="inbox-card">
+        <div class="inbox-header">
+          <span class="inbox-title">Notifications · ${totalCount}</span>
+          <span class="inbox-close" onclick="toggleNotifications()">✕ Close</span>
+        </div>
+        ${listingResps.length ? `
+          <div class="inbox-section-label">Listing Responses</div>
+          ${listingRespItems}
+        ` : ''}
+        ${notifs.length || inquiries.length ? `
+          <div class="inbox-section-label" style="margin-top:${listingResps.length?'14px':'0'}">Activity</div>
+          ${notifItems}${inqItems}
+        ` : ''}
+      </div>
+    </div>`;
+
+  await renderStats(signedInEmail);
+}
+
+/* ══════════════════════════════════════════════════════
+   BOOT
+══════════════════════════════════════════════════════ */
+async function boot(){
+  renderTopbar();
+
+  if(!db){
+    hideLoader();
+    document.getElementById('heroMount').innerHTML = `
+      <div style="text-align:center;padding:80px 20px">
+        <p style="font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--ink-dim);font-size:1.05rem;line-height:1.7">
+          Could not connect to the database.<br>
+          <span style="font-size:.8rem">${location.protocol === 'file:' ? 'Open via a local server or deploy to Netlify to test.' : 'Check your connection.'}</span>
+        </p>
+      </div>`;
+    return;
+  }
+
+  if(!targetEmail){
+    hideLoader();
+    document.getElementById('heroMount').innerHTML = `
+      <div style="text-align:center;padding:80px 20px">
+        <div style="font-family:'Pinyon Script',cursive;font-size:3rem;color:var(--gold);opacity:.4;margin-bottom:20px">CoCo</div>
+        <p style="font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--ink-dim);font-size:1.1rem;margin-bottom:20px">Sign in to see your creator hub.</p>
+        <button class="hero-btn hero-btn-gold" onclick="goSignIn()">Sign in →</button>
+      </div>`;
+    return;
+  }
+
+  try {
+    // Load creator profile
+    const { data: rows, error: fetchErr } = await db
+      .from('creators').select('*').eq('email', targetEmail).limit(1);
+
+    if(fetchErr) throw fetchErr;
+    CREATOR = rows?.[0] || null;
+
+    // Auto-create profile for new creators signing in for the first time
+    if(!CREATOR && isOwnProfile){
+      const { data: newRow, error: insertErr } = await db
+        .from('creators')
+        .insert([{
+          email:             signedInEmail,
+          display_name:      null,
+          bio:               null,
+          available_for_hire: false,
+          available_for:     [],
+          profile_views:     0,
+        }])
+        .select()
+        .single();
+
+      if(insertErr){
+        // RLS or constraint issue — surface a clear message
+        console.error('[boot] creator create failed:', insertErr);
+        hideLoader();
+        document.getElementById('heroMount').innerHTML = `
+          <div style="text-align:center;padding:80px 20px;max-width:480px;margin:0 auto">
+            <p style="font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--ink-dim);font-size:1.1rem;line-height:1.7">
+              We couldn't set up your profile — the database may need a policy update.
+            </p>
+            <p style="font:.6rem/1 'DM Sans',sans-serif;letter-spacing:.1em;color:var(--ink-dim);margin-top:16px;opacity:.6">
+              Ask Stacey to add an anon INSERT policy on the creators table.
+            </p>
+            <button class="hero-btn hero-btn-ghost" style="margin-top:20px" onclick="signOut()">Sign out</button>
+          </div>`;
+        return;
+      }
+      CREATOR = newRow;
+    }
+
+    if(!CREATOR){
+      hideLoader();
+      document.getElementById('heroMount').innerHTML = `
+        <div style="text-align:center;padding:80px 20px">
+          <p style="font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--ink-dim);font-size:1.1rem">Creator profile not found.</p>
+        </div>`;
+      return;
+    }
+
+    renderHero(CREATOR);
+    renderClaimBanner(CREATOR);
+    renderSharePrompt(CREATOR);
+    renderAvailPanel(CREATOR);
+    recordProfileView(CREATOR.email);
+
+    await Promise.all([
+      renderStats(CREATOR.email),
+      renderPosts(CREATOR.email),
+      renderTemplates(CREATOR.email),
+      renderBoards(CREATOR.email),
+    ]);
+
+  } catch(err){
+    console.error('[boot]', err);
+    hideLoader();
+    document.getElementById('heroMount').innerHTML = `
+      <div style="text-align:center;padding:80px 20px">
+        <p style="font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--ink-dim);font-size:1.1rem">
+          Something went wrong loading this profile.
+        </p>
+        <button class="hero-btn hero-btn-ghost" style="margin-top:20px" onclick="location.reload()">Try again</button>
+      </div>`;
+    return;
+  }
+
+  clearTimeout(_loaderTimeout);
+  hideLoader();
+}
+
+boot();
+</script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+# Claude Code brief — Color naming + palette matching (Color Finder)
+
+## Goal
+When a user uploads/snaps a photo in the Color Finder (on the Daily Inspo page,
+coco-daily-inspo.cultureschool.org), take the extracted hex and show:
+(a) the closest human color NAME from the xkcd dataset, and
+(b) the closest 3 palettes from our own `palettes` library.
+All client-side. No third-party color APIs. No Pantone or paint-brand data.
+
+## Before coding — audit
+The Color Finder already extracts a hex from an uploaded image. Find that
+extraction point and build on it. Do NOT rebuild extraction.
+
+## Data
+- xkcd colors: build `xkcd-colors-lab.json` from the source rgb.txt at
+ https://xkcd.com/color/rgb.txt. Parse name + hex, precompute
+  CIELAB for each, write the JSON, ship as a static asset loaded once.
+  DO NOT hand-enter color values — build from the real file.
+- Our palettes: query the existing `palettes` table. Match against
+  [ DECIDE: `dominant_color` (simplest, column exists) OR per-swatch across all colors ].
+
+## Matching
+- hex → CIELAB conversion.
+- Distance = Delta-E. Use CIE76 to start; leave a clear seam to swap in
+  CIEDE2000 later.
+- Precompute Lab for BOTH reference sets at load, not per-comparison.
+- Two lookups on the same extracted hex: nearest 1 xkcd name, nearest 3 palettes.
+
+## UI
+In the Color Finder result, show the extracted swatch, its nearest xkcd name,
+and the 3 nearest palettes (link each palette the way the app already does).
+
+## Constraints
+- Client-side only.
+- Never load proprietary color libraries (Pantone, paint brands) into the DB.
+- Match must run in Lab space, never raw RGB.
+- No unverified cultural-origin claims attached to color names.
+
+## Deliverables
+1. Build script + generated xkcd-colors-lab.json.
+2. Matching module (hex→Lab, Delta-E, nearest()).
+3. Color Finder UI wired in.
+4. Quick test with 3–4 sample hexes showing name + palette matches.
+
