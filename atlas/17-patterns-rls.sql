@@ -349,7 +349,16 @@ with (security_invoker = off) as
 select id, name, style, colors, occasion, thumb_url,
        palette_name, palette_id, grab_count, workspace_enabled, is_public,
        heritage_name, heritage_origin, heritage_region, heritage_era,
-       continent, tags, search_tags, aesthetic_tags, created_at
+       continent, tags, search_tags, aesthetic_tags, created_at,
+       -- `code` appended LAST on purpose: CREATE OR REPLACE VIEW can only add
+       -- columns at the end. If you already ran an earlier version of this
+       -- view, re-running this statement upgrades it in place.
+       --
+       -- It is included because index.html and planner.html both `select`
+       -- it, and PostgREST errors on a column the view does not expose —
+       -- planner would silently show "No patterns found". It is null on all
+       -- 7,088 rows today, so exposing it leaks nothing.
+       code
 from public.patterns
 where is_public;
 

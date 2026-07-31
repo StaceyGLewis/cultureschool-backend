@@ -1,6 +1,4 @@
 
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -588,6 +586,81 @@ body.panel-off #wsPanel { opacity: 0; pointer-events: none; transform: translate
 }
 #toast.toast-in  { visibility:visible; animation: toastIn  .28s cubic-bezier(.22,1,.36,1) forwards; transition: none; }
 #toast.toast-out { visibility:visible; animation: toastOut .22s ease-in  forwards; }
+
+/* ── SELL AS TEMPLATE DRAWER ── */
+#sellDrawer {
+  position: fixed; top: 0; right: 0; bottom: 0;
+  width: min(420px, 100vw); z-index: 10200;
+  background: #1a1410; border-left: 1px solid rgba(200,160,80,.2);
+  box-shadow: -8px 0 40px rgba(0,0,0,.5);
+  transform: translateX(100%); transition: transform .3s cubic-bezier(.22,.61,.36,1);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+#sellDrawer.open { transform: translateX(0); }
+.sell-drawer-head {
+  padding: 22px 24px 18px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.sell-drawer-title {
+  font-family: 'DM Serif Display', serif; font-style: italic;
+  font-size: 1.3rem; color: #fff;
+}
+.sell-drawer-close {
+  background: none; border: none; color: rgba(255,255,255,.4);
+  font-size: 1.2rem; cursor: pointer; padding: 4px 8px;
+  transition: color .2s;
+}
+.sell-drawer-close:hover { color: #fff; }
+.sell-drawer-body {
+  flex: 1; overflow-y: auto; padding: 22px 24px;
+  display: flex; flex-direction: column; gap: 16px;
+}
+.sell-field label {
+  display: block; font: 700 .62rem/1 var(--ws-sans, sans-serif);
+  letter-spacing: .12em; text-transform: uppercase;
+  color: rgba(200,160,80,.8); margin-bottom: 6px;
+}
+.sell-field input, .sell-field select, .sell-field textarea {
+  width: 100%; padding: 11px 14px;
+  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.15);
+  border-radius: 8px; color: #fff; font-size: .88rem;
+  outline: none; transition: border-color .2s; resize: vertical;
+  font-family: inherit;
+}
+.sell-field input:focus, .sell-field select:focus, .sell-field textarea:focus {
+  border-color: rgba(200,160,80,.6);
+}
+.sell-field select option { background: #1a1410; }
+.sell-field .hint {
+  font-size: .68rem; color: rgba(255,255,255,.3);
+  margin-top: 4px; line-height: 1.5;
+}
+.sell-source-tag {
+  background: rgba(200,160,80,.1); border: 1px solid rgba(200,160,80,.2);
+  border-radius: 6px; padding: 8px 12px;
+  font: 400 .75rem/1.4 var(--ws-sans, sans-serif);
+  color: rgba(255,255,255,.5);
+}
+.sell-source-tag strong { color: var(--ws-accent, #c8a050); }
+.sell-submit-btn {
+  width: 100%; padding: 14px; border-radius: 10px; border: none;
+  background: linear-gradient(135deg, #8a6820, #c8a050);
+  color: #fff; font: 700 .72rem/1 var(--ws-sans, sans-serif);
+  letter-spacing: .12em; text-transform: uppercase;
+  cursor: pointer; box-shadow: 0 6px 20px rgba(200,160,80,.25);
+  transition: filter .2s; margin-top: 4px;
+}
+.sell-submit-btn:hover { filter: brightness(1.1); }
+.sell-submit-btn:disabled { opacity: .5; cursor: not-allowed; filter: none; }
+.sell-status { font-size: .8rem; min-height: 20px; text-align: center; margin-top: 4px; }
+#wsDownloadBtn {
+  background: none; border: 1px solid rgba(255,255,255,.18);
+  border-radius: 6px; padding: 6px 12px; color: rgba(255,255,255,.5);
+  font: 600 .62rem/1 var(--ws-sans, sans-serif); letter-spacing: .1em;
+  text-transform: uppercase; cursor: pointer; transition: all .2s;
+}
+#wsDownloadBtn:hover { border-color: rgba(200,160,80,.5); color: rgba(200,160,80,.9); }
 
 /* publish flash */
 #pubFlash {
@@ -1210,6 +1283,36 @@ body::after {
 .pat-selected-name { font-size: .7rem; font-weight: 600; color: var(--ws-ink); }
 .pat-selected-meta { font-size: .58rem; color: var(--ws-ink-soft); opacity: .7; margin-top: 1px; }
 
+.media-tab-bar { display:flex; gap:4px; margin-bottom:10px; background:var(--ws-surface); border-radius:10px; padding:4px; }
+.media-tab { flex:1; padding:6px 4px; border-radius:7px; border:none; background:transparent; color:var(--ws-ink-soft); font:600 .65rem/1 'DM Sans',sans-serif; letter-spacing:.06em; text-transform:uppercase; cursor:pointer; transition:all .16s; white-space:nowrap; }
+.media-tab.active { background:var(--ws-accent); color:white; box-shadow:0 2px 8px var(--ws-glow); }
+.media-search-row { display:flex; gap:6px; margin-bottom:10px; align-items:center; }
+.media-search-wrap { position:relative; flex:1; }
+.media-search-input { width:100%; padding:7px 10px 7px 28px; background:var(--ws-surface); border:1px solid var(--ws-border); border-radius:8px; color:var(--ws-ink); font:400 .78rem/1 'DM Sans',sans-serif; outline:none; transition:border-color .16s; box-sizing:border-box; }
+.media-search-input:focus { border-color:var(--ws-accent); }
+.media-search-input::placeholder { color:var(--ws-ink-soft); opacity:.5; }
+.media-search-icon { position:absolute; left:9px; top:50%; transform:translateY(-50%); font-size:.75rem; opacity:.35; pointer-events:none; }
+.media-search-go { padding:7px 12px; border-radius:8px; border:none; background:var(--ws-accent); color:white; cursor:pointer; font:600 .72rem/1 'DM Sans',sans-serif; transition:filter .16s; flex-shrink:0; }
+.media-search-go:hover { filter:brightness(1.12); }
+.media-action-row { display:flex; gap:6px; margin-bottom:10px; }
+.media-action-row .ws-btn { flex:1; text-align:center; font-size:.7rem; }
+.media-results { display:grid; grid-template-columns:repeat(3,1fr); gap:5px; max-height:240px; overflow-y:auto; scrollbar-width:thin; scrollbar-color:rgba(139,92,246,.25) transparent; }
+.media-results.svg-grid { grid-template-columns:repeat(4,1fr); }
+.media-result-thumb { aspect-ratio:1; border-radius:6px; overflow:hidden; cursor:pointer; position:relative; background:var(--ws-surface); border:1px solid var(--ws-border); transition:border-color .16s; }
+.media-result-thumb:hover { border-color:var(--ws-accent); }
+.media-result-thumb img { width:100%; height:100%; object-fit:cover; display:block; transition:transform .2s; }
+.media-result-thumb:hover img { transform:scale(1.05); }
+.media-result-thumb .mrt-overlay,.media-svg-thumb .mrt-overlay { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity .16s; font:600 .6rem/1 'DM Sans',sans-serif; color:white; letter-spacing:.08em; }
+.media-result-thumb .mrt-overlay { background:rgba(0,0,0,.55); }
+.media-svg-thumb { aspect-ratio:1; border-radius:6px; background:white; display:flex; align-items:center; justify-content:center; cursor:pointer; padding:8px; border:1px solid var(--ws-border); transition:border-color .16s; position:relative; overflow:hidden; }
+.media-svg-thumb:hover { border-color:var(--ws-accent); }
+.media-svg-thumb img { width:100%; height:100%; object-fit:contain; }
+.media-svg-thumb .mrt-overlay { background:rgba(139,92,246,.7); }
+.media-result-thumb:hover .mrt-overlay,.media-svg-thumb:hover .mrt-overlay { opacity:1; }
+.media-status { font:400 .65rem/1.5 'DM Sans',sans-serif; color:var(--ws-ink-soft); text-align:center; padding:16px 0; opacity:.6; grid-column:1/-1; }
+.media-load-more { width:100%; margin-top:8px; padding:7px; background:transparent; border:1px solid var(--ws-border); border-radius:8px; color:var(--ws-ink-soft); font:500 .68rem/1 'DM Sans',sans-serif; cursor:pointer; transition:all .16s; display:none; }
+.media-load-more:hover { border-color:var(--ws-accent); color:var(--ws-ink); }
+.media-attribution { font:400 .55rem/1.4 'DM Sans',sans-serif; color:var(--ws-ink-soft); opacity:.4; margin-top:6px; text-align:center; }
 </style>
 </head>
 <body class="edit-mode">
@@ -1282,12 +1385,14 @@ body::after {
 
   <!-- TOP BAR -->
   <div id="wsBar">
-    <a href="https://cultureschool.org" class="ws-brand-link" style="gap:10px;">
+    <a href="https://cococreate.cultureschool.org" class="ws-brand-link" style="gap:10px;">
   <span class="ws-back-arrow">←</span>
   <img src="https://cdn.shopify.com/s/files/1/0673/3637/2387/files/CultureSchool_x_Coco_logo2.png?v=1769441790"
        alt="CoCo" style="height:26px;width:auto;display:block;flex-shrink:0;">
   <span class="ws-brand" style="font-size:.82rem;letter-spacing:.04em;">CoCo</span>
 </a>
+    <div class="ws-sep"></div>
+    <a href="https://coco-color-lab.cultureschool.org/" class="ws-btn" style="text-decoration:none;font-size:.72rem;letter-spacing:.04em;opacity:.85;" title="Switch to CoCo Color Lab">🎨 Color Lab</a>
     <div class="ws-sep"></div>
     <button class="ws-btn" onclick="openPicker()">Templates</button>
     <div id="wsTemplateName">No template loaded</div>
@@ -1300,7 +1405,88 @@ body::after {
     <button class="ws-btn outline" id="saveBtn" onclick="uiFeedback(this, ()=>saveDraft(false))">Save</button>
     <button class="ws-btn outline" id="publishDirectBtn" onclick="uiFeedback(this, ()=>publishDirect())" style="border-color:rgba(200,160,80,.5);color:var(--ws-accent);">Publish ✦</button>
     <button class="ws-btn primary" id="publishBtn" onclick="uiFeedback(this, ()=>publishToWorkspace3())">Refine ✦</button>
+    <button id="wsDownloadBtn" onclick="downloadTemplate()" title="Download HTML">⬇ HTML</button>
+    <button class="ws-btn" id="sellBtn" onclick="openSellDrawer()"
+      style="background:linear-gradient(135deg,#8a6820,#c8a050);color:#fff;border:none;font-weight:700;">
+      ✦ Sell this
+    </button>
   </div>
+
+  <!-- SELL AS TEMPLATE DRAWER -->
+  <div id="sellDrawer">
+    <div class="sell-drawer-head">
+      <div class="sell-drawer-title">Sell this template</div>
+      <button class="sell-drawer-close" onclick="closeSellDrawer()">✕</button>
+    </div>
+    <div class="sell-drawer-body">
+
+      <div class="sell-source-tag" id="sellSourceTag" style="display:none;">
+        Remixed from: <strong id="sellSourceKey"></strong>
+      </div>
+
+      <div class="sell-field">
+        <label>Template name</label>
+        <input type="text" id="sellName" placeholder="e.g. Indigo Garden Wedding Invitation">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="sell-field">
+          <label>Type</label>
+          <select id="sellType">
+            <option value="invitation">Invitation</option>
+            <option value="landing_page">Landing Page</option>
+            <option value="card">Card</option>
+            <option value="announcement">Announcement</option>
+            <option value="collage">Collage / Mood Board</option>
+            <option value="boutique">Boutique</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="sell-field">
+          <label>Occasion</label>
+          <select id="sellOccasion">
+            <option value="wedding">Wedding</option>
+            <option value="birthday">Birthday</option>
+            <option value="celebration">Celebration</option>
+            <option value="cultural">Cultural</option>
+            <option value="bachelorette">Bachelorette</option>
+            <option value="graduation">Graduation</option>
+            <option value="launch">Launch</option>
+            <option value="community">Community</option>
+            <option value="wellness">Wellness</option>
+            <option value="holiday">Holiday</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="sell-field">
+        <label>Description</label>
+        <textarea id="sellDesc" rows="3"
+          placeholder="What makes this template distinctive? Any cultural context?"></textarea>
+      </div>
+      <div class="sell-field">
+        <label>Tags <span style="font-weight:300;text-transform:none;letter-spacing:0;">(comma-separated)</span></label>
+        <input type="text" id="sellTags" placeholder="e.g. floral, west african, modern">
+      </div>
+      <div class="sell-field">
+        <label>Cover image URL <span style="font-weight:300;text-transform:none;letter-spacing:0;">(optional)</span></label>
+        <input type="url" id="sellThumb" placeholder="https://…">
+        <div class="hint">Screenshot your template and host it anywhere public.</div>
+      </div>
+
+      <button class="sell-submit-btn" id="sellSubmitBtn" onclick="submitAsTemplate()">
+        ✦ Submit for review →
+      </button>
+      <div class="sell-status" id="sellStatus"></div>
+
+      <div style="font-size:.72rem;color:rgba(255,255,255,.25);line-height:1.7;margin-top:4px;">
+        ✦ Review takes 2–5 days.<br>
+        ✦ Approved templates earn 70% of every sale.<br>
+        ✦ You'll be credited by name in the library.
+      </div>
+    </div>
+  </div>
+  <div id="sellScrim" onclick="closeSellDrawer()"
+    style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:10199;"></div>
 
   <!-- CANVAS -->
   <div id="wsCanvas">
@@ -1433,20 +1619,40 @@ body::after {
       <button class="ws-btn outline" onclick="applyStarterCopy()" style="width:100%;margin-top:4px;">✨ Suggest Headline</button>
     </div>
 
-    <!-- MEDIA -->
-    <div class="ps">
-      <div class="ps-label">Images</div>
-      <div class="media-grid" id="mediaGrid">
-        <div class="media-upload-btn" onclick="wsUploadMedia()"><span class="mub-icon">+</span><span>Upload</span></div>
-        <div class="media-thumb-btn" onclick="wsSwapActiveImg(this)"><img src="https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=200&q=70" alt="" loading="lazy"></div>
-        <div class="media-thumb-btn" onclick="wsSwapActiveImg(this)"><img src="https://images.unsplash.com/photo-1545389336-cf090694435e?w=200&q=70" alt="" loading="lazy"></div>
-        <div class="media-thumb-btn" onclick="wsSwapActiveImg(this)"><img src="https://images.unsplash.com/photo-1508672019048-805c876b67e2?w=200&q=70" alt="" loading="lazy"></div>
-        <div class="media-thumb-btn" onclick="wsSwapActiveImg(this)"><img src="https://images.unsplash.com/photo-1506126279646-a697353d3166?w=200&q=70" alt="" loading="lazy"></div>
-        <div class="media-thumb-btn" onclick="wsSwapActiveImg(this)"><img src="https://images.unsplash.com/photo-1554284126-aa88f22d8b74?w=200&q=70" alt="" loading="lazy"></div>
-        <div class="media-thumb-btn" onclick="wsSwapActiveImg(this)"><img src="https://images.unsplash.com/photo-1518611012118-696072aa579a?w=200&q=70" alt="" loading="lazy"></div>
-        <div class="media-thumb-btn" onclick="wsSwapActiveImg(this)"><img src="https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=200&q=70" alt="" loading="lazy"></div>
+    <!-- MEDIA ─ Photos · Archive · SVG ─────────────────────── -->
+    <div class="ps" id="mediaSection">
+      <div class="ps-label">Media</div>
+
+      <!-- Source tabs -->
+      <div class="media-tab-bar">
+        <button class="media-tab active" data-mt="pixabay"    onclick="switchMediaTab(this)">Photos</button>
+        <button class="media-tab"        data-mt="openverse"  onclick="switchMediaTab(this)">Archive</button>
+        <button class="media-tab"        data-mt="svg"        onclick="switchMediaTab(this)">SVG</button>
       </div>
-      <button class="ws-btn outline" onclick="openDraftLibrary()" style="width:100%;margin-top:8px;">Open Library</button>
+
+      <!-- Search -->
+      <div class="media-search-row">
+        <div class="media-search-wrap">
+          <span class="media-search-icon">⌕</span>
+          <input class="media-search-input" id="mediaSearchInput" type="search"
+                 placeholder="Search…"
+                 onkeydown="if(event.key==='Enter')mediaSearch(this.value)">
+        </div>
+        <button class="media-search-go" onclick="mediaSearch(document.getElementById('mediaSearchInput').value)">→</button>
+      </div>
+
+      <!-- Quick actions -->
+      <div class="media-action-row">
+        <button class="ws-btn outline" onclick="wsUploadMedia()">↑ Upload</button>
+        <button class="ws-btn outline" onclick="openDraftLibrary()">Library</button>
+      </div>
+
+      <!-- Results grid -->
+      <div class="media-results" id="mediaResultsGrid">
+        <div class="media-status">Search for photos, cultural archives, or decorative SVGs</div>
+      </div>
+      <button class="media-load-more" id="mediaLoadMoreBtn" onclick="mediaNextPage()">Load more →</button>
+      <div class="media-attribution" id="mediaAttribution"></div>
     </div>
 
     <!-- AUDIO -->
@@ -2265,6 +2471,100 @@ function getCurrentViewerHTML() {
   ].join('\n');
 }
 
+/* ══════════════════════════════════════════════════════════════
+   SELL AS TEMPLATE — submit current viewer HTML to creative_submissions
+═══════════════════════════════════════════════════════════════ */
+
+function openSellDrawer() {
+  const html = getCurrentViewerHTML();
+  if (!html || html.length < 100) {
+    showToast('Load and customise a template first'); return;
+  }
+  // Pre-fill name from current board title
+  const title = extractTitle?.() || document.getElementById('wsTemplateName')?.textContent || '';
+  if (title && title !== 'No template loaded') {
+    document.getElementById('sellName').value = title;
+  }
+  // Show source template attribution
+  if (currentTemplateKey) {
+    document.getElementById('sellSourceKey').textContent = currentTemplateKey;
+    document.getElementById('sellSourceTag').style.display = 'block';
+  } else {
+    document.getElementById('sellSourceTag').style.display = 'none';
+  }
+  document.getElementById('sellStatus').textContent = '';
+  document.getElementById('sellSubmitBtn').disabled = false;
+  document.getElementById('sellDrawer').classList.add('open');
+  document.getElementById('sellScrim').style.display = 'block';
+}
+
+function closeSellDrawer() {
+  document.getElementById('sellDrawer').classList.remove('open');
+  document.getElementById('sellScrim').style.display = 'none';
+}
+
+async function submitAsTemplate() {
+  const name = document.getElementById('sellName').value.trim();
+  const desc = document.getElementById('sellDesc').value.trim();
+  if (!name) { document.getElementById('sellStatus').textContent = 'Give your template a name.'; return; }
+  if (!desc) { document.getElementById('sellStatus').textContent = 'Add a description.'; return; }
+
+  let email;
+  try { email = getCreatorEmail(); }
+  catch(e) { document.getElementById('sellStatus').textContent = 'Sign in to submit.'; return; }
+
+  const html = getCurrentViewerHTML();
+  if (!html || html.length < 100) {
+    document.getElementById('sellStatus').textContent = 'No template loaded.'; return;
+  }
+
+  const btn = document.getElementById('sellSubmitBtn');
+  btn.disabled = true;
+  document.getElementById('sellStatus').style.color = 'rgba(255,255,255,.4)';
+  document.getElementById('sellStatus').textContent = 'Submitting…';
+
+  const payload = {
+    name,
+    description:  desc + (currentTemplateKey ? '\n\nRemixed from: ' + currentTemplateKey : ''),
+    template_type: document.getElementById('sellType').value,
+    occasion_tag:  document.getElementById('sellOccasion').value,
+    tags:          document.getElementById('sellTags').value.split(',').map(t=>t.trim()).filter(Boolean),
+    thumb_url:     document.getElementById('sellThumb').value.trim() || null,
+    html_content:  html,
+    file_name:     currentTemplateKey || 'flourish-remix',
+    author_email:  email,
+    status:        'pending',
+    created_at:    new Date().toISOString(),
+  };
+
+  try {
+    const { error } = await supa.from('creative_submissions').insert(payload);
+    if (error) throw error;
+    document.getElementById('sellStatus').style.color = '#4ade80';
+    document.getElementById('sellStatus').textContent = '✦ Submitted! Review takes 2–5 days.';
+    showToast('Template submitted for review ✦');
+    setTimeout(closeSellDrawer, 2500);
+  } catch(e) {
+    document.getElementById('sellStatus').style.color = '#f87171';
+    document.getElementById('sellStatus').textContent = 'Submit failed: ' + (e.message || 'try again');
+    btn.disabled = false;
+  }
+}
+
+function downloadTemplate() {
+  const html = getCurrentViewerHTML();
+  if (!html || html.length < 100) { showToast('Load a template first'); return; }
+  const title = (extractTitle?.() || 'coco-template').toLowerCase().replace(/[^a-z0-9]+/g,'-');
+  const blob = new Blob([html], { type: 'text/html' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = title + '.html';
+  a.style.display = 'none';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 3000);
+  showToast('Template downloaded ✦');
+}
+
 async function saveDraft(silent=false) {
   if (!supa) return;
   let email;
@@ -2540,17 +2840,17 @@ async function loadWorkspacePatterns() {
   const grid = document.getElementById('patternVisualGrid');
   if (!grid) return;
   try {
-    // workspace_enabled=true controls which patterns appear — no is_public filter
-    // so curated patterns show regardless of their public status
     const { data, error } = await supa
       .from('patterns_public')
       .select('id, code, name, style, colors, heritage_origin, occasion')
       .eq('workspace_enabled', true)
       .order('grab_count', { ascending: false })
       .limit(40);
+
     if (error) {
-      console.error('[WorkspacePatterns] Supabase error:', error);
-      grid.innerHTML = `<div style="grid-column:1/-1;font-size:.58rem;color:var(--ws-ink-soft);padding:6px 0;opacity:.5;">Error: ${error.message || error.code || 'check console'}</div>`;
+      const msg = error.message || error.details || error.hint || JSON.stringify(error);
+      console.error('[WorkspacePatterns] Supabase error:', msg, {code: error?.code, details: error?.details, hint: error?.hint});
+      grid.innerHTML = `<div style="grid-column:1/-1;font-size:.58rem;color:var(--ws-ink-soft);padding:6px 0;opacity:.5;">Patterns unavailable: ${msg}</div>`;
       return;
     }
     if (!data?.length) {
@@ -2670,19 +2970,32 @@ async function applyPatternSkin() {
   status.style.display = 'block'; status.textContent = 'Generating pattern…';
 
   try {
-    // 1. Fetch palette CSS vars + copy from skin-pattern function
-    const res = await fetch('/.netlify/functions/skin-pattern', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        pattern_code: _selectedPattern?.code || null,
-        pattern_id:   _selectedPattern?.code ? null : (_selectedPattern?.id || code),
-        template_key: window.currentTemplateKey || ''
-      })
-    });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
-    const { css, copy, pattern } = data;
+    // Fetch pattern data directly from Supabase — no Netlify function needed
+    const patCode = _selectedPattern?.code || code;
+    // Deliberately reads the BASE table, not patterns_public: this selects
+    // palette_story, which the public view excludes as IP. Members get a row;
+    // anonymous visitors get none. Note this lookup keys on `code`, which is
+    // null on all 7,088 rows today, so it already returns nothing either way.
+    const { data: patRow, error: patErr } = await supa
+      .from('patterns')
+      .select('code, name, style, colors, palette_story, heritage_name, heritage_origin')
+      .eq('code', patCode)
+      .single();
+    if (patErr || !patRow) throw new Error(patErr?.message || 'Pattern not found');
+
+    const pattern = patRow;
+    const patColors = Array.isArray(pattern.colors) && pattern.colors.length >= 3
+      ? pattern.colors
+      : (_selectedPattern?.colors?.length >= 3 ? _selectedPattern.colors
+          : ['#1a1208','#8b6a3a','#c9a96e','#e8d5a8','#faf6ef']);
+    const css = {
+      '--palette-1': patColors[0] || '#1a1208',
+      '--palette-2': patColors[1] || '#8b6a3a',
+      '--palette-3': patColors[2] || '#c9a96e',
+      '--palette-4': patColors[3] || '#e8d5a8',
+      '--palette-5': patColors[4] || '#faf6ef',
+    };
+    const copy = pattern.palette_story || pattern.heritage_name || pattern.name || '';
 
     // 2. Save originals for reset
     const root = document.documentElement;
@@ -2698,14 +3011,10 @@ async function applyPatternSkin() {
       if (mount) mount.style.setProperty(v, val);
     });
 
-    // 4. Generate the actual pattern canvas using drawPattern() already in this file
+    // 4. Generate pattern canvas using drawPattern()
     const tileSize = 280;
     const offCanvas = document.createElement('canvas');
     offCanvas.width = tileSize; offCanvas.height = tileSize;
-    const patColors = (Array.isArray(pattern.colors) && pattern.colors.length >= 3)
-      ? pattern.colors
-      : (_selectedPattern?.colors?.length >= 3 ? _selectedPattern.colors
-          : ['#1a1208','#8b6a3a','#c9a96e','#e8d5a8','#faf6ef']);
     const patStyle = pattern.style || _selectedPattern?.style || 'diamond';
     if (typeof drawPattern === 'function') drawPattern(offCanvas, patStyle, patColors);
     const patternDataUrl = offCanvas.toDataURL('image/png');
@@ -3991,7 +4300,80 @@ async function speakCollageTypesFromUI() {
   return true;
 }
   async function flourishWalkthrough(){showToast("🧭 Let's build this, step by step.");await CoCoVoice.speak("I'll walk you through this. You don't need to do everything at once.");await CoCoVoice.speak(" First: You can import your content or choose a template moment.");await CoCoVoice.speak("Second: choose a color story and edit the text.");await CoCoVoice.speak("Third: make it a collection with matching invites and landing pages.");await CoCoVoice.speak("When you're ready, say: import my stuff, build a pop-up page, or make an invitation.");}
-  window.cocoActionsFlourish=window.cocoActionsFlourish||{"what can you do here":async()=>{await cocoSay("calm","Here I can help you import or upload content, including products, build a pop-up shop page, create collages, invitations, and versatile landing and webpages . Say: import my stuff, make an invitation, make a collage, or build a pop-up landing page.");},"walk me through this":async()=>{await flourishWalkthrough();},"help me start":async()=>{const n=getCatalogCount();if(!n){await cocoSay("constraint","Start simple: Try a moment or upload yours. Then we'll create things that match it.");}else{await cocoSay("constraint","You've got content here. Next we pick a color theme and generate: a landing page plus a matching invitation.");}},"import my stuff":async()=>{showToast("🛍️ Importing your stuff…");if(hasFn(window.openShopImport)&&window.openShopImport())return;await cocoSay("calm","Open your shop import tool and choose Shopify, Etsy, Square, or CSV.");},"upload products":async()=>{showToast("📦 Upload products…");if(hasFn(window.openProductUploader)&&window.openProductUploader())return;await cocoSay("constraint","Upload a few things or use a template first: you can refine here or after saving.");},"organize my stuff":async()=>{showToast("🧺 Organizing…");if(hasFn(window.openCollectionsPanel)&&window.openCollectionsPanel())return;await cocoSay("constraint","Organize into 3 to 5 collections max.");},"build a pop-up page": async () => {
+
+  // ── CoCo Archive Intelligence Helpers ──────────────────────────────────────
+  function cocoGetActiveVibe(){
+    const on=document.querySelector('.vibe-card.on');
+    if(on){const n=on.querySelector('.vc-name');if(n)return{key:on.dataset.v||'',name:n.textContent.trim()};}
+    const mount=document.getElementById('viewerMount');
+    if(mount){const v=mount.getAttribute('data-vibe');if(v)return{key:v,name:v.replace(/_/g,' ')};}
+    return null;
+  }
+  function cocoViewersByVibe(vibeName){
+    if(!vibeName||!_tmplAll.length)return[];
+    const q=vibeName.toLowerCase();
+    return _tmplAll.filter(v=>{
+      const palettes=(v.palette||[]).map(p=>p.toLowerCase());
+      const feels=(v.feels||[]).map(f=>f.toLowerCase());
+      const tags=(v.tags||[]).map(t=>t.toLowerCase());
+      return palettes.some(p=>p.includes(q))||feels.some(f=>f.includes(q))||tags.some(t=>t.includes(q))||
+             (v.archetype||'').toLowerCase().includes(q)||(v.name||'').toLowerCase().includes(q);
+    });
+  }
+  function cocoViewersByOccasion(occ){
+    if(!occ||!_tmplAll.length)return[];
+    const q=occ.toLowerCase();
+    return _tmplAll.filter(v=>(v.occasion_tag||'').toLowerCase().includes(q)||(v.tags||[]).some(t=>t.toLowerCase().includes(q)));
+  }
+  function cocoTopRated(viewers,n=3){
+    return [...viewers].sort((a,b)=>(b.rating_avg||0)-(a.rating_avg||0)).slice(0,n);
+  }
+  function cocoMostUsed(viewers,n=3){
+    return [...viewers].sort((a,b)=>(b.used_count||0)-(a.used_count||0)).slice(0,n);
+  }
+  function cocoViewerSummary(v){
+    return v.title||v.name||v.viewer_name||v.key||'untitled';
+  }
+  async function cocoTellArchive(){
+    const vibe=cocoGetActiveVibe();
+    const total=_tmplAll.length;
+    if(!total){await cocoSay('constraint','The archive is still loading. Try again in a moment.');return;}
+    if(!vibe){await CoCoVoice.speak(`The archive has ${total} viewers across weddings, birthdays, milestones, and more. Choose a vibe to see what matches.`);return;}
+    const matches=cocoViewersByVibe(vibe.name);
+    const top=cocoTopRated(matches,3);
+    const topNames=top.map(cocoViewerSummary).join(', ');
+    if(!matches.length){
+      await CoCoVoice.speak(`I have ${total} viewers in the archive. None are tagged for ${vibe.name} yet — but the top rated ones are available for any vibe.`);
+    } else {
+      const usedTotal=matches.reduce((s,v)=>s+(v.used_count||0),0);
+      await CoCoVoice.speak(`For ${vibe.name}, I found ${matches.length} viewers in the archive.${usedTotal>0?' They have been used '+usedTotal+' times on the platform.':''} ${top.length?'The strongest matches are: '+topNames+'.':''}`);
+    }
+  }
+  async function cocoTellOccasion(occ){
+    const matches=cocoViewersByOccasion(occ);
+    if(!matches.length){await CoCoVoice.speak(`I don't have viewers tagged for ${occ} yet. Try browsing all templates.`);return;}
+    const top=cocoMostUsed(matches,3);
+    const names=top.map(cocoViewerSummary).join(', ');
+    const usedTotal=matches.reduce((s,v)=>s+(v.used_count||0),0);
+    await CoCoVoice.speak(`For ${occ}, I found ${matches.length} viewers. The most used are: ${names}.${usedTotal>0?' Combined, they have been used '+usedTotal+' times.':''}`);
+  }
+  // ── End Archive Intelligence ────────────────────────────────────────────────
+
+  window.cocoActionsFlourish=window.cocoActionsFlourish||{"what can you do here":async()=>{
+    const total=_tmplAll.length;
+    const vibe=cocoGetActiveVibe();
+    const vibeStr=vibe?` You are working with the ${vibe.name} palette right now.`:'';
+    const archiveStr=total?` The archive has ${total} viewers ready to use.`:'';
+    await CoCoVoice.speak(`Here I can help you build invitations, landing pages, collages, and pop-up shop pages.${archiveStr}${vibeStr} Say: what matches my vibe, show wedding viewers, what is in the archive, or help me start.`);
+  },"what's in the archive":async()=>{await cocoTellArchive();},"what matches my vibe":async()=>{await cocoTellArchive();},"show wedding viewers":async()=>{showToast("💍 Wedding viewers…");await cocoTellOccasion("wedding");},"show birthday viewers":async()=>{showToast("🎂 Birthday viewers…");await cocoTellOccasion("birthday");},"show milestone viewers":async()=>{showToast("✨ Milestone viewers…");await cocoTellOccasion("milestone");},"how popular is this vibe":async()=>{
+    const vibe=cocoGetActiveVibe();
+    if(!vibe){await cocoSay("calm","Choose a vibe first and then ask me again.");return;}
+    const matches=cocoViewersByVibe(vibe.name);
+    const usedTotal=matches.reduce((s,v)=>s+(v.used_count||0),0);
+    const top=cocoTopRated(matches,1)[0];
+    if(!matches.length){await CoCoVoice.speak(`${vibe.name} is a fresh direction — no viewers are tagged for it yet. You could be the first to define it.`);return;}
+    await CoCoVoice.speak(`${vibe.name} appears in ${matches.length} viewers with ${usedTotal} total uses on the platform.${top?' The highest rated is '+cocoViewerSummary(top)+(top.rating_avg?' with a '+top.rating_avg.toFixed(1)+' rating.':'.'):''}`);
+  },"walk me through this":async()=>{await flourishWalkthrough();},"help me start":async()=>{const n=getCatalogCount();if(!n){await cocoSay("constraint","Start simple: Try a moment or upload yours. Then we'll create things that match it.");}else{await cocoSay("constraint","You've got content here. Next we pick a color theme and generate: a landing page plus a matching invitation.");}},"import my stuff":async()=>{showToast("🛍️ Importing your stuff…");if(hasFn(window.openShopImport)&&window.openShopImport())return;await cocoSay("calm","Open your shop import tool and choose Shopify, Etsy, Square, or CSV.");},"upload products":async()=>{showToast("📦 Upload products…");if(hasFn(window.openProductUploader)&&window.openProductUploader())return;await cocoSay("constraint","Upload a few things or use a template first: you can refine here or after saving.");},"organize my stuff":async()=>{showToast("🧺 Organizing…");if(hasFn(window.openCollectionsPanel)&&window.openCollectionsPanel())return;await cocoSay("constraint","Organize into 3 to 5 collections max.");},"build a pop-up page": async () => {
   showToast("🏪 Opening Boutique Layouts...");
 
   // 1. Try to physically open the bar first
@@ -4103,6 +4485,12 @@ async function speakCollageTypesFromUI() {
 };
  window.fuzzyTriggersFlourish=window.fuzzyTriggersFlourish||{
   "what can you do here":["what can you do","what do you do","how does this work"],
+  "what's in the archive":["what's in the archive","show me the archive","what templates do you have","what viewers are there","what do you have"],
+  "what matches my vibe":["what matches my vibe","what fits this palette","what goes with this","match my palette","palette match"],
+  "show wedding viewers":["show weddings","wedding templates","wedding viewers","wedding invitations"],
+  "show birthday viewers":["show birthdays","birthday templates","birthday viewers"],
+  "show milestone viewers":["show milestones","milestone templates","graduation","baby shower"],
+  "how popular is this vibe":["how popular","how many people use this","is this trending","how often is this used"],
   "walk me through this":["walk me through","guide me","show me"],
   "help me start":["help me start","where do i start","start","i'm stuck","what now"],
   "import my stuff":["import my stuff","import store","connect shopify","shopify import","etsy import","square import","sync products"],
@@ -4569,7 +4957,216 @@ function wsLoadByKey() {
   if (key) { wsHideEmpty(); loadAnyTemplate(key); }
 }
 
-/* --- loading / empty state helpers --- */
+/* ── MEDIA PANEL GLOBALS ── */
+var PIXABAY_KEY  = '49646184-c33f7037bf8a60ed9942c581f';
+var _mediaTab    = 'pixabay';
+var _mediaPage   = 1;
+var _mediaQuery  = '';
+var _mediaHasMore = false;
+
+function switchMediaTab(btn) {
+  document.querySelectorAll('.media-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  _mediaTab  = btn.dataset.mt;
+  _mediaPage = 1;
+  const grid = document.getElementById('mediaResultsGrid');
+  grid.className = 'media-results' + (_mediaTab === 'svg' ? ' svg-grid' : '');
+  const attr = document.getElementById('mediaAttribution');
+  const attrMap = {
+    pixabay:   'Photos from Pixabay · Free for commercial use',
+    openverse: 'Creative Commons · Openverse Cultural Archive',
+    svg:       'Iconify Open SVG Library · MIT Licensed',
+  };
+  attr.textContent = attrMap[_mediaTab] || '';
+  // Re-run last search if there was one
+  if (_mediaQuery) {
+    _mediaPage = 1;
+    mediaSearch(_mediaQuery);
+  } else {
+    grid.innerHTML = '<div class="media-status">Search for ' +
+      (_mediaTab === 'pixabay'   ? 'photos' :
+       _mediaTab === 'openverse' ? 'cultural archives' : 'decorative SVGs') + '</div>';
+  }
+}
+
+async function mediaSearch(q) {
+  q = (q || '').trim();
+  if (!q) return;
+  _mediaQuery = q;
+  _mediaPage  = 1;
+  _mediaHasMore = false;
+
+  const grid = document.getElementById('mediaResultsGrid');
+  grid.className = 'media-results' + (_mediaTab === 'svg' ? ' svg-grid' : '');
+  grid.innerHTML = '<div class="media-status">Searching…</div>';
+  document.getElementById('mediaLoadMoreBtn').style.display = 'none';
+
+  try {
+    let items = [];
+    if      (_mediaTab === 'pixabay')   items = await _fetchPixabay(q, 1);
+    else if (_mediaTab === 'openverse') items = await _fetchOpenverse(q, 1);
+    else if (_mediaTab === 'svg')       items = await _fetchIconify(q, 1);
+
+    _renderMediaGrid(items);
+  } catch(e) {
+    grid.innerHTML = '<div class="media-status">Search failed — ' + (e.message || 'try again') + '</div>';
+  }
+}
+
+async function mediaNextPage() {
+  if (!_mediaQuery || !_mediaHasMore) return;
+  _mediaPage++;
+  const btn = document.getElementById('mediaLoadMoreBtn');
+  btn.textContent = 'Loading…'; btn.disabled = true;
+
+  try {
+    let items = [];
+    if      (_mediaTab === 'pixabay')   items = await _fetchPixabay(_mediaQuery,   _mediaPage);
+    else if (_mediaTab === 'openverse') items = await _fetchOpenverse(_mediaQuery, _mediaPage);
+    else if (_mediaTab === 'svg')       items = await _fetchIconify(_mediaQuery,   _mediaPage);
+
+    const grid = document.getElementById('mediaResultsGrid');
+    _appendMediaItems(grid, items);
+  } catch(e) {}
+  const btn2 = document.getElementById('mediaLoadMoreBtn');
+  btn2.textContent = 'Load more →'; btn2.disabled = false;
+}
+
+/* ── Pixabay ────────────────────────────────────────────── */
+async function _fetchPixabay(q, page) {
+  const per = 16;
+  const url = `https://pixabay.com/api/?key=${PIXABAY_KEY}&q=${encodeURIComponent(q)}&image_type=photo&per_page=${per}&page=${page}&safesearch=true`;
+  const r   = await fetch(url);
+  const d   = await r.json();
+  _mediaHasMore = d.totalHits > page * per;
+  return (d.hits || []).map(h => ({
+    type:  'photo',
+    thumb: h.previewURL,
+    full:  h.webformatURL,
+    large: h.largeImageURL,
+    alt:   h.tags,
+    credit: h.user,
+  }));
+}
+
+/* ── Openverse ──────────────────────────────────────────── */
+async function _fetchOpenverse(q, page) {
+  const per = 16;
+  const url = `https://api.openverse.org/v1/images/?q=${encodeURIComponent(q)}&page_size=${per}&page=${page}&license_type=commercial,modification`;
+  const r   = await fetch(url, { headers: { 'Accept': 'application/json' } });
+  const d   = await r.json();
+  _mediaHasMore = !!(d.next);
+  return (d.results || []).map(item => ({
+    type:  'photo',
+    thumb: item.thumbnail || item.url,
+    full:  item.url,
+    large: item.url,
+    alt:   item.title || '',
+    credit: item.creator || 'Openverse',
+    attribution: item.attribution || '',
+  }));
+}
+
+/* ── Iconify SVG ────────────────────────────────────────── */
+async function _fetchIconify(q, page) {
+  const per = 32; const start = (page - 1) * per;
+  const url = `https://api.iconify.design/search?query=${encodeURIComponent(q)}&limit=${per}&start=${start}`;
+  const r   = await fetch(url);
+  const d   = await r.json();
+  const icons = d.icons || [];
+  _mediaHasMore = icons.length === per;
+  return icons.map(icon => {
+    const [prefix, name] = icon.split(':');
+    const svgUrl = `https://api.iconify.design/${prefix}/${name}.svg`;
+    return { type: 'svg', thumb: svgUrl, full: svgUrl, alt: name.replace(/-/g,' '), icon };
+  });
+}
+
+/* ── Render ─────────────────────────────────────────────── */
+function _renderMediaGrid(items) {
+  const grid = document.getElementById('mediaResultsGrid');
+  if (!items.length) {
+    grid.innerHTML = '<div class="media-status">No results — try different terms</div>';
+    return;
+  }
+  grid.innerHTML = '';
+  _appendMediaItems(grid, items);
+  document.getElementById('mediaLoadMoreBtn').style.display = _mediaHasMore ? 'block' : 'none';
+  document.getElementById('mediaAttribution').textContent =
+    _mediaTab === 'openverse' ? 'Creative Commons · Openverse Cultural Archive' :
+    _mediaTab === 'svg'       ? 'Iconify Open SVG Library · MIT Licensed' :
+                                'Photos from Pixabay · Free for commercial use';
+}
+
+function _appendMediaItems(grid, items) {
+  items.forEach(item => {
+    const el = document.createElement('div');
+    if (item.type === 'svg') {
+      el.className = 'media-svg-thumb';
+      el.title = item.alt;
+      el.innerHTML = `<img src="${item.thumb}" alt="${item.alt}" loading="lazy">
+        <div class="mrt-overlay">Use</div>`;
+      el.onclick = () => _insertMedia(item);
+    } else {
+      el.className = 'media-result-thumb';
+      el.title = item.alt;
+      el.innerHTML = `<img src="${item.thumb}" alt="${item.alt}" loading="lazy">
+        <div class="mrt-overlay">Use</div>`;
+      el.onclick = () => _insertMedia(item);
+    }
+    grid.appendChild(el);
+  });
+}
+
+/* ── Insert into canvas ─────────────────────────────────── */
+function _insertMedia(item) {
+  const src   = item.large || item.full || item.thumb;
+  const mount = document.getElementById('viewerMount');
+  // canvasFrame doesn't exist — templates render directly in viewerMount
+  const searchRoot = mount || document;
+
+  if (item.type === 'svg') {
+    const target = window.__COCO_ACTIVE_IMAGE__
+      || searchRoot.querySelector('[data-coco-hero] img')
+      || searchRoot.querySelector('img.coco-editable-img');
+    if (target) {
+      target.src = src;
+      window.__COCO_ACTIVE_IMAGE__ = null;
+      showToast('SVG applied ✦');
+    } else {
+      navigator.clipboard?.writeText(src).catch(()=>{});
+      showToast('SVG URL copied — click a canvas image to swap');
+    }
+    return;
+  }
+
+  // Photos — try active image first, then first editable in viewerMount
+  const target = window.__COCO_ACTIVE_IMAGE__
+    || searchRoot.querySelector('img.coco-editable-img')
+    || searchRoot.querySelector('[data-coco-hero] img')
+    || searchRoot.querySelector('[data-coco-hero]')
+    || searchRoot.querySelector('img[data-coco-grid]')
+    || searchRoot.querySelector('img');   // last resort: first image in canvas
+
+  if (target) {
+    if (target.tagName === 'IMG') {
+      target.src = src;
+    } else {
+      const img = target.querySelector('img');
+      if (img) img.src = src;
+      else target.style.backgroundImage = `url("${src}")`;
+    }
+    window.__COCO_ACTIVE_IMAGE__ = null;
+    if (typeof collectCurrentItemsFromDOM === 'function') collectCurrentItemsFromDOM();
+    if (typeof scheduleAutosave === 'function') scheduleAutosave();
+    showToast('✨ Image updated');
+  } else {
+    navigator.clipboard?.writeText(src).catch(()=>{});
+    showToast('No canvas image found — URL copied');
+  }
+}
+
+
 function wsShowLoading(on, msg) {
   document.getElementById('wsLoadingOverlay').classList.toggle('show', on);
   const label = document.getElementById('wsLoadingLabel');
@@ -4623,59 +5220,24 @@ function setWsMode(m) {
 }
 
 /* --- vibe switcher (panel cards) --- */
-var VIBE_TOKENS = {
-  // ── Original presets ──
-  poets_nightfall:       { p1:'#1a1628',p2:'#2d2540',p3:'#4a3d6b',p4:'#f8f4ee',p5:'#e8e0d5',ink:'#1a1628',inkSoft:'#6b5e8a',accent:'#8b5cf6',warm:'#e8c48a',light:'#faf7f2' },
-  wildflower_honey:      { p1:'#1a0f00',p2:'#2e1c00',p3:'#7a4a10',p4:'#fdf6ec',p5:'#f0e4cc',ink:'#1a0f00',inkSoft:'#7a5a30',accent:'#d97b1a',warm:'#f5c87a',light:'#fffaf2' },
-  neutral_bloom:         { p1:'#13100d',p2:'#1e1a16',p3:'#5a4a3a',p4:'#f7f3ee',p5:'#e8e0d4',ink:'#13100d',inkSoft:'#7a6a5a',accent:'#c4a882',warm:'#d9c4aa',light:'#faf7f3' },
-  cape_cod:              { p1:'#04081f',p2:'#0a1240',p3:'#1e3a7a',p4:'#f0f4fc',p5:'#d8e4f8',ink:'#04081f',inkSoft:'#4a5a8a',accent:'#4a6aff',warm:'#a8c4ff',light:'#f4f7ff' },
-
-  // ── CultureSchool palettes ──
-  amazonian_acai_night:          { p1:'#2F1F2A',p2:'#4A2E3E',p3:'#7A4F6A',p4:'#C2A3B3',p5:'#E6D9DF',ink:'#2F1F2A',inkSoft:'#7A4F6A',accent:'#C2A3B3',warm:'#c9a96e',light:'#faf0f4' },
-  parisian_vintage_rouge:        { p1:'#470000',p2:'#790c0c',p3:'#9c6b30',p4:'#f0e5c1',p5:'#f5edd5',ink:'#470000',inkSoft:'#9c6b30',accent:'#9c6b30',warm:'#f0d7b2',light:'#fdf5e8' },
-  firenze_fuchsia:               { p1:'#2a0a14',p2:'#8a0038',p3:'#ff3881',p4:'#ffc0d4',p5:'#fff8f8',ink:'#2a0a14',inkSoft:'#c9006a',accent:'#ff3881',warm:'#e0aa3e',light:'#fff0f5' },
-  harlem_to_lagos:               { p1:'#2A1808',p2:'#6A1A20',p3:'#B07020',p4:'#E8D090',p5:'#F5F0E0',ink:'#2A1808',inkSoft:'#7A4A10',accent:'#B07020',warm:'#E8D090',light:'#F5F0E0' },
-  gullah_sea_island_indigo:      { p1:'#0A1020',p2:'#1A2A4A',p3:'#2E4870',p4:'#7A9AB8',p5:'#E0EAF0',ink:'#0A1020',inkSoft:'#2E4870',accent:'#7A9AB8',warm:'#a8c4d8',light:'#f0f6fc' },
-  jamaican_mango_orange:         { p1:'#100c00',p2:'#e06040',p3:'#e0a000',p4:'#c0e0e0',p5:'#f5f5e0',ink:'#100c00',inkSoft:'#c04020',accent:'#e0a000',warm:'#f5c060',light:'#fffef0' },
-  cape_cod_morning_light:        { p1:'#0c1a2a',p2:'#1e3a5a',p3:'#4a7a9a',p4:'#c0d8e8',p5:'#f0f6fa',ink:'#0c1a2a',inkSoft:'#4a7a9a',accent:'#4a7a9a',warm:'#a8c4d8',light:'#f4f8fb' },
-  cultureschool_default:         { p1:'#1a1208',p2:'#8b6a3a',p3:'#c9a96e',p4:'#e8d5a8',p5:'#faf6ef',ink:'#1a1208',inkSoft:'#8b6a3a',accent:'#c9a96e',warm:'#e8d5a8',light:'#fdf9f3' },
-};
-
-function wsSetVibe(card) {
-  var v = card.dataset.v;
-  var t = VIBE_TOKENS[v];
-  var mount = document.getElementById('viewerMount');
-  mount.setAttribute('data-vibe', v);
-  if (t) {
-    mount.style.setProperty('--palette-1', t.p1);
-    mount.style.setProperty('--palette-2', t.p2);
-    mount.style.setProperty('--palette-3', t.p3);
-    mount.style.setProperty('--palette-4', t.p4);
-    mount.style.setProperty('--palette-5', t.p5);
-    mount.style.setProperty('--ink', t.ink);
-    mount.style.setProperty('--ink-soft', t.inkSoft);
-    mount.style.setProperty('--accent', t.accent);
-    mount.style.setProperty('--warm', t.warm);
-    mount.style.setProperty('--light', t.light);
-  }
-  document.querySelectorAll('.vibe-card').forEach(function(c) { c.classList.remove('on'); });
-  card.classList.add('on');
-  var canvas = document.getElementById('wsCanvas');
-  canvas.classList.add('pulsing');
-  setTimeout(function() { canvas.classList.remove('pulsing'); }, 950);
-  showToast('Vibe: ' + card.querySelector('.vc-name').textContent);
-  // also fire your vibe-pill system so templates with data-vibe respond
-  mount.dispatchEvent(new CustomEvent('coco:vibeChanged', { detail: { vibe: v }, bubbles: true }));
-}
+v
 
 /* --- media panel helpers --- */
 function wsSwapActiveImg(thumb) {
   var src = thumb.querySelector('img').src.replace('w=200', 'w=1800');
+  var doc = document.getElementById('viewerMount') || document;
   var target = window.__COCO_ACTIVE_IMAGE__
+    || doc?.querySelector('[data-coco-hero]')
+    || doc?.querySelector('img.coco-editable-img')
     || document.querySelector('[data-coco-hero]')
     || document.querySelector('img.coco-editable-img');
-  if (target) { target.src = src; showToast('✨ Image updated'); }
-  else showToast('Click an image on the canvas first');
+  if (target) {
+    if (target.tagName === 'IMG') target.src = src;
+    else { var img = target.querySelector('img'); if (img) img.src = src; }
+    showToast('✨ Image updated');
+  } else {
+    showToast('Click an image on the canvas first');
+  }
 }
 
 function wsUploadMedia() {
@@ -4698,11 +5260,14 @@ function wsUploadMedia() {
         src = await new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result); r.readAsDataURL(file); });
       }
       var btn = document.createElement('div');
-      btn.className = 'media-thumb-btn';
-      btn.onclick = function() { wsSwapActiveImg(btn); };
-      btn.innerHTML = '<img src="' + src + '" alt="">';
-      var grid = document.getElementById('mediaGrid');
-      grid.insertBefore(btn, grid.children[1]);
+      btn.className = 'media-result-thumb';
+      btn.innerHTML = '<img src="' + src + '" alt=""><div class="mrt-overlay">Use</div>';
+      btn.onclick = function() {
+        var imgSrc = btn.querySelector('img').src;
+        _insertMedia({ type: 'photo', large: imgSrc, full: imgSrc, thumb: imgSrc });
+      };
+      var grid = document.getElementById('mediaResultsGrid');
+      if (grid) grid.insertBefore(btn, grid.firstChild);
       showToast('Image uploaded ✦');
     }
   };
@@ -4792,7 +5357,7 @@ const CURATED_VIBES = {
  * CORE INJECTION FUNCTION
  * Pulls from Table (Supabase) or Fallback, then paints the UI
  */
-async function wsSetVibe(vibeKey) {
+async function wsSetVibeFromPalette(vibeKey) {
   // 1. Get Palette Data
   let palette = await getPaletteFromTable(vibeKey);
 
@@ -5078,10 +5643,20 @@ var VIBE_TOKENS = {
   cultureschool_default:         { p1:'#1a1208',p2:'#8b6a3a',p3:'#c9a96e',p4:'#e8d5a8',p5:'#faf6ef',ink:'#1a1208',inkSoft:'#8b6a3a',accent:'#c9a96e',warm:'#e8d5a8',light:'#fdf9f3' },
 };
 
-function wsSetVibe(card) {
-  var v = card.dataset.v;
+function wsSetVibe(cardOrKey) {
+  // Accept either a DOM vibe-card element or a string key
+  var v, card;
+  if (typeof cardOrKey === 'string') {
+    v = cardOrKey;
+    card = document.querySelector('.vibe-card[data-v="' + v + '"]');
+  } else {
+    card = cardOrKey;
+    v = card ? card.dataset.v : undefined;
+  }
+  if (!v) { console.warn('[wsSetVibe] no vibe key resolved from:', cardOrKey); return; }
   var t = VIBE_TOKENS[v];
   var mount = document.getElementById('viewerMount');
+  if (!mount) return;
   mount.setAttribute('data-vibe', v);
   if (t) {
     mount.style.setProperty('--palette-1', t.p1);
@@ -5096,12 +5671,15 @@ function wsSetVibe(card) {
     mount.style.setProperty('--light', t.light);
   }
   document.querySelectorAll('.vibe-card').forEach(function(c) { c.classList.remove('on'); });
-  card.classList.add('on');
+  if (card) {
+    card.classList.add('on');
+    var nameEl = card.querySelector('.vc-name');
+    if (nameEl) showToast('Vibe: ' + nameEl.textContent);
+  } else {
+    showToast('Vibe: ' + v.replace(/_/g,' '));
+  }
   var canvas = document.getElementById('wsCanvas');
-  canvas.classList.add('pulsing');
-  setTimeout(function() { canvas.classList.remove('pulsing'); }, 950);
-  showToast('Vibe: ' + card.querySelector('.vc-name').textContent);
-  // also fire your vibe-pill system so templates with data-vibe respond
+  if (canvas) { canvas.classList.add('pulsing'); setTimeout(function() { canvas.classList.remove('pulsing'); }, 950); }
   mount.dispatchEvent(new CustomEvent('coco:vibeChanged', { detail: { vibe: v }, bubbles: true }));
 }
 const wsCanvas = document.getElementById('wsCanvas');
