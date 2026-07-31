@@ -2464,7 +2464,10 @@
         card.innerHTML=`
           <div style="height:32px;display:flex">${swatches||'<span style="flex:1;background:var(--rule)"></span>'}</div>
           <div style="padding:12px 14px 14px">
-            <div style="font-size:13px;font-weight:600;color:var(--ink);line-height:1.3;margin-bottom:4px">${esc(log.title)}</div>
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:4px">
+              <div style="font-size:13px;font-weight:600;color:var(--ink);line-height:1.3">${esc(log.title)}</div>
+              <button data-del style="background:none;border:none;color:var(--muted);font-size:16px;line-height:1;cursor:pointer;padding:0 2px;flex-shrink:0" title="Delete log">×</button>
+            </div>
             <div style="font-size:11px;color:var(--muted);margin-bottom:8px">
               ${esc(dt)}${log.location?' · '+esc(log.location):''}${log.image_count?' · '+log.image_count+' images':''}
               ${log.logged_by?' · '+esc(log.logged_by):''}
@@ -2474,6 +2477,13 @@
             ${log.notes?`<div style="font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5;border-top:1px solid var(--rule);padding-top:8px">${esc(log.notes.slice(0,140))}${log.notes.length>140?'…':''}</div>`:''}
           </div>`;
         grid.appendChild(card);
+        card.querySelector('[data-del]').addEventListener('click',async e=>{
+          e.stopPropagation();
+          if(!confirm(`Delete "${log.title}"?`))return;
+          const{error}=await SB.from('cs_field_logs').delete().eq('id',log.id);
+          if(error){alert('Delete failed: '+error.message);return;}
+          card.remove();
+        });
       });
 
       el.appendChild(grid);
