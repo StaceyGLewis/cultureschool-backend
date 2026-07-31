@@ -1377,7 +1377,9 @@ const sb = window.supabase.createClient(SUPA_URL, SUPA_ANON);
              'Could not verify your account. Contact the site owner.', false);
         return false;
       }
-      if (uRow?.admin) { allow(); return true; }
+      // users.admin is TEXT, not boolean — the string "false" is truthy in JS,
+      // so compare explicitly rather than relying on truthiness.
+      if (String(uRow?.admin ?? '').trim().toLowerCase() === 'true') { allow(); return true; }
       deny('Authorization required',
            'The account ' + session.user.email + ' is not an administrator.',
            false);

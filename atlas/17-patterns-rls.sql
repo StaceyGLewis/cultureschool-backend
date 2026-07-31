@@ -91,10 +91,28 @@ from public.users
 where lower(email) = lower('stacey.a.grant@gmail.com');
 
 -- 0f. How many accounts would retain full access after this change?
-select count(*) filter (where is_subscriber and (subscription_tier = 'all-access' or admin)) as keeps_full_access,
-       count(*) filter (where is_subscriber and subscription_tier is distinct from 'all-access' and not coalesce(admin,false)) as demoted_to_free,
+--
+--     NOTE: public.users.admin is TEXT, not boolean — an earlier version of
+--     this query failed with "argument of OR must be type boolean, not type
+--     text". Every comparison below normalises it explicitly. Do the same
+--     anywhere else you touch this column.
+select count(*) filter (
+         where is_subscriber
+           and (subscription_tier = 'all-access'
+                or lower(trim(coalesce(admin,''))) = 'true')
+       ) as keeps_full_access,
+       count(*) filter (
+         where is_subscriber
+           and subscription_tier is distinct from 'all-access'
+           and lower(trim(coalesce(admin,''))) <> 'true'
+       ) as demoted_to_free,
        count(*) as total_users
 from public.users;
+
+-- 0g. What is actually stored in users.admin? Confirms the normalisation above
+--     covers every value in use (expect 'true' / 'false' / null).
+select coalesce(admin,'«null»') as admin_value, count(*)
+from public.users group by 1 order by 2 desc;
 
 --  ⛔ STOP HERE. Send me 0a–0f before continuing.
 
@@ -126,7 +144,9 @@ as $$
     from public.users u
     where lower(u.email) = lower(coalesce(auth.jwt() ->> 'email', ''))
       and coalesce(u.is_subscriber, false)
-      and (u.subscription_tier = 'all-access' or coalesce(u.admin, false))
+      -- u.admin is TEXT, not boolean — normalise, never rely on a cast
+      and (u.subscription_tier = 'all-access'
+           or lower(trim(coalesce(u.admin, ''))) = 'true')
   );
 $$;
 

@@ -6197,8 +6197,11 @@ async function fetchFullAccess() {
       .select('is_subscriber, subscription_tier, admin')
       .eq('email', session.user.email.toLowerCase())
       .maybeSingle();
+    // users.admin is TEXT, not boolean. `!!uRow.admin` would be true for the
+    // string "false" — compare explicitly.
+    const isAdmin = String(uRow?.admin ?? '').trim().toLowerCase() === 'true';
     return !!(uRow?.is_subscriber &&
-      (uRow.subscription_tier === 'all-access' || uRow.admin));
+      (uRow.subscription_tier === 'all-access' || isAdmin));
   } catch(e) { return false; }
 }
 
