@@ -116,6 +116,81 @@ const SUPABASE_URL = 'https://qwulthvbwujfehgdegtn.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3dWx0aHZid3VqZmVoZ2RlZ3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQyMDcxODIsImV4cCI6MjA1OTc4MzE4Mn0.t9n4eZng6d0jggiPNK-J_DByvEE2L9tqy5Xh_1-TSoQ';
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+/* ═══════════════════════════════════════════════
+   ADMIN GATE
+   Internal tool. Required, not optional:
+     • atlas/17 §4 revokes anon INSERT/UPDATE on public.patterns, so the
+       thumb_url write-back only works for an authenticated admin.
+     • atlas/18 restricts writes to the pattern-thumbs bucket to admins.
+   Without a session this tool cannot upload OR write back — it would run
+   to completion and silently fail on every row.
+═══════════════════════════════════════════════ */
+(function thumbAdminGate(){
+  const gate = document.createElement('div');
+  gate.id = '__tgGate';
+  gate.style.cssText = 'position:fixed;inset:0;z-index:99999;background:#0e0b08;display:flex;align-items:center;justify-content:center;padding:24px;font-family:system-ui,sans-serif';
+  gate.innerHTML = `
+    <div style="max-width:400px;width:100%;text-align:center">
+      <div style="font-size:1.6rem;color:#c8a050;margin-bottom:14px">✦</div>
+      <div id="__tgTitle" style="font-family:Georgia,serif;font-style:italic;font-size:1.5rem;color:#faf6ef;margin-bottom:10px">Checking authorization…</div>
+      <div id="__tgSub" style="font-size:.82rem;line-height:1.6;color:rgba(250,246,239,.45)"></div>
+      <div id="__tgForm" style="display:none;margin-top:20px">
+        <input id="__tgEmail" type="email" placeholder="admin@cultureschool.org"
+          style="width:100%;padding:12px 16px;border:1.5px solid rgba(255,255,255,.16);border-radius:10px;font-size:.9rem;outline:none;margin-bottom:10px;background:rgba(255,255,255,.05);color:#faf6ef;box-sizing:border-box">
+        <button id="__tgSend"
+          style="width:100%;padding:13px;background:linear-gradient(135deg,#e8d5a8,#c8a050);border:none;border-radius:99px;font:700 .65rem/1 system-ui;letter-spacing:.18em;text-transform:uppercase;color:#1e1810;cursor:pointer">Send sign-in link →</button>
+      </div>
+      <div id="__tgMsg" style="font-size:.72rem;color:#c8a050;margin-top:12px;min-height:1em"></div>
+    </div>`;
+  document.body.appendChild(gate);
+  document.body.style.overflow = 'hidden';
+
+  const deny = (t, s, form) => {
+    document.getElementById('__tgTitle').textContent = t;
+    document.getElementById('__tgSub').textContent   = s;
+    document.getElementById('__tgForm').style.display = form ? 'block' : 'none';
+  };
+
+  async function check(){
+    try {
+      const { data: { session } } = await sb.auth.getSession();
+      if (!session?.user) {
+        deny('Authorization required',
+             'The thumbnail backfill writes to public.patterns and to storage. Sign in with an administrator account.', true);
+        return;
+      }
+      const { data: uRow, error } = await sb.from('users')
+        .select('admin').eq('email', session.user.email.toLowerCase()).maybeSingle();
+      if (error) { deny('Authorization required','Could not verify your account.',false); return; }
+      // users.admin is TEXT — "false" is truthy in JS, so compare explicitly.
+      if (String(uRow?.admin ?? '').trim().toLowerCase() === 'true') {
+        gate.remove();
+        document.body.style.overflow = '';
+        return;
+      }
+      deny('Authorization required',
+           'The account ' + session.user.email + ' is not an administrator.', false);
+    } catch (e) {
+      deny('Authorization required','Could not verify your account.',false);
+    }
+  }
+
+  document.getElementById('__tgSend').onclick = async () => {
+    const em = (document.getElementById('__tgEmail').value||'').trim().toLowerCase();
+    const msg = document.getElementById('__tgMsg');
+    if (!em.includes('@')) { msg.textContent = 'Enter a valid email.'; return; }
+    msg.textContent = 'Sending…';
+    const { error } = await sb.auth.signInWithOtp({ email: em, options: { emailRedirectTo: window.location.href } });
+    msg.textContent = error ? error.message : '✦ Check your email for a sign-in link.';
+  };
+
+  sb.auth.onAuthStateChange(e => {
+    if (e === 'SIGNED_IN' || e === 'TOKEN_REFRESHED') check();
+    if (e === 'SIGNED_OUT') location.reload();
+  });
+  check();
+})();
+
 const BUCKET = 'pattern-thumbs';
 const THUMB_SIZE = 400;
 
