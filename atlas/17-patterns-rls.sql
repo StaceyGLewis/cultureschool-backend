@@ -14,19 +14,27 @@
 --      "Not forced" is correct and expected: the table owner / service_role
 --      bypasses RLS, which is what netlify/functions/skin-pattern.js relies on.
 --
---    ⚠️  RLS BEING ALREADY ENABLED CHANGES SECTION 3.
---      anon can currently read all 7,088 rows *with RLS on*. That means an
---      existing PERMISSIVE SELECT policy is allowing it — almost certainly
---      `using (true)`.
+--    ── EXISTING POLICIES (0b result) ────────────────────────────────────────
+--      patterns_public_select     SELECT  {public}         (is_public = true)
+--      patterns_workspace_select  SELECT  {authenticated}  (workspace_enabled = true)
 --
---      PostgreSQL ORs permissive policies together. Adding the restrictive
---      policies below WITHOUT removing that existing one changes NOTHING —
---      the old policy keeps returning every row. This is the single easiest
---      way to "harden" the table and accomplish nothing.
+--      ⚠️  `patterns_public_select` IS THE LEAK, and it is the whole leak.
+--          `{public}` is the PUBLIC pseudo-role — every role, anon included.
+--          Its qual is `is_public = true`, and is_public is true on all 7,088
+--          rows (0 rows have is_public = false). So it returns the entire
+--          archive to everyone. It must be DROPPED, not supplemented:
+--          PostgreSQL ORs permissive policies together, so adding tighter
+--          policies alongside it would change nothing at all.
 --
---      → Run 0b, find the existing SELECT policy, and drop it as part of
---        Section 3. I have left a placeholder there; send me 0b's output and
---        I will fill in the exact policy name.
+--      `patterns_workspace_select` currently matches 0 rows
+--      (workspace_enabled = false on all 7,088), so it is inert today. It is
+--      left in place — but note it grants ANY authenticated user, including a
+--      free signed-up account, full read on any row that is later flipped to
+--      workspace_enabled = true. See the note at the end of Section 3.
+--
+--    ── YOUR ACCOUNT (0e result) ─────────────────────────────────────────────
+--      stacey.a.grant@gmail.com | is_subscriber t | all-access | admin t
+--      → retains full access under every policy below. No lockout risk.
 --
 --    • public.patterns holds 7,088 rows
 --    • is_public = true on ALL 7,088 — so `.eq('is_public', true)` filters nothing
@@ -252,11 +260,10 @@ comment on view public.patterns_public is
 
 alter table public.patterns enable row level security;
 
--- ⚠️ REQUIRED: drop the existing permissive SELECT policy that currently
---    lets anon read all 7,088 rows. Without this the two policies below are
---    decorative — permissive policies OR together.
---    Fill in the real name from Section 0b before running:
--- drop policy if exists "<NAME FROM 0b>" on public.patterns;
+-- ⚠️ REQUIRED FIRST — this is the line that actually closes the archive.
+--    Without it the two policies below are decorative: permissive policies OR
+--    together, so patterns_public_select would keep returning all 7,088 rows.
+drop policy if exists "patterns_public_select" on public.patterns;
 
 drop policy if exists "patterns free read"   on public.patterns;
 drop policy if exists "patterns member read" on public.patterns;
@@ -271,6 +278,24 @@ create policy "patterns member read"
   to authenticated
   using (is_public and public.cs_has_all_access());
 */
+
+
+-- ────────────────────────────────────────────────────────────────────────────
+--  NOTE ON patterns_workspace_select
+--
+--  It is inert today (0 rows have workspace_enabled = true) so neither 3A nor
+--  3B touches it. But as written it grants EVERY authenticated user — including
+--  a free account that just signed up — full read on any row flipped to
+--  workspace_enabled = true. If workspace is meant to be a members' feature,
+--  tighten it at the same time:
+--
+--    drop policy if exists "patterns_workspace_select" on public.patterns;
+--    create policy "patterns_workspace_select"
+--      on public.patterns for select to authenticated
+--      using (workspace_enabled and public.cs_has_all_access());
+--
+--  Leave it alone if workspace is deliberately open to all signed-in users.
+-- ────────────────────────────────────────────────────────────────────────────
 
 
 -- ════════════════════════════════════════════════════════════════════════════
@@ -349,12 +374,20 @@ select count(*) as total_rows from public.patterns;     -- expect 7088
 --  SECTION 6 — ROLLBACK. Restores the current behaviour exactly.
 -- ════════════════════════════════════════════════════════════════════════════
 
+-- NOTE: RLS was already ENABLED before this migration — do NOT disable it.
+-- Restoring means putting patterns_public_select back exactly as it was.
 /*
-alter table public.patterns disable row level security;
 drop policy if exists "patterns free read"     on public.patterns;
 drop policy if exists "patterns member read"   on public.patterns;
 drop policy if exists "patterns member insert" on public.patterns;
 drop policy if exists "patterns member update" on public.patterns;
+
+-- restore the original permissive read (verbatim from 0b)
+create policy "patterns_public_select"
+  on public.patterns for select
+  to public
+  using (is_public = true);
+
 grant insert, update, delete on public.patterns to anon;
 -- drop view if exists public.patterns_public;          -- only if 3B was run
 -- drop function if exists public.cs_has_all_access();  -- only if fully reverting
