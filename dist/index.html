@@ -6220,7 +6220,7 @@ document.getElementById('jumpBottom')?.addEventListener('click', () => {
       // Build query — palette_enabled first, then filter by occasion if known
       var q = supa
         .from('viewers')
-        .select('key, title, thumb_url, occasion_tag, feels, palette_tag')
+        .select('key, title, thumb_url, occasion_tag, feels, palette_code')
         .eq('is_active', true)
         .eq('palette_enabled', true)
         .limit(8);
@@ -6233,7 +6233,7 @@ document.getElementById('jumpBottom')?.addEventListener('click', () => {
       if ((!rows || !rows.length) && occTag) {
         var fb = await supa
           .from('viewers')
-          .select('key, title, thumb_url, occasion_tag, feels, palette_tag')
+          .select('key, title, thumb_url, occasion_tag, feels, palette_code')
           .eq('is_active', true)
           .eq('palette_enabled', true)
           .limit(8);
