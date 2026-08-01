@@ -1431,6 +1431,85 @@ const SUPA_URL  = 'https://qwulthvbwujfehgdegtn.supabase.co';
 const SUPA_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3dWx0aHZid3VqZmVoZ2RlZ3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQyMDcxODIsImV4cCI6MjA1OTc4MzE4Mn0.t9n4eZng6d0jggiPNK-J_DByvEE2L9tqy5Xh_1-TSoQ';
 const supa = supabase.createClient(SUPA_URL, SUPA_ANON);
 
+/* ═══════════════════════════════════════════════════════════════
+   EXPORT ACCESS — all-access members only
+   Locked decision: free to explore & shop, membership to create.
+   The studio stays fully usable — design, recolor, preview — so it
+   still demos. Only the outputs (SVG / PNG / tiled / hi-res) are
+   gated, at the two choke points every export funnels through:
+   downloadBlob() and downloadSVG().
+
+   Rule matches dist/pattern-library.html and my-world.html:
+     is_subscriber AND (subscription_tier === 'all-access' OR admin)
+   users.admin is TEXT, not boolean — "false" is truthy in JS, so it
+   is compared explicitly, never with !!.
+═══════════════════════════════════════════════════════════════ */
+var _psAccess = null, _psHasAccess = false;
+
+async function _psFetchAccess() {
+  try {
+    const { data: { session } } = await supa.auth.getSession();
+    if (!session?.user) return false;
+    const { data: uRow } = await supa.from('users')
+      .select('is_subscriber, subscription_tier, admin')
+      .eq('email', session.user.email.toLowerCase())
+      .maybeSingle();
+    const isAdmin = String(uRow?.admin ?? '').trim().toLowerCase() === 'true';
+    return !!(uRow?.is_subscriber &&
+      (uRow.subscription_tier === 'all-access' || isAdmin));
+  } catch (e) { return false; }
+}
+
+function psEnsureAccess() {
+  if (!_psAccess) _psAccess = _psFetchAccess().then(v => { _psHasAccess = v; return v; });
+  return _psAccess;
+}
+function psResetAccess() { _psAccess = null; _psHasAccess = false; }
+
+async function psRequireExport() {
+  if (await psEnsureAccess()) return true;
+  psShowExportGate();
+  return false;
+}
+
+function psShowExportGate() {
+  document.getElementById('__psGate')?.remove();
+  const scrim = document.createElement('div');
+  scrim.id = '__psGate';
+  scrim.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(10,8,4,.78);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:24px;';
+  scrim.innerHTML = `
+    <div style="background:#faf6ef;border-radius:20px;border:1px solid rgba(201,169,110,.3);width:min(460px,94vw);padding:34px 30px 32px;text-align:center;box-shadow:0 24px 70px rgba(0,0,0,.45);">
+      <p style="font:700 .58rem/1 'DM Sans',sans-serif;letter-spacing:.4em;text-transform:uppercase;color:#c9a96e;margin-bottom:12px;">✦ Members only</p>
+      <h3 style="font-family:'Cormorant Garamond',Georgia,serif;font-weight:400;font-size:1.55rem;line-height:1.2;color:#1a1208;margin-bottom:10px;">Exports are for members</h3>
+      <p style="font:400 .86rem/1.65 'DM Sans',sans-serif;color:rgba(26,18,8,.58);margin-bottom:22px;">Design and preview as much as you like. To download print-ready SVG and high-resolution PNG files, you'll need an all-access membership.</p>
+      <a href="https://cultureschool.org/collections/membership" style="display:inline-block;padding:13px 28px;border-radius:99px;background:linear-gradient(135deg,#e8d5a8,#c9a96e);color:#1a1208;font:700 .65rem/1 'DM Sans',sans-serif;letter-spacing:.18em;text-transform:uppercase;text-decoration:none;">Become a member →</a>
+      <p style="font:400 .6rem/1 'DM Sans',sans-serif;color:rgba(26,18,8,.4);margin-top:16px;">Already a member?
+        <button id="__psSignin" style="background:none;border:none;color:#8b6a3a;font:inherit;text-decoration:underline;cursor:pointer;padding:0;">Sign in →</button></p>
+      <p style="margin-top:8px;">
+        <button id="__psClose" style="background:none;border:none;color:rgba(26,18,8,.35);font:400 .6rem/1 'DM Sans',sans-serif;text-decoration:underline;cursor:pointer;padding:0;">Keep designing</button></p>
+      <p id="__psMsg" style="font:400 .68rem/1.4 'DM Sans',sans-serif;color:#8b6a3a;margin-top:12px;min-height:1.2em;"></p>
+    </div>`;
+  scrim.addEventListener('click', e => { if (e.target === scrim) scrim.remove(); });
+  document.body.appendChild(scrim);
+  document.getElementById('__psClose').onclick = () => scrim.remove();
+  document.getElementById('__psSignin').onclick = async () => {
+    const msg = document.getElementById('__psMsg');
+    const em = (prompt('Email linked to your CultureSchool membership:') || '').trim().toLowerCase();
+    if (!em.includes('@')) { msg.textContent = 'Enter a valid email.'; return; }
+    msg.textContent = 'Sending…';
+    const { error } = await supa.auth.signInWithOtp({ email: em, options: { emailRedirectTo: window.location.href } });
+    msg.textContent = error ? error.message : '✦ Check your email for a sign-in link.';
+  };
+}
+
+supa.auth.onAuthStateChange((ev, session) => {
+  if (ev === 'SIGNED_IN' || ev === 'TOKEN_REFRESHED') {
+    psResetAccess();
+    psEnsureAccess().then(ok => { if (ok) document.getElementById('__psGate')?.remove(); });
+  }
+  if (ev === 'SIGNED_OUT') psResetAccess();
+});
+
 // ── State ─────────────────────────────────────────────────
 let allPalettes = [];
 let activePalette = null;
@@ -3069,7 +3148,10 @@ function applyStrokeOutline(gid, color, width) {
 }
 
 // ── SVG Download ──────────────────────────────────────────
-function downloadSVG() {
+// Builds its own anchor rather than calling downloadBlob, so it needs
+// its own guard.
+async function downloadSVG() {
+  if (!await psRequireExport()) return;
   const svg = document.getElementById('printCanvas');
   const serializer = new XMLSerializer();
   let source = serializer.serializeToString(svg);
@@ -3624,7 +3706,10 @@ function mirrorCanvas(canvas) {
   mctx.drawImage(canvas, 0, 0);
   return mc;
 }
-function downloadBlob(blob, name) {
+// Every PNG export path funnels through here (tiled, hi-res, saved
+// snapshots) — gating it covers all of them at once.
+async function downloadBlob(blob, name) {
+  if (!await psRequireExport()) return;
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = name;
@@ -6665,7 +6750,10 @@ function runScatter() {
       legX, noteY + Math.round(noteH * .74)
     );
 
-    cnv.toBlob(function (blob) {
+    // Sewing panel built its own anchor and bypassed downloadBlob —
+    // it was the last fully ungated export path in the file.
+    cnv.toBlob(async function (blob) {
+      if (!await psRequireExport()) return;
       var a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
       a.download = 'coco-sewing-panel-' + _prod + '.png';
@@ -7288,8 +7376,12 @@ async function _pcSVGtoDataURL(svgText, targetSize) {
 }
 
 /* ── Auth check ──────────────────────────────────────────────────── */
+// Was: signed-in only, which let any free account export patch PNG/PDF.
+// Raised to the same all-access bar as every other export in this file.
+// All three call sites (PNG download, PDF download, UI state at ~7531)
+// upgrade with it.
 async function _pcCheckAuth() {
-  try { var r = await supa.auth.getSession(); return !!(r.data && r.data.session && r.data.session.user); }
+  try { return await psEnsureAccess(); }
   catch(e) { return false; }
 }
 
