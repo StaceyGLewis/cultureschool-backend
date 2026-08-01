@@ -63,6 +63,14 @@ Last updated: 2026-07-31
 - **Intelligence Platform / Textile Atlas** (`intelligence-platform.html`) — **the internal command center. Built July 2026. Check here before proposing any new internal tool.** Modules: Dashboard (live `cs_events` telemetry), Textile Atlas (search-first knowledge traversal), Knowledge Graph (places ↔ concepts ↔ sources), Supplier CRM, Creator CRM, Museum Library, **Institutions**, Event Planner, Trend Observatory, **Maker Network**, **Field Logs**. Magic-link gated, admin-only.
 - **Telemetry layer** — `cs-track.js` inlined across the CoCo surfaces, writing to `cs_events`; `cs_dash_*` views feed the Dashboard. Search terms with no Atlas entry are flagged as content gaps with one-click draft creation.
 - **Field Log / Field Read** (`field-read.cultureschool.org`) — field research capture: photo corpus → palette + heritage signals + Atlas matches, saved to `cs_field_logs`. Corpus Trends panel aggregates recurring colors and signals across logs.
+- **Pattern Generator / `patterng.html` — INTERNAL, ADMIN-ONLY, NOT DEPLOYED.** (Decided 2026-07-31.)
+  Both public domains — `coco-pattern-generator.cultureschool.org` and the `.netlify.app`
+  subdomain — have been **deleted**. They served the full 80-function pattern engine, ~380 KB,
+  to anyone with one `curl` and no login. The tool now runs locally only
+  (`python3 -m http.server 8000` → `http://localhost:8000/patterng.html`). It has an
+  admin gate that auto-bypasses on localhost and re-arms on any real host.
+  **Do not redeploy it.** The member-facing maker tool is CoCo Print Studio.
+  A stale reference copy lives at `dist/patterng.html` — reference only, do not serve.
 - **CoCo Print Studio** (`coco-print-studio`) — pattern/surface-design creation studio (Templates, Palette, Scatter, Shapes, Text) + product-scaled export (pillow/tote/napkin) + a guided **Make Mode** 8-to-88 lane. The maker tool. *(Not a place to bolt on a second "maker studio.")*
 - **Flourish / CoCo** (`flourish-ultimate`) — **color-intelligent template studio.** Editable templates for **invites, signage, landing pages**; a **Color Planner** (upload image → extract palette → apply to any template); recolors via palette variables from the Supabase library. Export = **HTML / PNG** (confirm if print-PDF exists). **This is our Canva — never recommend Canva.**
 - **Patch Studio** (`patch-studio`) — gated, one-time-pass printable iron-on patch tool.
