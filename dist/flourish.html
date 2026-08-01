@@ -5574,7 +5574,11 @@ function pomBuyNow() {
 function openPatternGenerator(e) {
   e.preventDefault();
   const p = window._currentPal;
-  const base = 'https://coco-pattern-generator.netlify.app/';
+  // Was coco-pattern-generator (patterng.html) — that tool is now internal,
+  // admin-only and no longer deployed. CoCo Print Studio is the member-facing
+  // maker tool. NOTE: Print Studio currently reads only ?mode=make, so the
+  // palette_id below is passed but ignored — the handoff is not wired yet.
+  const base = 'https://coco-print-studio.cultureschool.org/';
   if (p && p.id) {
     window.open(base + '?palette_id=' + p.id, '_blank');
   } else {
@@ -5733,7 +5737,7 @@ db.auth.onAuthStateChange(async (event, session) => {
     <button class="pom-buy-btn" id="pomBuyBtn" onclick="pomBuyNow()">Buy now → $58</button>
     <div class="pom-note">
       Products ship from Printful · Custom-printed just for you · 2–5 business days<br>
-      <a href="https://coco-pattern-generator.netlify.app/" target="_blank"
+      <a href="https://coco-print-studio.cultureschool.org/" target="_blank"
         style="color:rgba(201,169,110,.5);text-decoration:none;"
         onclick="openPatternGenerator(event)">Want to customize the design further? →</a>
     </div>

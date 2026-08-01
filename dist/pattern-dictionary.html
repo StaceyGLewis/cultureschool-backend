@@ -643,6 +643,7 @@ a{color:inherit}
   </div>
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (function(){
   var search=document.getElementById('pdSearch');
@@ -652,6 +653,31 @@ a{color:inherit}
   var empty=document.getElementById('pdEmpty');
   var activeRegion='all';
   var _trackTimer;
+
+  /* ── SIGN-IN GATE ───────────────────────────────────────────────
+     First 3 entries are open; the rest need a signed-in account.
+     Sign-in only — this is a lead-capture gate, not the all-access
+     membership check used on the pattern library.
+
+     LIMITATION, stated plainly: all 51 entries are static HTML in
+     this file, so the text is still in View Source. This gate shapes
+     behaviour and captures emails; it does not withhold the content.
+     Withholding would mean moving these entries into Supabase and
+     fetching them after auth. See atlas/ENGINE-SPLIT-SCOPE.md.
+  ─────────────────────────────────────────────────────────────── */
+  var FREE_ENTRIES = 3;
+  var _locked = true;                       // assume locked until proven otherwise
+  var _free   = Array.prototype.slice.call(cards, 0, FREE_ENTRIES);
+  var _freeSet = new Set(_free);
+  var _sb = null;
+  try {
+    if (window.supabase && window.supabase.createClient) {
+      _sb = window.supabase.createClient(
+        'https://qwulthvbwujfehgdegtn.supabase.co',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3dWx0aHZid3VqZmVoZ2RlZ3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQyMDcxODIsImV4cCI6MjA1OTc4MzE4Mn0.t9n4eZng6d0jggiPNK-J_DByvEE2L9tqy5Xh_1-TSoQ'
+      );
+    }
+  } catch(e) {}
   function apply(){
     var q=(search.value||'').trim().toLowerCase();
     var anyVisible=false;
@@ -659,7 +685,10 @@ a{color:inherit}
     cards.forEach(function(c){
       var matchR=activeRegion==='all'||c.dataset.region===activeRegion;
       var matchQ=!q||c.dataset.name.indexOf(q)>-1||c.textContent.toLowerCase().indexOf(q)>-1;
-      var show=matchR&&matchQ;
+      // Gate applies to filtering AND search — otherwise a locked visitor
+      // could simply search their way to any of the 51 entries.
+      var allowed=!_locked||_freeSet.has(c);
+      var show=matchR&&matchQ&&allowed;
       c.style.display=show?'':'none';
       if(show){anyVisible=true;visibleCards.push(c);}
     });
@@ -711,6 +740,73 @@ a{color:inherit}
       });
     });
   });
+
+  /* ── Gate panel ─────────────────────────────────────────────── */
+  var gateEl = null;
+  function buildGate(){
+    if (gateEl) return gateEl;
+    gateEl = document.createElement('div');
+    gateEl.id = 'pdGate';
+    gateEl.style.cssText = 'max-width:760px;margin:28px auto 48px;padding:32px 28px;border:1px solid rgba(201,169,110,.28);border-radius:18px;background:rgba(201,169,110,.06);text-align:center;';
+    gateEl.innerHTML =
+      '<p style="font-size:.6rem;font-weight:700;letter-spacing:.32em;text-transform:uppercase;color:#c9a96e;margin-bottom:12px;">✦ ' +
+        (cards.length - FREE_ENTRIES) + ' more traditions</p>' +
+      '<h3 style="font-family:\'Cormorant Garamond\',Georgia,serif;font-weight:400;font-size:1.6rem;line-height:1.2;margin-bottom:10px;">The full Pattern Dictionary</h3>' +
+      '<p style="font-size:.85rem;line-height:1.65;opacity:.62;max-width:46ch;margin:0 auto 20px;">Kente, Adire, Ikat, Shibori, Suzani, Zellige and more — every entry names the tradition, its origin, and how it is made. Sign in to read them all. Free.</p>' +
+      '<div id="pdGateForm" style="display:flex;gap:8px;max-width:400px;margin:0 auto;flex-wrap:wrap;justify-content:center;">' +
+        '<input id="pdGateEmail" type="email" placeholder="your@email.com" autocomplete="email" ' +
+          'style="flex:1;min-width:200px;padding:12px 16px;border:1px solid rgba(201,169,110,.35);border-radius:99px;font:400 .85rem/1 inherit;outline:none;background:rgba(255,255,255,.06);color:inherit;">' +
+        '<button id="pdGateSend" style="padding:12px 24px;border:none;border-radius:99px;background:linear-gradient(135deg,#e8d5a8,#c9a96e);color:#1a1208;font:700 .68rem/1 inherit;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;">Send link →</button>' +
+      '</div>' +
+      '<p id="pdGateMsg" style="font-size:.72rem;color:#c9a96e;margin-top:14px;min-height:1.2em;"></p>';
+    return gateEl;
+  }
+
+  function placeGate(){
+    if (!_locked) return;
+    var last = _free[_free.length - 1];
+    if (!last) return;
+    var host = last.closest('.pd-region') || last.parentNode;
+    if (host && host.parentNode) host.parentNode.insertBefore(buildGate(), host.nextSibling);
+
+    var sendBtn = document.getElementById('pdGateSend');
+    if (sendBtn) sendBtn.onclick = async function(){
+      var msg = document.getElementById('pdGateMsg');
+      var em  = (document.getElementById('pdGateEmail').value || '').trim().toLowerCase();
+      if (!em || em.indexOf('@') === -1) { msg.textContent = 'Enter a valid email.'; return; }
+      if (!_sb) { msg.textContent = 'Sign-in unavailable — please refresh.'; return; }
+      msg.textContent = 'Sending…';
+      try {
+        var r = await _sb.auth.signInWithOtp({ email: em, options: { emailRedirectTo: window.location.href } });
+        msg.textContent = r.error ? r.error.message : '✦ Check your email for a sign-in link.';
+      } catch(e) { msg.textContent = 'Could not send — try again.'; }
+    };
+  }
+
+  function unlock(){
+    if (!_locked) return;
+    _locked = false;
+    if (gateEl && gateEl.parentNode) gateEl.parentNode.removeChild(gateEl);
+    apply();
+  }
+
+  async function checkSession(){
+    if (!_sb) { placeGate(); apply(); return; }   // fail closed if the CDN is blocked
+    try {
+      var res = await _sb.auth.getSession();
+      if (res && res.data && res.data.session && res.data.session.user) { _locked = false; }
+    } catch(e) {}
+    if (_locked) placeGate();
+    apply();
+  }
+
+  if (_sb) {
+    _sb.auth.onAuthStateChange(function(ev, session){
+      if ((ev === 'SIGNED_IN' || ev === 'TOKEN_REFRESHED') && session && session.user) unlock();
+      if (ev === 'SIGNED_OUT') location.reload();
+    });
+  }
+  checkSession();
 })();
 </script>
 </body>

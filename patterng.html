@@ -7145,7 +7145,13 @@ async function gateSendLink() {
     const { error } = await sb.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: 'https://coco-pattern-generator.cultureschool.org/',
+        // Was hardcoded to https://coco-pattern-generator.cultureschool.org/ —
+        // that domain has been deleted, so every magic link from this gate
+        // landed on a dead host and the session never came back. Use the
+        // current origin so it works from localhost (and anywhere else).
+        // Requires the serving origin in Supabase → Auth → Redirect URLs,
+        // e.g. http://localhost:8000/**
+        emailRedirectTo: window.location.href,
         shouldCreateUser: false      // only sign in existing accounts
       }
     });
