@@ -4326,6 +4326,12 @@ function renderThumb(style, colors) {
   const ctx = canvas.getContext('2d');
   const fn = DRAW_FN[style] || drawDiamond;
   fn(ctx, THUMB_SIZE, THUMB_SIZE, colors, 28, 0, 60);
+  // These land in a PUBLIC bucket and patterns_public exposes thumb_url to
+  // anonymous visitors, so every thumbnail is directly downloadable by URL.
+  // Watermark them, exactly as dist/pattern-library.html does for its own
+  // canvas tiles (renderPatternToCanvas -> stampCanvas). Without this the
+  // backfill publishes 7,088 clean pattern images to the CDN.
+  stampCanvas(canvas);
   return canvas;
 }
 
