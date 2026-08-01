@@ -701,6 +701,11 @@ body.stamp-mode #elementsGroup .canvas-el { pointer-events: none; }
 body.stamp-mode #printCanvas { cursor: crosshair !important; }
 body.pen-mode   #elementsGroup .canvas-el { pointer-events: none; }
 body.pen-mode   #printCanvas { cursor: crosshair !important; }
+/* Stop iPad scrolling/zooming the page while a stylus is drawing.
+   preventDefault() alone leaves a gesture race on Safari. */
+body.draw-mode  #printCanvas,
+body.pen-mode   #printCanvas,
+body.stamp-mode #printCanvas { touch-action: none; }
 
 .draw-toolbar {
   position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
@@ -1197,6 +1202,7 @@ body.eyedrop-mode #printCanvas { cursor: crosshair; }
       <div class="dtb-sep"></div>
       <div id="drawColorRow" style="display:flex;gap:4px;align-items:center;"></div>
       <div class="dtb-sep"></div>
+      <button id="drawBrushBtn" class="prop-btn" onclick="toggleDrawBrush()" style="padding:4px 10px;font-size:.65rem;" title="Paintbrush — width follows Apple Pencil pressure, or speed on a mouse">🖌 Brush</button>
       <button id="drawFillBtn" class="prop-btn" onclick="toggleDrawFill()" style="padding:4px 10px;font-size:.65rem;" title="Stroke vs fill shape">Stroke</button>
       <button id="drawEraserBtn" class="prop-btn" onclick="toggleDrawEraser()" style="padding:4px 10px;font-size:.65rem;" title="Eraser — paints with canvas background color">◻ Erase</button>
       <div class="dtb-sep"></div>
@@ -4671,7 +4677,8 @@ function setDrawSize(w, btn) {
 
 function toggleDrawFill() {
   _drawFill = !_drawFill;
-  if (_drawFill) _drawEraser = false;
+  if (_drawFill) { _drawEraser = false; _drawBrush = false;
+    document.getElementById('drawBrushBtn')?.classList.remove('on'); }
   const btn = document.getElementById('drawFillBtn');
   const eb  = document.getElementById('drawEraserBtn');
   if (btn) { btn.textContent = _drawFill ? 'Fill' : 'Stroke'; btn.classList.toggle('on', _drawFill); }
@@ -4683,7 +4690,8 @@ function toggleDrawEraser() {
   const btn = document.getElementById('drawEraserBtn');
   const fb  = document.getElementById('drawFillBtn');
   if (_drawEraser) {
-    _drawFill = false;
+    _drawFill = false; _drawBrush = false;
+    document.getElementById('drawBrushBtn')?.classList.remove('on');
     if (fb) { fb.textContent = 'Stroke'; fb.classList.remove('on'); }
   }
   if (btn) btn.classList.toggle('on', _drawEraser);
@@ -4721,6 +4729,84 @@ function setDrawStrokeWidth(gid, w) {
   const p = g.querySelector('path'); if (p) p.setAttribute('stroke-width', w);
 }
 
+/* ════════════════════════════════════════════════════════════════════
+   PAINTBRUSH  — pressure/velocity-responsive variable-width stroke
+
+   An SVG <path> can only carry ONE stroke-width, so a real brush cannot
+   be a stroked line. Instead the centreline is turned into a closed,
+   FILLED ribbon: an outline offset left and right by a half-width that
+   varies point to point.
+
+   Width comes from, in order of preference:
+     1. Apple Pencil pressure (touch.force, 0–1) — captured in the touch
+        handlers below, since the synthetic MouseEvent cannot carry it.
+     2. Velocity, for a mouse or trackpad — fast strokes thin out, slow
+        strokes sit fat, which is how a loaded brush actually behaves.
+
+   Both ends taper so a stroke lifts off the page instead of stopping
+   with a blunt edge.
+════════════════════════════════════════════════════════════════════ */
+let _drawBrush   = false;   // paintbrush on/off (a mode of the draw tool)
+let _lastPressure = 0;      // most recent stylus force, 0 when not a stylus
+
+function toggleDrawBrush() {
+  _drawBrush = !_drawBrush;
+  if (_drawBrush) {
+    _drawEraser = false; _drawFill = false;
+    const eb = document.getElementById('drawEraserBtn');
+    const fb = document.getElementById('drawFillBtn');
+    if (eb) eb.classList.remove('on');
+    if (fb) { fb.textContent = 'Stroke'; fb.classList.remove('on'); }
+  }
+  const btn = document.getElementById('drawBrushBtn');
+  if (btn) btn.classList.toggle('on', _drawBrush);
+}
+
+// Pressure for one sample. Falls back to velocity when there is no stylus.
+function _brushPressure(pt, prev) {
+  if (_lastPressure > 0.01) return Math.min(1, _lastPressure);
+  if (!prev || prev.t == null) return 0.62;
+  const dt   = Math.max(1, pt.t - prev.t);
+  const dist = Math.hypot(pt.x - prev.x, pt.y - prev.y);
+  const v    = dist / dt;                       // svg units per ms
+  return Math.max(0.18, Math.min(1, 1 - v * 0.55));
+}
+
+// Quadratic-through-midpoints, same easing the pencil uses
+function _brushEdge(pts) {
+  let d = '';
+  for (let i = 1; i < pts.length - 1; i++) {
+    const mx = (pts[i].x + pts[i+1].x) / 2, my = (pts[i].y + pts[i+1].y) / 2;
+    d += ` Q${pts[i].x.toFixed(1)},${pts[i].y.toFixed(1)} ${mx.toFixed(1)},${my.toFixed(1)}`;
+  }
+  const last = pts[pts.length - 1];
+  return d + ` L${last.x.toFixed(1)},${last.y.toFixed(1)}`;
+}
+
+function buildBrushRibbon(pts, baseW) {
+  if (!pts || pts.length < 2) return '';
+  const n = pts.length, left = [], right = [];
+  for (let i = 0; i < n; i++) {
+    const p = pts[i];
+    const a = pts[Math.max(0, i - 1)], b = pts[Math.min(n - 1, i + 1)];
+    let dx = b.x - a.x, dy = b.y - a.y;
+    const len = Math.hypot(dx, dy) || 1;
+    dx /= len; dy /= len;
+    // taper the first and last 18% of the stroke
+    const t     = n === 1 ? 1 : i / (n - 1);
+    const taper = Math.min(1, Math.min(t, 1 - t) / 0.18);
+    const w = baseW * (0.30 + 0.70 * (p.p == null ? 0.62 : p.p))
+                    * (0.22 + 0.78 * taper);
+    left .push({ x: p.x - dy * w, y: p.y + dx * w });
+    right.push({ x: p.x + dy * w, y: p.y - dx * w });
+  }
+  right.reverse();
+  return `M${left[0].x.toFixed(1)},${left[0].y.toFixed(1)}`
+       + _brushEdge(left)
+       + ` L${right[0].x.toFixed(1)},${right[0].y.toFixed(1)}`
+       + _brushEdge(right) + ' Z';
+}
+
 // Smooth path builder — quadratic bezier through midpoints
 function buildSmoothPath(pts) {
   if (!pts.length) return '';
@@ -4754,6 +4840,12 @@ function finaliseDrawStroke(pts) {
     p.setAttribute('fill', 'none');
     p.setAttribute('stroke', bgColor);
     p.setAttribute('stroke-width', Math.max(_drawWidth * 4, 16));
+  } else if (_drawBrush) {
+    // Ribbon is already a closed outline — fill it, no stroke.
+    g.setAttribute('data-title', 'Brush stroke');
+    p.setAttribute('d', buildBrushRibbon(pts, Math.max(_drawWidth, 3)));
+    p.setAttribute('fill', _drawColor);
+    p.setAttribute('stroke', 'none');
   } else {
     g.setAttribute('data-title', 'Drawing');
     p.setAttribute('fill', _drawFill ? _drawColor : 'none');
@@ -4781,9 +4873,15 @@ function finaliseDrawStroke(pts) {
     if (!_drawActive || !_drawTempPath) return;
     const pt = svgPoint(e);
     const prev = _drawPoints[_drawPoints.length - 1];
-    if (Math.hypot(pt.x - prev.x, pt.y - prev.y) < 1.5) return;
+    // Brush needs a denser sample rate than the pencil — width varies
+    // along the stroke, so widely spaced points read as facets.
+    if (Math.hypot(pt.x - prev.x, pt.y - prev.y) < (_drawBrush ? 0.8 : 1.5)) return;
+    pt.t = performance.now();
+    if (_drawBrush) pt.p = _brushPressure(pt, prev);
     _drawPoints.push(pt);
-    _drawTempPath.setAttribute('d', buildSmoothPath(_drawPoints));
+    _drawTempPath.setAttribute('d', _drawBrush
+      ? buildBrushRibbon(_drawPoints, Math.max(_drawWidth, 3))
+      : buildSmoothPath(_drawPoints));
   }
 
   function endDraw() {
@@ -4800,9 +4898,15 @@ function finaliseDrawStroke(pts) {
     if (!_drawMode || e.button !== 0) return;
     e.stopPropagation(); e.preventDefault();
     _drawActive = true;
-    _drawPoints = [svgPoint(e)];
+    const _p0 = svgPoint(e);
+    _p0.t = performance.now();
+    if (_drawBrush) _p0.p = _lastPressure > 0.01 ? _lastPressure : 0.62;
+    _drawPoints = [_p0];
     _drawTempPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    if (_drawEraser) {
+    if (_drawBrush && !_drawEraser) {
+      _drawTempPath.setAttribute('fill', _drawColor);
+      _drawTempPath.setAttribute('stroke', 'none');
+    } else if (_drawEraser) {
       const bgColor = document.getElementById('canvasBg').getAttribute('fill') || '#f8f5f0';
       _drawTempPath.setAttribute('fill', 'none');
       _drawTempPath.setAttribute('stroke', bgColor);
@@ -4820,8 +4924,11 @@ function finaliseDrawStroke(pts) {
   }, true);
 
   // Touch support (iPad)
+  // Also the ONLY place Apple Pencil pressure is available — a synthetic
+  // MouseEvent cannot carry force, so stash it for _brushPressure() to read.
   function touchPt(e) {
     const t = e.touches[0] || e.changedTouches[0];
+    _lastPressure = (typeof t.force === 'number') ? t.force : 0;
     return { clientX: t.clientX, clientY: t.clientY };
   }
   svg.addEventListener('touchstart', e => {
@@ -5297,6 +5404,63 @@ function updatePenColorRow() {
     if (_penPoints.length > 0) _penPoints.pop();
     _penFinalize(false);
   }, true);
+
+  /* ── Touch / Apple Pencil support (iPad) ──────────────────────────
+     The pen tool previously bound only mouse events, so a stylus on
+     iPad did nothing — iPad Safari delivers Pencil input as TOUCH
+     events. The pencil (draw) tool already had this; the pen did not.
+
+     Same technique as wireDrawTool: translate touches into synthetic
+     MouseEvents. Note both tools attach their document-level handlers
+     in the CAPTURE phase, so `bubbles:false` is fine — capture-phase
+     listeners on ancestors still fire.
+
+     Two pen-specific details:
+       • mousemove must carry buttons:1, or the control-handle drag
+         that shapes the bezier never registers.
+       • double-TAP has to stand in for dblclick, which iPad does not
+         fire reliably — that is how you finish an open path.
+  ─────────────────────────────────────────────────────────────────── */
+  function _penTouchPt(e) {
+    const t = e.touches[0] || e.changedTouches[0];
+    return { clientX: t.clientX, clientY: t.clientY };
+  }
+  let _penLastTap = 0, _penLastTapX = 0, _penLastTapY = 0;
+
+  svg.addEventListener('touchstart', e => {
+    if (!_penMode) return;
+    e.preventDefault();
+    const tp = _penTouchPt(e);
+    const now = Date.now();
+    const near = Math.hypot(tp.clientX - _penLastTapX, tp.clientY - _penLastTapY) < 24;
+
+    // Double-tap → finish the path (stands in for dblclick)
+    if (now - _penLastTap < 320 && near) {
+      _penLastTap = 0;
+      if (_penPoints.length > 0) _penFinalize(false);
+      return;
+    }
+    _penLastTap = now; _penLastTapX = tp.clientX; _penLastTapY = tp.clientY;
+
+    svg.dispatchEvent(new MouseEvent('mousedown', {
+      clientX: tp.clientX, clientY: tp.clientY, button: 0, buttons: 1, bubbles: false
+    }));
+  }, { passive: false, capture: true });
+
+  svg.addEventListener('touchmove', e => {
+    if (!_penMode) return;
+    e.preventDefault();
+    const tp = _penTouchPt(e);
+    svg.dispatchEvent(new MouseEvent('mousemove', {
+      clientX: tp.clientX, clientY: tp.clientY, buttons: 1, bubbles: false
+    }));
+  }, { passive: false, capture: true });
+
+  svg.addEventListener('touchend', e => {
+    if (!_penMode) return;
+    e.preventDefault();
+    svg.dispatchEvent(new MouseEvent('mouseup', { button: 0, buttons: 0, bubbles: false }));
+  }, { passive: false, capture: true });
 })();
 
 /* ════════════════════════════════════════════════════════════════════
