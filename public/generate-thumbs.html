@@ -4189,14 +4189,47 @@ function drawTartan(ctx, w, h, colors, tile, rot, cx) {
 /* ═══════════════════════════════════════════════
    WATERMARK STAMP
 ═══════════════════════════════════════════════ */
+// The corner pill alone is one crop away from gone, so a faint diagonal
+// wordmark goes across the middle too. Kept light on purpose — these tiles are
+// the shop window for the licensing library, not a defaced preview. Set to
+// false if it ever fights the artwork.
+const DIAGONAL_WATERMARK = true;
+
 function stampCanvas(canvas) {
   const ctx = canvas.getContext('2d');
   const w = canvas.width, h = canvas.height;
-  const fontSize = Math.max(6, Math.round(w * 0.007));
+  const text = 'cultureschool.org';
+
+  /* Font size was Math.max(6, Math.round(w * 0.007)) — a ratio tuned for
+     3000px exports. On a 400px thumbnail it collapses to the 6px floor:
+     1.5% of image height, invisible in practice, and that is how 6,451
+     effectively-unwatermarked tiles reached the CDN. Scale it properly, with
+     a floor that stays legible and a cap so a big canvas doesn't get a
+     billboard across the corner. 400px -> 14px, 3000px -> 34px. */
+  const fontSize = Math.round(Math.min(34, Math.max(12, w * 0.034)));
+
   ctx.save();
   ctx.setTransform(1, 0, 0, 1, 0, 0); // reset any DPR or rotation transform
+
+  if (DIAGONAL_WATERMARK) {
+    ctx.save();
+    ctx.translate(w / 2, h / 2);
+    ctx.rotate(-Math.PI / 6);
+    const dFont = Math.round(Math.min(46, Math.max(14, w * 0.058)));
+    ctx.font = `600 ${dFont}px Arial, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    // Light fill with a darker outline so it survives both pale and dark
+    // patterns — a single flat colour disappears on half the archive.
+    ctx.fillStyle = 'rgba(255,255,255,0.16)';
+    ctx.fillText(text, 0, 0);
+    ctx.lineWidth = Math.max(1, dFont * 0.045);
+    ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+    ctx.strokeText(text, 0, 0);
+    ctx.restore();
+  }
+
   ctx.font = `500 ${fontSize}px Arial, sans-serif`;
-  const text = 'cultureschool.org';
   const tw = ctx.measureText(text).width;
   const pw = tw + 10, ph = fontSize + 7;
   const px = w - pw - 4, py = h - ph - 4;
@@ -4468,13 +4501,28 @@ async function processPattern(p, idx, total) {
     return false;
   }
 
-  // Update DB
-  const { error: dbErr } = await sb
+  /* Update DB.
+     `.select('id')` is load-bearing, not decoration. When RLS filters the row
+     out — expired session, an account that doesn't pass cs_has_all_access(),
+     the wrong login — PostgREST returns 204 with NO error and NO rows. The
+     old code checked only `dbErr`, so every write silently no-opped while the
+     log printed ✓ for all 6,451 patterns. That is exactly how the bucket
+     ended up full and `patterns.thumb_url` ended up null on every row.
+     Asking for the row back turns that silence into a hard failure. */
+  const { data: updated, error: dbErr } = await sb
     .from('patterns')
     .update({ thumb_url: publicUrl })
-    .eq('id', p.id);
+    .eq('id', p.id)
+    .select('id');
   if (dbErr) {
     log(`[${idx+1}/${total}] ✗ DB update failed for ${p.id}: ${dbErr.message}`, 'log-err');
+    return false;
+  }
+  if (!updated || updated.length === 0) {
+    log(`[${idx+1}/${total}] ✗ RLS blocked the thumb_url write for ${p.id} — ` +
+        `the image uploaded but the database was NOT updated. Stopping: ` +
+        `re-check you are signed in as an admin before continuing.`, 'log-err');
+    _stopRequested = true;   // fail loudly on the first row, not the 6,451st
     return false;
   }
 
