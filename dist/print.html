@@ -1219,11 +1219,16 @@ body.eyedrop-mode #printCanvas { cursor: crosshair; }
     <!-- Motifs Tab — the student's own drawn symbols, kept between sessions -->
     <div class="panel-body" id="tab-motifs" style="display:none">
       <div class="section-label">My Motifs</div>
-      <div style="font-size:.62rem;color:var(--text-muted);margin-bottom:10px;line-height:1.55;">
-        Draw a symbol, select it, then press <strong style="color:var(--gold)">✦ Save as motif</strong>
-        in Properties. Tap a saved motif to place it, then press <strong style="color:var(--gold)">S</strong>
-        to stamp it into a repeat.
+      <div style="font-size:.62rem;color:var(--text-muted);margin-bottom:8px;line-height:1.55;">
+        A symbol is usually several strokes. Draw the whole thing, press
+        <strong style="color:var(--gold)">⧉ Combine</strong> to make it one object, then
+        <strong style="color:var(--gold)">✦ Save as motif</strong> in Properties.
+        Tap a saved motif to place it, then <strong style="color:var(--gold)">S</strong> to stamp a repeat.
       </div>
+      <button class="prop-btn" onclick="combineDrawings()"
+        style="width:100%;padding:8px;margin-bottom:12px;color:var(--gold);border-color:var(--gold);"
+        title="Fold every stroke on the canvas into a single element you can save, stamp and scatter">
+        ⧉ Combine all strokes into one</button>
       <div id="motifGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;"></div>
     </div>
 
@@ -1281,7 +1286,17 @@ body.eyedrop-mode #printCanvas { cursor: crosshair; }
       <input type="color" id="drawInkPicker" value="#3a3530" onchange="setDrawInkCustom(this.value)"
         title="Any colour" style="width:20px;height:20px;padding:0;border:1px solid var(--border);border-radius:50%;background:none;cursor:pointer;flex-shrink:0;">
       <div class="dtb-sep"></div>
-      <button id="drawBrushBtn" class="prop-btn" onclick="toggleDrawBrush()" style="padding:4px 10px;font-size:.65rem;" title="Paintbrush — width follows Apple Pencil pressure, or speed on a mouse">🖌 Brush</button>
+      <select id="drawBrushType" onchange="setDrawBrush(this.value)"
+        title="Brush shape — every one responds to Apple Pencil pressure, or to speed on a mouse"
+        style="background:var(--surface-3);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:4px 6px;font-size:.65rem;font-family:'DM Sans',sans-serif;cursor:pointer;flex-shrink:0;">
+        <option value="off">✏ Pencil</option>
+        <option value="round">🖌 Round</option>
+        <option value="chisel">▰ Chisel</option>
+        <option value="dry">⋰ Dry</option>
+        <option value="liner">⟋ Liner</option>
+        <option value="rough">⌁ Rough</option>
+        <option value="stipple">⁘ Stipple</option>
+      </select>
       <button id="drawFillBtn" class="prop-btn" onclick="toggleDrawFill()" style="padding:4px 10px;font-size:.65rem;" title="Stroke vs fill shape">Stroke</button>
       <button id="drawEraserBtn" class="prop-btn" onclick="toggleDrawEraser()" style="padding:4px 10px;font-size:.65rem;" title="Eraser — paints with canvas background color">◻ Erase</button>
       <div class="dtb-sep"></div>
@@ -5182,8 +5197,7 @@ function setDrawInkCustom(col) {
 
 function toggleDrawFill() {
   _drawFill = !_drawFill;
-  if (_drawFill) { _drawEraser = false; _drawBrush = false;
-    document.getElementById('drawBrushBtn')?.classList.remove('on'); }
+  if (_drawFill) { _drawEraser = false; setDrawBrush('off'); }
   const btn = document.getElementById('drawFillBtn');
   const eb  = document.getElementById('drawEraserBtn');
   if (btn) { btn.textContent = _drawFill ? 'Fill' : 'Stroke'; btn.classList.toggle('on', _drawFill); }
@@ -5195,8 +5209,7 @@ function toggleDrawEraser() {
   const btn = document.getElementById('drawEraserBtn');
   const fb  = document.getElementById('drawFillBtn');
   if (_drawEraser) {
-    _drawFill = false; _drawBrush = false;
-    document.getElementById('drawBrushBtn')?.classList.remove('on');
+    _drawFill = false; setDrawBrush('off');
     if (fb) { fb.textContent = 'Stroke'; fb.classList.remove('on'); }
   }
   if (btn) btn.classList.toggle('on', _drawEraser);
@@ -5491,6 +5504,50 @@ function deleteMotif(id) {
   toast('Motif removed');
 }
 
+/* Save the WHOLE symbol, not the last stroke.
+   "Save as motif" acts on one selected element, but a drawn symbol is almost
+   always several strokes. This folds every drawing on the canvas into a single
+   element, which can then be saved, stamped, scattered and resized as a unit.
+
+   Only drawings are folded in, and the wrapper keeps data-type="draw", so the
+   three render paths that already know how to draw a stroke group — canvas
+   preview, PNG export, SVG export — all handle it with no further work.
+   Children are CLONED rather than moved: cloneNode drops their event
+   listeners, so an individual stroke can no longer be dragged back out of the
+   group it now belongs to. */
+function combineDrawings() {
+  const eg = document.getElementById('elementsGroup');
+  const parts = Array.from(eg.children).filter(g =>
+    g.getAttribute('data-type') === 'draw' && !g.getAttribute('data-fx'));
+  if (parts.length < 2) { toast('Draw at least two strokes, then combine them'); return; }
+
+  const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  g.setAttribute('id', 'el_' + (++elCounter));
+  g.setAttribute('class', 'canvas-el');
+  g.setAttribute('data-type', 'draw');
+  g.setAttribute('data-title', 'Combined motif');
+  g.setAttribute('transform', 'translate(0,0)');
+  eg.insertBefore(g, parts[0]);
+
+  parts.forEach(part => {
+    const c = part.cloneNode(true);          // nested transforms survive intact
+    c.removeAttribute('id');
+    c.removeAttribute('data-selected');
+    c.classList.remove('canvas-el');
+    c.style.outline = '';
+    c.querySelectorAll('[data-resize]').forEach(n => n.remove());
+    g.appendChild(c);
+    part.remove();
+  });
+
+  makeDraggable(g);
+  makeDrawResizable(g);
+  selectElement(g);
+  updateLayers();
+  scheduleRepeatRefresh();
+  toast(`${parts.length} strokes combined — now ✦ Save as motif`);
+}
+
 /* ════════════════════════════════════════════════════════════════════
    PAINTBRUSH  — pressure/velocity-responsive variable-width stroke
 
@@ -5508,21 +5565,29 @@ function deleteMotif(id) {
    Both ends taper so a stroke lifts off the page instead of stopping
    with a blunt edge.
 ════════════════════════════════════════════════════════════════════ */
-let _drawBrush   = false;   // paintbrush on/off (a mode of the draw tool)
-let _lastPressure = 0;      // most recent stylus force, 0 when not a stylus
+let _drawBrush     = false;    // brush on/off (a mode of the draw tool)
+let _drawBrushType = 'round';  // which of the six shapes
+let _lastPressure  = 0;        // most recent stylus force, 0 when not a stylus
 
-function toggleDrawBrush() {
-  _drawBrush = !_drawBrush;
+function setDrawBrush(type) {
+  _drawBrush = !!(type && type !== 'off');
   if (_drawBrush) {
+    _drawBrushType = type;
+    // Fill and Erase are different ways of laying down a mark; only one wins.
     _drawEraser = false; _drawFill = false;
     const eb = document.getElementById('drawEraserBtn');
     const fb = document.getElementById('drawFillBtn');
     if (eb) eb.classList.remove('on');
     if (fb) { fb.textContent = 'Stroke'; fb.classList.remove('on'); }
+    toast('Brush: ' + _drawBrushType + ' — ' + BRUSHES[_drawBrushType]);
   }
-  const btn = document.getElementById('drawBrushBtn');
-  if (btn) btn.classList.toggle('on', _drawBrush);
+  const sel = document.getElementById('drawBrushType');
+  const want = _drawBrush ? _drawBrushType : 'off';
+  if (sel && sel.value !== want) sel.value = want;
 }
+
+// Kept for the keyboard/older call sites.
+function toggleDrawBrush() { setDrawBrush(_drawBrush ? 'off' : 'round'); }
 
 // Pressure for one sample. Falls back to velocity when there is no stylus.
 function _brushPressure(pt, prev) {
@@ -5545,28 +5610,95 @@ function _brushEdge(pts) {
   return d + ` L${last.x.toFixed(1)},${last.y.toFixed(1)}`;
 }
 
-function buildBrushRibbon(pts, baseW) {
-  if (!pts || pts.length < 2) return '';
-  const n = pts.length, left = [], right = [];
+/* SIX SHAPES, ONE ENGINE.
+   Every brush below is the same pressure ribbon with a different rule for
+   which way the nib is turned and how wide it runs. All of them are plain
+   filled geometry — no SVG filters — so a stroke looks identical on screen,
+   in the PNG export and in the SVG export. A filter-based texture would
+   render on screen and silently vanish from the PNG. */
+const BRUSHES = {
+  round:   'even nib, pressure-tapered',
+  chisel:  'flat nib held at a fixed angle — thin on the pull, wide across',
+  dry:     'split bristles, broken coverage',
+  liner:   'thin–thick–thin, ignores pressure',
+  rough:   'torn, hand-cut edge',
+  stipple: 'dotted — spatter, or a dry stamp',
+};
+const CHISEL_ANGLE = -Math.PI / 5;   // ~-36°, roughly how a broad pen is held
+
+// Deterministic jitter keyed on point index, so a stroke doesn't reshuffle
+// itself while you are still drawing it.
+function _jit(i) { const s = Math.sin(i * 127.1) * 43758.5453; return s - Math.floor(s); }
+
+function _ribbonHalfWidth(p, i, n, baseW, type, travel) {
+  const t     = n === 1 ? 1 : i / (n - 1);
+  const taper = Math.min(1, Math.min(t, 1 - t) / (type === 'liner' ? 0.45 : 0.18));
+  const pr    = (type === 'liner') ? 0.8 : (p.p == null ? 0.62 : p.p);
+  let w = baseW * (0.30 + 0.70 * pr) * (0.22 + 0.78 * taper);
+  if (type === 'chisel') {
+    // A broad nib is widest across its angle and nearly disappears along it.
+    // That single rule is what makes calligraphic line weight.
+    const perp = Math.abs(travel.dx * Math.sin(CHISEL_ANGLE) - travel.dy * Math.cos(CHISEL_ANGLE));
+    w *= 0.16 + 0.84 * perp;
+  }
+  if (type === 'rough') w *= 0.66 + _jit(i) * 0.62;
+  if (type === 'dry')   w *= 0.35 + _jit(i * 3) * 1.25;
+  return w;
+}
+
+function _ribbon(pts, baseW, type, lateral, widthScale) {
+  const n = pts.length, L = [], R = [];
   for (let i = 0; i < n; i++) {
     const p = pts[i];
     const a = pts[Math.max(0, i - 1)], b = pts[Math.min(n - 1, i + 1)];
     let dx = b.x - a.x, dy = b.y - a.y;
     const len = Math.hypot(dx, dy) || 1;
     dx /= len; dy /= len;
-    // taper the first and last 18% of the stroke
-    const t     = n === 1 ? 1 : i / (n - 1);
-    const taper = Math.min(1, Math.min(t, 1 - t) / 0.18);
-    const w = baseW * (0.30 + 0.70 * (p.p == null ? 0.62 : p.p))
-                    * (0.22 + 0.78 * taper);
-    left .push({ x: p.x - dy * w, y: p.y + dx * w });
-    right.push({ x: p.x + dy * w, y: p.y - dx * w });
+    // Normal is perpendicular to travel — except a chisel, whose nib never turns.
+    const nx = (type === 'chisel') ? Math.cos(CHISEL_ANGLE) : -dy;
+    const ny = (type === 'chisel') ? Math.sin(CHISEL_ANGLE) :  dx;
+    const w  = _ribbonHalfWidth(p, i, n, baseW, type, { dx, dy }) * (widthScale || 1);
+    const ox = lateral ? nx * lateral : 0, oy = lateral ? ny * lateral : 0;
+    L.push({ x: p.x + nx * w + ox, y: p.y + ny * w + oy });
+    R.push({ x: p.x - nx * w + ox, y: p.y - ny * w + oy });
   }
-  right.reverse();
-  return `M${left[0].x.toFixed(1)},${left[0].y.toFixed(1)}`
-       + _brushEdge(left)
-       + ` L${right[0].x.toFixed(1)},${right[0].y.toFixed(1)}`
-       + _brushEdge(right) + ' Z';
+  R.reverse();
+  return `M${L[0].x.toFixed(1)},${L[0].y.toFixed(1)}`
+       + _brushEdge(L)
+       + ` L${R[0].x.toFixed(1)},${R[0].y.toFixed(1)}`
+       + _brushEdge(R) + ' Z';
+}
+
+// Dots along the centreline. Spacing tightens and size grows with pressure,
+// so a hard press lays down a solid mark and a light one speckles.
+function _stipple(pts, baseW) {
+  let d = '';
+  for (let i = 0; i < pts.length; i++) {
+    const p  = pts[i];
+    const pr = p.p == null ? 0.62 : p.p;
+    if (i % Math.max(1, Math.round(3 - pr * 2))) continue;
+    const r  = Math.max(0.4, baseW * (0.16 + 0.46 * pr) * (0.55 + _jit(i) * 0.9));
+    const x  = p.x + (_jit(i + 7)  - 0.5) * baseW * 1.9;
+    const y  = p.y + (_jit(i + 13) - 0.5) * baseW * 1.9;
+    const R  = r.toFixed(1);
+    d += `M${(x - r).toFixed(1)},${y.toFixed(1)}`
+       + `a${R},${R} 0 1,0 ${(r * 2).toFixed(1)},0`
+       + `a${R},${R} 0 1,0 ${(-r * 2).toFixed(1)},0`;
+  }
+  return d;
+}
+
+function buildBrushRibbon(pts, baseW, type) {
+  if (!pts || pts.length < 2) return '';
+  type = type || 'round';
+  if (type === 'stipple') return _stipple(pts, baseW);
+  if (type === 'dry') {
+    // Three bristles across the nib, each thinner and out of step with the others.
+    return _ribbon(pts, baseW, 'dry', -baseW * 0.62, 0.26)
+         + _ribbon(pts, baseW, 'dry',  0,            0.30)
+         + _ribbon(pts, baseW, 'dry',  baseW * 0.62, 0.22);
+  }
+  return _ribbon(pts, baseW, type, 0, 1);
 }
 
 // Smooth path builder — quadratic bezier through midpoints
@@ -5604,8 +5736,8 @@ function finaliseDrawStroke(pts) {
     p.setAttribute('stroke-width', Math.max(_drawWidth * 4, 16));
   } else if (_drawBrush) {
     // Ribbon is already a closed outline — fill it, no stroke.
-    g.setAttribute('data-title', 'Brush stroke');
-    p.setAttribute('d', buildBrushRibbon(pts, Math.max(_drawWidth, 3)));
+    g.setAttribute('data-title', _drawBrushType.charAt(0).toUpperCase() + _drawBrushType.slice(1) + ' stroke');
+    p.setAttribute('d', buildBrushRibbon(pts, Math.max(_drawWidth, 3), _drawBrushType));
     p.setAttribute('fill', _drawColor);
     p.setAttribute('stroke', 'none');
   } else {
@@ -5648,7 +5780,7 @@ function finaliseDrawStroke(pts) {
     if (_drawBrush) pt.p = _brushPressure(pt, prev);
     _drawPoints.push(pt);
     _drawTempPath.setAttribute('d', _drawBrush
-      ? buildBrushRibbon(_drawPoints, Math.max(_drawWidth, 3))
+      ? buildBrushRibbon(_drawPoints, Math.max(_drawWidth, 3), _drawBrushType)
       : buildSmoothPath(_drawPoints));
   }
 
@@ -5738,16 +5870,18 @@ function setSymMode(mode, btn) {
 function _symTransformPoints(mode, pts) {
   const cx = canvasW / 2, cy = canvasH / 2;
   const results = [];
-  if (mode === 'h'  || mode === 'hv') results.push(pts.map(p => ({ x: canvasW - p.x, y: p.y })));
-  if (mode === 'v'  || mode === 'hv') results.push(pts.map(p => ({ x: p.x, y: canvasH - p.y })));
-  if (mode === 'hv')                   results.push(pts.map(p => ({ x: canvasW - p.x, y: canvasH - p.y })));
+  // p (pressure) and t (timestamp) ride along, or the mirrored copies of a
+  // brush stroke come out as flat lines while the original tapers.
+  if (mode === 'h'  || mode === 'hv') results.push(pts.map(p => ({ x: canvasW - p.x, y: p.y, p: p.p, t: p.t })));
+  if (mode === 'v'  || mode === 'hv') results.push(pts.map(p => ({ x: p.x, y: canvasH - p.y, p: p.p, t: p.t })));
+  if (mode === 'hv')                   results.push(pts.map(p => ({ x: canvasW - p.x, y: canvasH - p.y, p: p.p, t: p.t })));
   if (/^\d+$/.test(mode)) {
     const N = parseInt(mode);
     for (let i = 1; i < N; i++) {
       const a = (2 * Math.PI * i) / N, cos = Math.cos(a), sin = Math.sin(a);
       results.push(pts.map(p => {
         const dx = p.x - cx, dy = p.y - cy;
-        return { x: cx + dx * cos - dy * sin, y: cy + dx * sin + dy * cos };
+        return { x: cx + dx * cos - dy * sin, y: cy + dx * sin + dy * cos, p: p.p, t: p.t };
       }));
     }
   }
@@ -5778,7 +5912,9 @@ function _symUpdateGhosts() {
   if (!_symGhosts.length || !_drawPoints.length) return;
   const transforms = _symTransformPoints(_symMode, _drawPoints);
   transforms.forEach((tpts, i) => {
-    if (_symGhosts[i]) _symGhosts[i].setAttribute('d', buildSmoothPath(tpts));
+    if (_symGhosts[i]) _symGhosts[i].setAttribute('d', _drawBrush
+      ? buildBrushRibbon(tpts, Math.max(_drawWidth, 3), _drawBrushType)
+      : buildSmoothPath(tpts));
   });
 }
 
@@ -5849,15 +5985,22 @@ window.finaliseDrawStroke = function finaliseDrawStroke(pts) {
   grp.setAttribute('data-type', 'draw');
   grp.setAttribute('transform', 'translate(0,0)');
   grp.setAttribute('data-title', 'Drawing ×' + _symMode);
-  function mkPath(d) {
+  /* Takes points, not a path string, so each mirrored copy can be rebuilt
+     with the same brush the original was drawn with. */
+  function mkPath(tpts) {
     const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    p.setAttribute('d', d);
     if (_drawEraser) {
       const bgColor = document.getElementById('canvasBg').getAttribute('fill') || '#f8f5f0';
+      p.setAttribute('d', buildSmoothPath(tpts));
       p.setAttribute('fill', 'none');
       p.setAttribute('stroke', bgColor);
       p.setAttribute('stroke-width', Math.max(_drawWidth * 4, 16));
+    } else if (_drawBrush) {
+      p.setAttribute('d', buildBrushRibbon(tpts, Math.max(_drawWidth, 3), _drawBrushType));
+      p.setAttribute('fill', _drawColor);
+      p.setAttribute('stroke', 'none');
     } else {
+      p.setAttribute('d', buildSmoothPath(tpts));
       p.setAttribute('fill',         _drawFill ? _drawColor : 'none');
       p.setAttribute('stroke',       _drawFill ? 'none' : _drawColor);
       p.setAttribute('stroke-width', _drawWidth);
@@ -5867,8 +6010,8 @@ window.finaliseDrawStroke = function finaliseDrawStroke(pts) {
     p.setAttribute('data-fill', 'true');
     return p;
   }
-  grp.appendChild(mkPath(finalD));
-  transforms.forEach(tpts => grp.appendChild(mkPath(buildSmoothPath(tpts))));
+  grp.appendChild(mkPath(pts));
+  transforms.forEach(tpts => grp.appendChild(mkPath(tpts)));
   document.getElementById('elementsGroup').appendChild(grp);
   makeDraggable(grp);
   makeDrawResizable(grp);
