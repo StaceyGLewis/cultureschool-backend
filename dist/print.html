@@ -661,6 +661,35 @@ body {
   image-rendering: pixelated;
 }
 
+/* ── Pattern archive tiles ───────────────────────────────────────
+   Not .botanical-thumb: that class is a fixed 1:1 box with overflow
+   hidden, and a pattern tile carries a colour strip and two lines of
+   provenance underneath the image. */
+.pattern-tile {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--surface-3);
+  cursor: pointer;
+  transition: border-color .15s;
+  position: relative;
+}
+.pattern-tile:hover { border-color: var(--gold); }
+.pattern-tile img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
+.pattern-tile .pt-bg {
+  position: absolute; top: 4px; right: 4px;
+  background: rgba(14,12,10,.78); color: var(--gold);
+  font-size: .6rem; letter-spacing: .04em; padding: 2px 5px;
+  border-radius: 3px; opacity: 0; transition: opacity .15s;
+}
+.pattern-tile:hover .pt-bg { opacity: 1; }
+.pattern-tile .pt-colors { display: flex; height: 7px; }
+.pattern-tile .pt-colors span { flex: 1; }
+.pattern-tile .pt-colors:hover { outline: 1px solid var(--gold); }
+.pattern-tile .pt-meta { padding: 4px 6px; font-size: .55rem; line-height: 1.4; }
+.pattern-tile .pt-name   { color: var(--text-soft);  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pattern-tile .pt-origin { color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
 @media (max-width: 768px) {
   :root { --panel: 220px; }
   .right-panel { display: none; }
@@ -983,6 +1012,7 @@ body.eyedrop-mode #printCanvas { cursor: crosshair; }
       <button class="panel-tab on" onclick="switchTab('palette',this)">Palette</button>
       <button class="panel-tab" onclick="switchTab('graphics',this)">Graphics+</button>
       <button class="panel-tab" onclick="switchTab('shapes',this)">Shapes</button>
+      <button class="panel-tab" onclick="switchTab('motifs',this)">Motifs</button>
       <button class="panel-tab" onclick="switchTab('text',this)">Text</button>
       <button class="panel-tab" onclick="switchTab('scatter',this)">Scatter</button>
       <button class="panel-tab" onclick="switchTab('fx',this)">FX ✦</button>
@@ -1089,6 +1119,8 @@ body.eyedrop-mode #printCanvas { cursor: crosshair; }
       <div class="section-label">Archive Palettes</div>
       <input class="palette-search" type="text" placeholder="Search palettes…" oninput="filterPalettes(this.value)" id="paletteSearch">
       <div id="paletteList"></div>
+      <button class="prop-btn" id="paletteMore" onclick="loadMorePalettes()"
+        style="width:100%;padding:7px;margin-top:8px;display:none;">Load more</button>
     </div>
 
     <!-- Graphics+ Tab -->
@@ -1096,7 +1128,8 @@ body.eyedrop-mode #printCanvas { cursor: crosshair; }
 
       <!-- Sub-tabs -->
       <div style="display:flex;border-bottom:1px solid var(--border);flex-shrink:0;">
-        <button class="panel-tab on" id="gtab-collections" onclick="switchGTab('collections',this)" title="Collections · Public Domain" style="font-size:.85rem;letter-spacing:0;border-bottom-color:var(--gold);">◈</button>
+        <button class="panel-tab on" id="gtab-patterns" onclick="switchGTab('patterns',this)" title="CultureSchool Pattern Archive" style="font-size:.85rem;letter-spacing:0;border-bottom-color:var(--gold);">▦</button>
+        <button class="panel-tab" id="gtab-collections" onclick="switchGTab('collections',this)" title="Collections · Public Domain" style="font-size:.85rem;letter-spacing:0;">◈</button>
         <button class="panel-tab" id="gtab-search" onclick="switchGTab('search',this)" title="Search Open Archive" style="font-size:.85rem;letter-spacing:0;">✦</button>
         <button class="panel-tab" id="gtab-icons" onclick="switchGTab('icons',this)" title="Iconify · Open SVG Icons" style="font-size:.85rem;letter-spacing:0;">◇</button>
         <button class="panel-tab" id="gtab-met" onclick="switchGTab('met',this)" title="The Met · Public Domain Museum" style="font-size:.75rem;letter-spacing:0;">▣</button>
@@ -1106,8 +1139,26 @@ body.eyedrop-mode #printCanvas { cursor: crosshair; }
         </label>
       </div>
 
+      <!-- Pattern archive pane — CultureSchool's own library, first door -->
+      <div id="gpane-patterns" style="padding:10px;overflow-y:auto;max-height:calc(100vh - 200px);">
+        <div class="section-label" style="margin-bottom:6px;">CultureSchool Pattern Archive</div>
+        <input class="botanical-search" type="text" placeholder="Search name, tradition, occasion…"
+          id="patternSearch" onkeydown="if(event.key==='Enter')searchPatterns()" style="margin-bottom:8px;">
+        <div class="search-tags" id="patternTags" style="margin-bottom:8px;"></div>
+        <div class="graphic-grid" id="patternGrid">
+          <div class="botanical-loading">Loading the archive…</div>
+        </div>
+        <div id="patternMore" style="display:none;text-align:center;padding:8px 0;">
+          <button class="prop-btn" onclick="loadMorePatterns()" style="width:100%;padding:6px;">Load more</button>
+        </div>
+        <div style="font-size:.55rem;color:var(--text-muted);margin-top:8px;line-height:1.5;">
+          Tap a tile to place it · <strong style="color:var(--gold)">⊡ BG</strong> fills the canvas ·
+          tap the colour strip to adopt that pattern's palette.
+        </div>
+      </div>
+
       <!-- Collections pane -->
-      <div id="gpane-collections" style="padding:10px;overflow-y:auto;max-height:calc(100vh - 200px);">
+      <div id="gpane-collections" style="display:none;padding:10px;overflow-y:auto;max-height:calc(100vh - 200px);">
         <div class="section-label" style="margin-bottom:8px;">Curated · Public Domain</div>
         <div id="collectionsList"></div>
       </div>
@@ -1165,6 +1216,17 @@ body.eyedrop-mode #printCanvas { cursor: crosshair; }
       <div class="shape-grid" id="shapeGrid"></div>
     </div>
 
+    <!-- Motifs Tab — the student's own drawn symbols, kept between sessions -->
+    <div class="panel-body" id="tab-motifs" style="display:none">
+      <div class="section-label">My Motifs</div>
+      <div style="font-size:.62rem;color:var(--text-muted);margin-bottom:10px;line-height:1.55;">
+        Draw a symbol, select it, then press <strong style="color:var(--gold)">✦ Save as motif</strong>
+        in Properties. Tap a saved motif to place it, then press <strong style="color:var(--gold)">S</strong>
+        to stamp it into a repeat.
+      </div>
+      <div id="motifGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;"></div>
+    </div>
+
     <!-- Text Tab -->
     <div class="panel-body" id="tab-text" style="display:none">
       <div class="section-label">Add Text</div>
@@ -1199,8 +1261,25 @@ body.eyedrop-mode #printCanvas { cursor: crosshair; }
       <div class="dsz-btn" id="dsz3" onclick="setDrawSize(14,this)" title="Bold (3)">
         <div class="dsz-dot" style="width:13px;height:13px;"></div>
       </div>
+      <div style="display:flex;align-items:center;gap:5px;">
+        <span style="font-size:.55rem;color:var(--text-muted);">W</span>
+        <input type="range" id="drawWidthRange" min="1" max="60" value="2"
+          style="width:64px;accent-color:var(--gold);"
+          oninput="setDrawSize(+this.value)" title="Line weight">
+        <span id="drawWidthVal" style="font-size:.55rem;color:var(--text-muted);min-width:14px;">2</span>
+      </div>
+      <div class="dtb-sep"></div>
+      <div style="display:flex;align-items:center;gap:5px;">
+        <span style="font-size:.55rem;color:var(--text-muted);" title="Steadies a shaky hand — higher values give smoother curves with a little lag">Smooth</span>
+        <input type="range" id="drawSmoothRange" min="0" max="100" value="45"
+          style="width:60px;accent-color:var(--gold);"
+          oninput="setDrawSmooth(+this.value)" title="Stroke stabilisation — steadies a shaky hand">
+        <span id="drawSmoothVal" style="font-size:.55rem;color:var(--text-muted);min-width:16px;">45</span>
+      </div>
       <div class="dtb-sep"></div>
       <div id="drawColorRow" style="display:flex;gap:4px;align-items:center;"></div>
+      <input type="color" id="drawInkPicker" value="#3a3530" onchange="setDrawInkCustom(this.value)"
+        title="Any colour" style="width:20px;height:20px;padding:0;border:1px solid var(--border);border-radius:50%;background:none;cursor:pointer;flex-shrink:0;">
       <div class="dtb-sep"></div>
       <button id="drawBrushBtn" class="prop-btn" onclick="toggleDrawBrush()" style="padding:4px 10px;font-size:.65rem;" title="Paintbrush — width follows Apple Pencil pressure, or speed on a mouse">🖌 Brush</button>
       <button id="drawFillBtn" class="prop-btn" onclick="toggleDrawFill()" style="padding:4px 10px;font-size:.65rem;" title="Stroke vs fill shape">Stroke</button>
@@ -1436,6 +1515,81 @@ body.eyedrop-mode #printCanvas { cursor: crosshair; }
 const SUPA_URL  = 'https://qwulthvbwujfehgdegtn.supabase.co';
 const SUPA_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3dWx0aHZid3VqZmVoZ2RlZ3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQyMDcxODIsImV4cCI6MjA1OTc4MzE4Mn0.t9n4eZng6d0jggiPNK-J_DByvEE2L9tqy5Xh_1-TSoQ';
 const supa = supabase.createClient(SUPA_URL, SUPA_ANON);
+// cs-track looks for window.sb (or window.supabase, which here is the CDN
+// module, not a client) to attribute events to a signed-in user. Without
+// this every Print Studio event would land with user_id null.
+window.sb = supa;
+
+/* ══════════════════════════════════════════════════════════════════
+   TELEMETRY — inlined copy of dist/cs-track.js
+   print.html called csTrack() in two places but never loaded it, so
+   `typeof csTrack === 'function'` was false and both calls were silent
+   no-ops: Print Studio has been recording nothing. Every other CoCo
+   surface inlines this same IIFE rather than <script src>, because the
+   studio sits on its own subdomain where /cs-track.js does not resolve.
+
+   event_type is CHECK-constrained to nine values; entity_id must be a
+   UUID or it is dropped to null; there is no `surface` column — surface
+   travels inside metadata.
+══════════════════════════════════════════════════════════════════ */
+(function () {
+  var URL_ = SUPA_URL, KEY_ = SUPA_ANON;
+  var ALLOWED = ['search','view','download','save','share',
+                 'palette_view','pattern_view','creator_view','museum_view'];
+  var UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+  var SID;
+  try {
+    SID = localStorage.getItem('cs_sid');
+    if (!SID) {
+      SID = (window.crypto && crypto.randomUUID) ? crypto.randomUUID()
+            : 'sid-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+      localStorage.setItem('cs_sid', SID);
+    }
+  } catch (e) { SID = 'nostorage'; }
+
+  var SURFACE = location.hostname.indexOf('print-studio') > -1 ? 'generator' : 'shop';
+
+  var UID = null;
+  try {
+    supa.auth.getSession().then(function (r) {
+      UID = (r && r.data && r.data.session) ? r.data.session.user.id : null;
+    }).catch(function () {});
+    supa.auth.onAuthStateChange(function (_e, s) { UID = s ? s.user.id : null; });
+  } catch (e) {}
+
+  window.csTrack = function (event_type, o) {
+    o = o || {};
+    try {
+      if (ALLOWED.indexOf(event_type) === -1) {
+        console.warn('[csTrack] invalid event_type:', event_type, '— allowed:', ALLOWED.join(', '));
+        return;
+      }
+      var eid = (o.id && UUID_RE.test(String(o.id))) ? String(o.id) : null;
+      var meta = o.meta || {};
+      meta.surface = o.surface || SURFACE;
+      if (o.id && !eid) meta.raw_id = String(o.id);
+      fetch(URL_ + '/rest/v1/cs_events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: KEY_,
+                   Authorization: 'Bearer ' + KEY_, Prefer: 'return=minimal' },
+        body: JSON.stringify({
+          event_type: event_type,
+          query:       o.query || null,
+          entity_type: o.type  || null,
+          entity_id:   eid,
+          entity_slug: o.slug  || null,
+          user_id:     UID,
+          session_id:  SID,
+          country_code: null,
+          referrer:    document.referrer || null,
+          metadata:    meta
+        }),
+        keepalive: true
+      }).catch(function () {});
+    } catch (e) { /* telemetry must never break the page */ }
+  };
+})();
 
 /* ═══════════════════════════════════════════════════════════════
    EXPORT ACCESS — all-access members only
@@ -1584,8 +1738,47 @@ document.addEventListener('DOMContentLoaded', () => {
     if (rp) { rp.classList.add('collapsed'); if (rb) rb.textContent = '‹'; }
   }
   // Don't auto-search graphics on load — wait for user
-  setTimeout(showStartModal, 800);
+  // A visitor arriving from the pattern library has already chosen something;
+  // don't greet them with a template picker over the top of it.
+  if (!applyLaunchParams()) setTimeout(showStartModal, 800);
 });
+
+/* Handoff from dist/pattern-library.html, which links here as
+     ?style=…&colors=%23aabbcc,%23ddeeff&name=…&palette=…
+   Print Studio read only ?mode=make, so all four were dropped and a member
+   who clicked "open in Print Studio" landed on a blank canvas with none of
+   their selection carried across. Returns true if anything was applied. */
+function applyLaunchParams() {
+  let q;
+  try { q = new URLSearchParams(location.search); } catch (_) { return false; }
+  const colors = (q.get('colors') || '').split(',')
+    .map(c => c.trim())
+    .map(c => (c && c[0] !== '#') ? '#' + c : c)
+    .filter(c => /^#[0-9a-fA-F]{3,8}$/.test(c))
+    .slice(0, 5);
+
+  // Pre-fill the archive search so the source pattern is one tap away.
+  const patName = q.get('name') || '';
+  if (patName) {
+    const ps = document.getElementById('patternSearch');
+    if (ps) ps.value = patName;
+  }
+
+  if (!colors.length) return false;
+
+  const paletteName = q.get('palette') || patName || 'From the library';
+  selectPalette({
+    id: 'handoff',
+    name: paletteName,
+    colors: colors,
+    cultural_origin: (q.get('palette') && patName) ? patName : '',
+  });
+  if (typeof updateDrawColorRow === 'function') updateDrawColorRow();
+  if (typeof updatePenColorRow  === 'function') updatePenColorRow();
+  const style = q.get('style');
+  toast(`Carried over: ${paletteName}${style ? ' · ' + style : ''}`);
+  return true;
+}
 
 // ── Canvas sizing ─────────────────────────────────────────
 function setCanvasSize(size, btn) {
@@ -1634,11 +1827,13 @@ function togglePanel(side) {
 function switchTab(name, btn) {
   document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('on'));
   btn.classList.add('on');
-  ['templates','palette','graphics','shapes','text','scatter','fx'].forEach(t => {
-    document.getElementById('tab-' + t).style.display = t === name ? '' : 'none';
+  ['templates','palette','graphics','shapes','motifs','text','scatter','fx'].forEach(t => {
+    const el = document.getElementById('tab-' + t);
+    if (el) el.style.display = t === name ? '' : 'none';
   });
-  if (name === 'graphics') renderCollections();
+  if (name === 'graphics') { renderCollections(); loadPatternsOnce(); }
   if (name === 'templates') renderTemplatesList();
+  if (name === 'motifs') renderMotifs();
   if (name === 'botanical' && document.getElementById('graphicGrid').children.length <= 1) {
     searchGraphics('botanical illustration');
   }
@@ -1764,11 +1959,12 @@ function switchGTab(name, btn) {
   });
   btn.classList.add('on');
   btn.style.borderBottomColor = 'var(--gold)';
-  ['collections','search','icons','met'].forEach(p => {
+  ['patterns','collections','search','icons','met'].forEach(p => {
     const el = document.getElementById('gpane-' + p);
     if (el) el.style.display = p === name ? '' : 'none';
   });
   if (name === 'collections') renderCollections();
+  if (name === 'patterns')    loadPatternsOnce();
 }
 
 // Initialise collections on first open of graphics tab
@@ -1778,21 +1974,63 @@ const _origSwitchTab = window.switchTab;
 // Palette registry — avoid inline JSON in onclick attributes
 const _paletteRegistry = {};
 
+/* All 251 public palettes were rendered into the panel in one pass — 251
+   cards, each with five swatch divs, built as one giant innerHTML string.
+   The data still loads in full (filterPalettes searches the whole array
+   locally, and Make Mode reads allPalettes), only the DOM is paged. */
+const PALETTE_PAGE = 24;
+let _palList = [];   // the currently displayed set — all, or the search result
+let _palShown = 0;
+
+function _paletteCard(p) {
+  _paletteRegistry[p.id] = p;
+  const colors = getPaletteColors(p);
+  const swatches = colors.map(c => `<div class="palette-swatch" style="background:${c}"></div>`).join('');
+  return `<div class="palette-card" data-id="${p.id}" onclick="selectPaletteById('${p.id}')">
+    <div class="palette-swatches">${swatches}</div>
+    <div class="palette-meta">
+      <div class="palette-name">${p.name}</div>
+      ${(p.cultural_origin||p.location) ? `<div class="palette-origin">${p.cultural_origin||p.location}</div>` : ''}
+    </div>
+  </div>`;
+}
+
 function renderPalettes(palettes) {
+  _palList  = palettes || [];
+  _palShown = 0;
   const list = document.getElementById('paletteList');
-  if (!palettes.length) { list.innerHTML = '<div class="botanical-loading">No palettes found</div>'; return; }
-  list.innerHTML = palettes.map(p => {
-    _paletteRegistry[p.id] = p;
-    const colors = getPaletteColors(p);
-    const swatches = colors.map(c => `<div class="palette-swatch" style="background:${c}"></div>`).join('');
-    return `<div class="palette-card" data-id="${p.id}" onclick="selectPaletteById('${p.id}')">
-      <div class="palette-swatches">${swatches}</div>
-      <div class="palette-meta">
-        <div class="palette-name">${p.name}</div>
-        ${(p.cultural_origin||p.location) ? `<div class="palette-origin">${p.cultural_origin||p.location}</div>` : ''}
-      </div>
-    </div>`;
-  }).join('');
+  if (!list) return;
+  if (!_palList.length) {
+    list.innerHTML = '<div class="botanical-loading">No palettes found</div>';
+    _updatePaletteMore();
+    return;
+  }
+  list.innerHTML = '';
+  loadMorePalettes();
+}
+
+function loadMorePalettes() {
+  const list = document.getElementById('paletteList');
+  if (!list) return;
+  const next = _palList.slice(_palShown, _palShown + PALETTE_PAGE);
+  if (!next.length) { _updatePaletteMore(); return; }
+  list.insertAdjacentHTML('beforeend', next.map(_paletteCard).join(''));
+  _palShown += next.length;
+  // The active palette may only now have come into view — re-mark it, since
+  // selectPalette() highlighted a card that did not exist yet.
+  if (activePalette) {
+    const card = list.querySelector(`.palette-card[data-id="${activePalette.id}"]`);
+    if (card) card.classList.add('on');
+  }
+  _updatePaletteMore();
+}
+
+function _updatePaletteMore() {
+  const btn = document.getElementById('paletteMore');
+  if (!btn) return;
+  const left = _palList.length - _palShown;
+  btn.style.display = left > 0 ? '' : 'none';
+  btn.textContent = `Load more — ${left} more palette${left === 1 ? '' : 's'}`;
 }
 
 function selectPaletteById(id) {
@@ -2081,6 +2319,166 @@ function iconifyThumb(iconId) {
   </div>`;
 }
 
+/* ════════════════════════════════════════════════════════════════════
+   CULTURESCHOOL PATTERN ARCHIVE
+   The proprietary library, and the only source in this file that is ours.
+   Reads public.patterns_public — the column-limited view that is the
+   privilege boundary (atlas/17). Never the base table.
+
+   Thumbnails come from the public pattern-thumbs bucket. thumb_url is
+   used when present, but the path is deterministic (<id>.png) so the
+   tab works even while the backfill is still writing that column back.
+   The bucket sends Access-Control-Allow-Origin: *, so urlToDataURL
+   fetches directly and never falls through to the third-party CORS
+   proxies — proprietary art must not be relayed through those.
+════════════════════════════════════════════════════════════════════ */
+const PATTERN_THUMB_BASE = SUPA_URL + '/storage/v1/object/public/pattern-thumbs/';
+const PATTERN_PAGE = 24;
+const PATTERN_REGIONS = ['Africa','Asia','Europe','North America','South America','Oceania'];
+const _patternRegistry = {};
+let _patternPage = 0, _patternQuery = '', _patternFilter = '';
+let _patternLoaded = false, _patternDone = false;
+
+function patternThumbUrl(p) {
+  return p.thumb_url || (PATTERN_THUMB_BASE + p.id + '.png');
+}
+
+function loadPatternsOnce() {
+  if (_patternLoaded) return;
+  _patternLoaded = true;
+  renderPatternTags();
+  searchPatterns();
+}
+
+function renderPatternTags() {
+  const el = document.getElementById('patternTags');
+  if (!el) return;
+  el.innerHTML = `<span class="search-tag on" onclick="setPatternFilter('',this)">All</span>` +
+    PATTERN_REGIONS.map(c => `<span class="search-tag" onclick="setPatternFilter('${c}',this)">${c}</span>`).join('');
+}
+
+function setPatternFilter(c, el) {
+  _patternFilter = c;
+  document.querySelectorAll('#patternTags .search-tag').forEach(t => t.classList.remove('on'));
+  if (el) el.classList.add('on');
+  searchPatterns();
+}
+
+async function fetchPatterns(page) {
+  let q = supa.from('patterns_public')
+    .select('id,name,style,colors,occasion,thumb_url,palette_name,heritage_origin,heritage_region,continent')
+    .order('name', { ascending: true })
+    .range(page * PATTERN_PAGE, page * PATTERN_PAGE + PATTERN_PAGE - 1);
+  // Strip PostgREST filter syntax out of user input before interpolating.
+  const term = _patternQuery.trim().replace(/[,()*%]/g, ' ').trim();
+  if (term) {
+    q = q.or(`name.ilike.%${term}%,heritage_origin.ilike.%${term}%,` +
+             `occasion.ilike.%${term}%,style.ilike.%${term}%`);
+  }
+  if (_patternFilter) q = q.eq('continent', _patternFilter);
+  const { data, error } = await q;
+  if (error) { console.warn('[patterns]', error); return null; }
+  return data || [];
+}
+
+function patternTile(p) {
+  _patternRegistry[p.id] = p;
+  const name   = _escAttr(p.name || 'Untitled');
+  const origin = _escAttr(p.heritage_origin || p.continent || p.occasion || '');
+  const swatches = (p.colors || []).slice(0, 5)
+    .map(c => `<span style="background:${_escAttr(c)}"></span>`).join('');
+  return `<div class="pattern-tile">
+    <img src="${_escAttr(patternThumbUrl(p))}" alt="${name}" loading="lazy"
+      onerror="this.closest('.pattern-tile').style.display='none'"
+      onclick="placePattern('${p.id}',false)" title="${name}">
+    <div class="pt-bg" onclick="event.stopPropagation();placePattern('${p.id}',true)"
+      title="Fill the canvas with this pattern">⊡ BG</div>
+    ${swatches ? `<div class="pt-colors" title="Use this pattern's colours"
+      onclick="event.stopPropagation();usePatternPalette('${p.id}')">${swatches}</div>` : ''}
+    <div class="pt-meta">
+      <div class="pt-name">${name}</div>
+      ${origin ? `<div class="pt-origin">${origin}</div>` : ''}
+    </div>
+  </div>`;
+}
+
+async function searchPatterns(preset) {
+  const input = document.getElementById('patternSearch');
+  if (typeof preset === 'string' && input) input.value = preset;
+  _patternQuery = input ? input.value : '';
+  _patternPage = 0; _patternDone = false;
+  const grid = document.getElementById('patternGrid');
+  const more = document.getElementById('patternMore');
+  if (!grid) return;
+  grid.innerHTML = '<div class="botanical-loading">Searching the archive…</div>';
+  if (more) more.style.display = 'none';
+
+  const rows = await fetchPatterns(0);
+  if (!rows) { grid.innerHTML = '<div class="botanical-loading">Archive unavailable — check your connection</div>'; return; }
+  if (!rows.length) { grid.innerHTML = '<div class="botanical-loading">No patterns match that search</div>'; return; }
+  grid.innerHTML = rows.map(patternTile).join('');
+  _patternPage = 1;
+  if (more) more.style.display = rows.length < PATTERN_PAGE ? 'none' : '';
+  if (_patternQuery.trim() && typeof csTrack === 'function') {
+    csTrack('search', { query: _patternQuery.trim(), type: 'pattern', surface: 'generator' });
+  }
+}
+
+async function loadMorePatterns() {
+  if (_patternDone) return;
+  const more = document.getElementById('patternMore');
+  const rows = await fetchPatterns(_patternPage);
+  if (!rows || !rows.length) {
+    _patternDone = true;
+    if (more) more.style.display = 'none';
+    return;
+  }
+  document.getElementById('patternGrid').insertAdjacentHTML('beforeend', rows.map(patternTile).join(''));
+  _patternPage++;
+  if (rows.length < PATTERN_PAGE) {
+    _patternDone = true;
+    if (more) more.style.display = 'none';
+  }
+}
+
+async function placePattern(id, asBg) {
+  const p = _patternRegistry[id];
+  if (!p) return;
+  const url = patternThumbUrl(p);
+  const g = await addImageToCanvas(url, p.name || 'Pattern', url, !!asBg);
+  const el = g || selectedEl;
+  if (el) {
+    // Provenance rides along on the element so an export can credit it.
+    el.setAttribute('data-source', 'patterns');
+    el.setAttribute('data-pattern-id', p.id);
+    const credit = [p.heritage_origin, p.continent].filter(Boolean).join(' · ');
+    if (credit) el.setAttribute('data-attribution', credit);
+    if (p.palette_name) el.setAttribute('data-palette-name', p.palette_name);
+  }
+  // One row per placement — this is the licensing usage evidence.
+  if (typeof csTrack === 'function') {
+    csTrack('pattern_view', { id: p.id, type: 'pattern', slug: p.style || null,
+      surface: 'generator', meta: { context: 'studio', placed_as: asBg ? 'background' : 'motif' } });
+  }
+}
+
+// Adopt a pattern's own colours as the working palette. patterns.palette_id is
+// null across the archive, so this synthesises a palette object from the row
+// rather than looking one up.
+function usePatternPalette(id) {
+  const p = _patternRegistry[id];
+  if (!p || !Array.isArray(p.colors) || !p.colors.length) { toast('That pattern carries no palette'); return; }
+  selectPalette({
+    id: 'pattern_' + p.id,
+    name: p.palette_name || p.name || 'Pattern palette',
+    colors: p.colors.slice(0, 5),
+    cultural_origin: p.heritage_origin || p.continent || '',
+    location: p.heritage_region || '',
+  });
+  if (typeof updateDrawColorRow === 'function') updateDrawColorRow();
+  if (typeof updatePenColorRow  === 'function') updatePenColorRow();
+}
+
 function graphicThumb(r) {
   const thumb = r.thumbnail || r.url;
   const title = (r.title || 'Image').replace(/'/g,"\'");
@@ -2340,6 +2738,7 @@ async function addImageToCanvas(url, title, thumb, asBg) {
   updateLayers();
   hideHint();
   toast(asBg ? 'Set as background' : 'Image added · Drag corner to resize');
+  return group;   // callers tag provenance onto the element they just placed
 }
 
 function addShapeToCanvas(shapeId) {
@@ -2483,6 +2882,15 @@ function makeResizable(group) {
 }
 
 document.getElementById('printCanvas').addEventListener('mousemove', e => {
+  // Drawings scale by transform rather than by image width/height.
+  if (_drawScaleState) {
+    const pt = svgPoint(e);
+    const factor = 1 + (pt.x - _drawScaleState.startX) / _drawScaleState.ref;
+    const next = Math.max(0.15, Math.min(6, _drawScaleState.startScale * factor));
+    scaleElement(_drawScaleState.group.id, next * 100);
+    _drawSyncHandle(_drawScaleState.group);
+    return;
+  }
   if (_resizeState) {
     const pt = svgPoint(e);
     const dx = pt.x - _resizeState.startX;
@@ -2511,8 +2919,11 @@ document.getElementById('printCanvas').addEventListener('mousemove', e => {
   if (repeatMode) updateGhosts(_dragState.group);
 });
 
-document.getElementById('printCanvas').addEventListener('mouseup', () => { _dragState = null; _resizeState = null; clearGhosts(); });
-document.getElementById('printCanvas').addEventListener('mouseleave', () => { _dragState = null; _resizeState = null; clearGhosts(); });
+document.getElementById('printCanvas').addEventListener('mouseup', () => { _dragState = null; _resizeState = null; _drawScaleState = null; clearGhosts(); });
+document.getElementById('printCanvas').addEventListener('mouseleave', () => { _dragState = null; _resizeState = null; _drawScaleState = null; clearGhosts(); });
+// Releasing outside the canvas must also end a resize, or the drawing keeps
+// scaling the next time the pointer re-enters.
+document.addEventListener('mouseup', () => { _drawScaleState = null; });
 document.getElementById('printCanvas').addEventListener('click', e => {
   if (e.target === document.getElementById('printCanvas') || e.target === document.getElementById('canvasBg')) {
     deselectAll();
@@ -2563,6 +2974,14 @@ function deselectAll() {
 // ── Color application ─────────────────────────────────────
 function applyColorToElement(hex) {
   if (!selectedEl) return;
+  // Drawings carry data-fill too, but blanket-setting `fill` on an open
+  // stroke turns the line into a filled blob. Recolour whichever channel
+  // the path actually paints with.
+  if (selectedEl.getAttribute('data-type') === 'draw') {
+    setDrawInk(selectedEl.id, hex);
+    toast('Colour applied');
+    return;
+  }
   selectedEl.querySelectorAll('[data-fill]').forEach(el => {
     if (el.tagName === 'text' || el.tagName === 'TEXT') el.setAttribute('fill', hex);
     else el.setAttribute('fill', hex);
@@ -2608,26 +3027,61 @@ function renderProps(group) {
   </div>`;
 
   if (type === 'draw') {
+    // NOTE: this block used to end with `panel.innerHTML = html; html = '';`,
+    // which was then overwritten by the single `panel.innerHTML = html` at the
+    // end of this function — so every control below (and Opacity/Scale above)
+    // was built and silently thrown away. Drawings showed only Rotate/Actions/
+    // Align. Let html accumulate like every other type.
     const path = group.querySelector('path');
-    const curStroke = path ? (path.getAttribute('stroke') || '#3a3530') : '#3a3530';
+    const curStroke = path ? (path.getAttribute('stroke') || 'none') : 'none';
+    const curFill   = path ? (path.getAttribute('fill')   || 'none') : 'none';
     const curWidth  = path ? (path.getAttribute('stroke-width') || '4') : '4';
-    const isFilled  = path && path.getAttribute('fill') !== 'none';
-    const colors = activePalette ? getPaletteColors(activePalette) : ['#3a3530','#c9a96e','#f0ece4'];
+    const hasStroke = curStroke !== 'none';
+    const hasFill   = curFill   !== 'none';
+    const mode = (hasStroke && hasFill) ? 'both' : hasFill ? 'fill' : 'stroke';
+    const ink  = hasStroke ? curStroke : (hasFill ? curFill : '#3a3530');
+    const blend = group.getAttribute('data-blend') || 'normal';
+    // Always offer black + white alongside the palette — indigo/resist work
+    // needs them and a palette may not carry either.
+    const colors = (activePalette ? getPaletteColors(activePalette) : [])
+      .concat(['#0e0c0a', '#ffffff'])
+      .filter((c, i, a) => a.indexOf(c) === i).slice(0, 8);
     html += `<div class="prop-row">
-      <div class="prop-label">Stroke Color</div>
-      <div style="display:flex;gap:5px;flex-wrap:wrap;">
-        ${colors.map(col => `<div style="width:26px;height:26px;background:${col};border-radius:50%;cursor:pointer;border:2px solid ${col===curStroke?'white':'transparent'};transition:all .12s;"
-          onclick="setDrawStroke('${gid}','${col}')" title="${col}"></div>`).join('')}
+      <div class="prop-label">Ink</div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;">
+        ${colors.map(col => `<div style="width:26px;height:26px;background:${col};border-radius:50%;cursor:pointer;border:2px solid ${String(col).toLowerCase()===String(ink).toLowerCase()?'white':'transparent'};transition:all .12s;"
+          onclick="setDrawInk('${gid}','${col}')" title="${col}"></div>`).join('')}
+        <input type="color" value="${/^#[0-9a-fA-F]{6}$/.test(ink) ? ink : '#3a3530'}"
+          oninput="setDrawInk('${gid}',this.value)" title="Any colour"
+          style="width:26px;height:26px;padding:0;border:1px solid var(--border);border-radius:50%;background:none;cursor:pointer;">
       </div>
     </div>
     <div class="prop-row">
-      <div class="prop-label">Stroke Width — <span id="drawWidthLabel">${curWidth}px</span></div>
-      <input type="range" class="prop-slider" min="1" max="40" value="${curWidth}"
+      <div class="prop-label">Line weight — <span id="drawWidthLabel">${curWidth}px</span></div>
+      <input type="range" class="prop-slider" min="1" max="60" value="${curWidth}"
         oninput="setDrawStrokeWidth('${gid}',this.value);document.getElementById('drawWidthLabel').textContent=this.value+'px'"
         style="width:100%">
+    </div>
+    <div class="prop-row">
+      <div class="prop-label">Stroke / Fill</div>
+      <div class="prop-row-btns">
+        <button class="prop-btn${mode==='stroke'?' on':''}" onclick="setDrawPaintMode('${gid}','stroke')" title="Outline only">Stroke</button>
+        <button class="prop-btn${mode==='fill'  ?' on':''}" onclick="setDrawPaintMode('${gid}','fill')"   title="Solid — fills the enclosed area">Fill</button>
+        <button class="prop-btn${mode==='both'  ?' on':''}" onclick="setDrawPaintMode('${gid}','both')"   title="Filled, with a matching edge">Both</button>
+      </div>
+      <button class="prop-btn" style="width:100%;margin-top:5px;" onclick="closeDrawPath('${gid}')"
+        title="Join the last point back to the first so the shape encloses an area">⊂ Close the shape</button>
+      <div style="font-size:.6rem;color:var(--text-muted);margin-top:4px;line-height:1.5">Close the shape, then Fill — that is how a solid motif is built.</div>
+    </div>
+    <div class="prop-row">
+      <div class="prop-label">Blend Mode</div>
+      <div class="prop-row-btns" style="flex-wrap:wrap;gap:4px;">
+        <button class="prop-btn${blend==='normal'  ?' on':''}" onclick="setBlend('${gid}','normal',this)">Normal</button>
+        <button class="prop-btn${blend==='multiply'?' on':''}" onclick="setBlend('${gid}','multiply',this)" title="Layers like transparent dye">Multiply</button>
+        <button class="prop-btn${blend==='screen'  ?' on':''}" onclick="setBlend('${gid}','screen',this)">Screen</button>
+        <button class="prop-btn${blend==='overlay' ?' on':''}" onclick="setBlend('${gid}','overlay',this)">Overlay</button>
+      </div>
     </div>`;
-    panel.innerHTML = html;
-    html = '';
   }
 
   if (type !== 'text') {
@@ -2647,6 +3101,9 @@ function renderProps(group) {
       <button class="prop-btn" onclick="sendBack('${gid}')">↓</button>
       <button class="prop-btn" onclick="deleteElement('${gid}')" style="color:#ff6060">Del</button>
     </div>
+    <button class="prop-btn" style="width:100%;margin-top:5px;color:var(--gold);border-color:var(--gold);"
+      onclick="saveAsMotif('${gid}')"
+      title="Keep this as a reusable motif — it lands in the Motifs tab and survives a reload">✦ Save as motif</button>
   </div>
   <div class="prop-row">
     <div class="prop-label">Align to Canvas</div>
@@ -2815,6 +3272,8 @@ function duplicateElement(id) {
   setTranslate(clone, t.x + 20, t.y + 20);
   document.getElementById('elementsGroup').appendChild(clone);
   makeDraggable(clone);
+  if (clone.getAttribute('data-type') === 'draw') makeDrawResizable(clone);
+  else makeResizable(clone);
   selectElement(clone);
   updateLayers();
   toast('Duplicated');
@@ -2918,7 +3377,19 @@ function setBlend(id, mode, btn) {
   const group = document.getElementById(id);
   if (!group) return;
   const img = group.querySelector('image');
-  if (!img) return;
+  // Drawings have no <image>; blend them at the group level instead. The
+  // white/dark-knockout filters are image-only and simply don't apply.
+  if (!img) {
+    group.setAttribute('data-blend', mode);
+    group.style.mixBlendMode = (mode === 'normal') ? '' : mode;
+    if (btn) {
+      btn.closest('.prop-row-btns').querySelectorAll('.prop-btn').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on');
+    }
+    toast(mode === 'normal' ? 'Blend cleared' : `Blend: ${mode}`);
+    scheduleRepeatRefresh();
+    return;
+  }
   ensureSVGDefs();
 
   // Clear previous filter/blend
@@ -3290,6 +3761,9 @@ async function renderCompositionToCtx(ctx) {
         }
       }
     } else if (type === 'draw') {
+      // Drawings can carry a blend mode now (group-level, no <image>).
+      const _db = group.getAttribute('data-blend') || 'normal';
+      ctx.globalCompositeOperation = {'multiply':'multiply','screen':'screen','overlay':'overlay','color-burn':'color-burn','normal':'source-over'}[_db] || 'source-over';
       group.querySelectorAll('path').forEach(path => {
         const d = path.getAttribute('d');
         if (d) {
@@ -3644,6 +4118,8 @@ function doExport() {
             }
           }
         } else if (type === 'draw') {
+          const _db = group.getAttribute('data-blend') || 'normal';
+          ctx.globalCompositeOperation = {'multiply':'multiply','screen':'screen','overlay':'overlay','color-burn':'color-burn','normal':'source-over'}[_db] || 'source-over';
           group.querySelectorAll('path').forEach(path => {
             const d = path.getAttribute('d');
             if (d) {
@@ -3815,7 +4291,8 @@ function loadSave(id) {
   myEg.innerHTML = savedEg.innerHTML;
   [...myEg.querySelectorAll('.canvas-el')].forEach(el => {
     makeDraggable(el);
-    makeResizable(el);
+    if (el.getAttribute('data-type') === 'draw') makeDrawResizable(el);
+    else makeResizable(el);
   });
   updateLayers();
   closeSaves();
@@ -4647,6 +5124,11 @@ let _drawColor  = '#3a3530';
 let _drawWidth  = 2;
 let _drawFill   = false;
 let _drawEraser = false;
+// Input stabilisation, 0–100. Beginners cannot hold a clean curve with a
+// stylus and nothing else in the tool forgives that. Each new sample is
+// pulled toward the previous one, so the line trails the nib slightly and
+// arrives smooth. This is most of what makes a drawing app "feel good".
+let _drawSmooth = 45;
 
 function toggleDrawMode() {
   _drawMode = !_drawMode;
@@ -4670,9 +5152,32 @@ function toggleDrawMode() {
 }
 
 function setDrawSize(w, btn) {
-  _drawWidth = w;
+  _drawWidth = +w;
   document.querySelectorAll('.dsz-btn').forEach(b => b.classList.remove('on'));
+  // Light up a preset dot when the slider lands exactly on one.
   if (btn) btn.classList.add('on');
+  else {
+    const preset = { 2: 'dsz1', 5: 'dsz2', 14: 'dsz3' }[_drawWidth];
+    if (preset) document.getElementById(preset)?.classList.add('on');
+  }
+  const r = document.getElementById('drawWidthRange');
+  if (r && +r.value !== _drawWidth) r.value = _drawWidth;
+  const l = document.getElementById('drawWidthVal');
+  if (l) l.textContent = _drawWidth;
+}
+
+function setDrawSmooth(v) {
+  _drawSmooth = Math.max(0, Math.min(100, +v || 0));
+  const l = document.getElementById('drawSmoothVal');
+  if (l) l.textContent = _drawSmooth;
+}
+
+// Any colour, not just palette entries — indigo resist work needs a specific
+// blue and a true white, and a given palette may carry neither.
+function setDrawInkCustom(col) {
+  _drawColor = col;
+  const row = document.getElementById('drawColorRow');
+  if (row) row.querySelectorAll('div').forEach(s => s.style.borderColor = 'transparent');
 }
 
 function toggleDrawFill() {
@@ -4716,17 +5221,274 @@ function updateDrawColorRow() {
   });
 }
 
-// Set stroke color from props panel
-function setDrawStroke(gid, col) {
+/* ── Drawing edit operations ───────────────────────────────────────────
+   All of these walk EVERY path in the group, not just the first — a
+   symmetry stroke is one group holding N mirrored paths, and editing
+   only path[0] would leave the mirrors the old colour/weight.
+─────────────────────────────────────────────────────────────────────── */
+
+// Recolour whichever channel the path actually paints with.
+function setDrawInk(gid, col) {
   const g = document.getElementById(gid); if (!g) return;
-  const p = g.querySelector('path'); if (!p) return;
-  if (_drawFill || p.getAttribute('fill') !== 'none') p.setAttribute('fill', col);
-  else p.setAttribute('stroke', col);
+  g.querySelectorAll('path').forEach(p => {
+    const hasStroke = (p.getAttribute('stroke') || 'none') !== 'none';
+    const hasFill   = (p.getAttribute('fill')   || 'none') !== 'none';
+    if (hasStroke) p.setAttribute('stroke', col);
+    if (hasFill)   p.setAttribute('fill',   col);
+    if (!hasStroke && !hasFill) p.setAttribute('fill', col);  // shouldn't happen
+  });
   renderProps(g);
+  scheduleRepeatRefresh();
 }
+
+// Kept for older call sites.
+function setDrawStroke(gid, col) { setDrawInk(gid, col); }
+
 function setDrawStrokeWidth(gid, w) {
   const g = document.getElementById(gid); if (!g) return;
-  const p = g.querySelector('path'); if (p) p.setAttribute('stroke-width', w);
+  g.querySelectorAll('path').forEach(p => p.setAttribute('stroke-width', w));
+  scheduleRepeatRefresh();
+}
+
+// Stroke ⇄ Fill ⇄ Both, preserving the colour already in use.
+function setDrawPaintMode(gid, mode) {
+  const g = document.getElementById(gid); if (!g) return;
+  g.querySelectorAll('path').forEach(p => {
+    const stroke = p.getAttribute('stroke') || 'none';
+    const fill   = p.getAttribute('fill')   || 'none';
+    const ink    = stroke !== 'none' ? stroke : (fill !== 'none' ? fill : '#3a3530');
+    const w      = p.getAttribute('stroke-width') || 4;
+    if (mode === 'stroke') { p.setAttribute('fill', 'none'); p.setAttribute('stroke', ink); p.setAttribute('stroke-width', w); }
+    if (mode === 'fill')   { p.setAttribute('fill', ink);    p.setAttribute('stroke', 'none'); }
+    if (mode === 'both')   { p.setAttribute('fill', ink);    p.setAttribute('stroke', ink); p.setAttribute('stroke-width', w); }
+  });
+  renderProps(g);
+  scheduleRepeatRefresh();
+}
+
+// Append Z so the outline encloses an area and fills without a gap.
+function closeDrawPath(gid) {
+  const g = document.getElementById(gid); if (!g) return;
+  let n = 0;
+  g.querySelectorAll('path').forEach(p => {
+    const d = (p.getAttribute('d') || '').trim();
+    if (d && !/[Zz]\s*$/.test(d)) { p.setAttribute('d', d + ' Z'); n++; }
+  });
+  toast(n ? 'Shape closed — now press Fill' : 'Already closed');
+  renderProps(g);
+  scheduleRepeatRefresh();
+}
+
+/* ── Corner resize handle for drawings ─────────────────────────────────
+   makeResizable() resizes an <image> by width/height, which a path group
+   has none of. Drawings scale via the group transform instead, reusing
+   scaleElement() so the transform string stays in the one known format.
+─────────────────────────────────────────────────────────────────────── */
+// var, not let — the canvas mousemove/mouseup handlers above reference this
+// and sit earlier in the file. Handlers only fire post-evaluation so `let`
+// would work, but the file already uses var for exactly this reason.
+var _drawScaleState = null;
+
+function _drawCurrentScale(group) {
+  const m = (group.getAttribute('transform') || '').match(/scale\(([^),]+)/);
+  const s = m ? parseFloat(m[1]) : 1;
+  return (isFinite(s) && s > 0) ? s : 1;
+}
+
+// Counter-scale the handle so it stays ~12px on screen at any zoom.
+function _drawSyncHandle(group) {
+  const h = group && group.querySelector('[data-resize]');
+  if (!h) return;
+  const s = _drawCurrentScale(group);
+  const x = parseFloat(h.getAttribute('x')) || 0;
+  const y = parseFloat(h.getAttribute('y')) || 0;
+  h.setAttribute('transform', `translate(${x},${y}) scale(${1 / s}) translate(${-x},${-y})`);
+}
+
+function makeDrawResizable(group) {
+  if (!group) return;
+  // Drop any existing handle first. Undo and Load-save rebuild the canvas from
+  // innerHTML, which keeps the handle markup but discards its listener — so
+  // replacing the node is both the rebind path and the de-duplication path.
+  const stale = group.querySelector('[data-resize]');
+  if (stale) stale.remove();
+  let bb;
+  try { bb = group.getBBox(); } catch (_) { return; }
+  if (!bb || !isFinite(bb.width) || bb.width <= 0) return;
+  const h = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  h.setAttribute('data-resize', 'true');
+  h.setAttribute('x', (bb.x + bb.width  - 6).toFixed(1));
+  h.setAttribute('y', (bb.y + bb.height - 6).toFixed(1));
+  h.setAttribute('width', 12);
+  h.setAttribute('height', 12);
+  h.setAttribute('fill', '#c9a96e');
+  h.setAttribute('rx', 2);
+  h.setAttribute('cursor', 'se-resize');
+  h.setAttribute('pointer-events', 'all');
+  group.appendChild(h);
+  _drawSyncHandle(group);
+
+  h.addEventListener('mousedown', e => {
+    e.stopPropagation(); e.preventDefault();
+    selectElement(group);
+    const pt = svgPoint(e);
+    let b;
+    try { b = group.getBBox(); } catch (_) { return; }
+    _drawScaleState = {
+      group,
+      startX: pt.x,
+      startScale: _drawCurrentScale(group),
+      ref: Math.max(30, b.width || 30),
+    };
+    _dragState = null; _resizeState = null;
+  });
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   MOTIF LIBRARY — the student's own symbols, kept between sessions
+
+   The class arc is: draw your own Adinkra or Adire mark → make it
+   reusable → repeat it across a textile. Step two did not exist — a
+   drawing was a one-off path that vanished on reload. Motifs are stored
+   in localStorage as raw SVG markup plus a thumbnail, so they survive a
+   refresh and can then be placed, stamped, or scattered like any other
+   element.
+════════════════════════════════════════════════════════════════════ */
+const _MOTIF_KEY = 'coco_motifs_v1';
+const _MOTIF_MAX = 24;
+
+function _getMotifs() {
+  try { return JSON.parse(localStorage.getItem(_MOTIF_KEY) || '[]'); }
+  catch (_) { return []; }
+}
+function _putMotifs(arr) { localStorage.setItem(_MOTIF_KEY, JSON.stringify(arr)); }
+function _escAttr(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+                  .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Rasterise the element on its own for the panel thumbnail. The clone keeps
+// its transform, so the viewBox has to be in canvas coordinates — which is
+// exactly what getElementSVGBounds() returns.
+function _motifThumb(markup, b) {
+  const pad = Math.max(4, Math.max(b.w, b.h) * 0.08);
+  const x = (b.x - pad).toFixed(1), y = (b.y - pad).toFixed(1);
+  const w = (b.w + pad * 2).toFixed(1), h = (b.h + pad * 2).toFixed(1);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${x} ${y} ${w} ${h}" width="150" height="150">`
+            + `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#f8f5f0"/>`
+            + markup + `</svg>`;
+  return new Promise(resolve => {
+    const im = new Image();
+    im.onload = () => {
+      const c = document.createElement('canvas');
+      c.width = 150; c.height = 150;
+      c.getContext('2d').drawImage(im, 0, 0, 150, 150);
+      resolve(c.toDataURL('image/jpeg', 0.7));
+    };
+    im.onerror = () => resolve('');
+    im.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
+  });
+}
+
+async function saveAsMotif(gid) {
+  const g = document.getElementById(gid);
+  if (!g) return;
+  let b;
+  try { b = getElementSVGBounds(g); } catch (_) { b = null; }
+  if (!b || !isFinite(b.w) || b.w <= 0 || b.h <= 0) { toast('Nothing to save from that element'); return; }
+
+  const suggested = g.getAttribute('data-title') || 'Motif';
+  const name = (prompt('Name this motif:', suggested) || '').trim() || suggested;
+
+  const clone = g.cloneNode(true);
+  clone.removeAttribute('id');
+  clone.removeAttribute('data-selected');
+  clone.style.outline = '';
+  clone.querySelectorAll('[data-resize]').forEach(n => n.remove());
+  const markup = clone.outerHTML;
+
+  toast('Saving motif…');
+  const thumb = await _motifThumb(markup, b);
+
+  const motifs = _getMotifs();
+  motifs.unshift({ id: Date.now(), name, svg: markup, thumb });
+  if (motifs.length > _MOTIF_MAX) motifs.length = _MOTIF_MAX;
+  try {
+    _putMotifs(motifs);
+    toast('✦ Saved to Motifs');
+  } catch (_) {
+    // A motif built from a photo carries base64 image data and fills the
+    // quota fast. Drop the oldest half rather than losing the new one.
+    const trimmed = motifs.slice(0, Math.max(3, Math.floor(motifs.length / 2)));
+    try { _putMotifs(trimmed); toast('Saved — older motifs removed, storage was full'); }
+    catch (_) { toast('Storage full — that motif is too large to keep'); return; }
+  }
+  renderMotifs();
+}
+
+function renderMotifs() {
+  const grid = document.getElementById('motifGrid');
+  if (!grid) return;
+  const motifs = _getMotifs();
+  if (!motifs.length) {
+    grid.innerHTML = '<div style="grid-column:1/-1;font-size:.68rem;color:var(--text-muted);font-style:italic;text-align:center;padding:26px 8px;line-height:1.6;">No motifs yet.<br>Draw a symbol, select it,<br>and save it here.</div>';
+    return;
+  }
+  grid.innerHTML = motifs.map(m => {
+    const nm = _escAttr(m.name);
+    const face = m.thumb
+      ? `<img src="${m.thumb}" alt="${nm}" style="width:100%;aspect-ratio:1;object-fit:cover;display:block;cursor:pointer;" onclick="placeMotif(${m.id})" title="Place on canvas">`
+      : `<div style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;color:var(--text-muted);cursor:pointer;" onclick="placeMotif(${m.id})" title="Place on canvas">✦</div>`;
+    return `<div style="border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;background:var(--surface-3);">
+      <div style="position:relative;">${face}
+        <button onclick="event.stopPropagation();deleteMotif(${m.id})" title="Delete motif"
+          style="position:absolute;top:3px;right:3px;background:rgba(14,12,10,.72);border:none;color:var(--text-muted);border-radius:3px;cursor:pointer;font-size:.6rem;padding:2px 5px;line-height:1;">✕</button>
+      </div>
+      <div style="padding:5px 6px;font-size:.6rem;color:var(--text-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${nm}">${nm}</div>
+    </div>`;
+  }).join('');
+}
+
+function placeMotif(id) {
+  const m = _getMotifs().find(x => x.id === id);
+  if (!m) return;
+  let node = null;
+  try {
+    const doc = new DOMParser().parseFromString(
+      `<svg xmlns="http://www.w3.org/2000/svg">${m.svg}</svg>`, 'image/svg+xml');
+    node = doc.documentElement.firstElementChild;
+  } catch (_) { /* handled below */ }
+  if (!node) { toast('Could not read that motif'); return; }
+
+  const g = document.importNode(node, true);
+  g.setAttribute('id', 'el_' + (++elCounter));
+  g.setAttribute('class', 'canvas-el');
+  g.removeAttribute('data-selected');
+  g.style.outline = '';
+  document.getElementById('elementsGroup').appendChild(g);
+
+  // Centre it on the canvas — it was saved wherever it happened to be drawn.
+  try {
+    const b = getElementSVGBounds(g);
+    const t = getTranslate(g);
+    setTranslate(g, t.x + (canvasW / 2 - (b.x + b.w / 2)),
+                    t.y + (canvasH / 2 - (b.y + b.h / 2)));
+  } catch (_) { /* leave where it landed */ }
+
+  makeDraggable(g);
+  if (g.getAttribute('data-type') === 'draw') makeDrawResizable(g);
+  else makeResizable(g);
+  selectElement(g);
+  updateLayers();
+  hideHint();
+  scheduleRepeatRefresh();
+  toast(m.name + ' placed — press S to stamp it into a repeat');
+}
+
+function deleteMotif(id) {
+  _putMotifs(_getMotifs().filter(m => m.id !== id));
+  renderMotifs();
+  toast('Motif removed');
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -4858,6 +5620,7 @@ function finaliseDrawStroke(pts) {
   g.appendChild(p);
   document.getElementById('elementsGroup').appendChild(g);
   makeDraggable(g);
+  makeDrawResizable(g);
   updateLayers();
   hideHint();
   scheduleRepeatRefresh();
@@ -4871,11 +5634,16 @@ function finaliseDrawStroke(pts) {
   // outside the scaled SVG bounds doesn't prematurely end the stroke.
   function onDocMove(e) {
     if (!_drawActive || !_drawTempPath) return;
-    const pt = svgPoint(e);
+    const raw  = svgPoint(e);
     const prev = _drawPoints[_drawPoints.length - 1];
     // Brush needs a denser sample rate than the pencil — width varies
     // along the stroke, so widely spaced points read as facets.
-    if (Math.hypot(pt.x - prev.x, pt.y - prev.y) < (_drawBrush ? 0.8 : 1.5)) return;
+    // Gate on the RAW distance, not the smoothed one: at high smoothing the
+    // damped point barely moves and the stroke would stall short of the nib.
+    if (Math.hypot(raw.x - prev.x, raw.y - prev.y) < (_drawBrush ? 0.8 : 1.5)) return;
+    const k  = Math.min(0.85, (_drawSmooth / 100) * 0.85);
+    const pt = { x: prev.x + (raw.x - prev.x) * (1 - k),
+                 y: prev.y + (raw.y - prev.y) * (1 - k) };
     pt.t = performance.now();
     if (_drawBrush) pt.p = _brushPressure(pt, prev);
     _drawPoints.push(pt);
@@ -5103,6 +5871,7 @@ window.finaliseDrawStroke = function finaliseDrawStroke(pts) {
   transforms.forEach(tpts => grp.appendChild(mkPath(buildSmoothPath(tpts))));
   document.getElementById('elementsGroup').appendChild(grp);
   makeDraggable(grp);
+  makeDrawResizable(grp);
   updateLayers();
   hideHint();
   scheduleRepeatRefresh();
@@ -5316,6 +6085,7 @@ function _penFinalize(close) {
   g.appendChild(path);
   document.getElementById('elementsGroup').appendChild(g);
   makeDraggable(g);
+  makeDrawResizable(g);
   updateLayers();
   hideHint();
   scheduleRepeatRefresh();
@@ -5491,6 +6261,8 @@ function enterStampMode(src) {
   _stampGhost = _stampSource.cloneNode(true);
   _stampGhost.setAttribute('id', 'stampGhost');
   _stampGhost.removeAttribute('data-selected');
+  // A drawing carries a gold resize square; it shouldn't trail the cursor.
+  _stampGhost.querySelectorAll('[data-resize]').forEach(n => n.remove());
   _stampGhost.style.outline       = '';
   _stampGhost.style.opacity       = '0.4';
   _stampGhost.style.pointerEvents = 'none';
@@ -5540,6 +6312,7 @@ function _onStampClick(e) {
   _stampApplyTransform(clone, svgPoint(e));
   document.getElementById('elementsGroup').appendChild(clone);
   makeDraggable(clone);
+  if (clone.getAttribute('data-type') === 'draw') makeDrawResizable(clone);
   updateLayers();
   scheduleRepeatRefresh();
   document.getElementById('elementsGroup').appendChild(_stampGhost); // keep ghost on top
@@ -5785,21 +6558,45 @@ function _randRotation(rng, mode) {
   return _randBetween(rng, 0, 360);
 }
 
-// Get source elements for scatter
+// Get source elements for scatter.
+// Drawings and shapes count too — scattering your OWN motif across the cloth
+// is the point of the exercise, not just scattering stock art.
+const _SCATTERABLE = ['image', 'draw', 'shape'];
 function _getScatterSources() {
   const all = Array.from(document.getElementById('elementsGroup').children)
-    .filter(g => g.getAttribute('data-type') === 'image');
-  if (_scatterSrc === 'selected' && selectedEl) {
-    const sel = document.getElementById(selectedEl);
-    if (sel && sel.getAttribute('data-type') === 'image') return [sel];
+    .filter(g => _SCATTERABLE.indexOf(g.getAttribute('data-type')) !== -1
+              && !g.getAttribute('data-fx'));
+  // selectedEl is a DOM node, not an id string — getElementById(node) was
+  // always null here, so "Selected" silently behaved as "All".
+  if (_scatterSrc === 'selected' && selectedEl &&
+      _SCATTERABLE.indexOf(selectedEl.getAttribute('data-type')) !== -1) {
+    return [selectedEl];
   }
-  return all.length ? all : [];
+  return all;
+}
+
+/* Intrinsic size and origin of a scatter source.
+   An image group draws at 0,0 in its own space with the position living in
+   the transform. A drawing does NOT — its path data holds absolute canvas
+   coordinates — so the bbox origin has to be cancelled when placing a copy,
+   or every copy lands offset by wherever it was first drawn. */
+function _srcSize(src) {
+  const w = parseFloat(src.getAttribute('data-w'));
+  const h = parseFloat(src.getAttribute('data-h'));
+  if (isFinite(w) && w > 0 && isFinite(h) && h > 0) return { w: w, h: h, sx: 0, sy: 0 };
+  try {
+    const b = src.getBBox();
+    if (b && b.width > 0) return { w: b.width, h: b.height, sx: b.x, sy: b.y };
+  } catch (_) {}
+  return { w: 180, h: 180, sx: 0, sy: 0 };
 }
 
 // Clone an SVG group element
 function _cloneEl(srcGroup, id) {
   const clone = srcGroup.cloneNode(true);
   clone.setAttribute('id', id);
+  // A drawing carries a resize square; scattered copies must not each show one.
+  clone.querySelectorAll('[data-resize]').forEach(n => n.remove());
   // Copy registry data if image
   const origId = srcGroup.getAttribute('id');
   if (_imgRegistry[origId]) _imgRegistry[id] = _imgRegistry[origId];
@@ -5812,15 +6609,18 @@ function _cloneEl(srcGroup, id) {
   return clone;
 }
 
-// Add frame around element
-function _addFrame(group, w, h, frameType, colors, rng) {
+// Add frame around element.
+// sx/sy = the source's own bbox origin. Zero for an image (its content sits
+// at 0,0); non-zero for a drawing, whose path data is in canvas coordinates.
+function _addFrame(group, w, h, frameType, colors, rng, sx, sy) {
   if (frameType === 'none') return;
+  sx = sx || 0; sy = sy || 0;
   const ns = 'http://www.w3.org/2000/svg';
   const color = colors && colors.length ? colors[Math.floor(rng() * colors.length)] : '#c9a96e';
   const pad = Math.round(Math.min(w,h) * 0.08);
   if (frameType === 'stamp') {
     const rect = document.createElementNS(ns,'rect');
-    rect.setAttribute('x',  -pad); rect.setAttribute('y',  -pad);
+    rect.setAttribute('x',  sx - pad); rect.setAttribute('y',  sy - pad);
     rect.setAttribute('width',  w + pad*2); rect.setAttribute('height', h + pad*2);
     rect.setAttribute('fill','none'); rect.setAttribute('stroke', color);
     rect.setAttribute('stroke-width','2'); rect.setAttribute('stroke-dasharray','4,3');
@@ -5829,20 +6629,20 @@ function _addFrame(group, w, h, frameType, colors, rng) {
     // inner rule
     const inner = rect.cloneNode();
     const p2 = Math.round(pad * 0.4);
-    inner.setAttribute('x', -pad+p2); inner.setAttribute('y', -pad+p2);
+    inner.setAttribute('x', sx-pad+p2); inner.setAttribute('y', sy-pad+p2);
     inner.setAttribute('width', w+pad*2-p2*2); inner.setAttribute('height', h+pad*2-p2*2);
     inner.setAttribute('stroke-dasharray','none');
     group.insertBefore(inner, group.firstChild);
   } else if (frameType === 'oval') {
     const ell = document.createElementNS(ns,'ellipse');
-    ell.setAttribute('cx', w/2); ell.setAttribute('cy', h/2);
+    ell.setAttribute('cx', sx + w/2); ell.setAttribute('cy', sy + h/2);
     ell.setAttribute('rx', w/2 + pad); ell.setAttribute('ry', h/2 + pad);
     ell.setAttribute('fill','none'); ell.setAttribute('stroke', color);
     ell.setAttribute('stroke-width','2');
     group.insertBefore(ell, group.firstChild);
   } else if (frameType === 'rect') {
     const rect = document.createElementNS(ns,'rect');
-    rect.setAttribute('x', -pad); rect.setAttribute('y', -pad);
+    rect.setAttribute('x', sx - pad); rect.setAttribute('y', sy - pad);
     rect.setAttribute('width', w+pad*2); rect.setAttribute('height', h+pad*2);
     rect.setAttribute('fill','none'); rect.setAttribute('stroke', color);
     rect.setAttribute('stroke-width','2'); rect.setAttribute('rx','6');
@@ -5852,7 +6652,7 @@ function _addFrame(group, w, h, frameType, colors, rng) {
 
 function runScatter() {
   const sources = _getScatterSources();
-  if (!sources.length) { toast('No source elements — add an image first'); return; }
+  if (!sources.length) { toast('Nothing to scatter — add an image, shape, or drawing first'); return; }
 
   const count   = parseInt(document.getElementById('scatterCount').value);
   const minPct  = parseInt(document.getElementById('scatterMin').value) / 100;
@@ -5867,14 +6667,16 @@ function runScatter() {
   function pickSource() { return sources[Math.floor(rng() * sources.length)]; }
 
   function placeOne(x, y, sc, rot, src) {
-    const srcW = parseFloat(src.getAttribute('data-w') || 180);
-    const srcH = parseFloat(src.getAttribute('data-h') || 180);
+    const sz = _srcSize(src);
+    const srcW = sz.w, srcH = sz.h;
     const ew = srcW * sc, eh = srcH * sc;
     const id = 'el_' + (++elCounter);
     const clone = _cloneEl(src, id);
-    clone.setAttribute('transform', `translate(${x.toFixed(1)},${y.toFixed(1)}) scale(${sc.toFixed(3)}) rotate(${rot.toFixed(1)},${(srcW/2).toFixed(1)},${(srcH/2).toFixed(1)})`);
+    // Cancel the source's own origin so a drawing lands at (x,y) like an image.
+    const rcx = (sz.sx + srcW / 2).toFixed(1), rcy = (sz.sy + srcH / 2).toFixed(1);
+    clone.setAttribute('transform', `translate(${(x - sz.sx*sc).toFixed(1)},${(y - sz.sy*sc).toFixed(1)}) scale(${sc.toFixed(3)}) rotate(${rot.toFixed(1)},${rcx},${rcy})`);
     clone.setAttribute('class','canvas-el');
-    _addFrame(clone, srcW, srcH, _scatterFrame, colors, rng);
+    _addFrame(clone, srcW, srcH, _scatterFrame, colors, rng, sz.sx, sz.sy);
     eGroup.appendChild(clone);
     elements.push(id);
     placed.push({x, y, w: ew, h: eh});
@@ -5889,9 +6691,9 @@ function runScatter() {
       offsets.forEach(([ox, oy]) => {
         const wid = 'el_' + (++elCounter);
         const wclone = _cloneEl(src, wid);
-        wclone.setAttribute('transform', `translate(${(x+ox).toFixed(1)},${(y+oy).toFixed(1)}) scale(${sc.toFixed(3)}) rotate(${rot.toFixed(1)},${(srcW/2).toFixed(1)},${(srcH/2).toFixed(1)})`);
+        wclone.setAttribute('transform', `translate(${(x + ox - sz.sx*sc).toFixed(1)},${(y + oy - sz.sy*sc).toFixed(1)}) scale(${sc.toFixed(3)}) rotate(${rot.toFixed(1)},${rcx},${rcy})`);
         wclone.setAttribute('class','canvas-el');
-        _addFrame(wclone, srcW, srcH, _scatterFrame, colors, rng);
+        _addFrame(wclone, srcW, srcH, _scatterFrame, colors, rng, sz.sx, sz.sy);
         eGroup.appendChild(wclone);
         elements.push(wid);
       });
@@ -5903,8 +6705,8 @@ function runScatter() {
     // Poisson-lite: random placement with min-distance retry
     for (let i = 0; i < count; i++) {
       const src = pickSource();
-      const srcW = parseFloat(src.getAttribute('data-w') || 180);
-      const srcH = parseFloat(src.getAttribute('data-h') || 180);
+      const _sz = _srcSize(src);
+      const srcW = _sz.w, srcH = _sz.h;
       const sc  = _randBetween(rng, minPct, maxPct);
       const ew  = srcW * sc, eh = srcH * sc;
       const rot = _randRotation(rng, _scatterRot);
@@ -5929,8 +6731,8 @@ function runScatter() {
     for (let r = 0; r < rows && n < count; r++) {
       for (let col = 0; col < cols && n < count; col++) {
         const src = pickSource();
-        const srcW = parseFloat(src.getAttribute('data-w') || 180);
-        const srcH = parseFloat(src.getAttribute('data-h') || 180);
+        const _sz = _srcSize(src);
+        const srcW = _sz.w, srcH = _sz.h;
         const sc  = _randBetween(rng, minPct * 0.85, maxPct);
         const ew  = srcW * sc, eh = srcH * sc;
         const rot = _randRotation(rng, _scatterRot);
@@ -5951,8 +6753,8 @@ function runScatter() {
     for (let r = 0; r < rows && n < count; r++) {
       for (let col = 0; col < cols && n < count; col++) {
         const src = pickSource();
-        const srcW = parseFloat(src.getAttribute('data-w') || 180);
-        const srcH = parseFloat(src.getAttribute('data-h') || 180);
+        const _sz = _srcSize(src);
+        const srcW = _sz.w, srcH = _sz.h;
         const sc  = _randBetween(rng, minPct * 0.9, maxPct);
         const ew  = srcW * sc, eh = srcH * sc;
         const rot = _randRotation(rng, _scatterRot);
@@ -5971,8 +6773,8 @@ function runScatter() {
     // Focal
     for (let i = 0; i < focalCount; i++) {
       const src = pickSource();
-      const srcW = parseFloat(src.getAttribute('data-w') || 180);
-      const srcH = parseFloat(src.getAttribute('data-h') || 180);
+      const _sz = _srcSize(src);
+      const srcW = _sz.w, srcH = _sz.h;
       const sc  = _randBetween(rng, maxPct * 0.75, maxPct);
       const ew  = srcW * sc, eh = srcH * sc;
       const rot = _randRotation(rng, _scatterRot);
@@ -5983,8 +6785,8 @@ function runScatter() {
     // Fill
     for (let i = 0; i < fillCount; i++) {
       const src = pickSource();
-      const srcW = parseFloat(src.getAttribute('data-w') || 180);
-      const srcH = parseFloat(src.getAttribute('data-h') || 180);
+      const _sz = _srcSize(src);
+      const srcW = _sz.w, srcH = _sz.h;
       const sc  = _randBetween(rng, minPct, maxPct * 0.55);
       const ew  = srcW * sc, eh = srcH * sc;
       const rot = _randRotation(rng, _scatterRot);
@@ -6001,7 +6803,12 @@ function runScatter() {
     }
   }
 
-  refreshLayerList && refreshLayerList();
+  // Was `refreshLayerList && refreshLayerList()` — that function does not
+  // exist anywhere in this file, and referencing an undeclared identifier
+  // throws a ReferenceError. Scatter placed its copies and then died on this
+  // line, so the layer list never refreshed and the toast below never fired.
+  updateLayers();
+  scheduleRepeatRefresh();
   toast(`✦ Scattered ${count} elements (seed ${seed})`);
 }
 
@@ -6164,7 +6971,11 @@ function runScatter() {
     const g = GROUP(); if(!g) return;
     Array.from(g.children).forEach(child => {
       try { if (typeof makeDraggable === 'function') makeDraggable(child); } catch(_){}
-      try { if (typeof makeResizable === 'function') makeResizable(child); } catch(_){}
+      try {
+        if (child.getAttribute('data-type') === 'draw') {
+          if (typeof makeDrawResizable === 'function') makeDrawResizable(child);
+        } else if (typeof makeResizable === 'function') { makeResizable(child); }
+      } catch(_){}
     });
   }
   function restore(s){
@@ -7846,19 +8657,28 @@ async function loadPacks() {
 
     if (error || !packs) { renderPackPanel([]); return; }
 
+    /* Look the member up by EMAIL, not by users.id.
+       This was `.eq('id', userId)` with userId = the auth user id. Every
+       other surface in the platform joins on email — it is the identity and
+       the Shopify join key — and users.id is a separate column that does not
+       have to match auth.uid(). Where it doesn't, the lookup silently
+       returned null and a paying member saw every pack locked. */
     let userRow = null;
-    if (userId) {
+    const email = session?.user?.email ? session.user.email.toLowerCase() : null;
+    if (email) {
       const { data: u } = await supa
         .from('users')
-        .select('is_subscriber, subscription_tier')
-        .eq('id', userId)
+        .select('is_subscriber, subscription_tier, admin')
+        .eq('email', email)
         .maybeSingle();
       userRow = u;
     }
+    // users.admin is TEXT — "false" is truthy in JS, so compare explicitly.
+    const isAdmin = String(userRow?.admin ?? '').trim().toLowerCase() === 'true';
 
     window._cocoPacks = packs.map(pack => {
       const canAccess =
-        pack.is_free ||
+        pack.is_free || isAdmin ||
         (userRow?.is_subscriber && pack.membership_tier === 'basic') ||
         (userRow?.is_subscriber && userRow?.subscription_tier === 'all-access');
 
