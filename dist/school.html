@@ -391,6 +391,14 @@ const API = {
   feature: (id,w,on)     => rpc('school_feature',{p_class:id,p_work:w,p_on:on}),
   hide: (id,w,on)        => rpc('school_hide',{p_class:id,p_work:w,p_on:on}),
   resetMember: (id,m)    => rpc('school_reset_member',{p_class:id,p_member:m}),
+  classBriefs: (id)      => rpc('school_class_briefs',{p_class:id}),
+  patternStyles: ()      => rpc('school_pattern_styles'),
+  deleteBrief: (id,bid)  => rpc('school_delete_brief',{p_class:id,p_id:bid}),
+  saveBrief: (id,b)      => rpc('school_save_brief',{ p_class:id, p_id:b.id||null,
+    p_title:b.title, p_tradition:b.tradition||null, p_meta:b.meta||null,
+    p_find:b.find||null, p_interpret:b.interpret||null, p_own:b.own||null,
+    p_turnin:b.turnin||null, p_style:b.style||null,
+    p_words:b.words||150, p_standards:b.standards||[] }),
 
   /* storage — a student cannot sign a URL, so the edge function does it */
   async upload(tok, brief, dataUrl, credits){
@@ -499,9 +507,17 @@ const State = {
   view:'gate', busy:false,
   teacher:null,                 /* email of the signed-in teacher */
   classes:[], classId:null, tab:'briefs', roster:[], gallery:[],
-  session:null,                 /* {token,name,class_name,assigned[]} */
-  works:[], briefOpen:null
+  session:null,                 /* {token,name,class_name,briefs[]} */
+  works:[], briefOpen:null,
+  briefs:[],                    /* teacher: templates + this class's own */
+  styles:[],                    /* archive styles a brief may bind to */
+  editing:null                  /* the brief being written, or null */
 };
+/* Brief content lives on the server so a teacher's own brief renders
+   exactly like a shipped one. BRIEFS is the demo-mode fallback only. */
+const liveBriefs = () => State.view==='student'
+  ? (State.session?.briefs || []) : State.briefs;
+const findBrief = id => liveBriefs().find(b=>b.id===id) || briefById(id);
 const curClass = () => State.classes.find(c=>c.id===State.classId) || null;
 
 function go(view, patch){ Object.assign(State,{view},patch||{}); render(); window.scrollTo(0,0); }
@@ -649,7 +665,9 @@ async function loadTeacher(){
   if(DEMO){ State.classes = Store.classes(State.teacher).map(c=>({
       id:c.id, code:c.code, name:c.name, join_open:true, assigned:c.assigned,
       students:Store.members(c.id).length,
-      submitted:Store.works(c.id).filter(w=>w.status==='submitted').length })); }
+      submitted:Store.works(c.id).filter(w=>w.status==='submitted').length }));
+    State.briefs = BRIEFS.map(b=>({...b, is_template:true,
+      assigned:(Store.classById(State.classId)?.assigned||[]).includes(b.id)})); }
   else {
     try{ State.classes = await API.classes() || []; }
     catch(e){ fail(e); State.classes=[]; }
@@ -676,6 +694,22 @@ async function loadClass(id){
     const [r,g] = await Promise.all([API.roster(id), API.gallery(id)]);
     State.roster = r||[]; State.gallery = g||[];
   }catch(e){ fail(e); State.roster=[]; State.gallery=[]; }
+
+  /* Brief authoring is a later migration than the rest. If it has not been
+     applied yet, fall back to the three shipped briefs read-only and say
+     so, rather than leaving the teacher on a broken tab. */
+  try{
+    State.briefs = await API.classBriefs(id) || [];
+    State.briefsReadOnly = false;
+  }catch(e){
+    const c = State.classes.find(x=>x.id===id);
+    State.briefs = BRIEFS.map(b=>({ ...b, is_template:true,
+      turnin:b.turnin, assigned:(c?.assigned||[]).includes(b.id) }));
+    State.briefsReadOnly = true;
+  }
+  if(!State.briefsReadOnly && !State.styles.length){
+    try{ State.styles = await API.patternStyles() || []; }catch(_){ State.styles=[]; }
+  }
 }
 
 async function newClass(){
@@ -743,37 +777,182 @@ async function toggleJoin(id, open){
 }
 
 function tabBriefs(c){
-  const assigned = c.assigned||[];
-  return BRIEFS.map(b=>{
-    const on=assigned.includes(b.id);
-    return `<div class="brief">
-      <div class="brief-top">
-        <div>
-          <p class="eyebrow">Brief ${b.n}</p>
-          <h3>${esc(b.title)}</h3>
-          <p class="brief-meta">${esc(b.meta)}</p>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
-          ${on?'<span class="badge badge-live">● Assigned</span>':''}
-          <button class="btn ${on?'btn-ghost':'btn-gold'} btn-sm" onclick="toggleAssign('${b.id}')">
-            ${on?'Unassign':'Assign to class'}</button>
-        </div>
+  const mine = State.briefs.filter(b=>!b.is_template);
+  const tpl  = State.briefs.filter(b=> b.is_template);
+  if(State.briefsReadOnly) return `
+    <div class="note"><b>Writing your own briefs is not switched on yet.</b>
+      Apply <code>docs/school-mode-briefs.sql</code> and this becomes an editor —
+      your prompts, your sources, your word count. Until then you can assign the
+      three below.</div>
+    ${tpl.map(b=>briefCard(b,true)).join('')}`;
+  return `
+    <div class="card" style="margin-bottom:18px;display:flex;justify-content:space-between;
+         align-items:center;gap:16px;flex-wrap:wrap">
+      <div><b style="font-weight:500">Your own briefs</b>
+        <p class="tiny dim" style="margin:4px 0 0">Write an assignment in your words — your prompts,
+          your sources, your word count. Or duplicate one below and edit it.</p></div>
+      <button class="btn btn-gold btn-sm" onclick="editBrief(null)">+ Write a brief</button>
+    </div>
+    ${mine.length ? mine.map(b=>briefCard(b,false)).join('')
+      : `<p class="tiny dim" style="margin:0 0 26px">Nothing of your own yet.</p>`}
+    <p class="eyebrow" style="margin:30px 0 12px">Ready-made briefs from CultureSchool</p>
+    ${tpl.map(b=>briefCard(b,true)).join('')}`;
+}
+
+function briefCard(b, isTemplate){
+  return `<div class="brief">
+    <div class="brief-top">
+      <div>
+        <p class="eyebrow">${isTemplate?'CultureSchool':'Your brief'}${b.style?' · '+esc(b.style):''}</p>
+        <h3>${esc(b.title)}</h3>
+        ${b.meta?`<p class="brief-meta">${esc(b.meta)}</p>`:''}
       </div>
-      <div class="brief-arc">
-        <div class="arc"><b>Find</b><p>${esc(b.find)}</p></div>
-        <div class="arc"><b>Interpret</b><p>${esc(b.interpret)}</p></div>
-        <div class="arc"><b>Own it</b><p>${esc(b.own)}</p></div>
+      <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
+        ${b.assigned?'<span class="badge badge-live">● Assigned</span>':''}
+        <button class="btn ${b.assigned?'btn-ghost':'btn-gold'} btn-sm"
+          onclick="toggleAssign('${esc(b.id)}')">${b.assigned?'Unassign':'Assign to class'}</button>
       </div>
-      <div class="turnin"><b>Turn in —</b> ${esc(b.turnin)}</div>
-      ${b.style
-        ? `<div><p class="eyebrow" style="margin-bottom:4px">From the archive · ${esc(b.tradition)}</p>
-             <div class="pats" data-style="${b.style}"><p class="tiny dim">Loading…</p></div></div>`
-        : `<div class="note"><b>No reference set yet.</b> The archive has no
-             improvisational-quilt style, so this brief ships without a pattern strip —
-             students compose freely, which is what the brief asks for anyway.</div>`}
-      <p class="standards"><b>Standards:</b> ${esc(b.standards)}</p>
-    </div>`;
-  }).join('');
+    </div>
+    ${(b.find||b.interpret||b.own)?`<div class="brief-arc">
+      ${b.find?`<div class="arc"><b>Find</b><p>${esc(b.find)}</p></div>`:''}
+      ${b.interpret?`<div class="arc"><b>Interpret</b><p>${esc(b.interpret)}</p></div>`:''}
+      ${b.own?`<div class="arc"><b>Own it</b><p>${esc(b.own)}</p></div>`:''}
+    </div>`:'<p class="tiny dim">No prompts written yet.</p>'}
+    ${b.turnin?`<div class="turnin"><b>Turn in —</b> ${esc(b.turnin)}</div>`:''}
+    ${b.style
+      ? `<div><p class="eyebrow" style="margin-bottom:4px">From the archive${b.tradition?' · '+esc(b.tradition):''}</p>
+           <div class="pats" data-style="${esc(b.style)}"><p class="tiny dim">Loading…</p></div></div>`
+      : `<div class="note"><b>No reference set.</b> Students compose freely — there is no
+           pattern strip on this brief.</div>`}
+    <p class="standards">
+      <b>Turn-in floor:</b> ${b.words} words${b.standards?` · <b>Standards:</b> ${esc(b.standards)}`:''}</p>
+    <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+      ${State.briefsReadOnly ? '' : isTemplate
+        ? `<button class="btn btn-ghost btn-sm" onclick="duplicateBrief('${esc(b.id)}')">Duplicate &amp; edit</button>`
+        : `<button class="btn btn-ghost btn-sm" onclick="editBrief('${esc(b.id)}')">Edit</button>
+           <button class="btn btn-ghost btn-sm" onclick="removeBrief('${esc(b.id)}')">Delete</button>`}
+    </div>
+  </div>`;
+}
+
+/* ── the brief editor ─────────────────────────────────────────────── */
+function editBrief(id){
+  const b = id ? State.briefs.find(x=>x.id===id) : null;
+  State.editing = b ? {...b} : { id:null, title:'', tradition:'', meta:'', find:'',
+    interpret:'', own:'', turnin:'', style:'', words:150, standards:'' };
+  openEditor();
+}
+function duplicateBrief(id){
+  const b = State.briefs.find(x=>x.id===id); if(!b) return;
+  State.editing = {...b, id:null, title:b.title+' (my version)'};
+  openEditor();
+}
+
+function openEditor(){
+  const b=State.editing;
+  const std = Array.isArray(b.standards) ? b.standards.join(', ') : (b.standards||'');
+  const scrim=document.createElement('div');
+  scrim.className='scrim'; scrim.id='briefEditor';
+  scrim.onclick=e=>{ if(e.target===scrim) scrim.remove(); };
+  scrim.innerHTML=`<div class="modal">
+    <div class="modal-h">
+      <div><p class="eyebrow">${b.id?'Edit brief':'New brief'}</p>
+        <h2 style="font-size:1.5rem;margin-top:6px">Write the assignment</h2></div>
+      <button class="x" onclick="this.closest('.scrim').remove()" aria-label="Close">×</button>
+    </div>
+    <div class="modal-b">
+      <label class="field"><span>Title</span>
+        <input class="inp" id="bTitle" maxlength="160" value="${esc(b.title)}"
+               placeholder="e.g. Kuba Cloth: Improvised Geometry"></label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <label class="field"><span>Tradition</span>
+          <input class="inp" id="bTrad" value="${esc(b.tradition||'')}"
+                 placeholder="Kuba · Kuba Kingdom, DRC"></label>
+        <label class="field"><span>Grades &amp; length</span>
+          <input class="inp" id="bMeta" value="${esc(b.meta||'')}"
+                 placeholder="Grades 9–12 · Visual Arts · 2 weeks"></label>
+      </div>
+
+      <label class="field"><span>1 · Find — what should they research?</span>
+        <textarea class="inp" id="bFind" style="min-height:96px"
+          placeholder="Name the tradition and say exactly what to document.">${esc(b.find||'')}</textarea></label>
+      <label class="field"><span>2 · Interpret — what should they make?</span>
+        <textarea class="inp" id="bInt" style="min-height:96px"
+          placeholder="What do they design, and which idea from the tradition carries over?">${esc(b.interpret||'')}</textarea></label>
+      <label class="field"><span>3 · Own it — what goes in the artist statement?</span>
+        <textarea class="inp" id="bOwn" style="min-height:80px"
+          placeholder="What must they name: borrowed, changed, and why.">${esc(b.own||'')}</textarea></label>
+      <label class="field"><span>Turn-in checklist</span>
+        <input class="inp" id="bTurn" value="${esc(b.turnin||'')}"
+               placeholder="Source notes · finished print · statement"></label>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <label class="field"><span>Reference patterns</span>
+          <select class="inp" id="bStyle">
+            <option value="">None — students compose freely</option>
+            ${State.styles.map(s=>`<option value="${esc(s.style)}"
+              ${s.style===b.style?'selected':''}>${esc(s.style)} — ${s.patterns} patterns</option>`).join('')}
+          </select></label>
+        <label class="field"><span>Statement must reach</span>
+          <input class="inp" id="bWords" type="number" min="25" max="2000" step="25"
+                 value="${b.words||150}"></label>
+      </div>
+      <label class="field"><span>Standards (comma separated)</span>
+        <input class="inp" id="bStd" value="${esc(std)}"
+               placeholder="VA.912.H.1.1, F.S.1003.42(2)(h)"></label>
+
+      <p class="tiny dim" style="margin:0 0 16px;line-height:1.6">
+        Students cannot turn in until they have attached a print <b>and</b> reached the word count.
+        That floor is enforced on the server, so it cannot be worked around.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-primary btn-sm" id="bSave" onclick="saveBriefForm()">
+          ${b.id?'Save changes':'Create brief'} →</button>
+        <button class="btn btn-ghost btn-sm" onclick="this.closest('.scrim').remove()">Cancel</button>
+      </div>
+    </div></div>`;
+  document.body.appendChild(scrim);
+}
+
+async function saveBriefForm(){
+  const c=curClass(); if(!c) return;
+  const b={
+    id: State.editing.id,
+    title: $('#bTitle').value.trim(),
+    tradition: $('#bTrad').value.trim(),
+    meta: $('#bMeta').value.trim(),
+    find: $('#bFind').value.trim(),
+    interpret: $('#bInt').value.trim(),
+    own: $('#bOwn').value.trim(),
+    turnin: $('#bTurn').value.trim(),
+    style: $('#bStyle').value,
+    words: parseInt($('#bWords').value,10) || 150,
+    standards: $('#bStd').value.split(',').map(x=>x.trim()).filter(Boolean)
+  };
+  if(!b.title) return toast('Give the brief a title');
+  const btn=$('#bSave'); btn.disabled=true; btn.textContent='Saving…';
+  try{
+    await API.saveBrief(c.id, b);
+    document.getElementById('briefEditor')?.remove();
+    State.editing=null;
+    await loadClass(c.id); render();
+    toast(b.id?'Brief saved':'Brief created — assign it when you are ready');
+  }catch(e){ btn.disabled=false; btn.textContent='Save →'; fail(e); }
+}
+
+async function removeBrief(id){
+  const c=curClass(); if(!c) return;
+  const b=State.briefs.find(x=>x.id===id);
+  if(!confirm('Delete "'+(b?b.title:'this brief')+'"? This cannot be undone.')) return;
+  try{
+    await API.deleteBrief(c.id, id);
+    await loadClass(c.id); render();
+    toast('Brief deleted');
+  }catch(e){
+    const m=String(e.message||e);
+    if(/piece\(s\) of student work/.test(m))
+      toast('Students have already worked on this — unassign it instead of deleting');
+    else fail(e);
+  }
 }
 
 async function toggleAssign(briefId){
@@ -986,7 +1165,7 @@ async function doJoin(){
     } else {
       const r=await API.join(code,name);
       State.session={ token:r.session_token, name:r.display_name,
-                      class_name:r.class_name, assigned:r.assigned||[] };
+                      class_name:r.class_name, briefs:[] };
     }
     try{ sessionStorage.setItem('cs_school_sess', JSON.stringify(State.session)); }catch(_){}
     await loadStudent();
@@ -1007,7 +1186,7 @@ async function loadStudent(){
   const s=State.session; if(!s) return;
   if(DEMO){
     const c=Store.classById(s._cid);
-    State.session.assigned=c?c.assigned:[];
+    State.session.briefs=(c?c.assigned:[]).map(briefById).filter(Boolean);
     State.works=Store.works(s._cid).filter(w=>w.memberId===s._mid).map(w=>({
       brief_id:w.briefId, statement:w.statement, credits:w.credits,
       status:w.status, submitted_at:w.submittedAt, _url:w.image }));
@@ -1016,7 +1195,9 @@ async function loadStudent(){
   try{
     const st=await API.state(s.token);
     State.session.name=st.display_name; State.session.class_name=st.class_name;
-    State.session.assigned=st.assigned||[];
+    /* Full brief content comes from the server, so a brief the teacher
+       wrote themselves renders exactly like one that ships with CoCo. */
+    State.session.briefs=st.briefs||[];
     State.works=(st.works||[]).map(w=>({...w, _url:null}));
   }catch(e){
     /* a dead token means the teacher reset the session */
@@ -1032,28 +1213,28 @@ const myWork = bid => State.works.find(w=>w.brief_id===bid);
    ══════════════════════════════════════════════════════════════ */
 function viewStudent(){
   const s=State.session; if(!s) return viewJoin();
-  const assigned=(s.assigned||[]).map(briefById).filter(Boolean);
+  const assigned=s.briefs||[];
 
   if(State.briefOpen){
-    const b=briefById(State.briefOpen);
-    if(b) return studentBrief(b);
+    const b=assigned.find(x=>x.id===State.briefOpen);
+    if(b) return studentBrief(b, assigned.indexOf(b));
   }
   return `<div class="wrap"><div class="stu">
     <p class="eyebrow">${esc(s.class_name||'')}</p>
     <h1 style="font-size:2rem;margin:10px 0 6px">Your assignments</h1>
     <p class="tiny dim" style="margin-bottom:28px">Signed in as ${esc(s.name)} · nothing else about you is stored.</p>
-    ${ assigned.length ? assigned.map(b=>{
+    ${ assigned.length ? assigned.map((b,i)=>{
       const w=myWork(b.id);
       const st = !w ? 'Not started' : w.status==='submitted' ? 'Submitted' : 'Draft';
       const cls = !w ? '' : w.status==='submitted' ? 'badge-live' : 'badge-draft';
       return `<div class="brief">
         <div class="brief-top">
-          <div><p class="eyebrow">Brief ${b.n}</p>
+          <div><p class="eyebrow">Brief ${String(i+1).padStart(2,'0')}</p>
             <h3>${esc(b.title)}</h3>
-            <p class="brief-meta">${esc(b.tradition)}</p></div>
+            <p class="brief-meta">${esc(b.tradition||b.meta||'')}</p></div>
           <span class="badge ${cls}">${st}</span>
         </div>
-        <p style="font-size:.88rem;line-height:1.62;color:var(--body);margin:0 0 16px">${esc(b.interpret)}</p>
+        <p style="font-size:.88rem;line-height:1.62;color:var(--body);margin:0 0 16px">${esc(b.interpret||'')}</p>
         <button class="btn btn-primary btn-sm" onclick="openBrief('${b.id}')">
           ${w?'Continue →':'Start →'}</button>
       </div>`; }).join('')
@@ -1065,13 +1246,14 @@ function viewStudent(){
 function openBrief(id){
   State.briefOpen=id;
   const s=State.session;
-  if(DEMO) Store.log(s._cid,s._mid,'open_brief',briefById(id)?.title||id);
-  else API.log(s.token,'open_brief',briefById(id)?.title||id);
+  const title=(s.briefs||[]).find(b=>b.id===id)?.title || id;
+  if(DEMO) Store.log(s._cid,s._mid,'open_brief',title);
+  else API.log(s.token,'open_brief',title);
   render();
 }
 function closeBrief(){ State.briefOpen=null; render(); }
 
-function studentBrief(b){
+function studentBrief(b, idx){
   const w=myWork(b.id);
   const has=!!(w && (w.image_path || w._url));
   const stmt=w?w.statement||'':'';
@@ -1079,15 +1261,15 @@ function studentBrief(b){
   const done=w&&w.status==='submitted';
   return `<div class="wrap"><div class="stu">
     <button class="btn btn-ghost btn-sm" onclick="closeBrief()">← All assignments</button>
-    <p class="eyebrow" style="margin-top:22px">Brief ${b.n} · ${esc(b.tradition)}</p>
+    <p class="eyebrow" style="margin-top:22px">Brief ${String((idx||0)+1).padStart(2,'0')}${b.tradition?' · '+esc(b.tradition):''}</p>
     <h1 style="font-size:2.1rem;margin:10px 0 6px">${esc(b.title)}</h1>
-    <p class="brief-meta">${esc(b.meta)}</p>
+    ${b.meta?`<p class="brief-meta">${esc(b.meta)}</p>`:''}
     ${done?'<div class="note"><b>Turned in.</b> Your teacher can see this. You can still revise it.</div>':''}
 
     <div class="card" style="margin:22px 0">
       <div class="step">
         <div class="step-n">1</div>
-        <div class="step-b"><h4>Find</h4><p>${esc(b.find)}</p>
+        <div class="step-b"><h4>Find</h4><p>${esc(b.find||'Research the tradition your teacher named.')}</p>
           ${b.style?`<p class="eyebrow" style="margin:14px 0 4px">Study these — hover for the credit</p>
             <div class="pats" data-style="${b.style}"><p class="tiny dim">Loading the archive…</p></div>
             <p class="tiny dim" style="margin-top:10px">Every pattern here is CultureSchool's own work,
@@ -1097,7 +1279,7 @@ function studentBrief(b){
       </div>
       <div class="step">
         <div class="step-n ${has?'done':''}">2</div>
-        <div class="step-b"><h4>Interpret</h4><p>${esc(b.interpret)}</p>
+        <div class="step-b"><h4>Interpret</h4><p>${esc(b.interpret||'Make your print in Print Studio, then attach it here.')}</p>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
             <a class="btn btn-gold btn-sm" href="${PRINT_STUDIO}" target="_blank" rel="noopener"
                onclick="logStudio()">Open Print Studio ↗</a>
@@ -1114,7 +1296,7 @@ function studentBrief(b){
       </div>
       <div class="step">
         <div class="step-n ${ok?'done':''}">3</div>
-        <div class="step-b"><h4>Own it</h4><p>${esc(b.own)}</p>
+        <div class="step-b"><h4>Own it</h4><p>${esc(b.own||'Write about what you borrowed, what you changed, and why.')}</p>
           <textarea class="inp" id="stmt" placeholder="What did you borrow? What did you change? Why?"
             oninput="countWords('${b.id}')">${esc(stmt)}</textarea>
           <p class="tiny" id="wc" style="margin:8px 0 0;color:${ok?'var(--live)':'var(--muted)'}">
@@ -1129,7 +1311,7 @@ function studentBrief(b){
         </div>
       </div>
     </div>
-    <div class="turnin"><b>Turn in —</b> ${esc(b.turnin)}</div>
+    ${b.turnin?`<div class="turnin"><b>Turn in —</b> ${esc(b.turnin)}</div>`:''}
   </div></div>`;
 }
 
@@ -1150,7 +1332,7 @@ function logStudio(){ const s=State.session;
   if(DEMO) Store.log(s._cid,s._mid,'open_studio'); else API.log(s.token,'open_studio'); }
 
 function countWords(briefId){
-  const b=briefById(briefId), n=words($('#stmt').value), ok=n>=b.words;
+  const b=findBrief(briefId), n=words($('#stmt').value), ok=n>=b.words;
   const el=$('#wc'); el.textContent=`${n} of ${b.words} words${ok?' ✓':''}`;
   el.style.color = ok?'var(--live)':'var(--muted)';
   const w=myWork(briefId);
@@ -1165,7 +1347,7 @@ async function attachWork(ev,briefId){
   toast('Adding your print…');
   try{
     const dataUrl=await fileToJpeg(f);
-    const b=briefById(briefId);
+    const b=findBrief(briefId);
     const credits = b.style
       ? [(await patternsForStyle(b.style,1)).map(creditFor)[0]].filter(Boolean) : [];
     if(DEMO){
@@ -1211,7 +1393,7 @@ async function saveDraft(briefId){
 }
 
 async function submitWork(briefId){
-  const b=briefById(briefId), stmt=$('#stmt').value;
+  const b=findBrief(briefId), stmt=$('#stmt').value;
   const w=myWork(briefId);
   if(!w || !(w.image_path||w._url)) return toast('Attach your print first');
   if(words(stmt)<b.words) return toast(`The statement needs at least ${b.words} words`);
