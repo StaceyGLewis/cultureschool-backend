@@ -1,0 +1,1584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CoCo Recolor · see it in your palette</title>
+<meta name="theme-color" content="#faf6f0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Pinyon+Script&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════════════════
+   CoCo RECOLOR — CultureSchool Labs 
+   Pull a palette from the world (Grab Palette) …or push
+   one back into it. This is the other direction.
+══════════════════════════════════════════════════════ */
+:root {
+  --gold:      #c8a050;
+  --gold-lt:   #e8d4a0;
+  --gold-dk:   #8a6820;
+  --ink:       #1e1810;   /* Daily Inspo ink            */
+  --ink-soft:  #5a4a38;   /* Daily Inspo ink-soft       */
+  --ink-dim:   #9a8a78;   /* Daily Inspo muted          */
+  --paper:     #faf6f0;   /* Daily Inspo bg             */
+  --surface:   #ffffff;   /* Daily Inspo surface        */
+  --surface-2: #f7f1e8;
+  --surface-3: #efe7d9;
+  --line:      #e8ddd0;   /* Daily Inspo line           */
+  --line-soft: #f0e9dd;
+  --ease:      cubic-bezier(.22,.61,.36,1);
+  --safe-bot:  env(safe-area-inset-bottom, 0px);
+}
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+body {
+  font-family:'DM Sans',sans-serif;
+  background:var(--paper); color:var(--ink);
+  min-height:100vh; -webkit-font-smoothing:antialiased;
+}
+body::before {
+  content:''; position:fixed; inset:0; z-index:1000;
+  pointer-events:none; opacity:.022;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:256px;
+}
+a { color:inherit; text-decoration:none; }
+button { font-family:inherit; cursor:pointer; border:none; background:none; color:inherit; }
+:focus-visible { outline:2px solid var(--gold); outline-offset:2px; border-radius:4px; }
+@media (prefers-reduced-motion: reduce) { *,*::before,*::after { animation:none!important; transition:none!important; } }
+
+/* ── TOPBAR ── */
+.topbar {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:16px clamp(16px,4vw,40px);
+}
+.topbar-logo {
+  font-family:'Pinyon Script',cursive; font-size:1.7rem; line-height:1;
+  color:var(--gold-dk);
+}
+.topbar-tag {
+  font:700 .6rem/1 'DM Sans',sans-serif;
+  letter-spacing:.26em; text-transform:uppercase;
+  color:var(--ink-soft);
+}
+
+/* ── HEAD ── */
+.head { text-align:center; padding:clamp(18px,4vh,44px) 20px 8px; }
+.head-eyebrow {
+  font:700 .58rem/1 'DM Sans',sans-serif;
+  letter-spacing:.32em; text-transform:uppercase;
+  color:var(--gold); margin-bottom:12px;
+}
+.head-title {
+  font-family:'Cormorant Garamond',serif; font-weight:600;
+  font-size:clamp(2.4rem,6vw,4rem); line-height:1;
+}
+.head-title .script {
+  font-family:'Pinyon Script',cursive; font-weight:400;
+  font-size:.55em; color:var(--gold-lt);
+  display:block; margin-top:6px;
+}
+.head-sub {
+  margin:14px auto 0; max-width:480px;
+  font-family:'Cormorant Garamond',serif; font-style:italic; font-weight:300;
+  font-size:clamp(1rem,2.2vw,1.12rem); line-height:1.65;
+  color:var(--ink-soft);
+}
+
+/* ── WORKBENCH ── */
+.bench {
+  max-width:1180px; margin:28px auto 0;
+  padding:0 clamp(12px,3vw,32px) calc(60px + var(--safe-bot));
+  display:grid; grid-template-columns: 1fr 320px; gap:22px;
+  align-items:start;
+}
+@media (max-width:900px) { .bench { grid-template-columns:1fr; } }
+
+/* stage */
+.stage-wrap { position:relative; }
+.dropzone {
+  border:1.5px dashed rgba(200,160,80,.35);
+  border-radius:22px;
+  background:var(--surface);
+  min-height:380px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px;
+  text-align:center; padding:40px 24px;
+  transition:border-color .2s, background .2s;
+  cursor:pointer;
+}
+.dropzone.drag { border-color:var(--gold); background:var(--surface-2); }
+.dropzone-glyph { font-family:'Pinyon Script',cursive; font-size:3.4rem; color:var(--gold); opacity:.45; line-height:1; }
+.dropzone-title { font-family:'Cormorant Garamond',serif; font-size:1.25rem; color:var(--ink); }
+.dropzone-sub { font:400 .88rem/1.6 'DM Sans',sans-serif; color:var(--ink-soft); max-width:320px; }
+
+.stage {
+  display:none;
+  position:relative;
+  border-radius:22px; overflow:hidden;
+  border:1px solid var(--line);
+  box-shadow:0 16px 44px rgba(30,24,16,.16);
+  background:var(--surface-2);
+  touch-action:none;
+  user-select:none; -webkit-user-select:none;
+}
+.stage.show { display:block; }
+.stage canvas { width:100%; display:block; }
+/* original overlay, clipped from the left by the reveal */
+.stage .before {
+  position:absolute; inset:0;
+  width:100%; height:100%; object-fit:cover;
+  pointer-events:none;
+}
+.reveal-line {
+  position:absolute; top:0; bottom:0; width:2px;
+  background:var(--gold-lt);
+  box-shadow:0 0 14px rgba(232,212,160,.6);
+  pointer-events:none;
+}
+.reveal-handle {
+  position:absolute; top:50%;
+  transform:translate(-50%,-50%);
+  width:40px; height:54px;
+  border-radius:8px 8px 12px 12px;
+  border:1.5px solid var(--gold-lt);
+  background:linear-gradient(180deg, var(--surface-2) 0%, var(--surface-3) 100%);
+  box-shadow:0 6px 20px rgba(0,0,0,.55);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
+  cursor:ew-resize;
+  z-index:5;
+}
+.reveal-handle::after {
+  content:'◂ ▸';
+  font-size:.55rem; letter-spacing:.08em; color:var(--gold-dk);
+}
+.reveal-chip { width:18px; height:14px; border-radius:3px; background:var(--gold); }
+.stage-tags {
+  position:absolute; top:12px; left:12px; right:12px;
+  display:flex; justify-content:space-between;
+  pointer-events:none;
+}
+.stage-tag {
+  font:700 .55rem/1 'DM Sans',sans-serif;
+  letter-spacing:.18em; text-transform:uppercase;
+  color:#fff; background:rgba(30,24,16,.55);
+  -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,.22);
+  padding:6px 12px; border-radius:999px;
+}
+.stage-busy {
+  position:absolute; inset:0; display:none;
+  align-items:center; justify-content:center;
+  background:rgba(13,10,7,.45);
+  -webkit-backdrop-filter:blur(2px); backdrop-filter:blur(2px);
+  font-family:'Cormorant Garamond',serif; font-style:italic;
+  color:var(--gold-lt); font-size:1.05rem;
+}
+.stage-busy.show { display:flex; }
+
+.stage-actions { display:none; gap:10px; margin-top:14px; flex-wrap:wrap; }
+.stage-actions.show { display:flex; }
+.pill {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:10px 20px; border-radius:999px;
+  border:1px solid var(--line);
+  background:var(--surface);
+  font:600 .65rem/1 'DM Sans',sans-serif;
+  letter-spacing:.1em; text-transform:uppercase;
+  color:var(--ink-soft);
+  transition:border-color .2s,color .2s,transform .15s var(--ease);
+  -webkit-tap-highlight-color:transparent;
+}
+.pill:hover,.pill:active { border-color:var(--gold); color:var(--gold-lt); }
+.pill:active { transform:scale(.96); }
+.pill.pri {
+  background:linear-gradient(135deg,var(--gold-dk),var(--gold));
+  border:1px solid transparent; color:#1e1610;
+  box-shadow:0 2px 14px rgba(200,160,80,.25);
+}
+
+/* ── RAIL ── */
+.rail { display:flex; flex-direction:column; gap:22px; }
+.rail-section-label {
+  font:700 .56rem/1 'DM Sans',sans-serif;
+  letter-spacing:.24em; text-transform:uppercase;
+  color:var(--gold); margin-bottom:10px;
+}
+.palettes { display:flex; flex-direction:column; gap:8px; }
+.palette-row {
+  display:flex; align-items:center; gap:12px;
+  padding:9px 11px; border-radius:14px;
+  border:1px solid var(--line-soft);
+  background:var(--surface);
+  cursor:pointer; width:100%;
+  transition:border-color .2s, background .2s;
+  -webkit-tap-highlight-color:transparent;
+}
+.palette-row:hover { border-color:var(--line); }
+.palette-row.active { border-color:var(--gold); background:var(--surface-2); }
+.palette-strip { display:flex; border-radius:7px; overflow:hidden; border:1px solid rgba(30,24,16,.12); flex-shrink:0; }
+.palette-strip i { width:19px; height:30px; display:block; transition:width .18s var(--ease); }
+.palette-strip i.dom { width:34px; box-shadow:inset 0 0 0 2px rgba(255,255,255,.55); }
+.palette-name {
+  font:500 .84rem/1.35 'DM Sans',sans-serif; color:var(--ink);
+  text-align:left;
+}
+.palette-name small {
+  display:block;
+  font-family:'Cormorant Garamond',serif; font-style:italic;
+  font-size:.82rem; color:var(--ink-soft); font-weight:400;
+}
+/* custom palette editors */
+.custom-chips { display:flex; gap:6px; margin-top:8px; }
+.custom-chips input[type=color] {
+  -webkit-appearance:none; appearance:none;
+  width:38px; height:46px; border:1px solid rgba(30,24,16,.15);
+  border-radius:8px; background:none; padding:0; cursor:pointer;
+}
+.custom-chips input[type=color]::-webkit-color-swatch-wrapper { padding:2px; }
+.custom-chips input[type=color]::-webkit-color-swatch { border:none; border-radius:6px; }
+
+/* controls */
+.ctl { background:var(--surface); border:1px solid var(--line-soft); border-radius:16px; padding:16px; }
+.mode-toggle { display:flex; gap:6px; }
+.mode-btn {
+  flex:1; padding:9px 8px; border-radius:10px;
+  border:1px solid var(--line-soft);
+  font:600 .64rem/1.2 'DM Sans',sans-serif;
+  letter-spacing:.08em; text-transform:uppercase;
+  color:var(--ink-soft);
+  transition:all .2s;
+  -webkit-tap-highlight-color:transparent;
+}
+.mode-btn.active {
+  border-color:var(--gold); color:var(--gold-dk);
+  background:var(--surface-3);
+}
+.mode-hint {
+  margin-top:9px;
+  font:400 .85rem/1.6 'DM Sans',sans-serif;
+  color:var(--ink-soft);
+}
+.strength-row { display:flex; align-items:center; gap:12px; margin-top:4px; }
+.strength-val {
+  font:700 .74rem/1 'DM Sans',sans-serif; color:var(--gold-dk);
+  min-width:38px; text-align:right;
+}
+input[type=range] {
+  -webkit-appearance:none; appearance:none;
+  flex:1; height:3px; border-radius:999px;
+  background:linear-gradient(90deg,var(--gold-dk),var(--gold));
+  outline:none;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance:none; appearance:none;
+  width:20px; height:20px; border-radius:50%;
+  background:var(--gold-lt);
+  border:2px solid var(--paper);
+  box-shadow:0 2px 8px rgba(0,0,0,.5);
+  cursor:pointer;
+}
+input[type=range]::-moz-range-thumb {
+  width:20px; height:20px; border-radius:50%;
+  background:var(--gold-lt); border:2px solid var(--paper); cursor:pointer;
+}
+
+/* toast */
+.toast {
+  position:fixed; bottom:calc(26px + var(--safe-bot)); left:50%;
+  transform:translateX(-50%) translateY(8px);
+  background:var(--surface-2); border:1px solid var(--line);
+  border-radius:999px; padding:9px 20px;
+  font:500 .72rem/1 'DM Sans',sans-serif; color:var(--ink);
+  white-space:nowrap; z-index:500; opacity:0; pointer-events:none;
+  transition:opacity .25s var(--ease), transform .25s var(--ease);
+  box-shadow:0 8px 24px rgba(30,24,16,.18);
+}
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+/* ── COCO LIBRARY (membership-gated) ── */
+.lib-note {
+  font:400 .85rem/1.6 'DM Sans',sans-serif;
+  color:var(--ink-soft);
+}
+.lib-search {
+  width:100%; margin-bottom:8px;
+  padding:10px 14px; border-radius:12px;
+  border:1px solid var(--line); background:var(--surface);
+  font:500 .85rem/1 'DM Sans',sans-serif; color:var(--ink);
+  outline:none;
+}
+.lib-search::placeholder { color:var(--ink-dim); }
+.lib-search:focus { border-color:var(--gold); }
+.lib-list { display:flex; flex-direction:column; gap:8px; max-height:420px; overflow:auto; }
+.lib-count {
+  margin-top:8px;
+  font:600 .68rem/1 'DM Sans',sans-serif;
+  letter-spacing:.08em; text-transform:uppercase; color:var(--ink-dim);
+}
+.palette-row.locked { pointer-events:none; }
+.palette-row.locked .palette-strip { filter:blur(5px) saturate(.85); }
+.palette-row.locked .palette-name { color:var(--ink-dim); }
+.lock-badge {
+  margin-left:auto; flex-shrink:0;
+  font-size:.85rem; color:var(--gold-dk);
+}
+.lock-cta {
+  margin-top:10px; padding:14px;
+  border:1px solid var(--gold); border-radius:14px;
+  background:var(--surface-2);
+}
+.lock-cta-title {
+  font-family:'Cormorant Garamond',serif; font-weight:600;
+  font-size:1.02rem; color:var(--ink); margin-bottom:4px;
+}
+.lock-cta-sub {
+  font:400 .85rem/1.55 'DM Sans',sans-serif;
+  color:var(--ink-soft); margin-bottom:10px;
+}
+.lock-cta .pill { width:100%; justify-content:center; }
+.member-row { display:flex; gap:6px; margin-top:8px; }
+.member-row input {
+  flex:1; min-width:0;
+  padding:10px 12px; border-radius:999px;
+  border:1px solid var(--line); background:var(--surface);
+  font:500 .8rem/1 'DM Sans',sans-serif; color:var(--ink);
+  outline:none;
+}
+.member-row input::placeholder { color:var(--ink-dim); }
+.member-row input:focus { border-color:var(--gold); }
+
+/* ── MOBILE PALETTE DOCK — thumb-reach palettes while the photo stays visible ── */
+.dock { display:none; }
+@media (max-width:900px) {
+  .dock.show {
+    display:block;
+    position:fixed; left:0; right:0; bottom:0; z-index:300;
+    background:rgba(250,246,240,.96);
+    -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px);
+    border-top:1px solid var(--line);
+    padding:8px 10px calc(10px + var(--safe-bot));
+    box-shadow:0 -8px 28px rgba(30,24,16,.1);
+  }
+  body.has-dock .bench { padding-bottom:calc(175px + var(--safe-bot)); }
+}
+.dock-hint {
+  display:flex; justify-content:space-between; margin:0 4px 7px;
+  font:700 .56rem/1 'DM Sans',sans-serif;
+  letter-spacing:.16em; text-transform:uppercase; color:var(--ink-dim);
+}
+.dock-scroll {
+  display:flex; gap:8px; overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+.dock-scroll::-webkit-scrollbar { display:none; }
+.dock-card {
+  flex:0 0 auto; width:112px;
+  border:1px solid var(--line); border-radius:14px;
+  background:var(--surface); padding:6px;
+  -webkit-tap-highlight-color:transparent;
+  transition:border-color .2s, background .2s;
+}
+.dock-card.active { border-color:var(--gold); background:var(--surface-2); }
+.dock-strip {
+  display:flex; align-items:stretch; height:36px;
+  border-radius:9px; overflow:hidden;
+  border:1px solid rgba(30,24,16,.1);
+}
+.dock-strip i { flex:1; display:block; transition:flex .18s var(--ease); }
+.dock-strip i.dom { flex:2.4; box-shadow:inset 0 0 0 2px rgba(255,255,255,.55); }
+.dock-name {
+  display:block; margin-top:5px; text-align:center;
+  font:600 .62rem/1.25 'DM Sans',sans-serif; color:var(--ink-soft);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+
+/* ── CROP HINT ── */
+.rh-banner {
+  position:fixed; left:50%; bottom:calc(24px + var(--safe-bot));
+  transform:translateX(-50%);
+  z-index:520; max-width:min(540px,94vw);
+  background:var(--surface); border:1px solid var(--gold);
+  border-radius:18px; padding:14px 16px;
+  display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+  box-shadow:0 12px 36px rgba(30,24,16,.2);
+  animation:rhUp .35s var(--ease) both;
+}
+@keyframes rhUp { from{opacity:0;transform:translate(-50%,14px)} to{opacity:1;transform:translate(-50%,0)} }
+.rh-msg {
+  flex:1 1 240px;
+  font:400 .88rem/1.55 'DM Sans',sans-serif; color:var(--ink-soft);
+}
+.rh-msg b { color:var(--gold-dk); font-weight:600; }
+.rh-banner .pill { padding:9px 16px; }
+.rh-overlay {
+  position:fixed; inset:0; z-index:540;
+  background:rgba(30,24,16,.9);
+  display:flex; flex-direction:column; align-items:center;
+  justify-content:center; gap:16px; padding:18px;
+  animation:rhFade .25s ease both;
+}
+@keyframes rhFade { from{opacity:0} to{opacity:1} }
+.rh-stage { position:relative; touch-action:none; }
+.rh-stage img { max-width:94vw; max-height:66vh; display:block; border-radius:14px; }
+.rh-box {
+  position:absolute; border:2px solid var(--gold-lt); border-radius:12px;
+  box-shadow:0 0 0 9999px rgba(30,24,16,.5);
+  cursor:grab; touch-action:none;
+}
+.rh-box::after {
+  content:'⤡';
+  position:absolute; right:-1px; bottom:-1px;
+  width:34px; height:34px;
+  display:flex; align-items:center; justify-content:center;
+  background:var(--gold); color:#1e1610;
+  border-radius:10px 0 10px 0;
+  font-size:15px; cursor:nwse-resize;
+}
+.rh-overlay .rh-tip {
+  font:500 .8rem/1.4 'DM Sans',sans-serif;
+  color:rgba(250,246,240,.85); letter-spacing:.04em; text-align:center;
+}
+.rh-overlay .rh-actions { display:flex; gap:10px; }
+.rh-overlay .pill { background:var(--surface); }
+
+footer {
+  border-top:1px solid var(--line-soft);
+  padding:30px 24px calc(40px + var(--safe-bot));
+  text-align:center;
+}
+.footer-line {
+  font-family:'Cormorant Garamond',serif; font-style:italic;
+  font-size:.95rem; color:var(--ink-soft);
+}
+
+/* ── RECOLOR SAVES MODAL ── */
+.rc-modal-overlay {
+  position:fixed; inset:0; z-index:600;
+  background:rgba(30,24,16,.65);
+  -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
+  display:flex; align-items:center; justify-content:center; padding:16px;
+  opacity:0; pointer-events:none;
+  transition:opacity .25s cubic-bezier(.22,.61,.36,1);
+}
+.rc-modal-overlay.open { opacity:1; pointer-events:all; }
+.rc-modal {
+  background:var(--paper); border:1px solid var(--line);
+  border-radius:22px; padding:clamp(16px,4vw,26px);
+  width:min(720px,95vw); max-height:min(88vh,640px);
+  display:flex; flex-direction:column; position:relative;
+  overflow:hidden;
+}
+@media (max-height:640px) {
+  .rc-modal { max-height:96vh; border-radius:14px; }
+}
+.rc-modal-close {
+  position:absolute; top:14px; right:16px;
+  width:30px; height:30px; border-radius:50%;
+  border:1px solid var(--line); background:var(--surface);
+  font-size:.72rem; color:var(--ink-soft);
+  display:flex; align-items:center; justify-content:center; cursor:pointer;
+}
+.rc-modal-title {
+  font-family:'Cormorant Garamond',serif; font-weight:600;
+  font-size:1.35rem; color:var(--ink); margin-bottom:4px;
+}
+.rc-modal-sub {
+  font:400 .84rem/1.55 'DM Sans',sans-serif; color:var(--ink-soft); margin-bottom:18px;
+}
+.rc-saves-grid {
+  display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+  gap:14px; overflow-y:auto; flex:1; padding:2px;
+}
+.rc-save-card {
+  background:var(--surface); border:1px solid var(--line);
+  border-radius:14px; padding:10px;
+}
+.rc-save-card img { width:100%; display:block; border-radius:8px; cursor:pointer; }
+.rc-save-name { font:500 .72rem/1.3 'DM Sans',sans-serif; color:var(--ink); margin-top:7px; }
+.rc-save-date { font:400 .62rem/1 'DM Sans',sans-serif; color:var(--ink-dim); margin-top:2px; }
+.rc-save-actions { display:flex; gap:4px; margin-top:7px; }
+.rc-save-actions .pill { flex:1; padding:7px 8px; font-size:.58rem; justify-content:center; }
+.rc-save-actions .pill.del { flex:0 0 auto; padding:7px 10px; color:var(--ink-dim); }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a class="topbar-logo" href="https://cultureschool.org">CoCo</a>
+  <span class="topbar-tag">CultureSchool Labs</span>
+</header>
+
+<section class="head">
+  <div class="head-eyebrow">Grab Palette, Reversed</div>
+  <h1 class="head-title">Recolor<span class="script">see it in your palette</span></h1>
+  <p class="head-sub">Drop in a photo, choose a palette with a story, and watch the scene live in its colors — texture and light untouched.</p>
+</section>
+
+<main class="bench">
+  <!-- STAGE -->
+  <div class="stage-wrap">
+    <div class="dropzone" id="dropzone">
+      <div class="dropzone-glyph">✦</div>
+      <div class="dropzone-title">Drop a photo here</div>
+      <div class="dropzone-sub">or tap to choose · you can also paste from the clipboard. The photo never leaves this device.</div>
+      <input type="file" id="fileInput" accept="image/*" hidden>
+    </div>
+
+    <div class="stage" id="stage">
+      <canvas id="resultCanvas"></canvas>
+      <img class="before" id="beforeImg" alt="Original">
+      <div class="reveal-line" id="revealLine"></div>
+      <div class="reveal-handle" id="revealHandle"><span class="reveal-chip" id="revealChip"></span></div>
+      <div class="stage-tags">
+        <span class="stage-tag">Before</span>
+        <span class="stage-tag" id="afterTag">After</span>
+      </div>
+      <div class="stage-busy" id="busy">recoloring…</div>
+    </div>
+
+    <div class="stage-actions" id="stageActions">
+      <button class="pill pri" id="downloadBtn">↓ Download PNG</button>
+      <button class="pill" onclick="saveRecolorVariation()">✦ Save variation</button>
+      <button class="pill" id="rcSavesBtn" onclick="openRcSaves()">My Saves (0)</button>
+      <button class="pill" id="newPhotoBtn">New photo</button>
+    </div>
+  </div>
+
+  <!-- RAIL -->
+  <aside class="rail">
+    <div>
+      <div class="rail-section-label">Choose a palette</div>
+      <div class="palettes" id="paletteList"></div>
+      <div class="custom-chips" id="customChips" style="display:none"></div>
+    </div>
+
+    <div>
+      <div class="rail-section-label">The CoCo Library</div>
+      <div id="libBody"><div class="lib-note">Loading the library…</div></div>
+    </div>
+
+    <div class="ctl">
+      <div class="rail-section-label">How it recolors</div>
+      <div class="mode-toggle">
+        <button class="mode-btn active" data-mode="hue">True to palette</button>
+        <button class="mode-btn" data-mode="mood">Mood shift</button>
+      </div>
+      <p class="mode-hint" id="modeHint">Keeps every shadow and highlight, and moves the hues to the nearest palette color. Best for rooms, textiles, and tablescapes.</p>
+    </div>
+
+    <div class="ctl">
+      <div class="rail-section-label">Strength</div>
+      <div class="strength-row">
+        <input type="range" id="strength" min="0" max="100" value="80">
+        <span class="strength-val" id="strengthVal">80%</span>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<div class="dock" id="dock">
+  <div class="dock-hint"><span>Palettes</span><span>tap again = new lead color</span></div>
+  <div class="dock-scroll" id="dockScroll"></div>
+</div>
+
+<!-- Upload TOS Modal -->
+<div class="rc-modal-overlay" id="uploadTosModal">
+  <div class="rc-modal">
+    <div class="rc-modal-title" style="font-size:1.05rem;margin-bottom:8px;flex-shrink:0;">Let's create something beautiful. ✨</div>
+    <div class="rc-modal-sub" style="line-height:1.7;margin-bottom:0;overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch;font-size:.8rem;">
+      <p style="margin-bottom:8px;">By uploading a photo, you confirm that you have permission to use it and that you've read and agree to <a href="https://cultureschool.org/terms" target="_blank" style="color:var(--gold-dk);text-decoration:underline;">CultureSchool's Terms of Service</a>.</p>
+      <p style="margin-bottom:8px;">Please upload only original content or images you have the right to use — no celebrities, brands, logos, fictional characters, or copyrighted material.</p>
+      <p style="margin-bottom:8px;">Accounts that repeatedly violate these guidelines may be suspended and royalties from infringing content withheld.</p>
+      <p>Thank you for helping us build a creative community rooted in originality, respect, and culture. 🌍🎨</p>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:14px;flex-shrink:0;">
+      <button class="pill" onclick="declineUploadTos()" style="flex:1;justify-content:center;">Cancel</button>
+      <button class="pill pri" onclick="acceptUploadTos()" style="flex:2;justify-content:center;">I agree — continue</button>
+    </div>
+  </div>
+</div>
+
+<div class="rc-modal-overlay" id="rcSavesModal" onclick="if(event.target===this)closeRcSaves()">
+  <div class="rc-modal">
+    <button class="rc-modal-close" onclick="closeRcSaves()">✕</button>
+    <div class="rc-modal-title">My Saved Variations</div>
+    <div class="rc-modal-sub">Click a thumbnail to re-apply its palette · ↓ PNG downloads that saved version · ✕ removes it.</div>
+    <div id="rcSavesGrid" class="rc-saves-grid"></div>
+    <p id="rcSavesEmpty" style="font:400 .88rem/1.6 'DM Sans',sans-serif;color:var(--ink-dim);text-align:center;padding:32px 0;display:none;">
+      No saves yet — recolor a photo and hit <strong>✦ Save variation</strong>.
+    </p>
+    <div style="margin-top:18px;">
+      <button class="pill" onclick="closeRcSaves()" style="width:100%;justify-content:center;">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<footer>
+  <div class="footer-line">A CultureSchool Labs prototype — patterns with provenance, now in both directions. Patent pending.</div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ══════════════════════════════════════════════════════
+   PALETTES — culturally named, provenance-flavored
+══════════════════════════════════════════════════════ */
+const PALETTES = [
+  { name:'Indigo Shibori',  origin:'Japanese resist-dye blues',     colors:['#1b2a4a','#2e4a7a','#6e8fc0','#c9d6e8','#f2ede2'] },
+  { name:'Marrakech Clay',  origin:'Moroccan earth & saffron',      colors:['#a8552f','#c87f3f','#e0b070','#7a4a3a','#f0e0c8'] },
+  { name:'Eucalyptus Calm', origin:'Garden greens, soft & sage',    colors:['#3a5244','#5a7a5e','#8aa890','#c2d4c0','#e8eee2'] },
+  { name:'Oaxaca Rosa',     origin:'Mexican magenta & cochineal',   colors:['#7a1a4a','#c2186e','#e0559a','#f0a0c0','#f8e0ea'] },
+  { name:'Kente Sun',       origin:'West African gold & green',     colors:['#1c1c1c','#1a7a3c','#d4a017','#c0392b','#f0e6c8'] },
+  { name:'Santorini',       origin:'Aegean blue on whitewash',      colors:['#1a4a8a','#4a7ac0','#b0c8e0','#d8d0c0','#f5f2ea'] },
+  { name:'Sahara Dusk',     origin:'Desert sand into plum night',   colors:['#38304a','#6a4a5a','#a87858','#c8a078','#e8d8c0'] },
+  { name:'Custom',          origin:'Your five — tap the chips',     colors:['#c8a050','#7a4a3a','#3a5244','#2e4a7a','#f2ede2'], custom:true },
+];
+
+/* ══ STATE ══ */
+let srcImg = null;          // HTMLImageElement (scaled)
+let srcData = null;         // ImageData of scaled original
+let activePalette = 0;
+let mode = 'hue';
+let strength = 0.8;
+let revealPct = 50;
+let libSelected = null;          // a palette chosen from the CoCo Library
+let dominantIdx = 0;             // which palette color leads the recolor
+let rotHinted = false;           // one-time "tap again to rotate" hint
+
+const $ = s => document.querySelector(s);
+const stage = $('#stage'), canvas = $('#resultCanvas'), ctx = canvas.getContext('2d');
+
+let toastTimer;
+function toast(msg) {
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+/* ══════════════════════════════════════════════════════
+   COLOR MATH — sRGB ↔ Lab
+══════════════════════════════════════════════════════ */
+function srgbToLinear(c){ c/=255; return c<=.04045 ? c/12.92 : Math.pow((c+.055)/1.055,2.4); }
+function linearToSrgb(c){ return 255*(c<=.0031308 ? 12.92*c : 1.055*Math.pow(c,1/2.4)-.055); }
+const Xn=.95047, Yn=1, Zn=1.08883;
+function f(t){ return t>.008856 ? Math.cbrt(t) : (7.787*t + 16/116); }
+function finv(t){ const t3=t*t*t; return t3>.008856 ? t3 : (t-16/116)/7.787; }
+
+function rgbToLab(r,g,b){
+  const R=srgbToLinear(r), G=srgbToLinear(g), B=srgbToLinear(b);
+  const X=(R*.4124+G*.3576+B*.1805)/Xn,
+        Y=(R*.2126+G*.7152+B*.0722)/Yn,
+        Z=(R*.0193+G*.1192+B*.9505)/Zn;
+  const fx=f(X), fy=f(Y), fz=f(Z);
+  return [116*fy-16, 500*(fx-fy), 200*(fy-fz)];
+}
+function labToRgb(L,a,b){
+  const fy=(L+16)/116, fx=fy+a/500, fz=fy-b/200;
+  const X=finv(fx)*Xn, Y=finv(fy)*Yn, Z=finv(fz)*Zn;
+  let R= X* 3.2406 + Y*-1.5372 + Z*-0.4986,
+      G= X*-0.9689 + Y* 1.8758 + Z* 0.0415,
+      B= X* 0.0557 + Y*-0.2040 + Z* 1.0570;
+  return [linearToSrgb(R), linearToSrgb(G), linearToSrgb(B)].map(v=>Math.max(0,Math.min(255,v)));
+}
+function hexToRgb(h){
+  h = h.replace('#','');
+  return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
+}
+
+/* ══════════════════════════════════════════════════════
+   RECOLOR ENGINES
+══════════════════════════════════════════════════════ */
+
+// Mode A — TRUE TO PALETTE
+// Luminance is preserved exactly; each pixel's chroma (a,b) is
+// pulled toward a blend of its two nearest palette colors.
+// Near-neutral pixels move less, so whites and grays stay honest.
+function recolorHue(data, palette, k, domIdx) {
+  const pal = palette.map(h => {
+    const [r,g,b] = hexToRgb(h);
+    const [L,a,bb] = rgbToLab(r,g,b);
+    return { a, b: bb };
+  });
+  const px = data.data;
+  for (let i = 0; i < px.length; i += 4) {
+    const [L,a,b] = rgbToLab(px[i],px[i+1],px[i+2]);
+    // two nearest palette chromas
+    let d1=1e9,d2=1e9,p1=null,p2=null;
+    for (let pi = 0; pi < pal.length; pi++) {
+      const p = pal[pi];
+      let d = (p.a-a)*(p.a-a) + (p.b-b)*(p.b-b);
+      if (pi === domIdx) d *= 0.3;   // lead color wins more pixel territory
+      if (d < d1) { d2=d1;p2=p1; d1=d;p1=p; }
+      else if (d < d2) { d2=d; p2=p; }
+    }
+    const w2 = p2 ? d1/(d1+d2+1e-6)*.5 : 0;     // soft blend toward 2nd
+    const ta = p1.a*(1-w2) + (p2?p2.a:0)*w2;
+    const tb = p1.b*(1-w2) + (p2?p2.b:0)*w2;
+    // chroma-aware strength: neutrals shift less
+    const chroma = Math.sqrt(a*a + b*b);
+    const cw = Math.min(1, chroma / 22);
+    const s = k * (0.25 + 0.75*cw);
+    const [r,g,bl] = labToRgb(L, a + (ta-a)*s, b + (tb-b)*s);
+    px[i]=r; px[i+1]=g; px[i+2]=bl;
+  }
+  return data;
+}
+
+// Mode B — MOOD SHIFT (Reinhard statistics)
+// The image's Lab mean/spread is matched to the palette's, like
+// developing the photo in the palette's atmosphere.
+function recolorMood(data, palette, k, domIdx) {
+  const labs = palette.map(h => { const [r,g,b]=hexToRgb(h); return rgbToLab(r,g,b); });
+  // lead color counts 3x — it pulls the whole atmosphere its way
+  const wts = labs.map((_, i) => i === domIdx ? 3 : 1);
+  const wsum = wts.reduce((a, b) => a + b, 0);
+  const mean = [0,0,0], std = [0,0,0];
+  labs.forEach((l, i) => l.forEach((v,j) => mean[j] += v * wts[i]));
+  mean.forEach((v,j) => mean[j] = v / wsum);
+  labs.forEach((l, i) => l.forEach((v,j) => std[j] += wts[i] * (v-mean[j])**2));
+  std.forEach((v,j) => std[j]=Math.max(Math.sqrt(std[j]/wsum), j===0?12:8)); // floor avoids collapse
+
+  // image stats (sampled)
+  const px = data.data;
+  const im = [0,0,0], is = [0,0,0];
+  let n = 0;
+  for (let i = 0; i < px.length; i += 64) {  // every 16th pixel
+    const l = rgbToLab(px[i],px[i+1],px[i+2]);
+    l.forEach((v,j) => im[j]+=v); n++;
+  }
+  im.forEach((v,j) => im[j]=v/n);
+  for (let i = 0; i < px.length; i += 64) {
+    const l = rgbToLab(px[i],px[i+1],px[i+2]);
+    l.forEach((v,j) => is[j]+=(v-im[j])**2);
+  }
+  is.forEach((v,j) => is[j]=Math.max(Math.sqrt(is[j]/n), 1e-3));
+
+  for (let i = 0; i < px.length; i += 4) {
+    const [L,a,b] = rgbToLab(px[i],px[i+1],px[i+2]);
+    const nl = [(L-im[0])*(std[0]/is[0])+mean[0],
+                (a-im[1])*(std[1]/is[1])+mean[1],
+                (b-im[2])*(std[2]/is[2])+mean[2]];
+    const [r,g,bl] = labToRgb(L+(nl[0]-L)*k*.5,   // half-strength on L keeps detail
+                              a+(nl[1]-a)*k,
+                              b+(nl[2]-b)*k);
+    px[i]=r; px[i+1]=g; px[i+2]=bl;
+  }
+  return data;
+}
+
+/* ══ PIPELINE ══ */
+let renderQueued = false;
+function render() {
+  if (!srcData) return;
+  if (renderQueued) return;
+  renderQueued = true;
+  $('#busy').classList.add('show');
+  // let the busy state paint before the pixel loop blocks
+  setTimeout(() => {
+    const copy = new ImageData(new Uint8ClampedArray(srcData.data), srcData.width, srcData.height);
+    const colors = getActivePalette().colors;
+    const di = dominantIdx % colors.length;
+    const out = mode === 'hue'
+      ? recolorHue(copy, colors, strength, di)
+      : recolorMood(copy, colors, strength, di);
+    ctx.putImageData(out, 0, 0);
+    $('#busy').classList.remove('show');
+    renderQueued = false;
+  }, 30);
+}
+
+/* ── Robust decode chain: iPads hand over HEIC photos and
+   blank-MIME files that a plain <img src=blobURL> chokes on.
+   Try the fastest path first, fall back twice, and only then
+   give up — with a useful message. ── */
+function loadImg(src) {
+  return new Promise((res, rej) => {
+    const i = new Image();
+    i.onload = () => res(i);
+    i.onerror = rej;
+    i.src = src;
+  });
+}
+
+async function decodeFile(file) {
+  // 1) createImageBitmap — fastest, EXIF-rotation aware
+  if (window.createImageBitmap) {
+    try { return await createImageBitmap(file); } catch(_) {}
+  }
+  // 2) data URL — sidesteps Safari blob-URL decode quirks
+  try {
+    const dataUrl = await new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(r.result);
+      r.onerror = () => rej(new Error('read failed'));
+      r.readAsDataURL(file);
+    });
+    return await loadImg(dataUrl);
+  } catch(_) {}
+  // 3) blob URL — the original path
+  const url = URL.createObjectURL(file);
+  try { return await loadImg(url); }
+  finally { setTimeout(() => URL.revokeObjectURL(url), 5000); }
+}
+
+const _TOS_KEY = 'coco_upload_tos_v1';
+let _tosCallback = null;
+function requireUploadTos(proceed) {
+  if (localStorage.getItem(_TOS_KEY)) { proceed(); return; }
+  _tosCallback = proceed;
+  document.getElementById('uploadTosModal').classList.add('open');
+}
+function acceptUploadTos() {
+  localStorage.setItem(_TOS_KEY, '1');
+  document.getElementById('uploadTosModal').classList.remove('open');
+  if (_tosCallback) { _tosCallback(); _tosCallback = null; }
+}
+function declineUploadTos() {
+  document.getElementById('uploadTosModal').classList.remove('open');
+  _tosCallback = null;
+}
+
+function loadImageFile(file) {
+  if (!file) return;
+  requireUploadTos(() => _doLoadImageFile(file));
+}
+
+async function _doLoadImageFile(file) {
+  rhDismiss();
+  // iPad Files app sometimes reports an empty type — try anyway
+  if (file.type && !file.type.startsWith('image/')) {
+    toast('That file is not an image'); return;
+  }
+
+  let img;
+  try {
+    img = await decodeFile(file);
+  } catch(_) {
+    const isHeic = /\.hei[cf]$/i.test(file.name || '') || /hei[cf]/i.test(file.type || '');
+    toast(isHeic
+      ? 'HEIC photo — in Photos tap Share → Copy Photo, then paste it here'
+      : 'Could not read that image — try a JPEG or PNG');
+    return;
+  }
+
+  const MAX = 1500;
+  const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+  const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+  canvas.width = w; canvas.height = h;
+  ctx.drawImage(img, 0, 0, w, h);
+  if (img.close) img.close();   // free ImageBitmap memory
+  srcData = ctx.getImageData(0, 0, w, h);
+  $('#beforeImg').src = canvas.toDataURL('image/jpeg', .9);  // crisp original snapshot
+  $('#dropzone').style.display = 'none';
+  stage.classList.add('show');
+  $('#stageActions').classList.add('show');
+  document.body.classList.add('has-dock');
+  const dk = $('#dock');
+  if (dk) { dk.classList.add('show'); renderDock(); }
+  setReveal(50);
+  render();
+  maybeHintCrop();
+}
+
+/* ══ REVEAL SLIDER ══ */
+function setReveal(pct) {
+  revealPct = Math.max(0, Math.min(100, pct));
+  $('#beforeImg').style.clipPath = `inset(0 ${100-revealPct}% 0 0)`;
+  $('#revealLine').style.left = revealPct + '%';
+  $('#revealHandle').style.left = revealPct + '%';
+}
+(function wireReveal(){
+  let dragging = false;
+  const pctFromEvent = e => {
+    const r = stage.getBoundingClientRect();
+    return ((e.clientX - r.left) / r.width) * 100;
+  };
+  stage.addEventListener('pointerdown', e => {
+    dragging = true;
+    stage.setPointerCapture(e.pointerId);
+    setReveal(pctFromEvent(e));
+  });
+  stage.addEventListener('pointermove', e => { if (dragging) setReveal(pctFromEvent(e)); });
+  stage.addEventListener('pointerup',   () => dragging = false);
+  stage.addEventListener('pointercancel',() => dragging = false);
+})();
+
+/* ══ INPUTS ══ */
+const dz = $('#dropzone'), fi = $('#fileInput');
+dz.addEventListener('click', () => fi.click());
+fi.addEventListener('change', () => loadImageFile(fi.files[0]));
+['dragover','dragenter'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.add('drag'); }));
+['dragleave','drop'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.remove('drag'); }));
+dz.addEventListener('drop', e => loadImageFile(e.dataTransfer.files[0]));
+document.addEventListener('paste', e => {
+  const item = [...(e.clipboardData?.items || [])].find(i => i.type.startsWith('image/'));
+  if (item) loadImageFile(item.getAsFile());
+});
+
+$('#newPhotoBtn').addEventListener('click', () => {
+  rhDismiss();
+  document.body.classList.remove('has-dock');
+  const dk = $('#dock');
+  if (dk) dk.classList.remove('show');
+  stage.classList.remove('show');
+  $('#stageActions').classList.remove('show');
+  $('#dropzone').style.display = 'flex';
+  srcData = null; fi.value = '';
+});
+
+$('#downloadBtn').addEventListener('click', () => {
+  canvas.toBlob(blob => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `coco-recolor-${getActivePalette().name.toLowerCase().replace(/\s+/g,'-')}.png`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }, 'image/png');
+  toast('✦ Saved in ' + getActivePalette().name);
+});
+
+/* ══ PALETTE RAIL ══ */
+function renderPalettes() {
+  $('#paletteList').innerHTML = PALETTES.map((p, i) => `
+    <button class="palette-row ${(!libSelected && i === activePalette) ? 'active' : ''}" data-i="${i}">
+      <span class="palette-strip">${p.colors.map((c, ci) => `<i class="${(!libSelected && i === activePalette && ci === dominantIdx % p.colors.length) ? 'dom' : ''}" style="background:${c}"></i>`).join('')}</span>
+      <span class="palette-name">${p.name}<small>${p.origin}</small></span>
+    </button>`).join('');
+  const ap = getActivePalette();
+  $('#revealChip').style.background = ap.colors[dominantIdx % ap.colors.length];
+  $('#afterTag').textContent = ap.name;
+  $('#customChips').style.display = (!libSelected && ap.custom) ? 'flex' : 'none';
+}
+function chooseDemo(i) {
+  if (!libSelected && i === activePalette) {
+    dominantIdx = (dominantIdx + 1) % getActivePalette().colors.length;
+    toast('✦ Lead color: ' + getActivePalette().colors[dominantIdx]);
+  } else {
+    activePalette = i; libSelected = null; dominantIdx = 0;
+    hintRotate();
+  }
+  refreshAll();
+}
+$('#paletteList').addEventListener('click', e => {
+  const row = e.target.closest('.palette-row');
+  if (!row) return;
+  chooseDemo(parseInt(row.dataset.i, 10));
+});
+
+// custom chips
+(function buildCustom(){
+  const wrap = $('#customChips');
+  const custom = PALETTES.find(p => p.custom);
+  wrap.innerHTML = '';
+  custom.colors.forEach((c, j) => {
+    const inp = document.createElement('input');
+    inp.type = 'color'; inp.value = c;
+    inp.addEventListener('input', () => {
+      custom.colors[j] = inp.value;
+      renderPalettes();
+      renderDock();
+      render();
+    });
+    wrap.appendChild(inp);
+  });
+})();
+
+/* ══ CONTROLS ══ */
+document.querySelectorAll('.mode-btn').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.mode-btn').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  mode = b.dataset.mode;
+  $('#modeHint').textContent = mode === 'hue'
+    ? 'Keeps every shadow and highlight, and moves the hues to the nearest palette color. Best for rooms, textiles, and tablescapes.'
+    : 'Re-develops the whole photo in the palette\u2019s atmosphere — softer, moodier, more cinematic. Best for scenes and light.';
+  render();
+}));
+
+let strengthTimer;
+$('#strength').addEventListener('input', e => {
+  strength = e.target.value / 100;
+  $('#strengthVal').textContent = e.target.value + '%';
+  clearTimeout(strengthTimer);
+  strengthTimer = setTimeout(render, 120);
+});
+
+
+/* ══════════════════════════════════════════════════════
+   CROP HINT — busy wide shots recolor poorly; close-ups
+   shine. Three signals on the already-loaded srcData:
+     dominance  share of the biggest color bucket (RGB/32).
+                Close-ups score HIGH, venue shots LOW.
+     highlight  fraction of near-white pixels — white-heavy
+                scenes go muddy under a uniform tint.
+     edges      mean luminance jump between sampled
+                neighbors — string lights & many small
+                surfaces score HIGH.
+   Tune in RH_CFG. All client-side, runs in a few ms.
+══════════════════════════════════════════════════════ */
+const RH_CFG = { DOM_MIN:.28, WHITE_MAX:.45, EDGE_MAX:20, STEP:6 };
+
+function rhAnalyze(d) {
+  const { width:w, height:h, data:px } = d;
+  const buckets = Object.create(null);
+  let white = 0, edgeSum = 0, edgeN = 0, n = 0;
+  const s = RH_CFG.STEP;
+  for (let y = 0; y < h; y += s) {
+    let prevLum = null;
+    for (let x = 0; x < w; x += s) {
+      const i = (y*w + x) * 4;
+      const r = px[i], g = px[i+1], b = px[i+2];
+      const lum = .299*r + .587*g + .114*b;
+      if (lum > 225) white++;
+      const key = ((r>>5)<<10) | ((g>>5)<<5) | (b>>5);
+      buckets[key] = (buckets[key] || 0) + 1;
+      if (prevLum !== null) { edgeSum += Math.abs(lum - prevLum); edgeN++; }
+      prevLum = lum; n++;
+    }
+  }
+  let top = 0;
+  for (const k in buckets) if (buckets[k] > top) top = buckets[k];
+  return { dominance: top/n, highlight: white/n, edges: edgeN ? edgeSum/edgeN : 0 };
+}
+
+function rhIsBusy(m) {
+  return m.dominance < RH_CFG.DOM_MIN
+      || m.highlight > RH_CFG.WHITE_MAX
+      || (m.edges > RH_CFG.EDGE_MAX && m.dominance < .4);
+}
+
+function rhDismiss() {
+  document.querySelectorAll('.rh-banner,.rh-overlay').forEach(e => e.remove());
+  clearTimeout(rhDismiss._t);
+}
+
+function maybeHintCrop() {
+  if (!srcData) return;
+  if (!rhIsBusy(rhAnalyze(srcData))) return;
+  rhDismiss();
+  const el = document.createElement('div');
+  el.className = 'rh-banner';
+  el.innerHTML = `
+    <div class="rh-msg">✦ <b>Tip — close-ups recolor best.</b>
+      This photo has lots of small surfaces, so the palette may read
+      as a filter. Crop to one detail — a tablescape, a wall, a corner.</div>
+    <button class="pill pri" id="rhCropBtn">Crop to a detail</button>
+    <button class="pill" id="rhKeepBtn">Keep full photo</button>`;
+  document.body.appendChild(el);
+  el.querySelector('#rhKeepBtn').addEventListener('click', rhDismiss);
+  el.querySelector('#rhCropBtn').addEventListener('click', () => { rhDismiss(); rhOpenCrop(); });
+  clearTimeout(rhDismiss._t);
+  rhDismiss._t = setTimeout(rhDismiss, 12000);
+}
+
+function rhOpenCrop() {
+  const ov = document.createElement('div');
+  ov.className = 'rh-overlay';
+  ov.innerHTML = `
+    <div class="rh-tip">Drag the frame over one detail · pull the corner to resize</div>
+    <div class="rh-stage"><img id="rhImg" alt=""><div class="rh-box" id="rhBox"></div></div>
+    <div class="rh-actions">
+      <button class="pill" id="rhCancel">Cancel</button>
+      <button class="pill pri" id="rhUse">Recolor this crop →</button>
+    </div>`;
+  document.body.appendChild(ov);
+
+  const im = ov.querySelector('#rhImg'), box = ov.querySelector('#rhBox');
+  im.onload = () => {
+    const W = im.clientWidth, H = im.clientHeight;
+    const size = Math.min(W, H) * .5;
+    box.style.width = box.style.height = size + 'px';
+    box.style.left = (W - size)/2 + 'px';
+    box.style.top  = (H - size)/2 + 'px';
+  };
+  im.src = $('#beforeImg').src;   // original snapshot — same-origin data URL
+  if (im.complete) im.onload();
+
+  let mode = null, sx, sy, ox, oy, ow;
+  box.addEventListener('pointerdown', e => {
+    const r = box.getBoundingClientRect();
+    mode = (e.clientX > r.right - 38 && e.clientY > r.bottom - 38) ? 'resize' : 'move';
+    sx = e.clientX; sy = e.clientY;
+    ox = box.offsetLeft; oy = box.offsetTop; ow = box.offsetWidth;
+    box.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  });
+  box.addEventListener('pointermove', e => {
+    if (!mode) return;
+    const W = im.clientWidth, H = im.clientHeight;
+    const dx = e.clientX - sx, dy = e.clientY - sy;
+    if (mode === 'move') {
+      box.style.left = Math.max(0, Math.min(W - box.offsetWidth,  ox + dx)) + 'px';
+      box.style.top  = Math.max(0, Math.min(H - box.offsetHeight, oy + dy)) + 'px';
+    } else {
+      const ns = Math.max(70, Math.min(ow + Math.max(dx, dy), W - ox, H - oy));
+      box.style.width = box.style.height = ns + 'px';
+    }
+  });
+  const stop = () => mode = null;
+  box.addEventListener('pointerup', stop);
+  box.addEventListener('pointercancel', stop);
+
+  ov.querySelector('#rhCancel').addEventListener('click', () => ov.remove());
+  ov.querySelector('#rhUse').addEventListener('click', () => {
+    const scale = srcData.width / im.clientWidth;
+    const cw = Math.max(1, Math.round(box.offsetWidth  * scale));
+    const ch = Math.max(1, Math.round(box.offsetHeight * scale));
+    const cx0 = Math.round(box.offsetLeft * scale);
+    const cy0 = Math.round(box.offsetTop  * scale);
+    // rebuild the original from srcData (result canvas holds the recolor)
+    const full = document.createElement('canvas');
+    full.width = srcData.width; full.height = srcData.height;
+    full.getContext('2d').putImageData(srcData, 0, 0);
+    const out = document.createElement('canvas');
+    out.width = cw; out.height = ch;
+    out.getContext('2d').drawImage(full, cx0, cy0, cw, ch, 0, 0, cw, ch);
+    ov.remove();
+    out.toBlob(blob => {
+      if (!blob) { toast('Crop failed — try again'); return; }
+      loadImageFile(new File([blob], 'coco-crop.jpg', { type:'image/jpeg' }));
+      toast('✦ Recoloring your close-up');
+    }, 'image/jpeg', .92);
+  });
+}
+
+/* ══ DEEP LINKS — Recolor accepts cargo from any CoCo property ══
+   ?img=<encoded image url>          → preloads the photo
+   ?palette=1b2a4a,2e4a7a,...        → injects a palette (3–5 hexes)
+   &name=The%20People%27s%20Color    → its display name
+   &origin=Elected%20June%202026     → its provenance line          */
+const qp = new URLSearchParams(location.search);
+
+const palParam = qp.get('palette');
+if (palParam) {
+  const colors = palParam.split(',')
+    .map(c => '#' + c.trim().replace('#',''))
+    .filter(c => /^#[0-9a-fA-F]{6}$/.test(c))
+    .slice(0, 5);
+  if (colors.length >= 3) {
+    while (colors.length < 5) colors.push(colors[colors.length - 1]);
+    PALETTES.unshift({
+      name:   qp.get('name')   || 'Shared palette',
+      origin: qp.get('origin') || 'arrived with this link',
+      colors
+    });
+    activePalette = 0;
+  }
+}
+
+async function loadImageUrl(url) {
+  try {
+    const resp = await fetch(url, { mode: 'cors' });
+    if (!resp.ok) throw new Error('fetch failed');
+    const blob = await resp.blob();
+    // Deep-linked images come from CoCo infrastructure — bypass TOS gate
+    await _doLoadImageFile(new File([blob], 'shared-image', { type: blob.type || 'image/jpeg' }));
+  } catch(_) {
+    toast('Could not load the linked image — save it and drop it here instead');
+  }
+}
+
+renderPalettes();
+
+/* ══════════════════════════════════════════════════════
+   THE COCO LIBRARY — Supabase-backed, membership-gated
+   Demos above stay free. The full library unlocks for
+   signed-in CultureSchool accounts — the SAME Supabase
+   auth users as Daily Inspo (magic-link sign in).
+══════════════════════════════════════════════════════ */
+const SUPA_URL  = 'https://qwulthvbwujfehgdegtn.supabase.co';
+const SUPA_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3dWx0aHZid3VqZmVoZ2RlZ3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQyMDcxODIsImV4cCI6MjA1OTc4MzE4Mn0.t9n4eZng6d0jggiPNK-J_DByvEE2L9tqy5Xh_1-TSoQ';
+const MEMBER_URL = 'https://account.cultureschool.org';
+
+let db = null;
+try { db = window.supabase && window.supabase.createClient(SUPA_URL, SUPA_ANON); }
+catch(e) { console.warn('[recolor] supabase init:', e.message); }
+
+let LIB = [];                 // full library rows {id,name,colors,origin}
+let libIsMember = false;
+let libQuery = '';
+
+function getActivePalette() { return libSelected || PALETTES[activePalette]; }
+function hintRotate() {
+  if (rotHinted) return;
+  rotHinted = true;
+  setTimeout(() => toast('✦ Tap the palette again to rotate its lead color'), 900);
+}
+function refreshAll() {
+  renderPalettes();
+  renderLibraryList();
+  renderDock();
+  render();
+}
+
+/* same identity sources Daily Inspo uses — for prefilling only */
+const getUserEmail = () =>
+  (window.__userEmail ||
+   localStorage.getItem('userEmail') ||
+   localStorage.getItem('USER_EMAIL') || '').trim().toLowerCase();
+
+/* membership = a real session with the same Supabase auth
+   users Daily Inspo signs in (mirrors its syncProfile()) */
+async function refreshMemberState() {
+  if (!db) return false;
+  try {
+    const { data: { user } } = await db.auth.getUser();
+    if (user?.email) {
+      window.__userEmail = user.email.toLowerCase();
+      localStorage.setItem('userEmail', window.__userEmail);
+      localStorage.setItem('USER_EMAIL', window.__userEmail);
+      return true;
+    }
+  } catch(_) {}
+  return false;
+}
+
+/* magic-link returns land back on this page; supabase-js
+   picks the session out of the URL and fires this — the
+   library unlocks the moment they arrive */
+try {
+  db && db.auth.onAuthStateChange((_e, session) => {
+    const em = session?.user?.email?.toLowerCase() || null;
+    if (em) {
+      window.__userEmail = em;
+      localStorage.setItem('userEmail', em);
+      localStorage.setItem('USER_EMAIL', em);
+    }
+    const was = libIsMember;
+    libIsMember = !!em;
+    if (libIsMember !== was && LIB.length) {
+      renderLibraryShell();
+      if (libIsMember) toast('✦ Signed in — library unlocked');
+    }
+  });
+} catch(_) {}
+
+async function loadLibrary() {
+  if (!db) { $('#libBody').innerHTML = '<div class="lib-note">Library unavailable right now.</div>'; return; }
+  try {
+    const { data, error } = await db.from('palettes')
+      .select('id, name, colors, description')
+      .eq('is_public', true)
+      .order('created_at', { ascending:false })
+      .limit(1000);
+    if (error) throw error;
+    LIB = (data || [])
+      .filter(p => Array.isArray(p.colors) && p.colors.length >= 3)
+      .map(p => ({
+        id: p.id, name: p.name || 'Untitled palette',
+        colors: p.colors.slice(0, 5),
+        origin: p.description || 'from the CoCo community'
+      }));
+  } catch(e) {
+    console.warn('[library]', e);
+    $('#libBody').innerHTML = '<div class="lib-note">Could not load the library — it will be back.</div>';
+    return;
+  }
+  libIsMember = await refreshMemberState();
+  renderLibraryShell();
+}
+
+function escA(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
+
+function libRowHtml(p, idx, locked) {
+  const active = !locked && libSelected && libSelected.id === p.id;
+  const strip = p.colors.map((c, ci) =>
+    `<i class="${active && ci === dominantIdx % p.colors.length ? 'dom' : ''}" style="background:${escA(c)}"></i>`).join('');
+  return `
+    <button class="palette-row ${locked ? 'locked' : ''} ${(!locked && libSelected && libSelected.id === p.id) ? 'active' : ''}"
+            data-lib="${idx}" ${locked ? 'tabindex="-1" aria-disabled="true"' : ''}>
+      <span class="palette-strip">${strip}</span>
+      <span class="palette-name">${escA(p.name)}<small>${escA(p.origin)}</small></span>
+      ${locked ? '<span class="lock-badge">🔒</span>' : ''}
+    </button>`;
+}
+
+function renderLibraryShell() {
+  const body = $('#libBody');
+  if (libIsMember) {
+    body.innerHTML = `
+      <input class="lib-search" id="libSearch" type="search"
+             placeholder="Search ${LIB.length} palettes…" value="${escA(libQuery)}">
+      <div class="lib-list" id="libList"></div>
+      <div class="lib-count" id="libCount"></div>`;
+    $('#libSearch').addEventListener('input', e => {
+      libQuery = e.target.value.toLowerCase();
+      renderLibraryList();
+    });
+  } else {
+    body.innerHTML = `
+      <div class="lib-list" id="libList"></div>
+      <div class="lock-cta">
+        <div class="lock-cta-title">Unlock the full library</div>
+        <div class="lock-cta-sub">${LIB.length} community palettes — every color
+          with a name, a story, and an origin — ready to recolor any photo.</div>
+        <a class="pill pri" href="${MEMBER_URL}">Become a member →</a>
+        <div class="member-row" id="memberRow">
+          <input type="email" id="memberEmail" placeholder="Member? Email for a sign-in link"
+                 autocomplete="email" value="${escA(getUserEmail())}">
+          <button class="pill" id="memberCheck">Send link</button>
+        </div>
+        <div class="lib-note" id="memberSent" style="display:none; margin-top:8px;">
+          ✦ Check your email — tap the link and the library unlocks right here.</div>
+      </div>`;
+    $('#memberCheck').addEventListener('click', verifyMember);
+    $('#memberEmail').addEventListener('keydown', e => { if (e.key === 'Enter') verifyMember(); });
+  }
+  renderLibraryList();
+  renderDock();
+}
+
+function renderLibraryList() {
+  const list = $('#libList');
+  if (!list) return;
+  if (libIsMember) {
+    const rows = libQuery
+      ? LIB.filter(p => (p.name + ' ' + p.origin).toLowerCase().includes(libQuery))
+      : LIB;
+    list.innerHTML = rows.length
+      ? rows.map(p => libRowHtml(p, LIB.indexOf(p), false)).join('')
+      : '<div class="lib-note">No palettes match that — try another word.</div>';
+    const count = $('#libCount');
+    if (count) count.textContent = rows.length + ' of ' + LIB.length + ' palettes';
+  } else {
+    // teaser: first four, blurred and locked
+    list.innerHTML = LIB.slice(0, 4).map((p, i) => libRowHtml(p, i, true)).join('');
+  }
+}
+
+async function verifyMember() {
+  const email = ($('#memberEmail').value || '').trim().toLowerCase();
+  if (!/^\S+@\S+\.\S+$/.test(email)) { toast('Enter the email on your account'); return; }
+  const btn = $('#memberCheck');
+  btn.textContent = 'Sending…'; btn.disabled = true;
+  try {
+    const { error } = await db.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: location.origin + location.pathname }
+    });
+    if (error) throw error;
+    localStorage.setItem('userEmail', email);
+    localStorage.setItem('USER_EMAIL', email);
+    $('#memberRow').style.display = 'none';
+    $('#memberSent').style.display = 'block';
+  } catch(e) {
+    console.warn('[signin]', e?.message || e);
+    btn.textContent = 'Send link'; btn.disabled = false;
+    toast('Could not send the link — try again in a moment');
+  }
+}
+
+function chooseLib(idx) {
+  const p = LIB[idx];
+  if (!p) return;
+  if (libSelected && libSelected.id === p.id) {
+    dominantIdx = (dominantIdx + 1) % libSelected.colors.length;
+    toast('✦ Lead color: ' + libSelected.colors[dominantIdx]);
+    refreshAll();
+    return;
+  }
+  dominantIdx = 0;
+  hintRotate();
+  libSelected = {
+    name: p.name, origin: p.origin, id: p.id,
+    colors: p.colors.length >= 5 ? p.colors
+          : [...p.colors, ...Array(5 - p.colors.length).fill(p.colors[p.colors.length - 1])]
+  };
+  refreshAll();
+}
+const libBodyEl = $('#libBody');
+if (libBodyEl) libBodyEl.addEventListener('click', e => {
+  const row = e.target.closest('.palette-row[data-lib]');
+  if (!row || row.classList.contains('locked')) return;
+  chooseLib(parseInt(row.dataset.lib, 10));
+});
+
+/* ══ MOBILE PALETTE DOCK — same data, thumb reach ══ */
+const DOCK_LIB_MAX = 30;
+function dockStrip(colors, act) {
+  return colors.map((cl, ci) =>
+    `<i class="${act && ci === dominantIdx % colors.length ? 'dom' : ''}" style="background:${escA(cl)}"></i>`).join('');
+}
+function renderDock() {
+  const sc = $('#dockScroll');
+  if (!sc) return;
+  const keep = sc.scrollLeft;
+  const cards = PALETTES.map((p, i) => {
+    const act = !libSelected && i === activePalette;
+    return `<button class="dock-card ${act ? 'active' : ''}" data-demo="${i}">
+      <span class="dock-strip">${dockStrip(p.colors, act)}</span>
+      <span class="dock-name">${escA(p.name)}</span>
+    </button>`;
+  });
+  if (libIsMember && LIB.length) {
+    LIB.slice(0, DOCK_LIB_MAX).forEach((p, idx) => {
+      const act = libSelected && libSelected.id === p.id;
+      cards.push(`<button class="dock-card ${act ? 'active' : ''}" data-libidx="${idx}">
+        <span class="dock-strip">${dockStrip(p.colors.slice(0, 5), act)}</span>
+        <span class="dock-name">${escA(p.name)}</span>
+      </button>`);
+    });
+    if (LIB.length > DOCK_LIB_MAX) cards.push(`<button class="dock-card" data-jump="lib">
+        <span class="dock-strip" style="align-items:center;justify-content:center;font-size:.78rem;color:var(--gold-dk);">＋${LIB.length - DOCK_LIB_MAX}</span>
+        <span class="dock-name">Search the list ↓</span>
+      </button>`);
+  } else if (LIB.length) {
+    cards.push(`<button class="dock-card" data-jump="lib">
+        <span class="dock-strip" style="align-items:center;justify-content:center;font-size:1rem;">🔒</span>
+        <span class="dock-name">${LIB.length} in the library</span>
+      </button>`);
+  }
+  sc.innerHTML = cards.join('');
+  sc.scrollLeft = keep;
+  const act = sc.querySelector('.dock-card.active');
+  if (act) act.scrollIntoView({ inline: 'nearest', block: 'nearest' });
+}
+const dockEl = $('#dock');
+if (dockEl) dockEl.addEventListener('click', e => {
+  const card = e.target.closest('.dock-card');
+  if (!card) return;
+  if (card.dataset.jump) {
+    const lib = $('#libBody');
+    if (lib) lib.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+  if (card.dataset.demo   != null) chooseDemo(parseInt(card.dataset.demo, 10));
+  if (card.dataset.libidx != null) chooseLib(parseInt(card.dataset.libidx, 10));
+});
+
+try { loadLibrary(); } catch(e) { console.warn('[recolor] library bootstrap:', e); }
+
+const imgParam = qp.get('img');
+if (imgParam && /^https?:\/\//i.test(imgParam)) loadImageUrl(imgParam);
+
+/* ══════════════════════════════════════════════════════
+   RECOLOR SAVES — browser-local variation gallery
+   Stores medium-JPEG snapshots so you can compare palettes
+   before committing to a download.
+══════════════════════════════════════════════════════ */
+const _RC_KEY = 'coco_recolor_saves_v1';
+
+function saveRecolorVariation() {
+  if (!srcData) { toast('Drop a photo first'); return; }
+  const doSave = () => {
+    if (renderQueued) { setTimeout(doSave, 60); return; }
+    const MAX = 700;
+    const scale = Math.min(1, MAX / Math.max(canvas.width, canvas.height));
+    const tw = Math.round(canvas.width * scale);
+    const th = Math.round(canvas.height * scale);
+    const tc = document.createElement('canvas');
+    tc.width = tw; tc.height = th;
+    tc.getContext('2d').drawImage(canvas, 0, 0, tw, th);
+    const thumb = tc.toDataURL('image/jpeg', 0.82);
+    const pal = getActivePalette();
+    const saves = JSON.parse(localStorage.getItem(_RC_KEY) || '[]');
+    saves.unshift({
+      id: Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+      paletteName: pal.name,
+      paletteColors: [...pal.colors],
+      mode, strength, dominantIdx,
+      thumb,
+      date: new Date().toISOString()
+    });
+    if (saves.length > 12) saves.splice(12);
+    try {
+      localStorage.setItem(_RC_KEY, JSON.stringify(saves));
+      _updateRcBadge();
+      toast('✦ Variation saved — My Saves to compare');
+    } catch(_) {
+      toast('Could not save — browser storage may be full');
+    }
+  };
+  doSave();
+}
+
+function _updateRcBadge() {
+  const saves = JSON.parse(localStorage.getItem(_RC_KEY) || '[]');
+  const btn = $('#rcSavesBtn');
+  if (btn) btn.textContent = `My Saves (${saves.length})`;
+}
+
+function openRcSaves() {
+  _renderRcGallery();
+  $('#rcSavesModal').classList.add('open');
+}
+
+function closeRcSaves() {
+  $('#rcSavesModal').classList.remove('open');
+}
+
+function _renderRcGallery() {
+  const saves = JSON.parse(localStorage.getItem(_RC_KEY) || '[]');
+  const grid = $('#rcSavesGrid');
+  const empty = $('#rcSavesEmpty');
+  if (!saves.length) {
+    grid.innerHTML = '';
+    empty.style.display = '';
+    return;
+  }
+  empty.style.display = 'none';
+  grid.innerHTML = saves.map(s => {
+    const d = new Date(s.date);
+    const label = `${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
+    return `<div class="rc-save-card">
+      <img src="${s.thumb}" alt="${escA(s.paletteName)}" onclick="loadRcSave('${s.id}')">
+      <div class="rc-save-name">${escA(s.paletteName)}</div>
+      <div class="rc-save-date">${label}</div>
+      <div class="rc-save-actions">
+        <button class="pill" onclick="downloadRcSave('${s.id}')">↓ PNG</button>
+        <button class="pill del" onclick="deleteRcSave('${s.id}')">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function loadRcSave(id) {
+  const saves = JSON.parse(localStorage.getItem(_RC_KEY) || '[]');
+  const s = saves.find(x => x.id === id);
+  if (!s) return;
+  const pi = PALETTES.findIndex(p => p.name === s.paletteName);
+  if (pi >= 0) {
+    activePalette = pi; libSelected = null;
+  } else {
+    libSelected = { name: s.paletteName, origin: 'saved variation', colors: s.paletteColors, id: null };
+  }
+  mode = s.mode; strength = s.strength; dominantIdx = s.dominantIdx || 0;
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+  const sl = $('#strength');
+  if (sl) { sl.value = Math.round(strength * 100); $('#strengthVal').textContent = sl.value + '%'; }
+  closeRcSaves();
+  if (srcData) { refreshAll(); toast('✦ Re-applied ' + s.paletteName); }
+  else { renderPalettes(); toast('✦ Palette set — drop a photo to apply'); }
+}
+
+function downloadRcSave(id) {
+  const saves = JSON.parse(localStorage.getItem(_RC_KEY) || '[]');
+  const s = saves.find(x => x.id === id);
+  if (!s) return;
+  const img = new Image();
+  img.onload = () => {
+    const c = document.createElement('canvas');
+    c.width = img.naturalWidth; c.height = img.naturalHeight;
+    c.getContext('2d').drawImage(img, 0, 0);
+    c.toBlob(blob => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `coco-recolor-${s.paletteName.toLowerCase().replace(/\s+/g,'-')}.png`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    }, 'image/png');
+  };
+  img.src = s.thumb;
+  toast('✦ Downloading ' + s.paletteName);
+}
+
+function deleteRcSave(id) {
+  const saves = JSON.parse(localStorage.getItem(_RC_KEY) || '[]');
+  localStorage.setItem(_RC_KEY, JSON.stringify(saves.filter(x => x.id !== id)));
+  _updateRcBadge();
+  _renderRcGallery();
+}
+
+_updateRcBadge();
+</script>
+</body>
+</html>
