@@ -19,6 +19,9 @@ select (:'ja'::jsonb->>'session_token') as sa \gset
 select (:'jb'::jsonb->>'session_token') as sb \gset
 select (:'jc'::jsonb->>'session_token') as sc \gset
 select public.school_save_work(:'sa'::uuid,'adinkra',repeat('word ',160),'a.jpg',array['Akan people, Ghana']);
+-- adinkra now demands 2 documented sources before it can be turned in
+select public.school_add_note(:'sa'::uuid,'adinkra','A stamped cloth at the High Museum','museum','High Museum');
+select public.school_add_note(:'sa'::uuid,'adinkra','My grandmother named three symbols','person','My grandmother');
 select public.school_submit(:'sa'::uuid,'adinkra');
 \set QUIET off
 
@@ -73,10 +76,18 @@ select t_refuse('no print attached is refused',
 select t_refuse('geesbend rejects 200 words (needs 250)',
   format('select public.school_save_work(%1$L::uuid,''geesbend'',%2$L,''p.jpg'',null),
           public.school_submit(%1$L::uuid,''geesbend'')', :'sc', repeat('word ',200)));
-select t_true  ('geesbend accepts 260 words',
-  format('(public.school_save_work(%1$L::uuid,''geesbend'',%2$L,''p.jpg'',null)) is not null
-          and (public.school_submit(%1$L::uuid,''geesbend''))->>''status''=''submitted''',
-          :'sc', repeat('word ',260)));
+\set QUIET on
+select public.school_save_work(:'sc'::uuid,'geesbend',repeat('word ',260),'p.jpg',null);
+\set QUIET off
+select t_refuse('geesbend with 260 words but no source notes is refused',
+  format('select public.school_submit(%L::uuid,''geesbend'')', :'sc'));
+\set QUIET on
+select public.school_add_note(:'sc'::uuid,'geesbend','Loretta Pettway, born 1942','book','Gee''''s Bend: The Women and Their Quilts');
+select public.school_add_note(:'sc'::uuid,'geesbend','Housetop variation, 1970s','museum','Souls Grown Deep');
+select public.school_add_note(:'sc'::uuid,'geesbend','She described working "my way"','web',null,'https://example.org');
+\set QUIET off
+select t_true  ('geesbend accepts 260 words once 3 sources are documented',
+  format('(public.school_submit(%L::uuid,''geesbend''))->>''status''=''submitted''', :'sc'));
 select t_refuse('an unknown brief is refused',
   format('select public.school_save_work(%L::uuid,''not-a-brief'',''x'',''p.jpg'',null)', :'sa'));
 
@@ -147,32 +158,3 @@ select t_true  ('a reset student can rejoin even though the class is closed',
   format('(public.school_state(%L::uuid))->>''class_name''=''Period 3''', :'sb2'));
 select t_refuse('but a stranger still cannot join a closed class',
   format('select public.school_join(%L,''Stranger Z.'',''d99'')', :'cacode'));
-
--- ═══════════════════════════════════════════════════════════════════════
--- HOW TO RUN
---
--- Against a throwaway Postgres, never against production:
---
---   docker run -d --name cs-sqltest -e POSTGRES_PASSWORD=t postgres:15-alpine
---   for f in school-mode-test-prelude school-mode school-mode-rpc school-mode-rpc.test; do
---     docker cp docs/$f.sql cs-sqltest:/$f.sql
---   done
---   docker exec cs-sqltest psql -U postgres -q -f /school-mode-test-prelude.sql
---   docker exec cs-sqltest psql -U postgres -q -v ON_ERROR_STOP=1 -f /school-mode.sql
---   docker exec cs-sqltest psql -U postgres -q -v ON_ERROR_STOP=1 -f /school-mode-rpc.sql
---   docker exec cs-sqltest psql -U postgres -q -f /school-mode-rpc.test.sql
---   docker rm -f cs-sqltest
---
--- The suite is NOT idempotent: it asserts on row counts, so it needs a
--- fresh database each run. 42 assertions, 0 failures as of this commit.
---
--- Two gotchas this suite was written around, both mine, both instructive:
---
---   1. `case when <cond> then 1 else 1/0 end` does not work as an
---      assertion. Postgres constant-folds 1/0 at plan time and raises
---      before the CASE is ever evaluated. Assert on a boolean instead.
---
---   2. school_state is STABLE, so calling it in the SAME statement as
---      school_join reads a pre-write snapshot and cannot see the new
---      member. Real clients make two round-trips; the tests must too.
--- ═══════════════════════════════════════════════════════════════════════

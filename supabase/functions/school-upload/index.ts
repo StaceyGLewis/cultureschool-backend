@@ -12,6 +12,10 @@
 // POST { session_token, brief_id, image (data URL or base64), credits? }
 //   -> { path, signed_url }
 //
+// POST { session_token, note_id, image }          a field-note photograph
+// POST { session_token, brief_id, mode:"read" }   re-sign a student's own print
+// POST { session_token, note_id,  mode:"read" }   re-sign a note photograph
+//
 // GET-style read is handled by the "class-works teacher read" policy in
 // docs/school-mode-storage.sql; students get the signed URL returned here.
 
@@ -38,29 +42,38 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   try {
-    const { session_token, brief_id, image, credits, mode } = await req.json();
+    const { session_token, brief_id, note_id, image, credits, mode } =
+      await req.json();
 
     if (!session_token || typeof session_token !== "string") {
       return json({ error: "session_token required" }, 400);
     }
-    if (!brief_id || typeof brief_id !== "string") {
-      return json({ error: "brief_id required" }, 400);
+    // Exactly one target: a brief's finished print, or a note's photograph.
+    const isNote = typeof note_id === "string" && note_id.length > 0;
+    if (!isNote && (!brief_id || typeof brief_id !== "string")) {
+      return json({ error: "brief_id or note_id required" }, 400);
     }
 
     const url_ = Deno.env.get("SUPABASE_URL")!;
     const anon_ = Deno.env.get("SUPABASE_ANON_KEY")!;
     const service_ = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
+    // Ask the database where this student is allowed to write. Either
+    // path is DERIVED from their own membership, never supplied, so a
+    // file cannot be aimed at another class, member, brief or note.
+    const targetFor = async (client: ReturnType<typeof createClient>) =>
+      isNote
+        ? client.rpc("school_note_target",
+            { p_session: session_token, p_note: note_id })
+        : client.rpc("school_upload_target",
+            { p_session: session_token, p_brief: brief_id });
+
     // ── read mode ─────────────────────────────────────────────────────
     // A student is anon and cannot sign a storage URL themselves. This
-    // re-issues one for their OWN work after a reload, using the same
-    // derived path — so it can only ever hand back their own file.
+    // re-issues one for their OWN file, using that same derived path.
     if (mode === "read") {
       const asStudent0 = createClient(url_, anon_);
-      const { data: t0, error: e0 } = await asStudent0.rpc(
-        "school_upload_target",
-        { p_session: session_token, p_brief: brief_id },
-      );
+      const { data: t0, error: e0 } = await targetFor(asStudent0);
       if (e0 || !t0?.path) return json({ error: "not authorised" }, 403);
       const admin0 = createClient(url_, service_);
       const { data: s0 } = await admin0.storage
@@ -107,14 +120,11 @@ Deno.serve(async (req) => {
     // the session token itself, and using anon here means a stolen
     // service key is not what stands between classes.
     const asStudent = createClient(url, anon);
-    const { data: target, error: targetErr } = await asStudent.rpc(
-      "school_upload_target",
-      { p_session: session_token, p_brief: brief_id },
-    );
+    const { data: target, error: targetErr } = await targetFor(asStudent);
     if (targetErr || !target?.path) {
-      // Same response for a bad token and an unknown brief, so this
-      // cannot be used to enumerate either.
-      return json({ error: "not authorised for this brief" }, 403);
+      // Same response for a bad token, an unknown brief and someone
+      // else's note, so this cannot be used to enumerate any of them.
+      return json({ error: "not authorised" }, 403);
     }
 
     // ── 2. Write to exactly that path, service role ───────────────────
@@ -124,21 +134,29 @@ Deno.serve(async (req) => {
       .upload(target.path, bytes, { contentType, upsert: true });
     if (upErr) return json({ error: upErr.message }, 500);
 
-    // ── 3. Record it against the work ─────────────────────────────────
-    const { error: saveErr } = await asStudent.rpc("school_save_work", {
-      p_session: session_token,
-      p_brief: brief_id,
-      p_statement: null,
-      p_image_path: target.path,
-      p_credits: Array.isArray(credits) ? credits.slice(0, 12) : null,
-    });
-    if (saveErr) return json({ error: saveErr.message }, 500);
+    // ── 3. Record it ──────────────────────────────────────────────────
+    if (isNote) {
+      const { error: noteErr } = await asStudent.rpc("school_note_photo", {
+        p_session: session_token, p_note: note_id, p_path: target.path,
+      });
+      if (noteErr) return json({ error: noteErr.message }, 500);
+      // school_note_photo writes its own receipt.
+    } else {
+      const { error: saveErr } = await asStudent.rpc("school_save_work", {
+        p_session: session_token,
+        p_brief: brief_id,
+        p_statement: null,
+        p_image_path: target.path,
+        p_credits: Array.isArray(credits) ? credits.slice(0, 12) : null,
+      });
+      if (saveErr) return json({ error: saveErr.message }, 500);
 
-    await asStudent.rpc("school_log", {
-      p_session: session_token,
-      p_kind: "attach",
-      p_detail: `${Math.round(bytes.byteLength / 1024)}KB`,
-    });
+      await asStudent.rpc("school_log", {
+        p_session: session_token,
+        p_kind: "attach",
+        p_detail: `${Math.round(bytes.byteLength / 1024)}KB`,
+      });
+    }
 
     // ── 4. Hand back a short-lived read URL for the student's own view ─
     const { data: signed } = await admin.storage

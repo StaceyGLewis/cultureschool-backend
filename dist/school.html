@@ -219,6 +219,24 @@ textarea.inp{min-height:132px;resize:vertical;line-height:1.65}
   font-size:.84rem;z-index:400;opacity:0;transition:.24s;pointer-events:none;max-width:88vw}
 #toast.on{transform:translateX(-50%) translateY(0);opacity:1}
 
+/* ── field notes ───────────────────────────────────────── */
+.notes{margin:14px 0 0;display:flex;flex-direction:column;gap:10px}
+.fnote{border:1px solid var(--rule);border-radius:var(--r);background:var(--cream);
+  padding:13px 15px;display:flex;gap:12px;align-items:flex-start}
+.fnote-img{flex:0 0 62px;height:62px;border-radius:6px;overflow:hidden;background:var(--rule-soft)}
+.fnote-img img{width:100%;height:100%;object-fit:cover;display:block}
+.fnote-b{flex:1;min-width:0}
+.fnote-b .src{font:500 .68rem/1 'DM Sans',sans-serif;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--gold);margin-bottom:6px}
+.fnote-b p{margin:0 0 5px;font-size:.86rem;line-height:1.55;color:var(--ink)}
+.fnote-b .surp{font-size:.79rem;line-height:1.5;color:var(--body);font-style:italic}
+.fnote-acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.kinds{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:7px}
+.kind{padding:6px 12px;border-radius:99px;border:1px solid var(--rule);background:var(--paper);
+  font:500 .72rem/1 'DM Sans',sans-serif;color:var(--body);transition:.14s}
+.kind[aria-pressed="true"]{background:var(--gold);color:#fff;border-color:var(--gold)}
+.needs{font-size:.78rem;line-height:1.5;margin:10px 0 0}
+
 .note{background:var(--gold-wash);border-radius:var(--r);padding:13px 16px;
   font-size:.82rem;line-height:1.6;color:var(--body);margin:16px 0}
 .note b{color:var(--gold)}
@@ -380,6 +398,13 @@ const API = {
   submit: (tok,brief)    => rpc('school_submit',{p_session:tok,p_brief:brief}),
   log: (tok,kind,detail) => rpc('school_log',{p_session:tok,p_kind:kind,p_detail:detail||null})
                               .catch(()=>{}),   /* a receipt must never break a student's action */
+  addNote: (tok,brief,n)  => rpc('school_add_note',{p_session:tok,p_brief:brief,
+                               p_found:n.found,p_kind:n.kind||'other',p_source:n.source||null,
+                               p_link:n.link||null,p_surprised:n.surprised||null}),
+  updateNote: (tok,id,n)  => rpc('school_update_note',{p_session:tok,p_note:id,
+                               p_found:n.found,p_kind:n.kind||null,p_source:n.source||null,
+                               p_link:n.link||null,p_surprised:n.surprised||null}),
+  deleteNote: (tok,id)    => rpc('school_delete_note',{p_session:tok,p_note:id}),
   /* teacher */
   classes: ()            => rpc('school_teacher_classes'),
   createClass: (name)    => rpc('school_create_class',{p_name:name,p_org:null}),
@@ -398,9 +423,29 @@ const API = {
     p_title:b.title, p_tradition:b.tradition||null, p_meta:b.meta||null,
     p_find:b.find||null, p_interpret:b.interpret||null, p_own:b.own||null,
     p_turnin:b.turnin||null, p_style:b.style||null,
-    p_words:b.words||150, p_standards:b.standards||[] }),
+    p_words:b.words||150, p_min_notes:b.min_notes||0, p_standards:b.standards||[] }),
 
   /* storage — a student cannot sign a URL, so the edge function does it */
+  async notePhoto(tok, noteId, dataUrl){
+    const r = await fetch(UPLOAD_FN, { method:'POST',
+      headers:{ 'Content-Type':'application/json', apikey:SUPA_ANON,
+                Authorization:'Bearer '+SUPA_ANON },
+      body: JSON.stringify({ session_token:tok, note_id:noteId, image:dataUrl }) });
+    if(r.status===404) throw new Error('UPLOAD_FN_MISSING');
+    const j = await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(j.error || ('upload failed ('+r.status+')'));
+    return j;
+  },
+  async noteUrl(tok, noteId){
+    try{
+      const r = await fetch(UPLOAD_FN, { method:'POST',
+        headers:{ 'Content-Type':'application/json', apikey:SUPA_ANON,
+                  Authorization:'Bearer '+SUPA_ANON },
+        body: JSON.stringify({ session_token:tok, note_id:noteId, mode:'read' }) });
+      if(!r.ok) return null;
+      return (await r.json()).signed_url || null;
+    }catch(_){ return null; }
+  },
   async upload(tok, brief, dataUrl, credits){
     const r = await fetch(UPLOAD_FN, { method:'POST',
       headers:{ 'Content-Type':'application/json', apikey:SUPA_ANON,
@@ -508,7 +553,7 @@ const State = {
   teacher:null,                 /* email of the signed-in teacher */
   classes:[], classId:null, tab:'briefs', roster:[], gallery:[],
   session:null,                 /* {token,name,class_name,briefs[]} */
-  works:[], briefOpen:null,
+  works:[], notes:[], briefOpen:null,
   briefs:[],                    /* teacher: templates + this class's own */
   styles:[],                    /* archive styles a brief may bind to */
   editing:null                  /* the brief being written, or null */
@@ -528,7 +573,7 @@ function render(){
   renderTopRight();
   hydratePatterns();
   if(State.view==='teacher') hydrateGalleryImages();
-  if(State.view==='student') hydrateStudentImage();
+  if(State.view==='student'){ hydrateStudentImage(); hydrateNoteImages(); }
 }
 
 function renderTopRight(){
@@ -825,7 +870,7 @@ function briefCard(b, isTemplate){
       : `<div class="note"><b>No reference set.</b> Students compose freely — there is no
            pattern strip on this brief.</div>`}
     <p class="standards">
-      <b>Turn-in floor:</b> ${b.words} words${b.standards?` · <b>Standards:</b> ${esc(b.standards)}`:''}</p>
+      <b>Turn-in floor:</b> ${b.words} words${b.min_notes?` · ${b.min_notes} documented source${b.min_notes===1?'':'s'}`:''}${b.standards?` · <b>Standards:</b> ${esc(b.standards)}`:''}</p>
     <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
       ${State.briefsReadOnly ? '' : isTemplate
         ? `<button class="btn btn-ghost btn-sm" onclick="duplicateBrief('${esc(b.id)}')">Duplicate &amp; edit</button>`
@@ -839,7 +884,7 @@ function briefCard(b, isTemplate){
 function editBrief(id){
   const b = id ? State.briefs.find(x=>x.id===id) : null;
   State.editing = b ? {...b} : { id:null, title:'', tradition:'', meta:'', find:'',
-    interpret:'', own:'', turnin:'', style:'', words:150, standards:'' };
+    interpret:'', own:'', turnin:'', style:'', words:150, min_notes:2, standards:'' };
   openEditor();
 }
 function duplicateBrief(id){
@@ -897,6 +942,13 @@ function openEditor(){
           <input class="inp" id="bWords" type="number" min="25" max="2000" step="25"
                  value="${b.words||150}"></label>
       </div>
+      <label class="field"><span>Documented sources required</span>
+        <input class="inp" id="bNotes" type="number" min="0" max="20" step="1"
+               value="${b.min_notes ?? 0}">
+        <span style="display:block;text-transform:none;letter-spacing:0;font-weight:400;
+              font-size:.78rem;color:var(--muted);margin-top:7px">
+          Students record what they found and where — a museum, a book, a person, a place.
+          Set 0 and the research step is optional.</span></label>
       <label class="field"><span>Standards (comma separated)</span>
         <input class="inp" id="bStd" value="${esc(std)}"
                placeholder="VA.912.H.1.1, F.S.1003.42(2)(h)"></label>
@@ -926,6 +978,7 @@ async function saveBriefForm(){
     turnin: $('#bTurn').value.trim(),
     style: $('#bStyle').value,
     words: parseInt($('#bWords').value,10) || 150,
+    min_notes: Math.max(0, parseInt($('#bNotes').value,10) || 0),
     standards: $('#bStd').value.split(',').map(x=>x.trim()).filter(Boolean)
   };
   if(!b.title) return toast('Give the brief a title');
@@ -1086,7 +1139,24 @@ async function openWork(workId){
               :'<p class="tiny dim">No image.</p>'}
       ${(d.credits||[]).length?`<p class="tiny dim" style="margin:10px 0 0">
         <b>Works cited —</b> ${(d.credits||[]).map(esc).join(' · ')}</p>`:''}
-      <h3 style="font-size:1.15rem;margin:22px 0 8px">Artist statement</h3>
+
+      <h3 style="font-size:1.15rem;margin:24px 0 6px">Where they looked</h3>
+      <p class="tiny dim" style="margin:0 0 12px">${(d.notes||[]).length
+        ? 'The sources they documented before making anything. A photograph they took themselves is the hardest thing to fake.'
+        : 'No sources documented.'}</p>
+      ${(d.notes||[]).length?`<div class="notes">${d.notes.map(n=>`
+        <div class="fnote">
+          ${n.image_path?`<div class="fnote-img" data-tnote-img="${esc(n.image_path)}"></div>`:''}
+          <div class="fnote-b">
+            <div class="src">${esc(kindLabel(n.kind))}${n.source?' · '+esc(n.source):''}</div>
+            <p>${esc(n.found)}</p>
+            ${n.surprised?`<p class="surp">What surprised me — ${esc(n.surprised)}</p>`:''}
+            ${n.link?`<p class="tiny"><a href="${esc(n.link)}" target="_blank" rel="noopener noreferrer">${esc(String(n.link).slice(0,60))}</a></p>`:''}
+            <p class="tiny dim" style="margin-top:6px">${fmtWhen(n.created_at)}</p>
+          </div>
+        </div>`).join('')}</div>`:''}
+
+      <h3 style="font-size:1.15rem;margin:26px 0 8px">Artist statement</h3>
       <p style="font-size:.9rem;line-height:1.72;color:var(--body);white-space:pre-wrap">${esc(d.statement||'—')}</p>
       <p class="tiny dim" style="margin-top:6px">${words(d.statement)} words${b?` · ${b.words} required`:''}</p>
 
@@ -1104,11 +1174,19 @@ async function openWork(workId){
       </div>
     </div></div>`;
   document.body.appendChild(scrim);
+  /* Note photographs are in the private bucket; the teacher's session
+     signs them, and the storage policy decides whether the object
+     belongs to a class they teach. */
+  scrim.querySelectorAll('[data-tnote-img]').forEach(async el=>{
+    const url=await signedForTeacher(el.dataset.tnoteImg);
+    if(url) el.innerHTML=`<img src="${esc(url)}" alt="">`;
+  });
 }
 const RECS={ join:'Joined the class', open_brief:'Opened the brief',
   view_tradition:'Studied a tradition card', open_studio:'Opened Print Studio',
   attach:'Attached a print', save_draft:'Saved a draft statement',
-  submit:'Submitted the work', resubmit:'Revised and resubmitted' };
+  submit:'Submitted the work', resubmit:'Revised and resubmitted',
+  field_note:'Recorded a source', note_photo:'Photographed a source' };
 
 async function toggleFeature(workId,on){
   const c=curClass(); if(!c) return;
@@ -1179,7 +1257,7 @@ async function doJoin(){
   }
 }
 
-function leaveClass(){ State.session=null; State.works=[]; State.briefOpen=null;
+function leaveClass(){ State.session=null; State.works=[]; State.notes=[]; State.briefOpen=null;
   try{ sessionStorage.removeItem('cs_school_sess'); }catch(_){} go('gate'); }
 
 async function loadStudent(){
@@ -1198,6 +1276,7 @@ async function loadStudent(){
     /* Full brief content comes from the server, so a brief the teacher
        wrote themselves renders exactly like one that ships with CoCo. */
     State.session.briefs=st.briefs||[];
+    State.notes=st.notes||[];
     State.works=(st.works||[]).map(w=>({...w, _url:null}));
   }catch(e){
     /* a dead token means the teacher reset the session */
@@ -1206,7 +1285,8 @@ async function loadStudent(){
     go('join');
   }
 }
-const myWork = bid => State.works.find(w=>w.brief_id===bid);
+const myWork  = bid => State.works.find(w=>w.brief_id===bid);
+const myNotes = bid => State.notes.filter(n=>n.brief_id===bid);
 
 /* ══════════════════════════════════════════════════════════════
    STUDENT — assignments
@@ -1258,6 +1338,8 @@ function studentBrief(b, idx){
   const has=!!(w && (w.image_path || w._url));
   const stmt=w?w.statement||'':'';
   const n=words(stmt), ok=n>=b.words;
+  const notes=myNotes(b.id), need=b.min_notes||0;
+  const gotNotes=notes.length>=need;
   const done=w&&w.status==='submitted';
   return `<div class="wrap"><div class="stu">
     <button class="btn btn-ghost btn-sm" onclick="closeBrief()">← All assignments</button>
@@ -1268,13 +1350,24 @@ function studentBrief(b, idx){
 
     <div class="card" style="margin:22px 0">
       <div class="step">
-        <div class="step-n">1</div>
+        <div class="step-n ${need&&gotNotes?'done':''}">1</div>
         <div class="step-b"><h4>Find</h4><p>${esc(b.find||'Research the tradition your teacher named.')}</p>
           ${b.style?`<p class="eyebrow" style="margin:14px 0 4px">Study these — hover for the credit</p>
             <div class="pats" data-style="${b.style}"><p class="tiny dim">Loading the archive…</p></div>
             <p class="tiny dim" style="margin-top:10px">Every pattern here is CultureSchool's own work,
               made in answer to the tradition named on it. The credit is your works-cited line.</p>`
            :`<p class="tiny dim">This brief has no reference set — your composition is your own from the start.</p>`}
+
+          <p class="eyebrow" style="margin:22px 0 4px">Your source notes${need?` · ${notes.length} of ${need}`:''}</p>
+          <p class="tiny dim" style="margin:0 0 4px">Record what you find — in a museum, a book, a
+            street, or from someone who knows. A photograph you took yourself is the strongest
+            source there is.</p>
+          ${notes.length?`<div class="notes">${notes.map(noteCard).join('')}</div>`:''}
+          <button class="btn btn-ghost btn-sm" style="margin-top:12px"
+            onclick="openNote('${b.id}',null)">+ Add a source note</button>
+          ${need?`<p class="needs" style="color:${notes.length>=need?'var(--live)':'var(--muted)'}">
+            ${notes.length>=need?'✓ You have the sources this brief asks for'
+              :`This brief asks for ${need} documented source${need===1?'':'s'} before you can turn it in.`}</p>`:''}
         </div>
       </div>
       <div class="step">
@@ -1304,15 +1397,153 @@ function studentBrief(b, idx){
           <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
             <button class="btn btn-ghost btn-sm" onclick="saveDraft('${b.id}')">Save draft</button>
             <button class="btn btn-primary btn-sm" id="subBtn" onclick="submitWork('${b.id}')"
-              ${has&&ok?'':'disabled'}>${done?'Turn in again':'Turn in'} →</button>
+              ${has&&ok&&gotNotes?'':'disabled'}>${done?'Turn in again':'Turn in'} →</button>
           </div>
-          ${!has||!ok?`<p class="tiny dim" style="margin:10px 0 0">
-            Turn-in unlocks once your print is attached and the statement reaches ${b.words} words.</p>`:''}
+          ${(!has||!ok||!gotNotes)?`<p class="tiny dim" style="margin:10px 0 0">
+            Turn-in unlocks once you have
+            ${need?`${need} source note${need===1?'':'s'}, `:''}your print attached,
+            and ${b.words} words written.</p>`:''}
         </div>
       </div>
     </div>
     ${b.turnin?`<div class="turnin"><b>Turn in —</b> ${esc(b.turnin)}</div>`:''}
   </div></div>`;
+}
+
+/* ── field notes ──────────────────────────────────────────────────── */
+const NOTE_KINDS = [
+  ['museum','Museum or gallery'], ['place','A place'], ['person','Someone I asked'],
+  ['object','An object I have'],  ['book','Book or article'], ['web','Online'],
+  ['other','Somewhere else']
+];
+const kindLabel = k => (NOTE_KINDS.find(x=>x[0]===k)||['','Source'])[1];
+
+function noteCard(n){
+  return `<div class="fnote" data-note="${esc(n.id)}">
+    ${n.image_path?`<div class="fnote-img" data-note-img="${esc(n.id)}"></div>`:''}
+    <div class="fnote-b">
+      <div class="src">${esc(kindLabel(n.kind))}${n.source?' · '+esc(n.source):''}</div>
+      <p>${esc(n.found)}</p>
+      ${n.surprised?`<p class="surp">What surprised me — ${esc(n.surprised)}</p>`:''}
+      ${n.link?`<p class="tiny"><a href="${esc(n.link)}" target="_blank" rel="noopener noreferrer">${esc(n.link.slice(0,60))}</a></p>`:''}
+      <div class="fnote-acts">
+        <button class="btn btn-ghost btn-sm" onclick="openNote(null,'${esc(n.id)}')">Edit</button>
+        <button class="btn btn-ghost btn-sm" onclick="notePhotoPick('${esc(n.id)}')">
+          ${n.image_path?'Replace photo':'Add my photo'}</button>
+        <button class="btn btn-ghost btn-sm" onclick="dropNote('${esc(n.id)}')">Delete</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function openNote(briefId, noteId){
+  const n = noteId ? State.notes.find(x=>x.id===noteId) : null;
+  const brief = briefId || (n && n.brief_id) || State.briefOpen;
+  const cur = n || { kind:'museum', source:'', link:'', found:'', surprised:'' };
+  const scrim=document.createElement('div');
+  scrim.className='scrim'; scrim.id='noteEditor';
+  scrim.onclick=e=>{ if(e.target===scrim) scrim.remove(); };
+  scrim.innerHTML=`<div class="modal">
+    <div class="modal-h">
+      <div><p class="eyebrow">${n?'Edit source note':'New source note'}</p>
+        <h2 style="font-size:1.5rem;margin-top:6px">What did you find?</h2></div>
+      <button class="x" onclick="this.closest('.scrim').remove()" aria-label="Close">×</button>
+    </div>
+    <div class="modal-b">
+      <label class="field"><span>Where did you find it?</span>
+        <div class="kinds" id="nKinds">
+          ${NOTE_KINDS.map(([k,l])=>`<button type="button" class="kind"
+            aria-pressed="${cur.kind===k}" onclick="pickKind(this,'${k}')">${esc(l)}</button>`).join('')}
+        </div></label>
+      <label class="field"><span>Name the source</span>
+        <input class="inp" id="nSource" value="${esc(cur.source||'')}"
+               placeholder="The High Museum · my grandmother · a book title"></label>
+      <label class="field"><span>What did you find?</span>
+        <textarea class="inp" id="nFound" style="min-height:104px"
+          placeholder="Describe it. What did it look like, who made it, what was it for?">${esc(cur.found||'')}</textarea></label>
+      <label class="field"><span>What surprised you?</span>
+        <textarea class="inp" id="nSurp" style="min-height:72px"
+          placeholder="The thing you did not expect. This is usually the best part.">${esc(cur.surprised||'')}</textarea></label>
+      <label class="field"><span>Link, if there is one</span>
+        <input class="inp" id="nLink" value="${esc(cur.link||'')}" placeholder="https://…"></label>
+      <p class="tiny dim" style="margin:0 0 16px;line-height:1.6">
+        Your notes are seen only by your teacher. Do not include your full name, your school,
+        or anything else about you.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-primary btn-sm" id="nSave"
+          onclick="saveNote('${esc(brief||'')}','${esc(noteId||'')}')">
+          ${n?'Save note':'Add note'} →</button>
+        <button class="btn btn-ghost btn-sm" onclick="this.closest('.scrim').remove()">Cancel</button>
+      </div>
+    </div></div>`;
+  document.body.appendChild(scrim);
+  scrim.dataset.kind = cur.kind || 'museum';
+}
+function pickKind(el,k){
+  el.closest('.kinds').querySelectorAll('.kind').forEach(b=>b.setAttribute('aria-pressed','false'));
+  el.setAttribute('aria-pressed','true');
+  document.getElementById('noteEditor').dataset.kind = k;
+}
+
+async function saveNote(briefId, noteId){
+  const scrim=document.getElementById('noteEditor');
+  const n={ kind: scrim.dataset.kind || 'other',
+            source: $('#nSource').value.trim(), found: $('#nFound').value.trim(),
+            surprised: $('#nSurp').value.trim(), link: $('#nLink').value.trim() };
+  if(!n.found) return toast('Say what you found');
+  const btn=$('#nSave'); btn.disabled=true; btn.textContent='Saving…';
+  try{
+    if(noteId) await API.updateNote(State.session.token, noteId, n);
+    else       await API.addNote(State.session.token, briefId, n);
+    scrim.remove();
+    await loadStudent(); render();
+    toast(noteId?'Note saved':'Source recorded');
+  }catch(e){ btn.disabled=false; btn.textContent='Save →'; fail(e); }
+}
+
+async function dropNote(noteId){
+  if(!confirm('Delete this source note?')) return;
+  try{
+    await API.deleteNote(State.session.token, noteId);
+    await loadStudent(); render();
+    toast('Note deleted');
+  }catch(e){ fail(e); }
+}
+
+/* A photograph the student took themselves — the strongest evidence in
+   the whole system, and the thing a chatbot cannot manufacture. */
+function notePhotoPick(noteId){
+  let inp=document.getElementById('notePhotoInput');
+  if(!inp){
+    inp=document.createElement('input');
+    inp.type='file'; inp.accept='image/*'; inp.id='notePhotoInput';
+    inp.style.display='none';
+    document.body.appendChild(inp);
+  }
+  inp.onchange = async ev => {
+    const f=ev.target.files&&ev.target.files[0]; ev.target.value='';
+    if(!f) return;
+    if(!/^image\//.test(f.type)) return toast('That needs to be an image');
+    toast('Adding your photo…');
+    try{
+      const dataUrl=await fileToJpeg(f, 1200);
+      await API.notePhoto(State.session.token, noteId, dataUrl);
+      await loadStudent(); render();
+      toast('Photo added to your note');
+    }catch(e){ fail(e); }
+  };
+  inp.click();
+}
+
+/* Note photographs live in the private bucket, so each one needs its own
+   signed URL. Fetched after paint so the page never waits on them. */
+async function hydrateNoteImages(){
+  if(DEMO || !State.session) return;
+  const nodes=[...document.querySelectorAll('[data-note-img]')];
+  for(const el of nodes){
+    const url=await API.noteUrl(State.session.token, el.dataset.noteImg);
+    if(url) el.innerHTML=`<img src="${esc(url)}" alt="">`;
+  }
 }
 
 /* A student cannot sign a storage URL, so the edge function re-issues
@@ -1412,7 +1643,8 @@ async function submitWork(briefId){
     toast(again?'Turned in again':'Turned in — your teacher can see it now');
   }catch(e){
     const m=String(e.message||e);
-    if(/needs \d+ words/.test(m)) toast(m);
+    if(/source note/i.test(m))    toast(m);
+    else if(/needs \d+ words/.test(m)) toast(m);
     else if(/attach/i.test(m))    toast('Attach your print first');
     else fail(e);
   }
