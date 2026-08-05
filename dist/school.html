@@ -254,10 +254,10 @@ textarea.inp{min-height:132px;resize:vertical;line-height:1.65}
    learn a palette faster by being inside it.
    ═══════════════════════════════════════════════════════════════ */
 body.skin{
-  --cream:#17120e; --paper:#241c16; --ink:#fdf9f3; --body:#d8cec1;
-  --muted:#9c8f7e; --faint:#6d6255;
-  --gold:#ffb020; --gold-wash:rgba(255,176,32,.14);
-  --rule:#3a2e24; --rule-soft:#2c2219;
+  --cream:#2b2233; --paper:#372c42; --ink:#fffbf5; --body:#ddd2e4;
+  --muted:#a99bb4; --faint:#7d7189;
+  --gold:#ffc43d; --gold-wash:rgba(255,196,61,.18);
+  --rule:#4d3f5c; --rule-soft:#3f3350;
   --live:#4ade80; --live-wash:rgba(74,222,128,.14);
   --wait:#fbbf24; --draft-wash:rgba(251,191,36,.16);
   --r:14px; --r-lg:22px;
@@ -265,22 +265,22 @@ body.skin{
   --shadow-lg:0 18px 50px rgba(0,0,0,.5);
   background:var(--cream);
 }
-body.skin .topbar{background:#1d1610;border-bottom-color:var(--rule)}
+body.skin .topbar{background:#241d2c;border-bottom-color:var(--rule)}
 body.skin .mark{color:var(--ink)}
-body.skin .btn-primary{background:var(--gold);color:#17120e;font-weight:700}
+body.skin .btn-primary{background:var(--gold);color:#2b2233;font-weight:700}
 body.skin .btn-primary:hover{filter:brightness(1.12)}
-body.skin .btn-gold{background:var(--gold);color:#17120e;font-weight:700}
+body.skin .btn-gold{background:var(--gold);color:#2b2233;font-weight:700}
 body.skin .btn-ghost{border-color:var(--rule);color:var(--body)}
 body.skin .btn-ghost:hover{border-color:var(--gold);color:var(--gold);background:var(--gold-wash)}
-body.skin .inp{background:#1c1510;border-color:var(--rule);color:var(--ink)}
+body.skin .inp{background:#251e2d;border-color:var(--rule);color:var(--ink)}
 body.skin .inp::placeholder{color:var(--faint)}
 body.skin .card,body.skin .brief{background:var(--paper);border-color:var(--rule)}
-body.skin .arc,body.skin .turnin,body.skin .drop,body.skin .fnote{background:#1c1510}
-body.skin .pat{background:#1c1510;border-color:var(--rule)}
-body.skin .kind{background:#1c1510;border-color:var(--rule);color:var(--body)}
-body.skin .kind[aria-pressed="true"]{background:var(--gold);color:#17120e;border-color:var(--gold)}
+body.skin .arc,body.skin .turnin,body.skin .drop,body.skin .fnote{background:#2f2639}
+body.skin .pat{background:#2f2639;border-color:var(--rule)}
+body.skin .kind{background:#2f2639;border-color:var(--rule);color:var(--body)}
+body.skin .kind[aria-pressed="true"]{background:var(--gold);color:#2b2233;border-color:var(--gold)}
 body.skin .modal{background:var(--paper)}
-body.skin #toast{background:var(--gold);color:#17120e;font-weight:500}
+body.skin #toast{background:var(--gold);color:#2b2233;font-weight:600}
 
 /* Louder type. A brief should read like a poster, not a permission slip. */
 body.skin .stu h1{font-size:clamp(2.1rem,6.4vw,3.1rem);letter-spacing:-.015em}
@@ -293,16 +293,42 @@ body.skin .lede{font-size:1.06rem;color:var(--body)}
 /* The step markers carry the progress, so make them read across a room. */
 body.skin .step{gap:18px;padding:24px 0;border-bottom-color:var(--rule-soft)}
 body.skin .step-n{flex:0 0 40px;height:40px;font-size:1rem;font-weight:700;
-  background:#2c2219;color:var(--muted);border:2px solid var(--rule)}
+  background:#3f3350;color:var(--body);border:2px solid var(--rule)}
 body.skin .step-n.done{background:var(--live);color:#0b2416;border-color:var(--live)}
 
 body.skin .badge{font-weight:700;font-size:.7rem}
 body.skin .badge-live{background:var(--live-wash);color:var(--live)}
 body.skin .badge-draft{background:var(--draft-wash);color:var(--wait)}
-body.skin .code-in{background:#1c1510;border-color:var(--rule);color:var(--ink);
+body.skin .code-in{background:#251e2d;border-color:var(--rule);color:var(--ink);
   font-size:2rem;letter-spacing:.4em}
 body.skin .fnote-b .src{font-weight:700}
 body.skin .brief-meta{font-weight:700;letter-spacing:.14em}
+
+/* Video sits inside the step it belongs to: the tradition in Find, the
+   technique in Interpret. */
+.vid{position:relative;aspect-ratio:16/9;border-radius:var(--r);overflow:hidden;
+  background:#000;margin:12px 0 4px;border:1px solid var(--rule)}
+.vid iframe,.vid video{position:absolute;inset:0;width:100%;height:100%;border:0}
+
+/* Colour before anything loads. A student's first screen used to be
+   near-black and one muted gold, which is exactly the "worksheet" read
+   we were trying to escape. Each brief card now wears its own
+   tradition's colour from the moment the list paints. */
+.bcolor{position:relative;overflow:hidden}
+.bcolor::before{content:'';position:absolute;inset:0 0 auto 0;height:5px;
+  background:var(--bc,var(--gold))}
+body.skin .bcolor{border-color:color-mix(in srgb,var(--bc,var(--gold)) 34%,var(--rule))}
+body.skin .bcolor .eyebrow{color:var(--bc,var(--gold))}
+body.skin .bcolor .badge{background:color-mix(in srgb,var(--bc,var(--gold)) 18%,transparent);
+  color:var(--bc,var(--gold))}
+body.skin .bcolor .prog i.on{background:var(--bc,var(--gold));
+  box-shadow:0 0 14px color-mix(in srgb,var(--bc,var(--gold)) 40%,transparent)}
+body.skin .bcolor .btn-primary{background:var(--bc,var(--gold));color:#2b2233}
+
+/* The join screen is the very first thing anyone sees. Give it a spine
+   of real tradition colour rather than an empty dark box. */
+.joinbar{display:flex;height:8px;border-radius:99px;overflow:hidden;margin:0 0 26px}
+.joinbar i{flex:1}
 
 /* Progress across the whole brief — the thing that makes a game a game. */
 .prog{display:flex;gap:6px;margin:18px 0 0}
@@ -497,7 +523,8 @@ const API = {
     p_title:b.title, p_tradition:b.tradition||null, p_meta:b.meta||null,
     p_find:b.find||null, p_interpret:b.interpret||null, p_own:b.own||null,
     p_turnin:b.turnin||null, p_style:b.style||null,
-    p_words:b.words||150, p_min_notes:b.min_notes||0, p_standards:b.standards||[] }),
+    p_words:b.words||150, p_min_notes:b.min_notes||0, p_standards:b.standards||[],
+    p_video:b.video||null, p_technique:b.technique||null }),
 
   /* storage — a student cannot sign a URL, so the edge function does it */
   async notePhoto(tok, noteId, dataUrl){
@@ -633,7 +660,9 @@ function _sat(hex){ const [r,g,b]=_hex2rgb(hex);
   const mx=Math.max(r,g,b), mn=Math.min(r,g,b); return mx===0?0:(mx-mn)/mx; }
 function _lift(hex,amt){ return _rgb2hex(_hex2rgb(hex).map(v=>v+(255-v)*amt)); }
 
-const GROUND='#17120e', DEFAULT_ACCENT='#ffb020';
+/* Must match --cream on body.skin. If the ground moves and this does
+   not, every accent silently loses contrast. */
+const GROUND='#2b2233', DEFAULT_ACCENT='#ffc43d';
 function accentFrom(colors){
   const pool=(colors||[]).filter(c=>/^#[0-9a-f]{6}$/i.test(c));
   if(!pool.length) return DEFAULT_ACCENT;
@@ -667,6 +696,33 @@ async function skinFor(brief){
   root.style.setProperty('--gold-wash', 'rgba('+_hex2rgb(a).join(',')+',.16)');
 }
 let _tradColors=[];
+
+/* Accent per brief, resolved once and cached, so the assignments list
+   paints in colour instead of waiting for a student to open something. */
+const _briefAccent={};
+async function accentForBrief(b){
+  if(!b) return DEFAULT_ACCENT;
+  if(_briefAccent[b.id]) return _briefAccent[b.id];
+  if(!b.style){ return (_briefAccent[b.id]=DEFAULT_ACCENT); }
+  const rows=await patternsForStyle(b.style, 8);
+  const a=accentFrom([...new Set(rows.flatMap(r=>r.colors||[]))]);
+  return (_briefAccent[b.id]=a);
+}
+async function paintBriefColours(){
+  const nodes=[...document.querySelectorAll('[data-bc]')];
+  for(const el of nodes){
+    const b=(State.session?.briefs||[]).find(x=>x.id===el.dataset.bc);
+    if(!b) continue;
+    el.style.setProperty('--bc', await accentForBrief(b));
+  }
+  const bar=document.getElementById('joinBar');
+  if(bar && !bar.dataset.done){
+    const rows=await patternsForStyle('adinkra', 6);
+    const cols=[...new Set(rows.flatMap(r=>r.colors||[]))].slice(0,7);
+    if(cols.length){ bar.innerHTML=cols.map(c=>`<i style="background:${esc(c)}"></i>`).join('');
+                     bar.dataset.done='1'; }
+  }
+}
 function creditFor(p){
   const bits=[p.heritage_origin, p.continent].filter(Boolean);
   return bits.length ? bits.join(' · ') : 'CultureSchool Pattern Archive';
@@ -708,8 +764,9 @@ function render(){
   renderTopRight();
   hydratePatterns();
   if(State.view==='teacher') hydrateGalleryImages();
+  if(State.view==='join') paintBriefColours();
   if(State.view==='student'){
-    hydrateStudentImage(); hydrateNoteImages();
+    hydrateStudentImage(); hydrateNoteImages(); paintBriefColours();
     skinFor(State.briefOpen ? (State.session?.briefs||[]).find(x=>x.id===State.briefOpen) : null)
       .then(()=>{ const st=document.getElementById('tradStrip');
         if(st && _tradColors.length)
@@ -1010,6 +1067,8 @@ function briefCard(b, isTemplate){
            <div class="pats" data-style="${esc(b.style)}"><p class="tiny dim">Loading…</p></div></div>`
       : `<div class="note"><b>No reference set.</b> Students compose freely — there is no
            pattern strip on this brief.</div>`}
+    ${(b.video||b.technique)?`<p class="tiny" style="margin:12px 0 0;color:var(--gold)">
+      ▶ ${[b.video?'tradition video':null,b.technique?'technique video':null].filter(Boolean).join(' · ')}</p>`:''}
     <p class="standards">
       <b>Turn-in floor:</b> ${b.words} words${b.min_notes?` · ${b.min_notes} documented source${b.min_notes===1?'':'s'}`:''}${b.standards?` · <b>Standards:</b> ${esc(b.standards)}`:''}</p>
     <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
@@ -1025,7 +1084,8 @@ function briefCard(b, isTemplate){
 function editBrief(id){
   const b = id ? State.briefs.find(x=>x.id===id) : null;
   State.editing = b ? {...b} : { id:null, title:'', tradition:'', meta:'', find:'',
-    interpret:'', own:'', turnin:'', style:'', words:150, min_notes:2, standards:'' };
+    interpret:'', own:'', turnin:'', style:'', words:150, min_notes:2,
+    video:'', technique:'', standards:'' };
   openEditor();
 }
 function duplicateBrief(id){
@@ -1090,6 +1150,18 @@ function openEditor(){
               font-size:.78rem;color:var(--muted);margin-top:7px">
           Students record what they found and where — a museum, a book, a person, a place.
           Set 0 and the research step is optional.</span></label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <label class="field"><span>Tradition video — Tell</span>
+          <input class="inp" id="bVid" value="${esc(b.video||'')}"
+                 placeholder="YouTube, Vimeo or .mp4 link"></label>
+        <label class="field"><span>Technique video — Show</span>
+          <input class="inp" id="bTech" value="${esc(b.technique||'')}"
+                 placeholder="Someone doing it, hands on"></label>
+      </div>
+      <p class="tiny dim" style="margin:-6px 0 16px;line-height:1.6">
+        This is what turns a brief into a course. Film yourself demonstrating and the brief
+        becomes something a school is buying you for, not just the platform. YouTube embeds
+        use the no-cookie host so a classroom is not shipping viewing history to an ad network.</p>
       <label class="field"><span>Standards (comma separated)</span>
         <input class="inp" id="bStd" value="${esc(std)}"
                placeholder="VA.912.H.1.1, F.S.1003.42(2)(h)"></label>
@@ -1120,6 +1192,8 @@ async function saveBriefForm(){
     style: $('#bStyle').value,
     words: parseInt($('#bWords').value,10) || 150,
     min_notes: Math.max(0, parseInt($('#bNotes').value,10) || 0),
+    video: $('#bVid').value.trim(),
+    technique: $('#bTech').value.trim(),
     standards: $('#bStd').value.split(',').map(x=>x.trim()).filter(Boolean)
   };
   if(!b.title) return toast('Give the brief a title');
@@ -1345,7 +1419,8 @@ async function toggleFeature(workId,on){
 function viewJoin(){
   return `<div class="join">
     <p class="eyebrow" style="text-align:center">Student</p>
-    <h1 style="font-size:clamp(2rem,7vw,2.6rem);text-align:center;margin:10px 0 26px;letter-spacing:-.015em">Join your class</h1>
+    <h1 style="font-size:clamp(2rem,7vw,2.6rem);text-align:center;margin:10px 0 20px;letter-spacing:-.015em">Join your class</h1>
+    <div class="joinbar" id="joinBar"></div>
     <div class="card">
       <label class="field"><span>Class code</span>
         <input class="code-in" id="jCode" maxlength="6" autocomplete="off"
@@ -1448,7 +1523,7 @@ function viewStudent(){
       const w=myWork(b.id);
       const st = !w ? 'Not started' : w.status==='submitted' ? 'Submitted' : 'Draft';
       const cls = !w ? '' : w.status==='submitted' ? 'badge-live' : 'badge-draft';
-      return `<div class="brief">
+      return `<div class="brief bcolor" data-bc="${esc(b.id)}">
         <div class="brief-top">
           <div><p class="eyebrow">Brief ${String(i+1).padStart(2,'0')}</p>
             <h3>${esc(b.title)}</h3>
@@ -1503,6 +1578,8 @@ function studentBrief(b, idx){
       <div class="step">
         <div class="step-n ${need&&gotNotes?'done':''}">1</div>
         <div class="step-b"><h4>Find</h4><p>${esc(b.find||'Research the tradition your teacher named.')}</p>
+          ${b.video?`<p class="eyebrow" style="margin:14px 0 0">Watch first — what this tradition is</p>
+            ${embedVideo(b.video,'About '+(b.tradition||b.title))}`:''}
           ${b.style?`<p class="eyebrow" style="margin:14px 0 4px">Study these — hover for the credit</p>
             <div class="pats" data-style="${b.style}"><p class="tiny dim">Loading the archive…</p></div>
             <p class="tiny dim" style="margin-top:10px">Every pattern here is CultureSchool's own work,
@@ -1524,6 +1601,8 @@ function studentBrief(b, idx){
       <div class="step">
         <div class="step-n ${has?'done':''}">2</div>
         <div class="step-b"><h4>Interpret</h4><p>${esc(b.interpret||'Make your print in Print Studio, then attach it here.')}</p>
+          ${b.technique?`<p class="eyebrow" style="margin:14px 0 0">Watch — how it is actually made</p>
+            ${embedVideo(b.technique,'Technique')}`:''}
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
             <a class="btn btn-gold btn-sm" href="${PRINT_STUDIO}" target="_blank" rel="noopener"
                onclick="logStudio()">Open Print Studio ↗</a>
@@ -1559,6 +1638,31 @@ function studentBrief(b, idx){
     </div>
     ${b.turnin?`<div class="turnin"><b>Turn in —</b> ${esc(b.turnin)}</div>`:''}
   </div></div>`;
+}
+
+/* ── video ─────────────────────────────────────────────────────────
+   youtube-nocookie, and no Vimeo tracking params. A classroom should
+   not ship a child's viewing history to an ad network because their
+   teacher embedded a demo. The host allow-list is enforced again in
+   the database, so a bad URL never reaches a student. */
+function embedVideo(url, label){
+  if(!url) return '';
+  const u=String(url);
+  let src=null;
+  let m=/^https:\/\/(?:www\.)?youtube\.com\/watch\?v=([A-Za-z0-9_-]{6,})/.exec(u)
+      || /^https:\/\/youtu\.be\/([A-Za-z0-9_-]{6,})/.exec(u);
+  if(m) src='https://www.youtube-nocookie.com/embed/'+m[1]+'?rel=0&modestbranding=1';
+  if(!src){
+    m=/^https:\/\/(?:player\.)?vimeo\.com\/(?:video\/)?(\d+)/.exec(u);
+    if(m) src='https://player.vimeo.com/video/'+m[1]+'?dnt=1&title=0&byline=0';
+  }
+  if(src) return `<div class="vid"><iframe src="${esc(src)}" title="${esc(label||'Video')}"
+    loading="lazy" allowfullscreen referrerpolicy="no-referrer"
+    sandbox="allow-scripts allow-same-origin allow-presentation"></iframe></div>`;
+  if(/^https:\/\/[^\s]+\.(mp4|webm|mov)(\?[^\s]*)?$/i.test(u))
+    return `<div class="vid"><video src="${esc(u)}" controls preload="metadata"
+      playsinline style="width:100%;height:100%"></video></div>`;
+  return '';   /* anything else is silently dropped rather than embedded */
 }
 
 /* ── field notes ──────────────────────────────────────────────────── */
