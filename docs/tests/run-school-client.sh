@@ -9,11 +9,18 @@ node -e '
 const fs=require("fs");
 let src=fs.readFileSync("dist/school.html","utf8")
   .match(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/)[1];
-src=src.replace(/const sb = window\.supabase[^\n]*\n/,"const sb=null;\n").replace(/^boot\(\);$/m,"");
+/* createClient spans several lines now, so match through its terminator
+   rather than to the first newline — a single-line regex leaves the rest
+   of the object literal orphaned and the whole file fails to parse. */
+src=src.replace(/const sb = window\.supabase\.createClient\([\s\S]*?\n\}\);\n/, "const sb=null;\n")
+       .replace(/const sb = window\.supabase[^\n]*\n/, "const sb=null;\n")
+       .replace(/^boot\(\);$/m, "");
 global.localStorage={getItem:()=>null,setItem(){},removeItem(){}};
 global.sessionStorage={getItem:()=>null,setItem(){},removeItem(){}};
-global.location={search:"",pathname:"/",origin:"x"}; global.history={replaceState(){}};
-global.window={supabase:{createClient:()=>null},scrollTo(){},open(){}};
+global.location={search:"",pathname:"/",origin:"x",href:"https://x/"};
+global.history={replaceState(){},pushState(){},back(){}};
+global.window={supabase:{createClient:()=>null},scrollTo(){},open(){},
+  addEventListener(){},removeEventListener(){}};
 global.document={querySelector:()=>({textContent:"",classList:{add(){},remove(){},toggle(){}},value:"",style:{setProperty(){},removeProperty(){}},innerHTML:""}),
   createElement:()=>({getContext:()=>new Proxy({},{get:()=>()=>{}}),toDataURL:()=>"data:,",style:{},dataset:{}}),
   body:{appendChild(){},classList:{toggle(){}},style:{setProperty(){},removeProperty(){}}},

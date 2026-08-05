@@ -48,7 +48,13 @@ begin
                   where id = cid and lower(teacher_email) = e);
 end $$;
 
-revoke all on function public._school_owns_object(text) from public, anon, authenticated;
+-- authenticated MUST keep EXECUTE: the policy below calls this function,
+-- and a policy is evaluated as the calling role. Revoking it here breaks
+-- every teacher read with "permission denied for function", which the
+-- client sees as a missing image rather than an error. anon never needs
+-- it — students read their own files through the school-upload function.
+revoke all on function public._school_owns_object(text) from public, anon;
+grant execute on function public._school_owns_object(text) to authenticated;
 
 -- ── Policies ───────────────────────────────────────────────────────────
 -- Nothing here grants anon anything. Storage RLS is already enabled by

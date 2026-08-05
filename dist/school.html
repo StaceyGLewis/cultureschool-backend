@@ -304,6 +304,21 @@ body.skin .code-in{background:#251e2d;border-color:var(--rule);color:var(--ink);
 body.skin .fnote-b .src{font-weight:700}
 body.skin .brief-meta{font-weight:700;letter-spacing:.14em}
 
+/* ── breadcrumbs ───────────────────────────────────────────────────
+   Every view is now a real history entry, so the browser back button and
+   an iPad's edge swipe both work. The crumb bar is the visible half of
+   the same thing — people who press back need it to be there, and people
+   who do not need to see where they are. */
+.crumbs{display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+  padding:16px 0 0;font:500 .78rem/1.4 'DM Sans',sans-serif}
+.crumbs a,.crumbs button{background:none;border:0;padding:4px 8px;border-radius:8px;
+  color:var(--muted);cursor:pointer;font:inherit;text-decoration:none;transition:.14s}
+.crumbs a:hover,.crumbs button:hover{background:var(--rule-soft);color:var(--ink)}
+.crumbs .sep{color:var(--faint);user-select:none}
+.crumbs .here{color:var(--ink);font-weight:700;padding:4px 8px;
+  max-width:min(46ch,60vw);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.crumbs .back{border:1px solid var(--rule);margin-right:4px}
+
 /* Video sits inside the step it belongs to: the tradition in Find, the
    technique in Interpret. */
 .vid{position:relative;aspect-ratio:16/9;border-radius:var(--r);overflow:hidden;
@@ -432,7 +447,33 @@ const SUPA_URL  = 'https://qwulthvbwujfehgdegtn.supabase.co';
 const SUPA_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3dWx0aHZid3VqZmVoZ2RlZ3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQyMDcxODIsImV4cCI6MjA1OTc4MzE4Mn0.t9n4eZng6d0jggiPNK-J_DByvEE2L9tqy5Xh_1-TSoQ';
 const PRINT_STUDIO = 'https://coco-print-studio.cultureschool.org';
 const UPLOAD_FN    = SUPA_URL + '/functions/v1/school-upload';
-const sb = window.supabase.createClient(SUPA_URL, SUPA_ANON);
+const sb = window.supabase.createClient(SUPA_URL, SUPA_ANON, {
+  /* Explicit rather than relying on defaults: a teacher who closes the
+     laptop at 3pm should still be signed in at 8am. */
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+});
+
+/* A student session lived in sessionStorage, which is wiped the moment the
+   browser closes — so every kid re-typed the class code every morning, and
+   a tab crash lost them. It now lives in localStorage under its own key.
+
+   The trade is shared devices: a session persists until Leave is pressed
+   or the teacher resets it. That is the right default for a 1:1 iPad and
+   the wrong one for a shared cart, so Leave is prominent and the roster
+   has Reset session. */
+const SESS_KEY = 'cs_school_sess_v2';
+const Sess = {
+  get(){
+    try{
+      const v = localStorage.getItem(SESS_KEY) || sessionStorage.getItem('cs_school_sess');
+      return v ? JSON.parse(v) : null;
+    }catch(_){ return null; }
+  },
+  set(s){ try{ localStorage.setItem(SESS_KEY, JSON.stringify(s));
+                sessionStorage.removeItem('cs_school_sess'); }catch(_){} },
+  clear(){ try{ localStorage.removeItem(SESS_KEY);
+                sessionStorage.removeItem('cs_school_sess'); }catch(_){} }
+};
 
 /* Demo mode is an explicit opt-in: coco-print-studio-school…/?demo=1
    It runs entirely on localStorage with a seeded class, so a showroom
@@ -822,7 +863,55 @@ const liveBriefs = () => State.view==='student'
 const findBrief = id => liveBriefs().find(b=>b.id===id) || briefById(id);
 const curClass = () => State.classes.find(c=>c.id===State.classId) || null;
 
-function go(view, patch){ Object.assign(State,{view},patch||{}); render(); window.scrollTo(0,0); }
+/* Navigation is pushed to history so the browser back button and an
+   iPad edge-swipe do the obvious thing. Without this, back left the app
+   entirely — which on a school iPad means losing your place mid-brief. */
+function navSnapshot(){
+  return { view:State.view, briefOpen:State.briefOpen, tab:State.tab,
+           classId:State.classId, fLevel:State.fLevel, fSubject:State.fSubject };
+}
+function go(view, patch, opts){
+  Object.assign(State,{view},patch||{});
+  pushNav(opts && opts.replace);
+  render(); window.scrollTo(0,0);
+}
+let _navReady=false;
+function pushNav(replace){
+  if(!_navReady) return;
+  const snap=navSnapshot();
+  try{
+    if(replace) history.replaceState(snap,'',location.href);
+    else        history.pushState(snap,'',location.href);
+  }catch(_){}
+}
+window.addEventListener('popstate', ev => {
+  const snap = ev.state;
+  if(!snap){ /* back past our first entry — land on something sane */
+    if(State.session){ State.briefOpen=null; State.view='student'; }
+    else State.view='gate';
+    render(); return;
+  }
+  Object.assign(State, {
+    view: snap.view, briefOpen: snap.briefOpen ?? null, tab: snap.tab || State.tab,
+    classId: snap.classId ?? State.classId,
+    fLevel: snap.fLevel || '', fSubject: snap.fSubject || ''
+  });
+  /* A teacher landing back on a class needs its data, not a blank tab. */
+  if(State.view==='teacher' && State.classId && State.teacher){
+    loadClass(State.classId).then(render);
+  } else render();
+});
+
+/* ── the crumb bar ─────────────────────────────────────────────────── */
+function crumbs(trail){
+  return `<nav class="crumbs" aria-label="Breadcrumb">
+    <button class="back" onclick="history.back()" title="Back">← Back</button>
+    ${trail.map((c,i)=> i===trail.length-1
+      ? `<span class="here" aria-current="page">${esc(c.label)}</span>`
+      : `<button onclick="${c.go}">${esc(c.label)}</button><span class="sep">›</span>`
+    ).join('')}
+  </nav>`;
+}
 
 function render(){
   const R={ gate:viewGate, teacher:viewTeacher, join:viewJoin, student:viewStudent };
@@ -854,8 +943,6 @@ function renderTopRight(){
   } else if(State.view==='student' && State.session){
     el.innerHTML = `<span class="tiny">${esc(State.session.name)}</span>
       <button class="btn btn-ghost btn-sm" onclick="leaveClass()">Leave</button>`;
-  } else if(State.view!=='gate'){
-    el.innerHTML = `<button class="btn btn-ghost btn-sm" onclick="go('gate')">← Back</button>`;
   } else el.innerHTML = DEMO ? `<span class="badge badge-draft">Demo mode</span>` : '';
 }
 
@@ -903,6 +990,10 @@ function viewGate(){
       teacher chooses the format of, and a device token. Nothing that identifies a child is
       stored — which is what keeps this outside FERPA and COPPA rather than compliant with them.
     </div>
+    ${State.session?`<div class="note" style="max-width:620px;margin:26px auto 0;text-align:left">
+      <b>You are still in ${esc(State.session.class_name||'your class')}.</b>
+      <button class="btn btn-gold btn-sm" style="margin-left:10px"
+        onclick="go('student')">Back to my assignments →</button></div>`:''}
     <p class="tiny dim" style="margin-top:26px">
       ${DEMO ? 'Demo mode — this device only, nothing is saved to the server.'
              : 'Work is saved to your class and syncs across devices.'}
@@ -918,7 +1009,13 @@ function viewGate(){
 function viewTeacher(){
   if(!State.teacher) return teacherSignIn();
   const cls=curClass();
-  return `<div class="wrap"><div class="cols">
+  const tabLabel={briefs:'Briefs',gallery:'Class gallery',roster:'Roster'}[State.tab]||'Briefs';
+  return `<div class="wrap">
+    ${crumbs(cls ? [{label:'Home', go:"go('gate')"},
+                    {label:cls.name, go:"setTab('briefs')"},
+                    {label:tabLabel}]
+                 : [{label:'Home', go:"go('gate')"},{label:'Your classes'}])}
+    <div class="cols">
     <aside class="side">
       <div class="card">
         <h3>Classes</h3>
@@ -1083,7 +1180,7 @@ function teacherClass(c){
       State.tab==='briefs'  ? tabBriefs(c) :
       State.tab==='gallery' ? tabGallery(c) : tabRoster(c) }</div>`;
 }
-function setTab(t){ State.tab=t; render(); }
+function setTab(t){ State.tab=t; pushNav(); render(); }
 
 async function toggleJoin(id, open){
   try{ await API.setJoinOpen(id, open); await loadTeacher();
@@ -1489,7 +1586,8 @@ async function toggleFeature(workId,on){
    STUDENT — join
    ══════════════════════════════════════════════════════════════ */
 function viewJoin(){
-  return `<div class="join">
+  return `<div class="wrap">${crumbs([{label:'Home', go:"go('gate')"},{label:'Join a class'}])}</div>
+  <div class="join">
     <p class="eyebrow" style="text-align:center">Student</p>
     <h1 style="font-size:clamp(2rem,7vw,2.6rem);text-align:center;margin:10px 0 20px;letter-spacing:-.015em">Join your class</h1>
     <div class="joinbar" id="joinBar"></div>
@@ -1533,7 +1631,7 @@ async function doJoin(){
       State.session={ token:r.session_token, name:r.display_name,
                       class_name:r.class_name, briefs:[] };
     }
-    try{ sessionStorage.setItem('cs_school_sess', JSON.stringify(State.session)); }catch(_){}
+    Sess.set(State.session);
     await loadStudent();
     go('student');
   }catch(e){
@@ -1545,8 +1643,11 @@ async function doJoin(){
   }
 }
 
-function leaveClass(){ State.session=null; State.works=[]; State.notes=[]; State.briefOpen=null;
-  try{ sessionStorage.removeItem('cs_school_sess'); }catch(_){} go('gate'); }
+function leaveClass(){
+  if(!confirm('Leave this class on this device? Your work is kept — you can rejoin with the same code and name.')) return;
+  State.session=null; State.works=[]; State.notes=[]; State.briefOpen=null;
+  Sess.clear(); go('gate');
+}
 
 async function loadStudent(){
   const s=State.session; if(!s) return;
@@ -1568,7 +1669,7 @@ async function loadStudent(){
     State.works=(st.works||[]).map(w=>({...w, _url:null}));
   }catch(e){
     /* a dead token means the teacher reset the session */
-    State.session=null; try{ sessionStorage.removeItem('cs_school_sess'); }catch(_){}
+    State.session=null; Sess.clear();
     toast('Your session ended — join again with your class code');
     go('join');
   }
@@ -1632,7 +1733,10 @@ function viewStudent(){
   const levels=[...new Set(assigned.map(b=>briefLevel(b).key))];
   const subjects=[...new Set(assigned.map(briefSubject))];
 
-  return `<div class="wrap"><div class="deck">
+  return `<div class="wrap">
+    ${crumbs([{label:'Home', go:"leaveToGate()"},
+              {label:s.class_name||'My class'}])}
+    <div class="deck">
 
     <aside class="locker">
       <div class="locker-card">
@@ -1701,7 +1805,11 @@ function viewStudent(){
   </div></div>`;
 }
 
-function setFacet(k,v){ State[k]=v; render(); }
+function setFacet(k,v){ State[k]=v; pushNav(); render(); }
+
+/* Home, not Leave. A student pressing a breadcrumb expects to go back a
+   level, not to be signed out and made to re-type the class code. */
+function leaveToGate(){ State.briefOpen=null; go('gate'); }
 
 /* One card per brief. The colour band is the tradition's own, so a
    student learns the palette by picking assignments out of a grid. */
@@ -1736,9 +1844,9 @@ function openBrief(id){
   const title=(s.briefs||[]).find(b=>b.id===id)?.title || id;
   if(DEMO) Store.log(s._cid,s._mid,'open_brief',title);
   else API.log(s.token,'open_brief',title);
-  render();
+  pushNav(); render(); window.scrollTo(0,0);
 }
-function closeBrief(){ State.briefOpen=null; render(); }
+function closeBrief(){ State.briefOpen=null; pushNav(); render(); window.scrollTo(0,0); }
 
 function studentBrief(b, idx){
   const w=myWork(b.id);
@@ -1748,9 +1856,12 @@ function studentBrief(b, idx){
   const notes=myNotes(b.id), need=b.min_notes||0;
   const gotNotes=notes.length>=need;
   const done=w&&w.status==='submitted';
-  return `<div class="wrap"><div class="stu">
-    <button class="btn btn-ghost btn-sm" onclick="closeBrief()">← All assignments</button>
-    <p class="eyebrow" style="margin-top:22px">Brief ${String((idx||0)+1).padStart(2,'0')}${b.tradition?' · '+esc(b.tradition):''}</p>
+  return `<div class="wrap">
+    ${crumbs([{label:'Home', go:"leaveToGate()"},
+              {label:State.session.class_name||'My class', go:"closeBrief()"},
+              {label:b.title}])}
+    <div class="stu">
+    <p class="eyebrow" style="margin-top:8px">Brief ${String((idx||0)+1).padStart(2,'0')}${b.tradition?' · '+esc(b.tradition):''}</p>
     <h1>${esc(b.title)}</h1>
     ${b.meta?`<p class="brief-meta">${esc(b.meta)}</p>`:''}
     ${b.style?`<div class="tradstrip" id="tradStrip"></div>
@@ -2250,12 +2361,13 @@ function demoPrint(brief,i){
    ══════════════════════════════════════════════════════════════ */
 async function boot(){
   render();   /* paint the gate immediately; auth resolves underneath */
+  _navReady=true; pushNav(true);
 
   if(DEMO){
     if(!Store.classes().length) State.teacher = seedDemo();
     else State.teacher = 'demo@school.edu';
     try{
-      const s=JSON.parse(sessionStorage.getItem('cs_school_sess')||'null');
+      const s=Sess.get();
       if(s && s.token && String(s.token).startsWith('demo:') && Store.classById(s._cid)){
         State.session=s; await loadStudent(); return go('student');
       }
@@ -2265,7 +2377,7 @@ async function boot(){
 
   /* A student session survives a reload; the token is the only thing kept. */
   try{
-    const s=JSON.parse(sessionStorage.getItem('cs_school_sess')||'null');
+    const s=Sess.get();
     if(s && s.token && !String(s.token).startsWith('demo:')){
       State.session=s; await loadStudent();
       if(State.session) return go('student');

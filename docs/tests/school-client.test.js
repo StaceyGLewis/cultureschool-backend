@@ -88,5 +88,67 @@ t("no external asset library is reachable from school", ()=>{
   const h=require("fs").readFileSync("/Users/staceygrant/Documents/cultureschool-backend/dist/school.html","utf8");
   return !/openverse|metmuseum|iconify/i.test(h.replace(/external libraries \(Openverse \/ Met \/ Iconify\)/g,'')); });
 
+
+console.log("\nSESSION SURVIVES A CLOSED BROWSER");
+t("the session store writes to localStorage, not sessionStorage", ()=>{
+  const seen={}; const realL=global.localStorage, realS=global.sessionStorage;
+  global.localStorage={getItem:k=>seen[k]??null,setItem:(k,v)=>{seen[k]=v},removeItem:k=>{delete seen[k]}};
+  global.sessionStorage={getItem:()=>null,setItem:()=>{throw new Error('must not be used')},removeItem(){}};
+  Sess.set({token:'abc',name:'M'});
+  const ok = !!seen[SESS_KEY] && JSON.parse(seen[SESS_KEY]).token==='abc';
+  global.localStorage=realL; global.sessionStorage=realS;
+  return ok; });
+t("an existing sessionStorage session is migrated, not lost", ()=>{
+  const store={}; const realL=global.localStorage, realS=global.sessionStorage;
+  global.localStorage={getItem:k=>store[k]??null,setItem:(k,v)=>{store[k]=v},removeItem:k=>{delete store[k]}};
+  global.sessionStorage={getItem:k=>k==='cs_school_sess'?JSON.stringify({token:'old'}):null,
+                         setItem(){},removeItem(){}};
+  const got=Sess.get();
+  global.localStorage=realL; global.sessionStorage=realS;
+  return got && got.token==='old'; });
+t("clear removes both the new key and the legacy one", ()=>{
+  const store={cs_school_sess_v2:'x'}; let legacyCleared=false;
+  const realL=global.localStorage, realS=global.sessionStorage;
+  global.localStorage={getItem:k=>store[k]??null,setItem:(k,v)=>{store[k]=v},removeItem:k=>{delete store[k]}};
+  global.sessionStorage={getItem:()=>null,setItem(){},removeItem:k=>{if(k==='cs_school_sess')legacyCleared=true}};
+  Sess.clear();
+  const ok = !store.cs_school_sess_v2 && legacyCleared;
+  global.localStorage=realL; global.sessionStorage=realS;
+  return ok; });
+t("supabase auth is told to persist explicitly", ()=>{
+  const h=require("fs").readFileSync("/Users/staceygrant/Documents/cultureschool-backend/dist/school.html","utf8");
+  return /persistSession:\s*true/.test(h) && /autoRefreshToken:\s*true/.test(h); });
+
+console.log("\nBACK AND BREADCRUMBS");
+t("crumbs render a back button and the trail",
+  ()=>{ const h=crumbs([{label:'Home',go:"go('gate')"},{label:'Period 3'}]);
+        return h.includes('history.back()') && h.includes('Home') && h.includes('Period 3'); });
+t("the last crumb is marked as the current page",
+  ()=>crumbs([{label:'A',go:'x'},{label:'B'}]).includes('aria-current="page"'));
+t("crumb labels are escaped",
+  ()=>!crumbs([{label:'<script>x</script>'}]).includes('<script>x'));
+t("navSnapshot captures what a view needs to be restored",
+  ()=>{ const k=Object.keys(navSnapshot());
+        return ['view','briefOpen','tab','classId','fLevel','fSubject'].every(x=>k.includes(x)); });
+t("opening and closing a brief are history entries",
+  ()=>{ const h=require("fs").readFileSync("/Users/staceygrant/Documents/cultureschool-backend/dist/school.html","utf8");
+        return /function openBrief[\s\S]{0,400}pushNav\(\)/.test(h)
+            && /function closeBrief[\s\S]{0,120}pushNav\(\)/.test(h); });
+t("a popstate handler exists",
+  ()=>require("fs").readFileSync("/Users/staceygrant/Documents/cultureschool-backend/dist/school.html","utf8")
+       .includes("addEventListener('popstate'"));
+t("Home from a student view does NOT clear the session", ()=>{
+  State.session={token:'t',name:'M',class_name:'P3',briefs:[]};
+  State.briefOpen='adinkra';
+  leaveToGate();
+  return State.session!==null && State.briefOpen===null && State.view==='gate'; });
+t("the gate offers a signed-in student their class back", ()=>{
+  State.session={token:'t',name:'M',class_name:'Period 3',briefs:[]};
+  const h=viewGate();
+  return h.includes('You are still in') && h.includes('Back to my assignments'); });
+t("leaving asks first, so a shared device is not wiped by accident",
+  ()=>/function leaveClass\(\)\s*\{\s*\n\s*if\(!confirm/.test(
+       require("fs").readFileSync("/Users/staceygrant/Documents/cultureschool-backend/dist/school.html","utf8")));
+
 console.log("\n"+_p+" passed, "+_f+" failed");
 process.exit(_f?1:0);
