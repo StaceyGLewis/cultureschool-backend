@@ -325,6 +325,70 @@ body.skin .bcolor .prog i.on{background:var(--bc,var(--gold));
   box-shadow:0 0 14px color-mix(in srgb,var(--bc,var(--gold)) 40%,transparent)}
 body.skin .bcolor .btn-primary{background:var(--bc,var(--gold));color:#2b2233}
 
+/* ── the locker layout ─────────────────────────────────────────────
+   A vertical list works for two assignments and falls apart at ten. This
+   is three regions: a locker rail that holds who you are and what you can
+   filter by, a canvas that holds the grid of work, and an up-next panel
+   that answers "what do I do now" without reading anything. */
+.deck{display:grid;grid-template-columns:216px minmax(0,1fr) 244px;gap:22px;
+  align-items:start;padding:26px 0 80px}
+.locker{position:sticky;top:80px;display:flex;flex-direction:column;gap:14px}
+.locker-card{background:var(--paper);border:1px solid var(--rule);
+  border-radius:var(--r-lg);padding:16px 15px}
+.locker-card h4{margin:0 0 10px;font:700 .6rem/1 'DM Sans',sans-serif;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--gold)}
+.facet{display:block;width:100%;text-align:left;border:1px solid transparent;background:none;
+  color:var(--body);border-radius:99px;padding:7px 11px;margin-bottom:3px;
+  font:500 .8rem/1.2 'DM Sans',sans-serif;transition:.14s}
+.facet:hover{background:var(--rule-soft);color:var(--ink)}
+.facet[aria-pressed="true"]{background:var(--gold);color:#2b2233;font-weight:700}
+.facet .n{float:right;opacity:.65;font-variant-numeric:tabular-nums}
+
+/* The canvas: a grid of work, not a stack of paragraphs. */
+.deckgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(224px,1fr));gap:16px}
+.tile{position:relative;display:flex;flex-direction:column;text-align:left;
+  background:var(--paper);border:1px solid var(--rule);border-radius:var(--r-lg);
+  overflow:hidden;cursor:pointer;transition:.16s;padding:0}
+.tile:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg);
+  border-color:color-mix(in srgb,var(--bc,var(--gold)) 55%,var(--rule))}
+.tile-top{height:76px;position:relative;display:flex;align-items:flex-end;
+  background:linear-gradient(135deg,
+    color-mix(in srgb,var(--bc,var(--gold)) 82%,#000),
+    color-mix(in srgb,var(--bc,var(--gold)) 34%,#000))}
+.tile-swatch{position:absolute;inset:auto 0 0 0;display:flex;height:7px}
+.tile-swatch i{flex:1}
+.tile-lvl{position:absolute;top:9px;right:9px;padding:3px 9px;border-radius:99px;
+  background:rgba(0,0,0,.42);color:#fff;font:700 .6rem/1.5 'DM Sans',sans-serif;
+  letter-spacing:.06em}
+.tile-b{padding:14px 15px 16px;flex:1;display:flex;flex-direction:column}
+.tile-b .trad{font:700 .58rem/1.3 'DM Sans',sans-serif;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--bc,var(--gold));margin-bottom:6px}
+.tile-b h3{font-size:1.12rem;line-height:1.2;margin:0 0 8px}
+.tile-b .need{font-size:.74rem;line-height:1.5;color:var(--muted);margin:0 0 12px}
+.tile-foot{margin-top:auto;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.tile .prog{margin:0;flex:1}
+
+.upnext{position:sticky;top:80px;display:flex;flex-direction:column;gap:14px}
+.upnext .locker-card p{margin:0 0 10px;font-size:.82rem;line-height:1.55;color:var(--body)}
+.ring{display:flex;align-items:baseline;gap:6px;margin-bottom:10px}
+.ring b{font:700 2rem/1 'DM Sans',sans-serif;color:var(--gold)}
+.ring span{font-size:.76rem;color:var(--muted)}
+
+/* How-to, folded away until wanted. */
+.howto{border:1px solid var(--rule);border-radius:var(--r);background:var(--cream);
+  padding:0;margin:0 0 12px;overflow:hidden}
+.howto summary{cursor:pointer;padding:11px 14px;font:700 .78rem/1.3 'DM Sans',sans-serif;
+  color:var(--gold);list-style:none}
+.howto summary::-webkit-details-marker{display:none}
+.howto summary::before{content:'▸ ';display:inline-block;transition:.15s}
+.howto[open] summary::before{transform:rotate(90deg)}
+.howto ol{margin:0;padding:0 16px 14px 34px}
+.howto li{font-size:.82rem;line-height:1.6;color:var(--body);margin-bottom:7px}
+body.skin .howto{background:#2f2639}
+
+@media (max-width:1080px){ .deck{grid-template-columns:196px minmax(0,1fr)} .upnext{display:none} }
+@media (max-width:760px){ .deck{grid-template-columns:1fr} .locker{position:static} }
+
 /* The join screen is the very first thing anyone sees. Give it a spine
    of real tradition colour rather than an empty dark box. */
 .joinbar{display:flex;height:8px;border-radius:99px;overflow:hidden;margin:0 0 26px}
@@ -716,6 +780,13 @@ async function paintBriefColours(){
     if(!b) continue;
     el.style.setProperty('--bc', await accentForBrief(b));
   }
+  for(const el of document.querySelectorAll('[data-swatch]')){
+    const b=(State.session?.briefs||[]).find(x=>x.id===el.dataset.swatch);
+    if(!b || !b.style) continue;
+    const rows=await patternsForStyle(b.style, 6);
+    const cols=[...new Set(rows.flatMap(r=>r.colors||[]))].slice(0,6);
+    if(cols.length) el.innerHTML=cols.map(c=>`<i style="background:${esc(c)}"></i>`).join('');
+  }
   const bar=document.getElementById('joinBar');
   if(bar && !bar.dataset.done){
     const rows=await patternsForStyle('adinkra', 6);
@@ -740,7 +811,7 @@ const State = {
   classes:[], classId:null, tab:'briefs', roster:[], gallery:[],
   session:null,                 /* {token,name,class_name,briefs[]} */
   works:[], notes:[], briefOpen:null,
-  briefs:[],                    /* teacher: templates + this class's own */
+  briefs:[], fLevel:'', fSubject:'',   /* locker facets */
   styles:[],                    /* archive styles a brief may bind to */
   editing:null                  /* the brief being written, or null */
 };
@@ -1505,6 +1576,41 @@ async function loadStudent(){
 const myWork  = bid => State.works.find(w=>w.brief_id===bid);
 const myNotes = bid => State.notes.filter(n=>n.brief_id===bid);
 
+/* Difficulty is not a field anyone fills in — it is what the brief already
+   demands. A 250-word statement with three documented sources IS harder
+   than 150 and two, so derive it rather than asking a teacher to guess. */
+function briefLevel(b){
+  const score=(b.words||150)/50 + (b.min_notes||0)*1.2 + (b.style?0:1);
+  if(score < 4.5) return {key:'starter', label:'Starter'};
+  if(score < 7)   return {key:'core',    label:'Core'};
+  return {key:'deep', label:'Deep dive'};
+}
+/* The subject facet is the tradition, because that is what a student
+   actually recognises — not "Visual Arts". */
+const briefSubject = b => (b.tradition||'').split('·')[0].trim() || 'General';
+
+function briefDone(b){
+  const w=myWork(b.id);
+  return { notes: myNotes(b.id).length >= (b.min_notes||0),
+           print: !!(w && (w.image_path||w._url)),
+           words: words(w?w.statement:'') >= b.words,
+           status: w ? w.status : null };
+}
+/* What to do next, across everything assigned — so a student never has to
+   work out where they were. */
+function upNext(list){
+  for(const b of list){
+    const d=briefDone(b);
+    if(d.status==='submitted') continue;
+    if(!d.notes) return { b, what:'Find a source', why:`${myNotes(b.id).length} of ${b.min_notes} documented` };
+    if(!d.print) return { b, what:'Make your print', why:'Open the studio — your palette is loaded' };
+    if(!d.words) return { b, what:'Write the statement',
+                          why:`${words(myWork(b.id)?.statement)} of ${b.words} words` };
+    return { b, what:'Turn it in', why:'Everything is ready' };
+  }
+  return null;
+}
+
 /* ══════════════════════════════════════════════════════════════
    STUDENT — assignments
    ══════════════════════════════════════════════════════════════ */
@@ -1516,33 +1622,112 @@ function viewStudent(){
     const b=assigned.find(x=>x.id===State.briefOpen);
     if(b) return studentBrief(b, assigned.indexOf(b));
   }
-  return `<div class="wrap"><div class="stu">
-    <p class="eyebrow">${esc(s.class_name||'')}</p>
-    <h1>Your assignments</h1>
-    <p class="tiny dim" style="margin-bottom:28px">Signed in as ${esc(s.name)} · nothing else about you is stored.</p>
-    ${ assigned.length ? assigned.map((b,i)=>{
-      const w=myWork(b.id);
-      const st = !w ? 'Not started' : w.status==='submitted' ? 'Submitted' : 'Draft';
-      const cls = !w ? '' : w.status==='submitted' ? 'badge-live' : 'badge-draft';
-      return `<div class="brief bcolor" data-bc="${esc(b.id)}">
-        <div class="brief-top">
-          <div><p class="eyebrow">Brief ${String(i+1).padStart(2,'0')}</p>
-            <h3>${esc(b.title)}</h3>
-            <p class="brief-meta">${esc(b.tradition||b.meta||'')}</p></div>
-          <span class="badge ${cls}">${st}</span>
+  const lvl=State.fLevel||'', sub=State.fSubject||'';
+  const shown=assigned.filter(b=>
+    (!lvl || briefLevel(b).key===lvl) && (!sub || briefSubject(b)===sub));
+  const next=upNext(assigned);
+  const doneCount=assigned.filter(b=>briefDone(b).status==='submitted').length;
+
+  const count=(fn,val)=>assigned.filter(b=>fn(b)===val).length;
+  const levels=[...new Set(assigned.map(b=>briefLevel(b).key))];
+  const subjects=[...new Set(assigned.map(briefSubject))];
+
+  return `<div class="wrap"><div class="deck">
+
+    <aside class="locker">
+      <div class="locker-card">
+        <h4>My class</h4>
+        <p style="margin:0;font:500 .92rem/1.3 'DM Sans',sans-serif">${esc(s.class_name||'')}</p>
+        <p class="tiny dim" style="margin:6px 0 0">${esc(s.name)}</p>
+      </div>
+      ${subjects.length>1?`<div class="locker-card">
+        <h4>Traditions</h4>
+        <button class="facet" aria-pressed="${!sub}" onclick="setFacet('fSubject','')">
+          All <span class="n">${assigned.length}</span></button>
+        ${subjects.map(x=>`<button class="facet" aria-pressed="${sub===x}"
+          onclick="setFacet('fSubject','${esc(x)}')">${esc(x)}
+          <span class="n">${count(briefSubject,x)}</span></button>`).join('')}
+      </div>`:''}
+      ${levels.length>1?`<div class="locker-card">
+        <h4>Level</h4>
+        <button class="facet" aria-pressed="${!lvl}" onclick="setFacet('fLevel','')">
+          All <span class="n">${assigned.length}</span></button>
+        ${levels.map(k=>{ const lb=assigned.find(b=>briefLevel(b).key===k);
+          return `<button class="facet" aria-pressed="${lvl===k}" onclick="setFacet('fLevel','${k}')">
+            ${esc(briefLevel(lb).label)}
+            <span class="n">${assigned.filter(b=>briefLevel(b).key===k).length}</span></button>`;}).join('')}
+      </div>`:''}
+      <div class="locker-card">
+        <h4>Progress</h4>
+        <div class="ring"><b>${doneCount}</b><span>of ${assigned.length} turned in</span></div>
+        <div class="prog" style="margin:0">
+          ${assigned.map(b=>`<i class="${briefDone(b).status==='submitted'?'on':''}"></i>`).join('')}
         </div>
-        <p style="font-size:.88rem;line-height:1.62;color:var(--body);margin:0 0 4px">${esc(b.interpret||'')}</p>
-        ${(()=>{ const nt=myNotes(b.id).length>=(b.min_notes||0),
-                       im=!!(w&&(w.image_path||w._url)),
-                       wd=words(w?w.statement:'')>=b.words;
-          return `<div class="prog" style="margin:12px 0 16px">
-            <i class="${nt?'on':''}"></i><i class="${im?'on':''}"></i><i class="${wd?'on':''}"></i></div>`; })()}
-        <button class="btn btn-primary btn-sm" onclick="openBrief('${b.id}')">
-          ${w?'Continue →':'Start →'}</button>
-      </div>`; }).join('')
-    : `<div class="empty"><h3>Nothing assigned yet</h3>
-        <p class="lede" style="margin:0 auto">Your teacher hasn't assigned a brief. Check back soon.</p></div>` }
+      </div>
+    </aside>
+
+    <section>
+      <h1 style="margin-bottom:6px">Your assignments</h1>
+      <p class="tiny dim" style="margin-bottom:22px">
+        ${shown.length} of ${assigned.length} shown · nothing about you is stored beyond your name.</p>
+      ${ shown.length ? `<div class="deckgrid">${shown.map(b=>briefTile(b,assigned.indexOf(b))).join('')}</div>`
+        : `<div class="empty"><h3>${assigned.length?'Nothing matches that filter':'Nothing assigned yet'}</h3>
+            <p class="lede" style="margin:0 auto">${assigned.length
+              ? 'Clear the filters in your locker to see everything.'
+              : "Your teacher hasn't assigned a brief. Check back soon."}</p></div>` }
+    </section>
+
+    <aside class="upnext">
+      ${next?`<div class="locker-card bcolor" data-bc="${esc(next.b.id)}">
+        <h4>Up next</h4>
+        <p style="font-weight:500;color:var(--ink)">${esc(next.what)}</p>
+        <p class="tiny dim" style="margin:-4px 0 12px">${esc(next.why)}</p>
+        <button class="btn btn-primary btn-sm" style="width:100%"
+          onclick="openBrief('${esc(next.b.id)}')">${esc(next.b.title.slice(0,38))} →</button>
+      </div>`:`<div class="locker-card">
+        <h4>Up next</h4>
+        <p class="tiny dim" style="margin:0">${assigned.length
+          ? 'Everything is turned in. Nice.' : 'Nothing assigned yet.'}</p>
+      </div>`}
+      <div class="locker-card">
+        <h4>How this works</h4>
+        <p class="tiny dim" style="margin:0;line-height:1.65">Every brief is three steps —
+          <b style="color:var(--body)">find</b> real sources,
+          <b style="color:var(--body)">make</b> something of your own,
+          <b style="color:var(--body)">say</b> what you borrowed and what you changed.
+          You cannot turn in until all three are done.</p>
+      </div>
+    </aside>
   </div></div>`;
+}
+
+function setFacet(k,v){ State[k]=v; render(); }
+
+/* One card per brief. The colour band is the tradition's own, so a
+   student learns the palette by picking assignments out of a grid. */
+function briefTile(b, idx){
+  const d=briefDone(b), lv=briefLevel(b);
+  const st = d.status==='submitted' ? 'Turned in'
+           : (d.notes||d.print||d.words) ? 'In progress' : 'Not started';
+  const cls = d.status==='submitted' ? 'badge-live'
+            : (d.notes||d.print||d.words) ? 'badge-draft' : '';
+  return `<button class="tile bcolor" data-bc="${esc(b.id)}" onclick="openBrief('${esc(b.id)}')">
+    <div class="tile-top">
+      <span class="tile-lvl">${esc(lv.label)}</span>
+      <div class="tile-swatch" data-swatch="${esc(b.id)}"></div>
+    </div>
+    <div class="tile-b">
+      ${b.tradition?`<div class="trad">${esc(b.tradition)}</div>`:''}
+      <h3>${esc(b.title)}</h3>
+      <p class="need">${b.min_notes?`${b.min_notes} source${b.min_notes===1?'':'s'} · `:''}${b.words} words${b.video||b.technique?' · has video':''}</p>
+      <div class="tile-foot">
+        <div class="prog">
+          <i class="${d.notes?'on':''}"></i><i class="${d.print?'on':''}"></i><i class="${d.words?'on':''}"></i>
+        </div>
+        <span class="badge ${cls}">${st}</span>
+      </div>
+    </div>
+  </button>`;
 }
 
 function openBrief(id){
@@ -1616,6 +1801,9 @@ function studentBrief(b, idx){
             The studio opens with ${b.style?"this tradition's palette":'your class palette'} already
             loaded. When you are done, hit <b>Send to my assignment</b> there and it lands here —
             no downloading, no hunting for the file.</p>
+          ${(()=>{ const tp=toolPathFor(b); if(!tp) return '';
+            return `<details class="howto"><summary>How to make a ${esc(tp.label.toLowerCase())} in the studio</summary>
+              <ol>${tp.steps.map(x=>`<li>${x}</li>`).join('')}</ol></details>`; })()}
           <input type="file" id="upl" accept="image/*" style="display:none" onchange="attachWork(event,'${b.id}')">
           <div class="drop" id="dropBox" onclick="document.getElementById('upl').click()">
             ${has?(w._url?`<img src="${esc(w._url)}" alt="Your print">`
@@ -1670,6 +1858,42 @@ function embedVideo(url, label){
     return `<div class="vid"><video src="${esc(u)}" controls preload="metadata"
       playsinline style="width:100%;height:100%"></video></div>`;
   return '';   /* anything else is silently dropped rather than embedded */
+}
+
+/* ── which studio tools this brief actually needs ──────────────────
+   Print Studio can do everything the briefs ask for — stamp mode places
+   copies by clicking, Scatter has Structured and Half-drop layouts with
+   a Stamp frame, Repeat Mode shows the tile boundary with edge wrapping,
+   and a drawing can be saved as a reusable motif. None of that is
+   discoverable by a fifteen-year-old staring at a toolbar, so the brief
+   names the path. */
+const TOOL_PATHS = {
+  stamped: { label:'Stamped cloth repeat', steps:[
+    'Draw your symbol with the pencil, then <b>✦ Save as motif</b>',
+    'Open <b>Scatter</b> and choose <b>Structured</b> for a grid, or <b>Half-drop</b> for the offset a real loom gives',
+    'Set <b>Frame: Stamp</b> so each one reads as a pressed block',
+    'Turn on <b>Repeat Mode ⊡</b> and drag to the edge — the ghost shows how it wraps',
+    'Use <b>Preview how your design tiles</b> to check the seam' ]},
+  resist: { label:'Resist pattern', steps:[
+    'Draw the shape that stays <i>untouched</i> — that is your resist',
+    'Use <b>Symmetry</b> while drawing so the fold repeats like real cloth',
+    'Open <b>Scatter</b> → <b>Tossed</b> with slight rotation, so it reads as hand-folded, not printed',
+    'Turn on <b>Repeat Mode ⊡</b> to check the tile' ]},
+  improv: { label:'Improvised composition', steps:[
+    'Build blocks as separate drawings, then <b>✦ Save as motif</b> for each',
+    'Place them by hand — do not use Scatter; the point is that you decided',
+    'Break the grid deliberately at least once',
+    'Use the palette buckets to recolour a block after you place it' ]}
+};
+/* Bound by the tradition the brief points at, since that is what decides
+   whether the answer is a stamp, a resist, or a free composition. */
+function toolPathFor(b){
+  if(!b) return null;
+  const s=(b.style||'')+' '+(b.title||'')+' '+(b.tradition||'');
+  if(/adinkra|kente|stamp|block|kuba|ndebele|tapa|siapo/i.test(s)) return TOOL_PATHS.stamped;
+  if(/shibori|batik|ikat|resist|indigo|tie/i.test(s))              return TOOL_PATHS.resist;
+  if(/gee|quilt|improv|patch/i.test(s))                            return TOOL_PATHS.improv;
+  return b.style ? TOOL_PATHS.stamped : TOOL_PATHS.improv;
 }
 
 /* ── field notes ──────────────────────────────────────────────────── */
