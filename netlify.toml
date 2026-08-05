@@ -46,6 +46,16 @@
   status = 200
 
 [[redirects]]
+  from = "https://coco-print-studio-school.cultureschool.org/*"
+  to   = "/school"
+  status = 200
+
+[[redirects]]
+  from = "https://coco-print-studio-school.cultureschool.org"
+  to   = "/school"
+  status = 200
+
+[[redirects]]
   from = "https://coco-print-studio.cultureschool.org/*"
   to   = "/print"
   status = 200

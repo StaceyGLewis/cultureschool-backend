@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   try {
-    const { session_token, brief_id, image, credits } = await req.json();
+    const { session_token, brief_id, image, credits, mode } = await req.json();
 
     if (!session_token || typeof session_token !== "string") {
       return json({ error: "session_token required" }, 400);
@@ -46,6 +46,29 @@ Deno.serve(async (req) => {
     if (!brief_id || typeof brief_id !== "string") {
       return json({ error: "brief_id required" }, 400);
     }
+
+    const url_ = Deno.env.get("SUPABASE_URL")!;
+    const anon_ = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const service_ = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    // ── read mode ─────────────────────────────────────────────────────
+    // A student is anon and cannot sign a storage URL themselves. This
+    // re-issues one for their OWN work after a reload, using the same
+    // derived path — so it can only ever hand back their own file.
+    if (mode === "read") {
+      const asStudent0 = createClient(url_, anon_);
+      const { data: t0, error: e0 } = await asStudent0.rpc(
+        "school_upload_target",
+        { p_session: session_token, p_brief: brief_id },
+      );
+      if (e0 || !t0?.path) return json({ error: "not authorised" }, 403);
+      const admin0 = createClient(url_, service_);
+      const { data: s0 } = await admin0.storage
+        .from(t0.bucket ?? "class-works")
+        .createSignedUrl(t0.path, 60 * 60 * 8);
+      return json({ path: t0.path, signed_url: s0?.signedUrl ?? null });
+    }
+
     if (!image || typeof image !== "string") {
       return json({ error: "image required" }, 400);
     }
@@ -77,9 +100,7 @@ Deno.serve(async (req) => {
     if (bytes.byteLength === 0) return json({ error: "image is empty" }, 400);
     if (bytes.byteLength > MAX_BYTES) return json({ error: "image too large" }, 413);
 
-    const url = Deno.env.get("SUPABASE_URL")!;
-    const anon = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const service = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const url = url_, anon = anon_, service = service_;
 
     // ── 1. Ask the database where this student may write ──────────────
     // Called with the ANON key on purpose: school_upload_target validates

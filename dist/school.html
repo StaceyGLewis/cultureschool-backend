@@ -249,17 +249,24 @@ textarea.inp{min-height:132px;resize:vertical;line-height:1.65}
 const SUPA_URL  = 'https://qwulthvbwujfehgdegtn.supabase.co';
 const SUPA_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3dWx0aHZid3VqZmVoZ2RlZ3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQyMDcxODIsImV4cCI6MjA1OTc4MzE4Mn0.t9n4eZng6d0jggiPNK-J_DByvEE2L9tqy5Xh_1-TSoQ';
 const PRINT_STUDIO = 'https://coco-print-studio.cultureschool.org';
+const UPLOAD_FN    = SUPA_URL + '/functions/v1/school-upload';
 const sb = window.supabase.createClient(SUPA_URL, SUPA_ANON);
+
+/* Demo mode is an explicit opt-in: coco-print-studio-school…/?demo=1
+   It runs entirely on localStorage with a seeded class, so a showroom
+   laptop with no wifi still tells the whole story. Everything else
+   talks to the real backend. The two paths never mix. */
+const DEMO = /[?&]demo=1/.test(location.search);
 
 /* ══════════════════════════════════════════════════════════════
    INTERPRETATION BRIEFS
-   Verbatim from docs/print-studio-school-docs. Each carries the
-   Find / Interpret / Own-it arc, the turn-in checklist, and the
-   standards tags that make it purchasable by a district.
+   Verbatim from docs/print-studio-school-docs. The server holds the
+   same three as templates in public.briefs with the word floors, so
+   the turn-in limit is not the client's to relax.
 
    `style` binds a brief to a real pattern style in patterns_public
    so the reference strip is live archive content, not stock art.
-   null = the archive has no matching style yet (see notes).
+   null = the archive has no matching style yet.
    ══════════════════════════════════════════════════════════════ */
 const BRIEFS = [
   {
@@ -305,74 +312,20 @@ const BRIEFS = [
 const briefById = id => BRIEFS.find(b => b.id === id);
 
 /* ══════════════════════════════════════════════════════════════
-   STORE — prototype persistence
-   The ONLY place that touches storage. Replacing this object with
-   Supabase calls is the whole migration; see docs/school-mode.sql.
-   ══════════════════════════════════════════════════════════════ */
-const Store = {
-  KEY:'cs_school_v1',
-  _d:null,
-  _load(){ if(this._d) return this._d;
-    try{ this._d = JSON.parse(localStorage.getItem(this.KEY)) || null; }catch(_){ this._d=null; }
-    if(!this._d) this._d = { classes:[], members:[], works:[], events:[] };
-    return this._d; },
-  _save(){ try{ localStorage.setItem(this.KEY, JSON.stringify(this._d)); }
-           catch(e){ toast('Storage full — remove a submission to continue'); } },
-  all(){ return this._load(); },
-
-  classes(teacher){ return this._load().classes.filter(c => !teacher || c.teacher === teacher); },
-  classByCode(code){ return this._load().classes.find(c => c.code === String(code||'').toUpperCase()); },
-  classById(id){ return this._load().classes.find(c => c.id === id); },
-  addClass(c){ this._load().classes.push(c); this._save(); return c; },
-  updClass(id,patch){ const c=this.classById(id); if(c){ Object.assign(c,patch); this._save(); } return c; },
-
-  members(classId){ return this._load().members.filter(m => m.classId === classId); },
-  member(classId,name){ return this._load().members
-      .find(m => m.classId===classId && m.name.toLowerCase()===String(name).toLowerCase()); },
-  addMember(m){ this._load().members.push(m); this._save(); return m; },
-
-  works(classId){ return this._load().works.filter(w => w.classId === classId); },
-  work(id){ return this._load().works.find(w => w.id === id); },
-  workFor(classId,memberId,briefId){ return this._load().works
-      .find(w => w.classId===classId && w.memberId===memberId && w.briefId===briefId); },
-  addWork(w){ this._load().works.push(w); this._save(); return w; },
-  updWork(id,patch){ const w=this.work(id); if(w){ Object.assign(w,patch); this._save(); } return w; },
-
-  /* Process receipts — school-mode brief §34. Class-scoped, teacher-only,
-     keyed to display name + device token. Never public, never PII. */
-  log(classId,memberId,kind,detail){
-    const d=this._load();
-    d.events.push({ id:uid(), classId, memberId, kind, detail:detail||'', at:Date.now() });
-    if(d.events.length>4000) d.events.splice(0,d.events.length-4000);
-    this._save();
-  },
-  events(classId,memberId){ return this._load().events
-      .filter(e => e.classId===classId && (!memberId || e.memberId===memberId))
-      .sort((a,b)=>a.at-b.at); },
-  reset(){ localStorage.removeItem(this.KEY); this._d=null; }
-};
-
-/* ══════════════════════════════════════════════════════════════
    HELPERS
    ══════════════════════════════════════════════════════════════ */
 const $ = s => document.querySelector(s);
 const uid = () => 'x'+Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4);
 const esc = s => String(s??'').replace(/[&<>"']/g, c =>
   ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-/* Ambiguous glyphs removed: no O/0, I/1, S/5 — these get read aloud
-   across a classroom and mistyped by twelve-year-olds. */
-const CODE_ALPHABET='ABCDEFGHJKLMNPQRTUVWXY2346789';
-const makeCode = () => Array.from({length:6},
-  () => CODE_ALPHABET[Math.floor(Math.random()*CODE_ALPHABET.length)]).join('');
 const words = s => String(s||'').trim().split(/\s+/).filter(Boolean).length;
-const fmtWhen = ts => new Date(ts).toLocaleString(undefined,
+const fmtWhen = ts => !ts ? '—' : new Date(ts).toLocaleString(undefined,
   {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
 
 let _tt;
 function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('on');
-  clearTimeout(_tt); _tt=setTimeout(()=>t.classList.remove('on'),2600); }
+  clearTimeout(_tt); _tt=setTimeout(()=>t.classList.remove('on'),3200); }
 
-/* Device token — identifies a returning device, never a person. */
 function deviceToken(){
   let t; try{ t=localStorage.getItem('cs_school_dev'); }catch(_){}
   if(!t){ t='d'+Math.random().toString(36).slice(2,12);
@@ -380,10 +333,10 @@ function deviceToken(){
   return t;
 }
 
-/* Downscale on attach. Student exports are full-resolution PNGs and a
-   handful would blow the localStorage quota; the prototype keeps a
-   long-edge-1000 JPEG. Production stores the original in a bucket. */
-function fileToThumb(file, edge=1000){
+/* Downscale before upload. A Print Studio export is a full-resolution
+   PNG; long-edge 1400 at q0.85 keeps it legible on a projector and well
+   under the bucket's 8MB ceiling. */
+function fileToJpeg(file, edge=1400){
   return new Promise((resolve,reject)=>{
     const fr=new FileReader();
     fr.onerror=()=>reject(new Error('read failed'));
@@ -397,7 +350,7 @@ function fileToThumb(file, edge=1000){
         const x=c.getContext('2d');
         x.fillStyle='#fff'; x.fillRect(0,0,c.width,c.height);
         x.drawImage(img,0,0,c.width,c.height);
-        resolve(c.toDataURL('image/jpeg',0.82));
+        resolve(c.toDataURL('image/jpeg',0.85));
       };
       img.src=fr.result;
     };
@@ -406,16 +359,115 @@ function fileToThumb(file, edge=1000){
 }
 
 /* ══════════════════════════════════════════════════════════════
+   API — the real backend
+   Every student call carries a session token and nothing else. There
+   is no class id or member id to pass, because the token IS the scope
+   (docs/school-mode-rpc.sql). Teacher calls carry no identity at all;
+   the server reads it from the verified JWT.
+   ══════════════════════════════════════════════════════════════ */
+async function rpc(fn, args){
+  const { data, error } = await sb.rpc(fn, args||{});
+  if(error) throw new Error(error.message || 'request failed');
+  return data;
+}
+const API = {
+  /* student */
+  join: (code,name)      => rpc('school_join',{p_code:code,p_display_name:name,p_device:deviceToken()}),
+  state: (tok)           => rpc('school_state',{p_session:tok}),
+  saveWork: (tok,brief,stmt,credits) =>
+    rpc('school_save_work',{p_session:tok,p_brief:brief,p_statement:stmt??null,
+                            p_image_path:null,p_credits:credits??null}),
+  submit: (tok,brief)    => rpc('school_submit',{p_session:tok,p_brief:brief}),
+  log: (tok,kind,detail) => rpc('school_log',{p_session:tok,p_kind:kind,p_detail:detail||null})
+                              .catch(()=>{}),   /* a receipt must never break a student's action */
+  /* teacher */
+  classes: ()            => rpc('school_teacher_classes'),
+  createClass: (name)    => rpc('school_create_class',{p_name:name,p_org:null}),
+  setAssigned: (id,br)   => rpc('school_set_assigned',{p_class:id,p_briefs:br}),
+  setJoinOpen: (id,open) => rpc('school_set_join_open',{p_class:id,p_open:open}),
+  roster: (id)           => rpc('school_roster',{p_class:id}),
+  gallery: (id)          => rpc('school_gallery',{p_class:id}),
+  workDetail: (id,w)     => rpc('school_work_detail',{p_class:id,p_work:w}),
+  feature: (id,w,on)     => rpc('school_feature',{p_class:id,p_work:w,p_on:on}),
+  hide: (id,w,on)        => rpc('school_hide',{p_class:id,p_work:w,p_on:on}),
+  resetMember: (id,m)    => rpc('school_reset_member',{p_class:id,p_member:m}),
+
+  /* storage — a student cannot sign a URL, so the edge function does it */
+  async upload(tok, brief, dataUrl, credits){
+    const r = await fetch(UPLOAD_FN, { method:'POST',
+      headers:{ 'Content-Type':'application/json', apikey:SUPA_ANON,
+                Authorization:'Bearer '+SUPA_ANON },
+      body: JSON.stringify({ session_token:tok, brief_id:brief, image:dataUrl, credits }) });
+    if(r.status===404) throw new Error('UPLOAD_FN_MISSING');
+    const j = await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(j.error || ('upload failed ('+r.status+')'));
+    return j;
+  },
+  async readUrl(tok, brief){
+    try{
+      const r = await fetch(UPLOAD_FN, { method:'POST',
+        headers:{ 'Content-Type':'application/json', apikey:SUPA_ANON,
+                  Authorization:'Bearer '+SUPA_ANON },
+        body: JSON.stringify({ session_token:tok, brief_id:brief, mode:'read' }) });
+      if(!r.ok) return null;
+      return (await r.json()).signed_url || null;
+    }catch(_){ return null; }
+  }
+};
+
+async function signedForTeacher(path){
+  if(!path) return null;
+  try{
+    const { data } = await sb.storage.from('class-works').createSignedUrl(path, 3600);
+    return data?.signedUrl || null;
+  }catch(_){ return null; }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   STORE — demo mode only (?demo=1)
+   ══════════════════════════════════════════════════════════════ */
+const Store = {
+  KEY:'cs_school_v1', _d:null,
+  _load(){ if(this._d) return this._d;
+    try{ this._d = JSON.parse(localStorage.getItem(this.KEY)) || null; }catch(_){ this._d=null; }
+    if(!this._d) this._d = { classes:[], members:[], works:[], events:[] };
+    return this._d; },
+  _save(){ try{ localStorage.setItem(this.KEY, JSON.stringify(this._d)); }
+           catch(e){ toast('Storage full — remove a submission to continue'); } },
+  all(){ return this._load(); },
+  classes(t){ return this._load().classes.filter(c=>!t||c.teacher===t); },
+  classByCode(c){ return this._load().classes.find(x=>x.code===String(c||'').toUpperCase()); },
+  classById(id){ return this._load().classes.find(c=>c.id===id); },
+  addClass(c){ this._load().classes.push(c); this._save(); return c; },
+  updClass(id,p){ const c=this.classById(id); if(c){Object.assign(c,p); this._save();} return c; },
+  members(cid){ return this._load().members.filter(m=>m.classId===cid); },
+  member(cid,n){ return this._load().members
+      .find(m=>m.classId===cid && m.name.toLowerCase()===String(n).toLowerCase()); },
+  addMember(m){ this._load().members.push(m); this._save(); return m; },
+  works(cid){ return this._load().works.filter(w=>w.classId===cid); },
+  work(id){ return this._load().works.find(w=>w.id===id); },
+  workFor(cid,mid,bid){ return this._load().works
+      .find(w=>w.classId===cid&&w.memberId===mid&&w.briefId===bid); },
+  addWork(w){ this._load().works.push(w); this._save(); return w; },
+  updWork(id,p){ const w=this.work(id); if(w){Object.assign(w,p); this._save();} return w; },
+  log(cid,mid,kind,detail){ const d=this._load();
+    d.events.push({id:uid(),classId:cid,memberId:mid,kind,detail:detail||'',at:Date.now()});
+    if(d.events.length>4000) d.events.splice(0,d.events.length-4000); this._save(); },
+  events(cid,mid){ return this._load().events
+      .filter(e=>e.classId===cid&&(!mid||e.memberId===mid)).sort((a,b)=>a.at-b.at); },
+  reset(){ localStorage.removeItem(this.KEY); this._d=null; }
+};
+
+/* ══════════════════════════════════════════════════════════════
    PATTERN ARCHIVE — school_safe by construction
    Patterns are CultureSchool's own generated works referencing
-   traditions, so they are owned outright: no per-row rights check
-   is needed. The school gate is simply "patterns only" — the three
+   traditions, so they are owned outright and need no per-row rights
+   check. The school gate is simply "patterns only": the three
    external libraries (Openverse / Met / Iconify) are not reachable
    from this surface at all.
    ══════════════════════════════════════════════════════════════ */
 const THUMB_BASE = SUPA_URL + '/storage/v1/object/public/pattern-thumbs/';
 const _patCache = {};
-
 async function patternsForStyle(style, limit=12){
   if(!style) return [];
   if(_patCache[style]) return _patCache[style];
@@ -423,9 +475,9 @@ async function patternsForStyle(style, limit=12){
     const { data, error } = await sb.from('patterns_public')
       .select('id,name,style,colors,heritage_origin,continent,thumb_url')
       .eq('style', style)
-      .not('heritage_origin','is',null)   /* 27% of the archive has no origin —
-                                             those can't carry a credit line, so
-                                             they are excluded from school use */
+      .not('heritage_origin','is',null)   /* 27% of the archive has no origin — those
+                                             cannot carry a credit line, so they are
+                                             excluded from school use */
       .limit(limit);
     if(error) throw error;
     _patCache[style] = data || [];
@@ -433,28 +485,34 @@ async function patternsForStyle(style, limit=12){
   }catch(e){ console.warn('[patterns]', e); return []; }
 }
 const thumbUrl = p => p.thumb_url || (THUMB_BASE + p.id + '.png');
-
-/* The credit line that doubles as the works-cited entry. */
 function creditFor(p){
   const bits=[p.heritage_origin, p.continent].filter(Boolean);
   return bits.length ? bits.join(' · ') : 'CultureSchool Pattern Archive';
 }
 
 /* ══════════════════════════════════════════════════════════════
-   ROUTER
+   STATE + ROUTER
+   Views stay synchronous; loaders fill State then call render().
+   Both the real and demo paths normalise into the same shape.
    ══════════════════════════════════════════════════════════════ */
-const State = { view:'gate', teacher:null, classId:null, tab:'briefs',
-                session:null /* {classId, memberId, name} */ };
+const State = {
+  view:'gate', busy:false,
+  teacher:null,                 /* email of the signed-in teacher */
+  classes:[], classId:null, tab:'briefs', roster:[], gallery:[],
+  session:null,                 /* {token,name,class_name,assigned[]} */
+  works:[], briefOpen:null
+};
+const curClass = () => State.classes.find(c=>c.id===State.classId) || null;
 
 function go(view, patch){ Object.assign(State,{view},patch||{}); render(); window.scrollTo(0,0); }
 
 function render(){
-  const app=$('#app');
   const R={ gate:viewGate, teacher:viewTeacher, join:viewJoin, student:viewStudent };
-  app.innerHTML = (R[State.view]||viewGate)();
+  $('#app').innerHTML = (R[State.view]||viewGate)();
   renderTopRight();
-  if(State.view==='teacher') afterTeacher();
-  if(State.view==='student') afterStudent();
+  hydratePatterns();
+  if(State.view==='teacher') hydrateGalleryImages();
+  if(State.view==='student') hydrateStudentImage();
 }
 
 function renderTopRight(){
@@ -467,7 +525,18 @@ function renderTopRight(){
       <button class="btn btn-ghost btn-sm" onclick="leaveClass()">Leave</button>`;
   } else if(State.view!=='gate'){
     el.innerHTML = `<button class="btn btn-ghost btn-sm" onclick="go('gate')">← Back</button>`;
-  } else el.innerHTML='';
+  } else el.innerHTML = DEMO ? `<span class="badge badge-draft">Demo mode</span>` : '';
+}
+
+/* Surface a failure rather than leaving a spinner spinning. */
+function fail(e){
+  const m = String(e && e.message || e);
+  if(m==='UPLOAD_FN_MISSING'){
+    toast('Uploads are not switched on yet — the school-upload function needs deploying');
+  } else if(/permission denied|sign in required/i.test(m)){
+    toast('Please sign in again');
+  } else toast(m.slice(0,120));
+  console.warn('[school]', e);
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -504,28 +573,28 @@ function viewGate(){
       stored — which is what keeps this outside FERPA and COPPA rather than compliant with them.
     </div>
     <p class="tiny dim" style="margin-top:26px">
-      Prototype — work is saved on this device only.
-      <button class="btn btn-ghost btn-sm" style="margin-left:8px" onclick="seedDemo()">Load a demo class</button>
+      ${DEMO ? 'Demo mode — this device only, nothing is saved to the server.'
+             : 'Work is saved to your class and syncs across devices.'}
+      <a class="btn btn-ghost btn-sm" style="margin-left:8px"
+         href="${DEMO?location.pathname:'?demo=1'}">${DEMO?'Leave demo mode':'Open a demo class'}</a>
     </p>
   </div></div>`;
 }
 
 /* ══════════════════════════════════════════════════════════════
-   TEACHER
+   TEACHER — magic link, then the dashboard
    ══════════════════════════════════════════════════════════════ */
 function viewTeacher(){
   if(!State.teacher) return teacherSignIn();
-  const classes=Store.classes(State.teacher);
-  if(!State.classId && classes.length) State.classId=classes[0].id;
-  const cls=Store.classById(State.classId);
+  const cls=curClass();
   return `<div class="wrap"><div class="cols">
     <aside class="side">
       <div class="card">
         <h3>Classes</h3>
-        ${classes.length ? classes.map(c=>`
+        ${State.classes.length ? State.classes.map(c=>`
           <button class="class-row" aria-current="${c.id===State.classId}" onclick="pickClass('${c.id}')">
             <b>${esc(c.name)}</b>
-            <span>${c.code} · ${Store.members(c.id).length} student${Store.members(c.id).length===1?'':'s'}</span>
+            <span>${esc(c.code)} · ${c.students} student${c.students===1?'':'s'}</span>
           </button>`).join('') : `<p class="tiny dim">No classes yet.</p>`}
         <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:12px" onclick="newClass()">+ New class</button>
       </div>
@@ -543,61 +612,122 @@ function teacherSignIn(){
     <p class="eyebrow" style="text-align:center">Teacher</p>
     <h1 style="font-size:2rem;text-align:center;margin:10px 0 8px">Your dashboard</h1>
     <p class="tiny dim" style="text-align:center;margin-bottom:26px">
-      Teachers identify by email; students never do.</p>
+      Teachers sign in by email. Students never do.</p>
     <div class="card">
       <label class="field"><span>School email</span>
         <input class="inp" id="tEmail" type="email" placeholder="you@school.edu"
-               onkeydown="if(event.key==='Enter')doTeacherIn()"></label>
-      <button class="btn btn-primary" style="width:100%" onclick="doTeacherIn()">Continue →</button>
-      <p class="tiny dim" style="margin:14px 0 0;text-align:center">
-        Prototype — no password, nothing sent.</p>
+               autocomplete="email" onkeydown="if(event.key==='Enter')sendLink()"></label>
+      <button class="btn btn-primary" style="width:100%" id="tBtn" onclick="sendLink()">
+        Email me a sign-in link →</button>
+      <p class="tiny dim" style="margin:14px 0 0;text-align:center;line-height:1.6">
+        No password. We send a link that signs you in on this device.</p>
+      <p class="tiny" id="tMsg" style="margin:12px 0 0;text-align:center;color:var(--gold);min-height:1.2em"></p>
     </div>
   </div>`;
 }
-function doTeacherIn(){
+
+async function sendLink(){
   const v=$('#tEmail').value.trim();
   if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)) return toast('Enter a valid email address');
-  State.teacher=v; try{ localStorage.setItem('cs_school_teacher',v); }catch(_){}
-  const mine=Store.classes(v); State.classId = mine.length ? mine[0].id : null;
+  const btn=$('#tBtn'); btn.disabled=true; btn.textContent='Sending…';
+  try{
+    const { error } = await sb.auth.signInWithOtp({ email:v,
+      options:{ emailRedirectTo: location.origin + location.pathname } });
+    if(error) throw error;
+    $('#tMsg').textContent = 'Check ' + v + ' — the link opens straight into your dashboard.';
+    btn.textContent = 'Link sent';
+  }catch(e){ fail(e); btn.disabled=false; btn.textContent='Email me a sign-in link →'; }
+}
+
+async function signOut(){
+  try{ await sb.auth.signOut(); }catch(_){}
+  State.teacher=null; State.classes=[]; State.classId=null;
+  go('gate');
+}
+
+async function loadTeacher(){
+  if(DEMO){ State.classes = Store.classes(State.teacher).map(c=>({
+      id:c.id, code:c.code, name:c.name, join_open:true, assigned:c.assigned,
+      students:Store.members(c.id).length,
+      submitted:Store.works(c.id).filter(w=>w.status==='submitted').length })); }
+  else {
+    try{ State.classes = await API.classes() || []; }
+    catch(e){ fail(e); State.classes=[]; }
+  }
+  if(!State.classId || !curClass()) State.classId = State.classes[0]?.id || null;
+  if(State.classId) await loadClass(State.classId);
   render();
 }
-function signOut(){ State.teacher=null; State.classId=null;
-  try{ localStorage.removeItem('cs_school_teacher'); }catch(_){} go('gate'); }
 
-function newClass(){
+async function loadClass(id){
+  if(DEMO){
+    State.roster = Store.members(id).map(m=>({ member_id:m.id, display_name:m.name,
+      joined_at:m.joinedAt,
+      submitted:Store.works(id).filter(w=>w.memberId===m.id&&w.status==='submitted').length,
+      drafts:Store.works(id).filter(w=>w.memberId===m.id&&w.status==='draft').length }));
+    State.gallery = Store.works(id).filter(w=>w.status==='submitted').map(w=>({
+      work_id:w.id, member_id:w.memberId, brief_id:w.briefId,
+      display_name:(Store.members(id).find(m=>m.id===w.memberId)||{}).name,
+      image_path:null, _url:w.image, credits:w.credits, featured:w.featured,
+      submitted_at:w.submittedAt }));
+    return;
+  }
+  try{
+    const [r,g] = await Promise.all([API.roster(id), API.gallery(id)]);
+    State.roster = r||[]; State.gallery = g||[];
+  }catch(e){ fail(e); State.roster=[]; State.gallery=[]; }
+}
+
+async function newClass(){
   const name=prompt('Class name — e.g. "Period 3 · Visual Arts"');
   if(!name || !name.trim()) return;
-  let code, tries=0;
-  do { code=makeCode(); tries++; } while(Store.classByCode(code) && tries<40);
-  const c=Store.addClass({ id:uid(), code, name:name.trim(), teacher:State.teacher,
-    namePolicy:'first_initial', assigned:[], createdAt:Date.now() });
-  State.classId=c.id; render();
-  toast('Class created — code ' + code);
+  try{
+    if(DEMO){
+      let code; do{ code=Array.from({length:6},()=>
+        'ABCDEFGHJKLMNPQRTUVWXY2346789'[Math.floor(Math.random()*29)]).join('');
+      }while(Store.classByCode(code));
+      Store.addClass({ id:uid(), code, name:name.trim(), teacher:State.teacher,
+        assigned:[], createdAt:Date.now() });
+      await loadTeacher();
+      toast('Class created — code '+code);
+    } else {
+      const c = await API.createClass(name.trim());
+      await loadTeacher();
+      State.classId = c.id; await loadClass(c.id); render();
+      toast('Class created — code ' + c.code);
+    }
+  }catch(e){ fail(e); }
 }
-function pickClass(id){ State.classId=id; State.tab='briefs'; render(); }
+
+async function pickClass(id){ State.classId=id; State.tab='briefs';
+  await loadClass(id); render(); }
 
 function teacherClass(c){
-  const members=Store.members(c.id), works=Store.works(c.id);
-  const submitted=works.filter(w=>w.status==='submitted');
+  const submitted = State.gallery.length;
   return `
     <div class="card" style="margin-bottom:24px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:20px;flex-wrap:wrap">
         <div>
           <h2 style="font-size:1.8rem">${esc(c.name)}</h2>
           <p class="tiny dim" style="margin:6px 0 0">
-            ${members.length} student${members.length===1?'':'s'} ·
-            ${c.assigned.length} brief${c.assigned.length===1?'':'s'} assigned ·
-            ${submitted.length} submitted</p>
+            ${c.students} student${c.students===1?'':'s'} ·
+            ${(c.assigned||[]).length} brief${(c.assigned||[]).length===1?'':'s'} assigned ·
+            ${submitted} submitted</p>
         </div>
         <div style="text-align:right">
           <p class="eyebrow" style="margin-bottom:6px">Class code</p>
-          <div class="code">${c.code}</div>
+          <div class="code">${esc(c.code)}</div>
+          ${DEMO?'':`<button class="btn btn-ghost btn-sm" style="margin-top:10px"
+            onclick="toggleJoin('${c.id}',${!c.join_open})">
+            ${c.join_open?'● Open — shut the door':'○ Closed — let students in'}</button>`}
         </div>
       </div>
+      ${c.join_open===false?`<p class="tiny dim" style="margin:14px 0 0">
+        New students cannot join. Anyone already in the class can still work and rejoin.</p>`:''}
     </div>
     <div class="tabs" role="tablist">
       <button class="tab" role="tab" aria-selected="${State.tab==='briefs'}"  onclick="setTab('briefs')">Briefs</button>
-      <button class="tab" role="tab" aria-selected="${State.tab==='gallery'}" onclick="setTab('gallery')">Class gallery ${submitted.length?`<span class="badge badge-live" style="margin-left:6px">${submitted.length}</span>`:''}</button>
+      <button class="tab" role="tab" aria-selected="${State.tab==='gallery'}" onclick="setTab('gallery')">Class gallery ${submitted?`<span class="badge badge-live" style="margin-left:6px">${submitted}</span>`:''}</button>
       <button class="tab" role="tab" aria-selected="${State.tab==='roster'}"  onclick="setTab('roster')">Roster</button>
     </div>
     <div id="tabBody">${
@@ -606,9 +736,16 @@ function teacherClass(c){
 }
 function setTab(t){ State.tab=t; render(); }
 
+async function toggleJoin(id, open){
+  try{ await API.setJoinOpen(id, open); await loadTeacher();
+       toast(open?'Students can join':'Door shut — no new students'); }
+  catch(e){ fail(e); }
+}
+
 function tabBriefs(c){
+  const assigned = c.assigned||[];
   return BRIEFS.map(b=>{
-    const on=c.assigned.includes(b.id);
+    const on=assigned.includes(b.id);
     return `<div class="brief">
       <div class="brief-top">
         <div>
@@ -618,7 +755,7 @@ function tabBriefs(c){
         </div>
         <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
           ${on?'<span class="badge badge-live">● Assigned</span>':''}
-          <button class="btn ${on?'btn-ghost':'btn-gold'} btn-sm" onclick="toggleAssign('${c.id}','${b.id}')">
+          <button class="btn ${on?'btn-ghost':'btn-gold'} btn-sm" onclick="toggleAssign('${b.id}')">
             ${on?'Unassign':'Assign to class'}</button>
         </div>
       </div>
@@ -639,35 +776,38 @@ function tabBriefs(c){
   }).join('');
 }
 
-function toggleAssign(classId,briefId){
-  const c=Store.classById(classId); if(!c) return;
-  const i=c.assigned.indexOf(briefId);
-  if(i>=0) c.assigned.splice(i,1); else c.assigned.push(briefId);
-  Store.updClass(classId,{assigned:c.assigned});
-  render();
-  toast(i>=0 ? 'Unassigned' : 'Assigned — students will see it on their next visit');
+async function toggleAssign(briefId){
+  const c=curClass(); if(!c) return;
+  const next=[...(c.assigned||[])];
+  const i=next.indexOf(briefId);
+  if(i>=0) next.splice(i,1); else next.push(briefId);
+  try{
+    if(DEMO) Store.updClass(c.id,{assigned:next});
+    else await API.setAssigned(c.id,next);
+    await loadTeacher();
+    toast(i>=0 ? 'Unassigned' : 'Assigned — students see it on their next visit');
+  }catch(e){ fail(e); }
 }
 
 function tabGallery(c){
-  const works=Store.works(c.id).filter(w=>w.status==='submitted')
-    .sort((a,b)=>(b.submittedAt||0)-(a.submittedAt||0));
+  const works=[...State.gallery].sort((a,b)=>
+    new Date(b.submitted_at||0) - new Date(a.submitted_at||0));
   if(!works.length) return `<div class="empty">
     <h3>Nothing submitted yet</h3>
     <p class="lede" style="margin:0 auto">Work appears here the moment a student turns it in —
       with the print, the statement, and how it was made.</p></div>`;
   return `<div class="gal">${works.map(w=>{
-    const m=Store.members(c.id).find(x=>x.id===w.memberId);
-    const b=briefById(w.briefId);
+    const b=briefById(w.brief_id);
     return `<div class="work">
-      <div class="work-img" onclick="openWork('${w.id}')">
-        ${w.image?`<img src="${w.image}" alt="Print by ${esc(m?m.name:'student')}">`
-                 :'<span class="tiny dim">No image</span>'}
+      <div class="work-img" onclick="openWork('${w.work_id}')" data-path="${esc(w.image_path||'')}">
+        ${w._url?`<img src="${esc(w._url)}" alt="Print by ${esc(w.display_name||'student')}">`
+                 :'<span class="tiny dim">Loading…</span>'}
       </div>
       <div class="work-body">
-        <b>${esc(m?m.name:'—')}</b>
-        <p class="tiny">${esc(b?b.title:'')}</p>
+        <b>${esc(w.display_name||'—')}</b>
+        <p class="tiny">${esc(b?b.title:w.brief_id)}</p>
         <div class="work-acts">
-          <button class="btn btn-ghost btn-sm" onclick="openWork('${w.id}')">Open</button>
+          <button class="btn btn-ghost btn-sm" onclick="openWork('${w.work_id}')">Open</button>
           ${w.featured?'<span class="badge badge-live">★ Featured</span>':''}
         </div>
       </div></div>`;
@@ -675,38 +815,56 @@ function tabGallery(c){
 }
 
 function tabRoster(c){
-  const members=Store.members(c.id);
-  if(!members.length) return `<div class="empty">
+  if(!State.roster.length) return `<div class="empty">
     <h3>No one has joined yet</h3>
-    <p class="lede" style="margin:0 auto">Read out the code <b class="code" style="font-size:1rem">${c.code}</b>
+    <p class="lede" style="margin:0 auto">Read out the code <b class="code" style="font-size:1rem">${esc(c.code)}</b>
       and students join in seconds.</p></div>`;
-  return `<div class="card"><table style="width:100%;border-collapse:collapse;font-size:.88rem">
+  return `<div class="card"><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.88rem">
     <thead><tr style="text-align:left;border-bottom:1px solid var(--rule)">
       <th style="padding:9px 0;font:500 .7rem/1 'DM Sans';letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Display name</th>
-      <th style="padding:9px 0;font:500 .7rem/1 'DM Sans';letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Works</th>
+      <th style="padding:9px 0;font:500 .7rem/1 'DM Sans';letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Turned in</th>
+      <th style="padding:9px 0;font:500 .7rem/1 'DM Sans';letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Drafts</th>
       <th style="padding:9px 0;font:500 .7rem/1 'DM Sans';letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Joined</th>
       <th></th></tr></thead>
-    <tbody>${members.map(m=>{
-      const ws=Store.works(c.id).filter(w=>w.memberId===m.id);
-      const done=ws.filter(w=>w.status==='submitted').length;
-      return `<tr style="border-bottom:1px solid var(--rule-soft)">
-        <td style="padding:11px 0"><b style="font-weight:500">${esc(m.name)}</b></td>
-        <td style="padding:11px 0">${done} of ${ws.length||0}</td>
-        <td style="padding:11px 0" class="tiny dim">${fmtWhen(m.joinedAt)}</td>
+    <tbody>${State.roster.map(m=>`
+      <tr style="border-bottom:1px solid var(--rule-soft)">
+        <td style="padding:11px 0"><b style="font-weight:500">${esc(m.display_name)}</b></td>
+        <td style="padding:11px 0">${m.submitted}</td>
+        <td style="padding:11px 0">${m.drafts}</td>
+        <td style="padding:11px 0" class="tiny dim">${fmtWhen(m.joined_at)}</td>
         <td style="padding:11px 0;text-align:right">
-          <button class="btn btn-ghost btn-sm" onclick="resetMember('${m.id}')">Reset session</button></td>
-      </tr>`; }).join('')}</tbody></table>
-    <p class="tiny dim" style="margin:16px 0 0">Display names only. Resetting lets a student
-      rejoin on a new device with the same name.</p></div>`;
+          <button class="btn btn-ghost btn-sm" onclick="resetMember('${m.member_id}')">Reset session</button></td>
+      </tr>`).join('')}</tbody></table></div>
+    <p class="tiny dim" style="margin:16px 0 0">Display names only — nothing else about a student is
+      stored. Resetting signs them out everywhere so they can rejoin on another device with the
+      same name and the same work.</p></div>`;
 }
 
-function resetMember(id){
-  const d=Store.all(); const m=d.members.find(x=>x.id===id); if(!m) return;
-  m.device=null; Store._save();
-  toast('Session reset — they can rejoin on any device');
+async function resetMember(memberId){
+  const c=curClass(); if(!c) return;
+  if(!confirm('Sign this student out of every device? Their work is kept.')) return;
+  try{
+    if(DEMO){ const m=Store.all().members.find(x=>x.id===memberId); if(m){m.device=null; Store._save();} }
+    else await API.resetMember(c.id, memberId);
+    await loadClass(c.id); render();
+    toast('Signed out — they can rejoin with the same name');
+  }catch(e){ fail(e); }
 }
 
-function afterTeacher(){
+/* Gallery images live in a private bucket. The teacher holds a real
+   session, so they sign their own URLs and the storage policy decides
+   whether the object belongs to a class they teach. */
+async function hydrateGalleryImages(){
+  if(DEMO) return;
+  const nodes=[...document.querySelectorAll('.work-img[data-path]')].filter(n=>n.dataset.path);
+  for(const n of nodes){
+    const url=await signedForTeacher(n.dataset.path);
+    if(url) n.innerHTML=`<img src="${esc(url)}" alt="">`;
+    else n.innerHTML='<span class="tiny dim">Image unavailable</span>';
+  }
+}
+
+function hydratePatterns(){
   document.querySelectorAll('.pats[data-style]').forEach(async el=>{
     const rows=await patternsForStyle(el.dataset.style, 8);
     el.innerHTML = rows.length ? rows.map(p=>`
@@ -719,40 +877,50 @@ function afterTeacher(){
 }
 
 /* ══════════════════════════════════════════════════════════════
-   WORK DETAIL — statement + process receipts
+   WORK DETAIL — statement beside the receipts that produced it
    ══════════════════════════════════════════════════════════════ */
-function openWork(id){
-  const w=Store.work(id); if(!w) return;
-  const m=Store.members(w.classId).find(x=>x.id===w.memberId);
-  const b=briefById(w.briefId);
-  const evs=Store.events(w.classId,w.memberId);
+async function openWork(workId){
+  const c=curClass(); if(!c) return;
+  let d;
+  if(DEMO){
+    const w=Store.work(workId); if(!w) return;
+    const m=Store.members(w.classId).find(x=>x.id===w.memberId);
+    d={ name:m?m.name:'—', brief_id:w.briefId, statement:w.statement, credits:w.credits,
+        featured:w.featured, image_path:null, _url:w.image,
+        receipts:Store.events(w.classId,w.memberId).map(e=>({kind:e.kind,detail:e.detail,at:e.at})) };
+  } else {
+    try{ d = await API.workDetail(c.id, workId); }catch(e){ return fail(e); }
+    d._url = await signedForTeacher(d.image_path);
+  }
+  const b=briefById(d.brief_id);
   const scrim=document.createElement('div');
   scrim.className='scrim';
   scrim.onclick=e=>{ if(e.target===scrim) scrim.remove(); };
   scrim.innerHTML=`<div class="modal">
     <div class="modal-h">
-      <div><p class="eyebrow">${esc(b?b.title:'')}</p>
-        <h2 style="font-size:1.55rem;margin-top:6px">${esc(m?m.name:'—')}</h2></div>
+      <div><p class="eyebrow">${esc(b?b.title:d.brief_id)}</p>
+        <h2 style="font-size:1.55rem;margin-top:6px">${esc(d.name||'—')}</h2></div>
       <button class="x" onclick="this.closest('.scrim').remove()" aria-label="Close">×</button>
     </div>
     <div class="modal-b">
-      ${w.image?`<img src="${w.image}" alt="" style="width:100%;border-radius:var(--r);border:1px solid var(--rule)">`:''}
-      ${w.credits&&w.credits.length?`<p class="tiny dim" style="margin:10px 0 0">
-        <b>Works cited —</b> ${w.credits.map(esc).join(' · ')}</p>`:''}
+      ${d._url?`<img src="${esc(d._url)}" alt="" style="width:100%;border-radius:var(--r);border:1px solid var(--rule)">`
+              :'<p class="tiny dim">No image.</p>'}
+      ${(d.credits||[]).length?`<p class="tiny dim" style="margin:10px 0 0">
+        <b>Works cited —</b> ${(d.credits||[]).map(esc).join(' · ')}</p>`:''}
       <h3 style="font-size:1.15rem;margin:22px 0 8px">Artist statement</h3>
-      <p style="font-size:.9rem;line-height:1.72;color:var(--body);white-space:pre-wrap">${esc(w.statement||'—')}</p>
-      <p class="tiny dim" style="margin-top:6px">${words(w.statement)} words${b?` · ${b.words} required`:''}</p>
+      <p style="font-size:.9rem;line-height:1.72;color:var(--body);white-space:pre-wrap">${esc(d.statement||'—')}</p>
+      <p class="tiny dim" style="margin-top:6px">${words(d.statement)} words${b?` · ${b.words} required`:''}</p>
 
       <h3 style="font-size:1.15rem;margin:26px 0 8px">How it was made</h3>
       <p class="tiny dim" style="margin:0 0 12px">Process receipts are class-scoped and visible only to you.
         They exist so a finished print can be read alongside the work that produced it.</p>
-      <ul class="recs">${ evs.length ? evs.map(e=>`<li class="rec">
+      <ul class="recs">${ (d.receipts||[]).length ? d.receipts.map(e=>`<li class="rec">
         <time>${fmtWhen(e.at)}</time><span><b>${esc(RECS[e.kind]||e.kind)}</b>${e.detail?' — '+esc(e.detail):''}</span>
       </li>`).join('') : '<li class="tiny dim">No activity recorded.</li>' }</ul>
 
       <div style="display:flex;gap:8px;margin-top:24px;flex-wrap:wrap">
-        <button class="btn btn-ghost btn-sm" onclick="toggleFeature('${w.id}')">
-          ${w.featured?'★ Unfeature':'☆ Feature'}</button>
+        <button class="btn btn-ghost btn-sm" onclick="toggleFeature('${workId}',${!d.featured})">
+          ${d.featured?'★ Unfeature':'☆ Feature'}</button>
         <button class="btn btn-ghost btn-sm" onclick="window.print()">Print this work</button>
       </div>
     </div></div>`;
@@ -763,9 +931,15 @@ const RECS={ join:'Joined the class', open_brief:'Opened the brief',
   attach:'Attached a print', save_draft:'Saved a draft statement',
   submit:'Submitted the work', resubmit:'Revised and resubmitted' };
 
-function toggleFeature(id){ const w=Store.work(id); if(!w) return;
-  Store.updWork(id,{featured:!w.featured});
-  document.querySelector('.scrim')?.remove(); render(); }
+async function toggleFeature(workId,on){
+  const c=curClass(); if(!c) return;
+  try{
+    if(DEMO) Store.updWork(workId,{featured:on});
+    else await API.feature(c.id, workId, on);
+    document.querySelector('.scrim')?.remove();
+    await loadClass(c.id); render();
+  }catch(e){ fail(e); }
+}
 
 /* ══════════════════════════════════════════════════════════════
    STUDENT — join
@@ -777,13 +951,13 @@ function viewJoin(){
     <div class="card">
       <label class="field"><span>Class code</span>
         <input class="code-in" id="jCode" maxlength="6" autocomplete="off"
-               autocapitalize="characters" spellcheck="false" placeholder="ABC123"
+               autocapitalize="characters" spellcheck="false" placeholder="ABC234"
                oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')"
                onkeydown="if(event.key==='Enter')document.getElementById('jName').focus()"></label>
       <label class="field"><span>Your name</span>
         <input class="inp" id="jName" placeholder="e.g. Maya R." autocomplete="off"
                onkeydown="if(event.key==='Enter')doJoin()"></label>
-      <button class="btn btn-gold" style="width:100%" onclick="doJoin()">Join →</button>
+      <button class="btn btn-gold" style="width:100%" id="jBtn" onclick="doJoin()">Join →</button>
       <p class="tiny dim" style="margin:16px 0 0;text-align:center;line-height:1.6">
         Use the name format your teacher asked for — usually your first name and last initial.
         <b>Never your full name, email, or anything else about you.</b></p>
@@ -791,45 +965,85 @@ function viewJoin(){
   </div>`;
 }
 
-function doJoin(){
+async function doJoin(){
   const code=$('#jCode').value.trim().toUpperCase();
   const name=$('#jName').value.trim();
   if(code.length!==6) return toast('A class code is six characters');
-  const c=Store.classByCode(code);
-  if(!c) return toast('No class with that code — check with your teacher');
-  if(!name) return toast('Add the name your class will see');
-  if(name.length>28) return toast('That name is too long');
-  if(/@/.test(name)) return toast('Please use a display name, not an email address');
+  if(!name)           return toast('Add the name your class will see');
+  if(name.length>28)  return toast('That name is too long');
+  if(/@/.test(name))  return toast('Please use a display name, not an email address');
 
-  let m=Store.member(c.id,name);
-  if(m){ if(m.device && m.device!==deviceToken()) m.device=deviceToken(); Store._save(); }
-  else { m=Store.addMember({ id:uid(), classId:c.id, name, device:deviceToken(), joinedAt:Date.now() });
-         Store.log(c.id,m.id,'join'); }
-  State.session={ classId:c.id, memberId:m.id, name:m.name };
-  try{ sessionStorage.setItem('cs_school_sess', JSON.stringify(State.session)); }catch(_){}
-  go('student');
+  const btn=$('#jBtn'); btn.disabled=true; btn.textContent='Joining…';
+  try{
+    if(DEMO){
+      const c=Store.classByCode(code);
+      if(!c) throw new Error('No class with that code — check with your teacher');
+      let m=Store.member(c.id,name);
+      if(!m){ m=Store.addMember({id:uid(),classId:c.id,name,device:deviceToken(),joinedAt:Date.now()});
+              Store.log(c.id,m.id,'join'); }
+      State.session={ token:'demo:'+m.id, name:m.name, class_name:c.name,
+                      assigned:c.assigned, _cid:c.id, _mid:m.id };
+    } else {
+      const r=await API.join(code,name);
+      State.session={ token:r.session_token, name:r.display_name,
+                      class_name:r.class_name, assigned:r.assigned||[] };
+    }
+    try{ sessionStorage.setItem('cs_school_sess', JSON.stringify(State.session)); }catch(_){}
+    await loadStudent();
+    go('student');
+  }catch(e){
+    btn.disabled=false; btn.textContent='Join →';
+    const m=String(e.message||e);
+    toast(/no such class/i.test(m) ? 'No class with that code — check with your teacher'
+        : /closed/i.test(m)        ? 'That class is closed — ask your teacher to reopen it'
+        : m.slice(0,120));
+  }
 }
-function leaveClass(){ State.session=null;
+
+function leaveClass(){ State.session=null; State.works=[]; State.briefOpen=null;
   try{ sessionStorage.removeItem('cs_school_sess'); }catch(_){} go('gate'); }
+
+async function loadStudent(){
+  const s=State.session; if(!s) return;
+  if(DEMO){
+    const c=Store.classById(s._cid);
+    State.session.assigned=c?c.assigned:[];
+    State.works=Store.works(s._cid).filter(w=>w.memberId===s._mid).map(w=>({
+      brief_id:w.briefId, statement:w.statement, credits:w.credits,
+      status:w.status, submitted_at:w.submittedAt, _url:w.image }));
+    return;
+  }
+  try{
+    const st=await API.state(s.token);
+    State.session.name=st.display_name; State.session.class_name=st.class_name;
+    State.session.assigned=st.assigned||[];
+    State.works=(st.works||[]).map(w=>({...w, _url:null}));
+  }catch(e){
+    /* a dead token means the teacher reset the session */
+    State.session=null; try{ sessionStorage.removeItem('cs_school_sess'); }catch(_){}
+    toast('Your session ended — join again with your class code');
+    go('join');
+  }
+}
+const myWork = bid => State.works.find(w=>w.brief_id===bid);
 
 /* ══════════════════════════════════════════════════════════════
    STUDENT — assignments
    ══════════════════════════════════════════════════════════════ */
 function viewStudent(){
   const s=State.session; if(!s) return viewJoin();
-  const c=Store.classById(s.classId); if(!c) return viewJoin();
-  const assigned=c.assigned.map(briefById).filter(Boolean);
+  const assigned=(s.assigned||[]).map(briefById).filter(Boolean);
 
   if(State.briefOpen){
     const b=briefById(State.briefOpen);
-    if(b) return studentBrief(c,b);
+    if(b) return studentBrief(b);
   }
   return `<div class="wrap"><div class="stu">
-    <p class="eyebrow">${esc(c.name)}</p>
+    <p class="eyebrow">${esc(s.class_name||'')}</p>
     <h1 style="font-size:2rem;margin:10px 0 6px">Your assignments</h1>
     <p class="tiny dim" style="margin-bottom:28px">Signed in as ${esc(s.name)} · nothing else about you is stored.</p>
     ${ assigned.length ? assigned.map(b=>{
-      const w=Store.workFor(c.id,s.memberId,b.id);
+      const w=myWork(b.id);
       const st = !w ? 'Not started' : w.status==='submitted' ? 'Submitted' : 'Draft';
       const cls = !w ? '' : w.status==='submitted' ? 'badge-live' : 'badge-draft';
       return `<div class="brief">
@@ -851,15 +1065,16 @@ function viewStudent(){
 function openBrief(id){
   State.briefOpen=id;
   const s=State.session;
-  Store.log(s.classId,s.memberId,'open_brief',briefById(id)?.title||id);
+  if(DEMO) Store.log(s._cid,s._mid,'open_brief',briefById(id)?.title||id);
+  else API.log(s.token,'open_brief',briefById(id)?.title||id);
   render();
 }
 function closeBrief(){ State.briefOpen=null; render(); }
 
-function studentBrief(c,b){
-  const s=State.session;
-  let w=Store.workFor(c.id,s.memberId,b.id);
-  const has=!!(w&&w.image), stmt=w?w.statement||'':'';
+function studentBrief(b){
+  const w=myWork(b.id);
+  const has=!!(w && (w.image_path || w._url));
+  const stmt=w?w.statement||'':'';
   const n=words(stmt), ok=n>=b.words;
   const done=w&&w.status==='submitted';
   return `<div class="wrap"><div class="stu">
@@ -867,13 +1082,13 @@ function studentBrief(c,b){
     <p class="eyebrow" style="margin-top:22px">Brief ${b.n} · ${esc(b.tradition)}</p>
     <h1 style="font-size:2.1rem;margin:10px 0 6px">${esc(b.title)}</h1>
     <p class="brief-meta">${esc(b.meta)}</p>
-    ${done?'<div class="note"><b>Submitted.</b> Your teacher can see this. You can still revise it.</div>':''}
+    ${done?'<div class="note"><b>Turned in.</b> Your teacher can see this. You can still revise it.</div>':''}
 
     <div class="card" style="margin:22px 0">
       <div class="step">
         <div class="step-n">1</div>
         <div class="step-b"><h4>Find</h4><p>${esc(b.find)}</p>
-          ${b.style?`<p class="eyebrow" style="margin:14px 0 4px">Study these — tap for the credit</p>
+          ${b.style?`<p class="eyebrow" style="margin:14px 0 4px">Study these — hover for the credit</p>
             <div class="pats" data-style="${b.style}"><p class="tiny dim">Loading the archive…</p></div>
             <p class="tiny dim" style="margin-top:10px">Every pattern here is CultureSchool's own work,
               made in answer to the tradition named on it. The credit is your works-cited line.</p>`
@@ -890,8 +1105,9 @@ function studentBrief(c,b){
               ${has?'Replace print':'Attach my print'}</button>
           </div>
           <input type="file" id="upl" accept="image/*" style="display:none" onchange="attachWork(event,'${b.id}')">
-          <div class="drop" onclick="document.getElementById('upl').click()">
-            ${has?`<img src="${w.image}" alt="Your print">`
+          <div class="drop" id="dropBox" onclick="document.getElementById('upl').click()">
+            ${has?(w._url?`<img src="${esc(w._url)}" alt="Your print">`
+                        :`<p class="tiny dim" style="margin:0">Your print is attached. Loading preview…</p>`)
                  :`<p class="tiny dim" style="margin:0">Make your print in the studio, export it,<br>then attach the file here.</p>`}
           </div>
         </div>
@@ -906,7 +1122,7 @@ function studentBrief(c,b){
           <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
             <button class="btn btn-ghost btn-sm" onclick="saveDraft('${b.id}')">Save draft</button>
             <button class="btn btn-primary btn-sm" id="subBtn" onclick="submitWork('${b.id}')"
-              ${has&&ok?'':'disabled'}>${done?'Resubmit':'Turn in'} →</button>
+              ${has&&ok?'':'disabled'}>${done?'Turn in again':'Turn in'} →</button>
           </div>
           ${!has||!ok?`<p class="tiny dim" style="margin:10px 0 0">
             Turn-in unlocks once your print is attached and the statement reaches ${b.words} words.</p>`:''}
@@ -917,99 +1133,138 @@ function studentBrief(c,b){
   </div></div>`;
 }
 
-function afterStudent(){ afterTeacher(); /* same pattern-strip hydration */ }
+/* A student cannot sign a storage URL, so the edge function re-issues
+   one for their own work after a reload. */
+async function hydrateStudentImage(){
+  if(DEMO || !State.briefOpen || !State.session) return;
+  const w=myWork(State.briefOpen);
+  if(!w || !w.image_path || w._url) return;
+  const url=await API.readUrl(State.session.token, State.briefOpen);
+  if(!url) return;
+  w._url=url;
+  const box=$('#dropBox');
+  if(box) box.innerHTML=`<img src="${esc(url)}" alt="Your print">`;
+}
 
 function logStudio(){ const s=State.session;
-  Store.log(s.classId,s.memberId,'open_studio'); }
+  if(DEMO) Store.log(s._cid,s._mid,'open_studio'); else API.log(s.token,'open_studio'); }
 
 function countWords(briefId){
   const b=briefById(briefId), n=words($('#stmt').value), ok=n>=b.words;
   const el=$('#wc'); el.textContent=`${n} of ${b.words} words${ok?' ✓':''}`;
   el.style.color = ok?'var(--live)':'var(--muted)';
-  const s=State.session, w=Store.workFor(s.classId,s.memberId,briefId);
-  const btn=$('#subBtn'); if(btn) btn.disabled = !(w&&w.image&&ok);
-}
-
-function ensureWork(briefId){
-  const s=State.session;
-  let w=Store.workFor(s.classId,s.memberId,briefId);
-  if(!w) w=Store.addWork({ id:uid(), classId:s.classId, memberId:s.memberId, briefId,
-    image:null, statement:'', credits:[], status:'draft', featured:false, createdAt:Date.now() });
-  return w;
+  const w=myWork(briefId);
+  const btn=$('#subBtn');
+  if(btn) btn.disabled = !(w && (w.image_path||w._url) && ok);
 }
 
 async function attachWork(ev,briefId){
   const f=ev.target.files&&ev.target.files[0]; if(!f) return;
+  ev.target.value='';
   if(!/^image\//.test(f.type)) return toast('That needs to be an image file');
   toast('Adding your print…');
   try{
-    const img=await fileToThumb(f);
-    const w=ensureWork(briefId);
+    const dataUrl=await fileToJpeg(f);
     const b=briefById(briefId);
-    const credits = b.style ? [(await patternsForStyle(b.style,1)).map(creditFor)[0]].filter(Boolean) : [];
-    Store.updWork(w.id,{ image:img, credits });
-    Store.log(State.session.classId,State.session.memberId,'attach',f.name);
+    const credits = b.style
+      ? [(await patternsForStyle(b.style,1)).map(creditFor)[0]].filter(Boolean) : [];
+    if(DEMO){
+      const s=State.session;
+      let w=Store.workFor(s._cid,s._mid,briefId);
+      if(!w) w=Store.addWork({id:uid(),classId:s._cid,memberId:s._mid,briefId,
+        image:null,statement:'',credits:[],status:'draft',featured:false,createdAt:Date.now()});
+      Store.updWork(w.id,{image:dataUrl,credits});
+      Store.log(s._cid,s._mid,'attach',f.name);
+    } else {
+      const r=await API.upload(State.session.token, briefId, dataUrl, credits);
+      const w=myWork(briefId);
+      if(w){ w.image_path=r.path; w._url=r.signed_url; }
+      else State.works.push({brief_id:briefId,statement:'',credits,status:'draft',
+                             image_path:r.path,_url:r.signed_url});
+    }
+    await loadStudent();
+    /* keep the freshly-signed URL through the reload */
+    if(!DEMO){ const w=myWork(briefId); if(w && !w._url)
+      w._url = await API.readUrl(State.session.token, briefId); }
     render();
     toast('Print attached');
-  }catch(e){ toast('Could not read that image — try a PNG or JPEG'); }
-  ev.target.value='';
+  }catch(e){ fail(e); }
 }
 
-function saveDraft(briefId){
-  const w=ensureWork(briefId);
-  Store.updWork(w.id,{ statement:$('#stmt').value });
-  Store.log(State.session.classId,State.session.memberId,'save_draft', words($('#stmt').value)+' words');
-  toast('Draft saved');
-}
-
-function submitWork(briefId){
-  const b=briefById(briefId), w=ensureWork(briefId);
+async function saveDraft(briefId){
   const stmt=$('#stmt').value;
-  if(!w.image) return toast('Attach your print first');
+  try{
+    if(DEMO){
+      const s=State.session;
+      let w=Store.workFor(s._cid,s._mid,briefId);
+      if(!w) w=Store.addWork({id:uid(),classId:s._cid,memberId:s._mid,briefId,
+        image:null,statement:'',credits:[],status:'draft',featured:false,createdAt:Date.now()});
+      Store.updWork(w.id,{statement:stmt});
+      Store.log(s._cid,s._mid,'save_draft',words(stmt)+' words');
+    } else {
+      await API.saveWork(State.session.token, briefId, stmt, null);
+      API.log(State.session.token,'save_draft',words(stmt)+' words');
+    }
+    const w=myWork(briefId); if(w) w.statement=stmt;
+    toast('Draft saved');
+  }catch(e){ fail(e); }
+}
+
+async function submitWork(briefId){
+  const b=briefById(briefId), stmt=$('#stmt').value;
+  const w=myWork(briefId);
+  if(!w || !(w.image_path||w._url)) return toast('Attach your print first');
   if(words(stmt)<b.words) return toast(`The statement needs at least ${b.words} words`);
   const again=w.status==='submitted';
-  Store.updWork(w.id,{ statement:stmt, status:'submitted', submittedAt:Date.now() });
-  Store.log(State.session.classId,State.session.memberId, again?'resubmit':'submit', b.title);
-  render();
-  toast(again?'Resubmitted':'Turned in — your teacher can see it now');
+  try{
+    if(DEMO){
+      const s=State.session;
+      const dw=Store.workFor(s._cid,s._mid,briefId);
+      Store.updWork(dw.id,{statement:stmt,status:'submitted',submittedAt:Date.now()});
+      Store.log(s._cid,s._mid, again?'resubmit':'submit', b.title);
+    } else {
+      await API.saveWork(State.session.token, briefId, stmt, null);
+      await API.submit(State.session.token, briefId);   /* the floor is enforced here */
+    }
+    await loadStudent(); render();
+    toast(again?'Turned in again':'Turned in — your teacher can see it now');
+  }catch(e){
+    const m=String(e.message||e);
+    if(/needs \d+ words/.test(m)) toast(m);
+    else if(/attach/i.test(m))    toast('Attach your print first');
+    else fail(e);
+  }
 }
 
 /* ══════════════════════════════════════════════════════════════
-   DEMO SEED
-   A showroom gallery must never be empty. Builds a class with
-   three students at different stages, with plausible receipts.
+   DEMO SEED — ?demo=1 only
+   A showroom gallery must never be empty.
    ══════════════════════════════════════════════════════════════ */
 function seedDemo(){
-  if(!confirm('Load a demo class? This replaces anything currently saved on this device.')) return;
   Store.reset();
   const teacher='demo@school.edu';
   const c=Store.addClass({ id:uid(), code:'ADINKR', name:'Period 3 · Visual Arts',
-    teacher, namePolicy:'first_initial', assigned:['adinkra','shibori'], createdAt:Date.now()-864e5*9 });
+    teacher, assigned:['adinkra','shibori'], createdAt:Date.now()-864e5*9 });
   const H=36e5, D=864e5, now=Date.now();
   const people=[
-    { name:'Maya R.',   brief:'adinkra', st:'submitted', at:now-D*2,
+    { name:'Maya R.', brief:'adinkra', st:'submitted', at:now-D*2,
       s:"I chose Sankofa, the bird that looks backward while walking forward. It means you can go back and get what you forgot — my grandmother says something close to that in Creole, so it already felt like ours. Adinkra symbols were stamped with carved calabash and dye made from tree bark, and the cloth was worn at funerals, which surprised me because I assumed pattern always meant celebration.\n\nMy own symbol is a key inside an open hand. It stands for my mother giving me the house key the first week she trusted me alone. I borrowed the grid — Adinkra repeats in bands with a stamped edge, so mine does too, and I kept the block spacing loose the way a hand-stamp never lands perfectly. What I changed is the colour: traditional Adinkra is often dark brown-black on russet, and I used the indigo family because the key was cold when she handed it to me. I also let my symbol break the grid once, in the bottom corner, so the eye finds it." },
-    { name:'Devon A.',  brief:'adinkra', st:'submitted', at:now-D-H*4,
+    { name:'Devon A.', brief:'adinkra', st:'submitted', at:now-D-H*4,
       s:"Gye Nyame is everywhere in Ghana — on buildings, on cloth, on the back of taxis. It means except for God, and it is probably the most used Adinkra symbol there is. What surprised me is that the symbols were a whole writing system before they were decoration, and that a chief could wear a cloth that argued with you without saying anything.\n\nI made a symbol for stubbornness, which my coach calls my best and worst quality. It is two arrows pushing into each other and neither one bending. I borrowed the way Adinkra fills a square completely so the stamp reads at a distance, and the way the same block repeats until the repetition becomes the message. I changed the scale — I made mine much larger than a real stamp so it reads as a poster instead of cloth, and I used only two colours because I wanted it to feel like a warning sign more than a fabric." },
-    { name:'Priya S.',  brief:'shibori', st:'draft', at:now-H*6, s:"I picked itajime, the one where you fold the cloth and clamp it between two shapes so the dye can't reach the middle. " }
+    { name:'Priya S.', brief:'shibori', st:'draft', at:now-H*6,
+      s:"I picked itajime, the one where you fold the cloth and clamp it between two shapes so the dye can't reach the middle. " }
   ];
   people.forEach((p,i)=>{
     const m=Store.addMember({ id:uid(), classId:c.id, name:p.name, device:'demo'+i,
       joinedAt:now-D*8+i*H });
-    Store.log(c.id,m.id,'join');
-    Store.log(c.id,m.id,'open_brief',briefById(p.brief).title);
-    Store.log(c.id,m.id,'view_tradition',briefById(p.brief).tradition);
+    ['join','open_brief','view_tradition'].forEach(k=>Store.log(c.id,m.id,k,
+      k==='join'?'':briefById(p.brief).title));
+    Store.log(c.id,m.id,'open_studio');
     if(p.st==='submitted'){
-      Store.log(c.id,m.id,'open_studio');
       Store.log(c.id,m.id,'attach','print_final.png');
       Store.log(c.id,m.id,'save_draft','82 words');
       Store.log(c.id,m.id,'submit',briefById(p.brief).title);
-    } else {
-      Store.log(c.id,m.id,'open_studio');
-      Store.log(c.id,m.id,'save_draft','24 words');
-    }
-    /* Backdate the receipts so the timeline reads like three weeks of work
-       rather than three seconds of seeding. */
+    } else Store.log(c.id,m.id,'save_draft','24 words');
     const evs=Store.events(c.id,m.id);
     evs.forEach((e,k)=>{ e.at = p.at - (evs.length-k)*H*(1.5+i); });
     Store._save();
@@ -1018,16 +1273,11 @@ function seedDemo(){
       status:p.st, featured:i===0,
       createdAt:p.at-D, submittedAt:p.st==='submitted'?p.at:null });
   });
-  State.teacher=teacher; State.classId=c.id; State.tab='gallery';
-  try{ localStorage.setItem('cs_school_teacher',teacher); }catch(_){}
-  go('teacher');
-  toast('Demo class loaded — code ADINKR');
+  return teacher;
 }
 const demoCredit = b => b==='adinkra'
   ? 'Akan people, Ghana & Côte d’Ivoire · Africa' : 'Japan · Asia';
 
-/* Placeholder student prints, drawn rather than fetched so the demo
-   works with no network and adds no weight to the file. */
 function demoPrint(brief,i){
   const c=document.createElement('canvas'); c.width=c.height=520;
   const x=c.getContext('2d');
@@ -1051,8 +1301,7 @@ function demoPrint(brief,i){
       x.fillStyle=b%2?P[1]:P[2]; x.globalAlpha=.85;
       for(let q=0;q<7;q++){
         const w=30+((b*7+q*13)%46);
-        x.beginPath();
-        x.ellipse(26+q*76, 30+b*58, w/2, 15, 0, 0, Math.PI*2); x.fill();
+        x.beginPath(); x.ellipse(26+q*76, 30+b*58, w/2, 15, 0, 0, Math.PI*2); x.fill();
       }
     }
     x.globalAlpha=1;
@@ -1066,14 +1315,51 @@ function demoPrint(brief,i){
 /* ══════════════════════════════════════════════════════════════
    BOOT
    ══════════════════════════════════════════════════════════════ */
-(function boot(){
+async function boot(){
+  render();   /* paint the gate immediately; auth resolves underneath */
+
+  if(DEMO){
+    if(!Store.classes().length) State.teacher = seedDemo();
+    else State.teacher = 'demo@school.edu';
+    try{
+      const s=JSON.parse(sessionStorage.getItem('cs_school_sess')||'null');
+      if(s && s.token && String(s.token).startsWith('demo:') && Store.classById(s._cid)){
+        State.session=s; await loadStudent(); return go('student');
+      }
+    }catch(_){}
+    await loadTeacher(); return go('teacher');
+  }
+
+  /* A student session survives a reload; the token is the only thing kept. */
   try{
-    const t=localStorage.getItem('cs_school_teacher'); if(t) State.teacher=t;
     const s=JSON.parse(sessionStorage.getItem('cs_school_sess')||'null');
-    if(s && Store.classById(s.classId)){ State.session=s; State.view='student'; }
+    if(s && s.token && !String(s.token).startsWith('demo:')){
+      State.session=s; await loadStudent();
+      if(State.session) return go('student');
+    }
   }catch(_){}
-  render();
-})();
+
+  /* Magic-link return lands here with a session already exchanged. */
+  sb.auth.onAuthStateChange(async (evt, session) => {
+    const email = session?.user?.email || null;
+    if(email && email !== State.teacher){
+      State.teacher = email;
+      if(history.replaceState) history.replaceState({}, '', location.pathname);
+      await loadTeacher();
+      go('teacher');
+    } else if(!email && State.teacher){
+      State.teacher=null; render();
+    }
+  });
+
+  const { data:{ session } } = await sb.auth.getSession();
+  if(session?.user?.email){
+    State.teacher = session.user.email;
+    await loadTeacher();
+    go('teacher');
+  }
+}
+boot();
 </script>
 </body>
 </html>
