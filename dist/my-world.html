@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1179,7 +1180,7 @@ main {
 <div id="toast"></div>
 
 <!-- cs-track telemetry -->
-<script>(function(){var U='https://qwulthvbwujfehgdegtn.supabase.co',K='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3dWx0aHZid3VqZmVoZ2RlZ3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQyMDcxODIsImV4cCI6MjA1OTc4MzE4Mn0.t9n4eZng6d0jggiPNK-J_DByvEE2L9tqy5Xh_1-TSoQ',A=['search','view','download','save','share','palette_view','pattern_view','creator_view','museum_view'],R=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,SID;try{SID=localStorage.getItem('cs_sid');if(!SID){SID=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():'sid-'+Date.now()+'-'+Math.random().toString(36).slice(2);localStorage.setItem('cs_sid',SID);}}catch(e){SID='nostorage';}var _CC=null;try{_CC=localStorage.getItem('cs_cc');if(!_CC){fetch('https://ipapi.co/json/').then(function(r){return r.json();}).then(function(d){if(d&&d.country_code){localStorage.setItem('cs_cc',d.country_code);_CC=d.country_code;}}).catch(function(){});}}catch(e){}var SURF='my-world',UID=null;try{var _s=window.sb||window.supabase;if(_s&&_s.auth&&_s.auth.getSession)_s.auth.getSession().then(function(r){UID=r&&r.data&&r.data.session?r.data.session.user.id:null;}).catch(function(){});}catch(e){}window.csTrack=function(t,o){o=o||{};try{if(A.indexOf(t)===-1)return;var eid=o.id&&R.test(String(o.id))?String(o.id):null,m=o.meta||{};m.surface=o.surface||SURF;if(o.id&&!eid)m.raw_id=String(o.id);fetch(U+'/rest/v1/cs_events',{method:'POST',headers:{'Content-Type':'application/json',apikey:K,Authorization:'Bearer '+K,Prefer:'return=minimal'},body:JSON.stringify({event_type:t,query:o.query||null,entity_type:o.type||null,entity_id:eid,entity_slug:o.slug||null,user_id:UID,session_id:SID,country_code:_CC,referrer:document.referrer||null,metadata:m}),keepalive:true}).catch(function(){});}catch(e){}};})();</script>
+<script>(function(){var U='https://qwulthvbwujfehgdegtn.supabase.co',K='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3dWx0aHZid3VqZmVoZ2RlZ3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQyMDcxODIsImV4cCI6MjA1OTc4MzE4Mn0.t9n4eZng6d0jggiPNK-J_DByvEE2L9tqy5Xh_1-TSoQ',A=['search','view','download','save','share','palette_view','pattern_view','creator_view','museum_view'],R=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,SID;try{SID=localStorage.getItem('cs_sid');if(!SID){SID=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():'sid-'+Date.now()+'-'+Math.random().toString(36).slice(2);localStorage.setItem('cs_sid',SID);}}catch(e){SID='nostorage';}var _CC=null;try{_CC=sessionStorage.getItem('cs_cc');if(!_CC){fetch('https://ipapi.co/json/').then(function(r){return r.json();}).then(function(d){if(d&&d.country_code){sessionStorage.setItem('cs_cc',d.country_code);_CC=d.country_code;}}).catch(function(){});}}catch(e){}var SURF='my-world',UID=null;try{var _s=window.sb||window.supabase;if(_s&&_s.auth&&_s.auth.getSession)_s.auth.getSession().then(function(r){UID=r&&r.data&&r.data.session?r.data.session.user.id:null;}).catch(function(){});}catch(e){}window.csTrack=function(t,o){o=o||{};try{if(A.indexOf(t)===-1)return;var eid=o.id&&R.test(String(o.id))?String(o.id):null,m=o.meta||{};m.surface=o.surface||SURF;if(o.id&&!eid)m.raw_id=String(o.id);fetch(U+'/rest/v1/cs_events',{method:'POST',headers:{'Content-Type':'application/json',apikey:K,Authorization:'Bearer '+K,Prefer:'return=minimal'},body:JSON.stringify({event_type:t,query:o.query||null,entity_type:o.type||null,entity_id:eid,entity_slug:o.slug||null,user_id:UID,session_id:SID,country_code:_CC,referrer:document.referrer||null,metadata:m}),keepalive:true}).catch(function(){});}catch(e){}};})();</script>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -1632,7 +1633,10 @@ db.auth.onAuthStateChange(async (event, session) => {
 
     if (uRow?.is_subscriber) {
       _isSubscriber = true;
-      _isFullAccess = uRow.subscription_tier === 'all-access' || !!uRow.admin;
+      // users.admin is TEXT, not boolean — the string "false" is truthy in JS,
+      // so !!uRow.admin would hand full access to a Basic subscriber.
+      _isFullAccess = uRow.subscription_tier === 'all-access' ||
+                      String(uRow.admin ?? '').trim().toLowerCase() === 'true';
       _userEmail    = session.user.email;
       revealWorld();
       loadWorld();
@@ -1682,7 +1686,9 @@ db.auth.onAuthStateChange(async (event, session) => {
     }
 
     _isSubscriber = true;
-    _isFullAccess = uRow.subscription_tier === 'all-access' || !!uRow.admin;
+    // See the note in onAuthStateChange — users.admin is TEXT, compare explicitly.
+    _isFullAccess = uRow.subscription_tier === 'all-access' ||
+                    String(uRow.admin ?? '').trim().toLowerCase() === 'true';
     revealWorld();
     loadWorld();
 
