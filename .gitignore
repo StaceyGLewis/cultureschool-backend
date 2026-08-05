@@ -9,3 +9,6 @@ node_modules
 
 # Local Netlify folder
 .netlify
+
+# Generated lookbooks — rebuild with tools/lookbook/build.js, never commit
+lookbook-*.html
