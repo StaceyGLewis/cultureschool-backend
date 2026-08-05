@@ -264,6 +264,26 @@ begin
   return jsonb_build_object('status','submitted','words',n);
 end $$;
 
+-- Where this student's file for this brief is allowed to go. The path is
+-- DERIVED, never supplied — a student cannot aim an upload at another
+-- class, another member, or outside the bucket. The upload itself runs
+-- service-role inside the school-upload edge function, which calls this
+-- first and writes to exactly the path it returns.
+create or replace function public.school_upload_target(p_session uuid, p_brief text)
+returns jsonb
+language plpgsql stable security definer set search_path = public, pg_temp as $$
+declare m public.class_members;
+begin
+  m := public._school_member(p_session);
+  perform public._school_brief(p_brief);   -- rejects an unknown brief
+  return jsonb_build_object(
+    'bucket','class-works',
+    'path', m.class_id || '/' || m.id || '/' ||
+            regexp_replace(p_brief, '[^a-zA-Z0-9_-]', '', 'g') || '.jpg',
+    'class_id', m.class_id,
+    'member_id', m.id);
+end $$;
+
 create or replace function public.school_log(
   p_session uuid, p_kind text, p_detail text default null)
 returns void
@@ -452,6 +472,7 @@ grant execute on function
   public.school_state(uuid),
   public.school_save_work(uuid,text,text,text,text[]),
   public.school_submit(uuid,text),
+  public.school_upload_target(uuid,text),
   public.school_log(uuid,text,text)
   to anon, authenticated;
 
