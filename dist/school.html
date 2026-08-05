@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Print Studio for Schools · CultureSchool</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   PRINT STUDIO FOR SCHOOLS — prototype
+   Separate entry point sharing the pattern archive (school-mode
+   brief §32: mode isolation, not a toggle inside the consumer app).
+   Touches no consumer code path.
+
+   PROTOTYPE STORAGE: everything persists to localStorage via the
+   Store object below. Swapping to Supabase means replacing that one
+   object — the SQL is in docs/school-mode.sql, unrun.
+
+   ZERO STUDENT PII by construction. A student session is
+   class code + display name + a random device token. No email,
+   no password, no account, nothing that identifies a child.
+   ═══════════════════════════════════════════════════════════════ */
+:root{
+  --cream:#faf6ef; --paper:#fffdf9; --ink:#1a1208; --body:#4a3c28;
+  --muted:#8a7a62; --faint:#b3a68f;
+  --gold:#a9803c; --gold-lift:#c9a96e; --gold-wash:rgba(169,128,60,.09);
+  --rule:#e6dfcf; --rule-soft:#f0eade;
+  --live:#4a7c59; --live-wash:rgba(74,124,89,.1);
+  --wait:#9a8156; --draft-wash:rgba(154,129,86,.12);
+  --r:10px; --r-lg:16px;
+  --shadow:0 1px 2px rgba(26,18,8,.04),0 8px 24px rgba(26,18,8,.06);
+  --shadow-lg:0 2px 6px rgba(26,18,8,.06),0 20px 50px rgba(26,18,8,.12);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--cream);color:var(--ink);
+  font:400 16px/1.6 'DM Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:'Cormorant Garamond',Georgia,serif;font-weight:600;
+  margin:0;line-height:1.12;text-wrap:balance}
+button{font:inherit;cursor:pointer}
+input,textarea,select{font:inherit;color:inherit}
+a{color:var(--gold)}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px;border-radius:4px}
+
+/* ── shell ─────────────────────────────────────────────── */
+.wrap{max-width:1140px;margin:0 auto;padding:0 24px}
+.topbar{border-bottom:1px solid var(--rule);background:var(--paper);position:sticky;top:0;z-index:50}
+.topbar .wrap{display:flex;align-items:center;justify-content:space-between;height:62px;gap:16px}
+.mark{font-family:'Cormorant Garamond',Georgia,serif;font-size:1.32rem;font-weight:600;letter-spacing:-.01em}
+.mark small{display:block;font:500 .56rem/1 'DM Sans',sans-serif;letter-spacing:.26em;
+  text-transform:uppercase;color:var(--gold);margin-top:3px}
+.topbar-right{display:flex;align-items:center;gap:14px;font-size:.82rem;color:var(--muted)}
+
+/* ── type ──────────────────────────────────────────────── */
+.eyebrow{font:500 .6rem/1 'DM Sans',sans-serif;letter-spacing:.26em;
+  text-transform:uppercase;color:var(--gold)}
+.lede{font-size:1.02rem;line-height:1.7;color:var(--body);max-width:62ch}
+.dim{color:var(--muted)}
+.tiny{font-size:.76rem;line-height:1.5}
+
+/* ── buttons ───────────────────────────────────────────── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:12px 22px;border-radius:99px;border:1px solid transparent;
+  font:500 .82rem/1 'DM Sans',sans-serif;text-decoration:none;transition:.16s}
+.btn-primary{background:var(--ink);color:var(--cream)}
+.btn-primary:hover{background:#2c2013}
+.btn-gold{background:var(--gold);color:#fff}
+.btn-gold:hover{background:#94702f}
+.btn-ghost{background:transparent;color:var(--body);border-color:var(--rule)}
+.btn-ghost:hover{border-color:var(--gold);color:var(--gold)}
+.btn-sm{padding:8px 15px;font-size:.75rem}
+.btn:disabled{opacity:.42;cursor:not-allowed}
+
+/* ── fields ────────────────────────────────────────────── */
+.field{display:block;margin-bottom:16px}
+.field > span{display:block;font:500 .7rem/1 'DM Sans',sans-serif;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+.inp{width:100%;padding:12px 14px;border:1px solid var(--rule);border-radius:var(--r);
+  background:var(--paper);transition:.16s}
+.inp:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-wash)}
+textarea.inp{min-height:132px;resize:vertical;line-height:1.65}
+
+/* ── cards ─────────────────────────────────────────────── */
+.card{background:var(--paper);border:1px solid var(--rule);border-radius:var(--r-lg);
+  padding:26px;box-shadow:var(--shadow)}
+.grid{display:grid;gap:18px}
+
+/* ── gate (landing) ────────────────────────────────────── */
+.gate{min-height:calc(100vh - 62px);display:flex;align-items:center;justify-content:center;padding:48px 24px}
+.gate-inner{width:100%;max-width:880px;text-align:center}
+.gate h1{font-size:clamp(2.3rem,5.4vw,3.5rem);margin-bottom:16px}
+.doors{display:grid;grid-template-columns:repeat(auto-fit,minmax(268px,1fr));gap:20px;margin-top:42px;text-align:left}
+.door{background:var(--paper);border:1px solid var(--rule);border-radius:var(--r-lg);
+  padding:30px 28px 26px;cursor:pointer;transition:.18s;box-shadow:var(--shadow)}
+.door:hover{border-color:var(--gold);transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+.door h3{font-size:1.5rem;margin:14px 0 8px}
+.door p{margin:0 0 20px;font-size:.88rem;line-height:1.6;color:var(--body)}
+.door-ico{width:38px;height:38px;color:var(--gold)}
+
+/* ── badges ────────────────────────────────────────────── */
+.badge{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:99px;
+  font:500 .67rem/1.5 'DM Sans',sans-serif;letter-spacing:.04em;
+  background:var(--gold-wash);color:var(--gold)}
+.badge-live{background:var(--live-wash);color:var(--live)}
+.badge-draft{background:var(--draft-wash);color:var(--wait)}
+.badge-flag{background:rgba(180,66,47,.1);color:#a63d2b}
+
+/* ── class code ────────────────────────────────────────── */
+.code{font:700 1.5rem/1 'DM Sans',sans-serif;letter-spacing:.34em;
+  color:var(--ink);font-variant-numeric:tabular-nums}
+.code-lg{font-size:2.6rem;letter-spacing:.4em}
+
+/* ── layout: teacher ───────────────────────────────────── */
+.cols{display:grid;grid-template-columns:288px 1fr;gap:32px;align-items:start;padding:34px 0 80px}
+.side .card{padding:20px}
+.side h3{font-size:1.15rem;margin-bottom:14px}
+.class-row{display:block;width:100%;text-align:left;padding:12px 13px;border-radius:var(--r);
+  border:1px solid transparent;background:transparent;margin-bottom:5px;transition:.14s}
+.class-row:hover{background:var(--cream)}
+.class-row[aria-current="true"]{background:var(--gold-wash);border-color:rgba(169,128,60,.25)}
+.class-row b{display:block;font-weight:500;font-size:.9rem}
+.class-row span{font-size:.72rem;color:var(--muted);font-variant-numeric:tabular-nums}
+
+/* ── tabs ──────────────────────────────────────────────── */
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--rule);margin-bottom:26px;overflow-x:auto}
+.tab{padding:11px 17px;background:none;border:none;border-bottom:2px solid transparent;
+  color:var(--muted);font:500 .82rem/1 'DM Sans',sans-serif;white-space:nowrap;transition:.14s}
+.tab:hover{color:var(--body)}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--gold)}
+
+/* ── briefs ────────────────────────────────────────────── */
+.brief{border:1px solid var(--rule);border-radius:var(--r-lg);background:var(--paper);
+  padding:24px;margin-bottom:16px;box-shadow:var(--shadow)}
+.brief-top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:6px}
+.brief h3{font-size:1.42rem}
+.brief-meta{font:500 .68rem/1 'DM Sans',sans-serif;letter-spacing:.11em;
+  text-transform:uppercase;color:var(--gold);margin:7px 0 14px}
+.brief-arc{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin:18px 0}
+.arc{background:var(--cream);border-radius:var(--r);padding:14px 15px}
+.arc b{display:block;font:500 .68rem/1 'DM Sans',sans-serif;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--gold);margin-bottom:7px}
+.arc p{margin:0;font-size:.84rem;line-height:1.58;color:var(--body)}
+.turnin{background:var(--cream);border-left:2px solid var(--gold);padding:14px 17px;
+  border-radius:0 var(--r) var(--r) 0;margin:16px 0;font-size:.86rem;line-height:1.62;color:var(--body)}
+.standards{font-size:.75rem;line-height:1.6;color:var(--muted);padding-top:14px;border-top:1px solid var(--rule-soft)}
+
+/* ── pattern strip ─────────────────────────────────────── */
+.pats{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px;margin-top:12px}
+.pat{position:relative;aspect-ratio:1;border-radius:var(--r);overflow:hidden;
+  border:1px solid var(--rule);background:var(--cream);cursor:pointer;transition:.15s}
+.pat:hover{border-color:var(--gold);transform:scale(1.03)}
+.pat img{width:100%;height:100%;object-fit:cover;display:block}
+.pat-cap{position:absolute;inset:auto 0 0 0;background:linear-gradient(transparent,rgba(26,18,8,.86));
+  color:#fff;font-size:.6rem;line-height:1.3;padding:14px 6px 5px;opacity:0;transition:.15s}
+.pat:hover .pat-cap{opacity:1}
+
+/* ── gallery ───────────────────────────────────────────── */
+.gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(224px,1fr));gap:18px}
+.work{background:var(--paper);border:1px solid var(--rule);border-radius:var(--r-lg);
+  overflow:hidden;box-shadow:var(--shadow);transition:.16s}
+.work:hover{box-shadow:var(--shadow-lg)}
+.work-img{aspect-ratio:1;background:var(--cream);display:flex;align-items:center;justify-content:center;
+  border-bottom:1px solid var(--rule-soft);cursor:pointer}
+.work-img img{width:100%;height:100%;object-fit:cover;display:block}
+.work-body{padding:14px 16px 16px}
+.work-body b{display:block;font-weight:500;font-size:.92rem;margin-bottom:3px}
+.work-body .tiny{color:var(--muted)}
+.work-acts{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap}
+
+/* ── empty ─────────────────────────────────────────────── */
+.empty{text-align:center;padding:56px 24px;color:var(--muted)}
+.empty h3{font-size:1.3rem;color:var(--ink);margin-bottom:8px}
+
+/* ── student ───────────────────────────────────────────── */
+.stu{max-width:820px;margin:0 auto;padding:34px 0 80px}
+.join{max-width:420px;margin:0 auto;padding:64px 0}
+.code-in{width:100%;padding:18px;text-align:center;font:700 1.7rem/1 'DM Sans',sans-serif;
+  letter-spacing:.34em;text-transform:uppercase;border:1px solid var(--rule);
+  border-radius:var(--r);background:var(--paper)}
+.code-in:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-wash)}
+.step{display:flex;gap:15px;padding:19px 0;border-bottom:1px solid var(--rule-soft)}
+.step:last-child{border-bottom:none}
+.step-n{flex:0 0 27px;height:27px;border-radius:50%;background:var(--gold-wash);color:var(--gold);
+  display:flex;align-items:center;justify-content:center;
+  font:700 .76rem/1 'DM Sans',sans-serif;font-variant-numeric:tabular-nums}
+.step-n.done{background:var(--live-wash);color:var(--live)}
+.step-b{flex:1;min-width:0}
+.step-b h4{margin:0 0 5px;font:500 .96rem/1.3 'DM Sans',sans-serif}
+.step-b p{margin:0 0 11px;font-size:.85rem;line-height:1.6;color:var(--body)}
+.drop{border:1.5px dashed var(--rule);border-radius:var(--r);padding:26px;text-align:center;
+  cursor:pointer;transition:.15s;background:var(--cream)}
+.drop:hover{border-color:var(--gold);background:var(--gold-wash)}
+.drop img{max-width:100%;max-height:250px;border-radius:6px;display:block;margin:0 auto}
+
+/* ── process receipts ──────────────────────────────────── */
+.recs{margin:0;padding:0;list-style:none;font-size:.8rem}
+.rec{display:flex;gap:12px;padding:8px 0;border-bottom:1px solid var(--rule-soft);align-items:baseline}
+.rec:last-child{border-bottom:none}
+.rec time{flex:0 0 128px;color:var(--faint);font-size:.72rem;font-variant-numeric:tabular-nums}
+.rec b{font-weight:500}
+
+/* ── modal ─────────────────────────────────────────────── */
+.scrim{position:fixed;inset:0;z-index:200;background:rgba(20,14,6,.62);backdrop-filter:blur(5px);
+  display:flex;align-items:center;justify-content:center;padding:24px}
+.modal{background:var(--paper);border-radius:var(--r-lg);width:min(680px,100%);
+  max-height:88vh;overflow:auto;box-shadow:var(--shadow-lg)}
+.modal-h{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;
+  padding:24px 26px 0}
+.modal-b{padding:18px 26px 26px}
+.x{background:none;border:none;font-size:1.5rem;line-height:1;color:var(--muted);padding:0 4px}
+.x:hover{color:var(--ink)}
+
+/* ── toast ─────────────────────────────────────────────── */
+#toast{position:fixed;left:50%;bottom:30px;transform:translateX(-50%) translateY(90px);
+  background:var(--ink);color:var(--cream);padding:12px 22px;border-radius:99px;
+  font-size:.84rem;z-index:400;opacity:0;transition:.24s;pointer-events:none;max-width:88vw}
+#toast.on{transform:translateX(-50%) translateY(0);opacity:1}
+
+.note{background:var(--gold-wash);border-radius:var(--r);padding:13px 16px;
+  font-size:.82rem;line-height:1.6;color:var(--body);margin:16px 0}
+.note b{color:var(--gold)}
+
+@media (max-width:860px){
+  .cols{grid-template-columns:1fr;gap:22px}
+  .wrap{padding:0 18px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media print{.topbar,.btn,.tabs,.work-acts{display:none!important}}
+</style>
+</head>
+<body>
+
+<div class="topbar"><div class="wrap">
+  <div class="mark">CoCo<small>Print Studio for Schools</small></div>
+  <div class="topbar-right" id="topRight"></div>
+</div></div>
+
+<main id="app"></main>
+<div id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ══════════════════════════════════════════════════════════════
+   CONFIG
+   ══════════════════════════════════════════════════════════════ */
+const SUPA_URL  = 'https://qwulthvbwujfehgdegtn.supabase.co';
+const SUPA_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3dWx0aHZid3VqZmVoZ2RlZ3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQyMDcxODIsImV4cCI6MjA1OTc4MzE4Mn0.t9n4eZng6d0jggiPNK-J_DByvEE2L9tqy5Xh_1-TSoQ';
+const PRINT_STUDIO = 'https://coco-print-studio.cultureschool.org';
+const sb = window.supabase.createClient(SUPA_URL, SUPA_ANON);
+
+/* ══════════════════════════════════════════════════════════════
+   INTERPRETATION BRIEFS
+   Verbatim from docs/print-studio-school-docs. Each carries the
+   Find / Interpret / Own-it arc, the turn-in checklist, and the
+   standards tags that make it purchasable by a district.
+
+   `style` binds a brief to a real pattern style in patterns_public
+   so the reference strip is live archive content, not stock art.
+   null = the archive has no matching style yet (see notes).
+   ══════════════════════════════════════════════════════════════ */
+const BRIEFS = [
+  {
+    id:'adinkra', n:'01',
+    title:'A Symbol That Speaks: Adinkra',
+    meta:'Grades 6–8 · Visual Arts or Integrated Social Studies · 2–3 weeks',
+    style:'adinkra',
+    tradition:'Adinkra · Akan people, Ghana',
+    find:"Adinkra symbols from Ghana are a visual language: each mark carries a proverb or value, traditionally stamped onto cloth with carved calabash stamps. Choose ONE Adinkra symbol. Document: what it looks like, the proverb or meaning it carries, who historically made and wore Adinkra cloth, and one thing that surprised you.",
+    interpret:"Design a symbol of your own for a value YOU hold — then build a stamped-cloth-style repeat print around it, using what you learned about how Adinkra organizes symbols in a grid. Your symbol, Adinkra's visual grammar.",
+    own:"An artist statement of 150+ words: what your symbol means, what you borrowed from the tradition, what you changed and why.",
+    words:150,
+    turnin:'Documented source notes · your finished print · an artist statement (150+ words)',
+    standards:'VA.68.H.1.3 (significance of artwork to its culture) · VA.68.S.1.3 (cultural references in personal artwork). Supports F.S. 1003.42(2)(h).'
+  },
+  {
+    id:'shibori', n:'02',
+    title:'Pattern From Process: Shibori',
+    meta:'Grades 6–12 · Visual Arts · 2 weeks',
+    style:'shibori',
+    tradition:'Shibori · Japan',
+    find:"In Japanese shibori, the pattern is a record of what was done to the cloth before the indigo dye touched it — bound, stitched, clamped, or folded, each technique leaves its own signature. Choose one shibori technique (kanoko, itajime, arashi…). Document how the physical process creates the pattern, and where and when the tradition developed.",
+    interpret:"Design a print where the pattern records a process — translate the idea of “resist” into your own rule (what stays untouched, and why?). Use an indigo-family palette and explain your rule in the statement.",
+    own:"An artist statement of 150+ words: your rule, the technique that inspired it, and how your digital “resist” differs from cloth and dye.",
+    words:150,
+    turnin:'Source notes · finished print · statement (150+ words)',
+    standards:'VA.68.O.1.1 / VA.912 organizational-structure equivalents · VA.68.H.2.2 (utilitarian objects and human experience). Supports F.S. 1003.42(2)(i).'
+  },
+  {
+    id:'geesbend', n:'03',
+    title:"My Way: The Quilters of Gee's Bend",
+    meta:'Grades 9–12 · Visual Arts or American History · 3 weeks',
+    style:null,
+    tradition:"Gee's Bend · Boykin, Alabama",
+    find:"In Gee's Bend, Alabama, generations of African American women — including named artists like Loretta Pettway and Annie Mae Young — built one of America's great art traditions: improvisational quilts whose bold, off-grid geometry now hangs in major museums. Choose ONE named quilter. Document: her life and circumstances, how she described her own way of working, and what makes her compositions recognizable.",
+    interpret:"Compose an improvisational print answering her principles — work “your way”: break the grid deliberately, reuse and recombine pattern blocks the way the quilters reused cloth, and let the composition show its decisions.",
+    own:"An artist statement of 250+ words: who she was, one principle of hers you adopted, one place you departed from it, and why her work belongs in the story of American art.",
+    words:250,
+    turnin:'Source notes · finished print · statement (250+ words)',
+    standards:"VA.912 Historical & Global Connections strand · directly supports F.S. 1003.42(2)(h) African American history and (2)(r) women's contributions — both annually certified topics."
+  }
+];
+const briefById = id => BRIEFS.find(b => b.id === id);
+
+/* ══════════════════════════════════════════════════════════════
+   STORE — prototype persistence
+   The ONLY place that touches storage. Replacing this object with
+   Supabase calls is the whole migration; see docs/school-mode.sql.
+   ══════════════════════════════════════════════════════════════ */
+const Store = {
+  KEY:'cs_school_v1',
+  _d:null,
+  _load(){ if(this._d) return this._d;
+    try{ this._d = JSON.parse(localStorage.getItem(this.KEY)) || null; }catch(_){ this._d=null; }
+    if(!this._d) this._d = { classes:[], members:[], works:[], events:[] };
+    return this._d; },
+  _save(){ try{ localStorage.setItem(this.KEY, JSON.stringify(this._d)); }
+           catch(e){ toast('Storage full — remove a submission to continue'); } },
+  all(){ return this._load(); },
+
+  classes(teacher){ return this._load().classes.filter(c => !teacher || c.teacher === teacher); },
+  classByCode(code){ return this._load().classes.find(c => c.code === String(code||'').toUpperCase()); },
+  classById(id){ return this._load().classes.find(c => c.id === id); },
+  addClass(c){ this._load().classes.push(c); this._save(); return c; },
+  updClass(id,patch){ const c=this.classById(id); if(c){ Object.assign(c,patch); this._save(); } return c; },
+
+  members(classId){ return this._load().members.filter(m => m.classId === classId); },
+  member(classId,name){ return this._load().members
+      .find(m => m.classId===classId && m.name.toLowerCase()===String(name).toLowerCase()); },
+  addMember(m){ this._load().members.push(m); this._save(); return m; },
+
+  works(classId){ return this._load().works.filter(w => w.classId === classId); },
+  work(id){ return this._load().works.find(w => w.id === id); },
+  workFor(classId,memberId,briefId){ return this._load().works
+      .find(w => w.classId===classId && w.memberId===memberId && w.briefId===briefId); },
+  addWork(w){ this._load().works.push(w); this._save(); return w; },
+  updWork(id,patch){ const w=this.work(id); if(w){ Object.assign(w,patch); this._save(); } return w; },
+
+  /* Process receipts — school-mode brief §34. Class-scoped, teacher-only,
+     keyed to display name + device token. Never public, never PII. */
+  log(classId,memberId,kind,detail){
+    const d=this._load();
+    d.events.push({ id:uid(), classId, memberId, kind, detail:detail||'', at:Date.now() });
+    if(d.events.length>4000) d.events.splice(0,d.events.length-4000);
+    this._save();
+  },
+  events(classId,memberId){ return this._load().events
+      .filter(e => e.classId===classId && (!memberId || e.memberId===memberId))
+      .sort((a,b)=>a.at-b.at); },
+  reset(){ localStorage.removeItem(this.KEY); this._d=null; }
+};
+
+/* ══════════════════════════════════════════════════════════════
+   HELPERS
+   ══════════════════════════════════════════════════════════════ */
+const $ = s => document.querySelector(s);
+const uid = () => 'x'+Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4);
+const esc = s => String(s??'').replace(/[&<>"']/g, c =>
+  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+/* Ambiguous glyphs removed: no O/0, I/1, S/5 — these get read aloud
+   across a classroom and mistyped by twelve-year-olds. */
+const CODE_ALPHABET='ABCDEFGHJKLMNPQRTUVWXY2346789';
+const makeCode = () => Array.from({length:6},
+  () => CODE_ALPHABET[Math.floor(Math.random()*CODE_ALPHABET.length)]).join('');
+const words = s => String(s||'').trim().split(/\s+/).filter(Boolean).length;
+const fmtWhen = ts => new Date(ts).toLocaleString(undefined,
+  {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+
+let _tt;
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('on');
+  clearTimeout(_tt); _tt=setTimeout(()=>t.classList.remove('on'),2600); }
+
+/* Device token — identifies a returning device, never a person. */
+function deviceToken(){
+  let t; try{ t=localStorage.getItem('cs_school_dev'); }catch(_){}
+  if(!t){ t='d'+Math.random().toString(36).slice(2,12);
+          try{ localStorage.setItem('cs_school_dev',t); }catch(_){} }
+  return t;
+}
+
+/* Downscale on attach. Student exports are full-resolution PNGs and a
+   handful would blow the localStorage quota; the prototype keeps a
+   long-edge-1000 JPEG. Production stores the original in a bucket. */
+function fileToThumb(file, edge=1000){
+  return new Promise((resolve,reject)=>{
+    const fr=new FileReader();
+    fr.onerror=()=>reject(new Error('read failed'));
+    fr.onload=()=>{
+      const img=new Image();
+      img.onerror=()=>reject(new Error('not an image'));
+      img.onload=()=>{
+        const s=Math.min(1, edge/Math.max(img.width,img.height));
+        const c=document.createElement('canvas');
+        c.width=Math.round(img.width*s); c.height=Math.round(img.height*s);
+        const x=c.getContext('2d');
+        x.fillStyle='#fff'; x.fillRect(0,0,c.width,c.height);
+        x.drawImage(img,0,0,c.width,c.height);
+        resolve(c.toDataURL('image/jpeg',0.82));
+      };
+      img.src=fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PATTERN ARCHIVE — school_safe by construction
+   Patterns are CultureSchool's own generated works referencing
+   traditions, so they are owned outright: no per-row rights check
+   is needed. The school gate is simply "patterns only" — the three
+   external libraries (Openverse / Met / Iconify) are not reachable
+   from this surface at all.
+   ══════════════════════════════════════════════════════════════ */
+const THUMB_BASE = SUPA_URL + '/storage/v1/object/public/pattern-thumbs/';
+const _patCache = {};
+
+async function patternsForStyle(style, limit=12){
+  if(!style) return [];
+  if(_patCache[style]) return _patCache[style];
+  try{
+    const { data, error } = await sb.from('patterns_public')
+      .select('id,name,style,colors,heritage_origin,continent,thumb_url')
+      .eq('style', style)
+      .not('heritage_origin','is',null)   /* 27% of the archive has no origin —
+                                             those can't carry a credit line, so
+                                             they are excluded from school use */
+      .limit(limit);
+    if(error) throw error;
+    _patCache[style] = data || [];
+    return _patCache[style];
+  }catch(e){ console.warn('[patterns]', e); return []; }
+}
+const thumbUrl = p => p.thumb_url || (THUMB_BASE + p.id + '.png');
+
+/* The credit line that doubles as the works-cited entry. */
+function creditFor(p){
+  const bits=[p.heritage_origin, p.continent].filter(Boolean);
+  return bits.length ? bits.join(' · ') : 'CultureSchool Pattern Archive';
+}
+
+/* ══════════════════════════════════════════════════════════════
+   ROUTER
+   ══════════════════════════════════════════════════════════════ */
+const State = { view:'gate', teacher:null, classId:null, tab:'briefs',
+                session:null /* {classId, memberId, name} */ };
+
+function go(view, patch){ Object.assign(State,{view},patch||{}); render(); window.scrollTo(0,0); }
+
+function render(){
+  const app=$('#app');
+  const R={ gate:viewGate, teacher:viewTeacher, join:viewJoin, student:viewStudent };
+  app.innerHTML = (R[State.view]||viewGate)();
+  renderTopRight();
+  if(State.view==='teacher') afterTeacher();
+  if(State.view==='student') afterStudent();
+}
+
+function renderTopRight(){
+  const el=$('#topRight');
+  if(State.view==='teacher' && State.teacher){
+    el.innerHTML = `<span class="tiny">${esc(State.teacher)}</span>
+      <button class="btn btn-ghost btn-sm" onclick="signOut()">Sign out</button>`;
+  } else if(State.view==='student' && State.session){
+    el.innerHTML = `<span class="tiny">${esc(State.session.name)}</span>
+      <button class="btn btn-ghost btn-sm" onclick="leaveClass()">Leave</button>`;
+  } else if(State.view!=='gate'){
+    el.innerHTML = `<button class="btn btn-ghost btn-sm" onclick="go('gate')">← Back</button>`;
+  } else el.innerHTML='';
+}
+
+/* ══════════════════════════════════════════════════════════════
+   GATE
+   ══════════════════════════════════════════════════════════════ */
+function viewGate(){
+  return `<div class="gate"><div class="gate-inner">
+    <p class="eyebrow">Prototype · Spring 2027</p>
+    <h1>Students find a tradition,<br>then answer it in their own hand.</h1>
+    <p class="lede" style="margin:18px auto 0">Interpretation Briefs are find-and-interpret projects that
+      can't be handed to a chatbot: documented sources, an original print, and a written artist
+      statement — with the making process visible to the teacher.</p>
+    <div class="doors">
+      <div class="door" onclick="go('teacher')" role="button" tabindex="0"
+           onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();go('teacher')}">
+        <svg class="door-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+          <path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M7 10v5c0 1.5 2.2 3 5 3s5-1.5 5-3v-5"/><path d="M21 7v6"/></svg>
+        <h3>I'm a teacher</h3>
+        <p>Create a class, assign a brief, and watch the work come in — including how it was made.</p>
+        <span class="btn btn-primary btn-sm">Open the dashboard →</span>
+      </div>
+      <div class="door" onclick="go('join')" role="button" tabindex="0"
+           onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();go('join')}">
+        <svg class="door-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+          <path d="M4 20v-1a5 5 0 015-5h6a5 5 0 015 5v1"/><circle cx="12" cy="8" r="4"/></svg>
+        <h3>I'm a student</h3>
+        <p>Enter your class code and your first name. No email, no password, no account.</p>
+        <span class="btn btn-gold btn-sm">Join a class →</span>
+      </div>
+    </div>
+    <div class="note" style="max-width:620px;margin:36px auto 0;text-align:left">
+      <b>No student data is collected.</b> A student session is a class code, a display name your
+      teacher chooses the format of, and a device token. Nothing that identifies a child is
+      stored — which is what keeps this outside FERPA and COPPA rather than compliant with them.
+    </div>
+    <p class="tiny dim" style="margin-top:26px">
+      Prototype — work is saved on this device only.
+      <button class="btn btn-ghost btn-sm" style="margin-left:8px" onclick="seedDemo()">Load a demo class</button>
+    </p>
+  </div></div>`;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   TEACHER
+   ══════════════════════════════════════════════════════════════ */
+function viewTeacher(){
+  if(!State.teacher) return teacherSignIn();
+  const classes=Store.classes(State.teacher);
+  if(!State.classId && classes.length) State.classId=classes[0].id;
+  const cls=Store.classById(State.classId);
+  return `<div class="wrap"><div class="cols">
+    <aside class="side">
+      <div class="card">
+        <h3>Classes</h3>
+        ${classes.length ? classes.map(c=>`
+          <button class="class-row" aria-current="${c.id===State.classId}" onclick="pickClass('${c.id}')">
+            <b>${esc(c.name)}</b>
+            <span>${c.code} · ${Store.members(c.id).length} student${Store.members(c.id).length===1?'':'s'}</span>
+          </button>`).join('') : `<p class="tiny dim">No classes yet.</p>`}
+        <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:12px" onclick="newClass()">+ New class</button>
+      </div>
+    </aside>
+    <section>${ cls ? teacherClass(cls) : `<div class="empty">
+        <h3>Start with a class</h3>
+        <p class="lede" style="margin:0 auto">Create one, and you'll get a six-character code to read out.</p>
+        <button class="btn btn-primary" style="margin-top:20px" onclick="newClass()">Create a class</button>
+      </div>` }</section>
+  </div></div>`;
+}
+
+function teacherSignIn(){
+  return `<div class="join">
+    <p class="eyebrow" style="text-align:center">Teacher</p>
+    <h1 style="font-size:2rem;text-align:center;margin:10px 0 8px">Your dashboard</h1>
+    <p class="tiny dim" style="text-align:center;margin-bottom:26px">
+      Teachers identify by email; students never do.</p>
+    <div class="card">
+      <label class="field"><span>School email</span>
+        <input class="inp" id="tEmail" type="email" placeholder="you@school.edu"
+               onkeydown="if(event.key==='Enter')doTeacherIn()"></label>
+      <button class="btn btn-primary" style="width:100%" onclick="doTeacherIn()">Continue →</button>
+      <p class="tiny dim" style="margin:14px 0 0;text-align:center">
+        Prototype — no password, nothing sent.</p>
+    </div>
+  </div>`;
+}
+function doTeacherIn(){
+  const v=$('#tEmail').value.trim();
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)) return toast('Enter a valid email address');
+  State.teacher=v; try{ localStorage.setItem('cs_school_teacher',v); }catch(_){}
+  const mine=Store.classes(v); State.classId = mine.length ? mine[0].id : null;
+  render();
+}
+function signOut(){ State.teacher=null; State.classId=null;
+  try{ localStorage.removeItem('cs_school_teacher'); }catch(_){} go('gate'); }
+
+function newClass(){
+  const name=prompt('Class name — e.g. "Period 3 · Visual Arts"');
+  if(!name || !name.trim()) return;
+  let code, tries=0;
+  do { code=makeCode(); tries++; } while(Store.classByCode(code) && tries<40);
+  const c=Store.addClass({ id:uid(), code, name:name.trim(), teacher:State.teacher,
+    namePolicy:'first_initial', assigned:[], createdAt:Date.now() });
+  State.classId=c.id; render();
+  toast('Class created — code ' + code);
+}
+function pickClass(id){ State.classId=id; State.tab='briefs'; render(); }
+
+function teacherClass(c){
+  const members=Store.members(c.id), works=Store.works(c.id);
+  const submitted=works.filter(w=>w.status==='submitted');
+  return `
+    <div class="card" style="margin-bottom:24px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:20px;flex-wrap:wrap">
+        <div>
+          <h2 style="font-size:1.8rem">${esc(c.name)}</h2>
+          <p class="tiny dim" style="margin:6px 0 0">
+            ${members.length} student${members.length===1?'':'s'} ·
+            ${c.assigned.length} brief${c.assigned.length===1?'':'s'} assigned ·
+            ${submitted.length} submitted</p>
+        </div>
+        <div style="text-align:right">
+          <p class="eyebrow" style="margin-bottom:6px">Class code</p>
+          <div class="code">${c.code}</div>
+        </div>
+      </div>
+    </div>
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" aria-selected="${State.tab==='briefs'}"  onclick="setTab('briefs')">Briefs</button>
+      <button class="tab" role="tab" aria-selected="${State.tab==='gallery'}" onclick="setTab('gallery')">Class gallery ${submitted.length?`<span class="badge badge-live" style="margin-left:6px">${submitted.length}</span>`:''}</button>
+      <button class="tab" role="tab" aria-selected="${State.tab==='roster'}"  onclick="setTab('roster')">Roster</button>
+    </div>
+    <div id="tabBody">${
+      State.tab==='briefs'  ? tabBriefs(c) :
+      State.tab==='gallery' ? tabGallery(c) : tabRoster(c) }</div>`;
+}
+function setTab(t){ State.tab=t; render(); }
+
+function tabBriefs(c){
+  return BRIEFS.map(b=>{
+    const on=c.assigned.includes(b.id);
+    return `<div class="brief">
+      <div class="brief-top">
+        <div>
+          <p class="eyebrow">Brief ${b.n}</p>
+          <h3>${esc(b.title)}</h3>
+          <p class="brief-meta">${esc(b.meta)}</p>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
+          ${on?'<span class="badge badge-live">● Assigned</span>':''}
+          <button class="btn ${on?'btn-ghost':'btn-gold'} btn-sm" onclick="toggleAssign('${c.id}','${b.id}')">
+            ${on?'Unassign':'Assign to class'}</button>
+        </div>
+      </div>
+      <div class="brief-arc">
+        <div class="arc"><b>Find</b><p>${esc(b.find)}</p></div>
+        <div class="arc"><b>Interpret</b><p>${esc(b.interpret)}</p></div>
+        <div class="arc"><b>Own it</b><p>${esc(b.own)}</p></div>
+      </div>
+      <div class="turnin"><b>Turn in —</b> ${esc(b.turnin)}</div>
+      ${b.style
+        ? `<div><p class="eyebrow" style="margin-bottom:4px">From the archive · ${esc(b.tradition)}</p>
+             <div class="pats" data-style="${b.style}"><p class="tiny dim">Loading…</p></div></div>`
+        : `<div class="note"><b>No reference set yet.</b> The archive has no
+             improvisational-quilt style, so this brief ships without a pattern strip —
+             students compose freely, which is what the brief asks for anyway.</div>`}
+      <p class="standards"><b>Standards:</b> ${esc(b.standards)}</p>
+    </div>`;
+  }).join('');
+}
+
+function toggleAssign(classId,briefId){
+  const c=Store.classById(classId); if(!c) return;
+  const i=c.assigned.indexOf(briefId);
+  if(i>=0) c.assigned.splice(i,1); else c.assigned.push(briefId);
+  Store.updClass(classId,{assigned:c.assigned});
+  render();
+  toast(i>=0 ? 'Unassigned' : 'Assigned — students will see it on their next visit');
+}
+
+function tabGallery(c){
+  const works=Store.works(c.id).filter(w=>w.status==='submitted')
+    .sort((a,b)=>(b.submittedAt||0)-(a.submittedAt||0));
+  if(!works.length) return `<div class="empty">
+    <h3>Nothing submitted yet</h3>
+    <p class="lede" style="margin:0 auto">Work appears here the moment a student turns it in —
+      with the print, the statement, and how it was made.</p></div>`;
+  return `<div class="gal">${works.map(w=>{
+    const m=Store.members(c.id).find(x=>x.id===w.memberId);
+    const b=briefById(w.briefId);
+    return `<div class="work">
+      <div class="work-img" onclick="openWork('${w.id}')">
+        ${w.image?`<img src="${w.image}" alt="Print by ${esc(m?m.name:'student')}">`
+                 :'<span class="tiny dim">No image</span>'}
+      </div>
+      <div class="work-body">
+        <b>${esc(m?m.name:'—')}</b>
+        <p class="tiny">${esc(b?b.title:'')}</p>
+        <div class="work-acts">
+          <button class="btn btn-ghost btn-sm" onclick="openWork('${w.id}')">Open</button>
+          ${w.featured?'<span class="badge badge-live">★ Featured</span>':''}
+        </div>
+      </div></div>`;
+  }).join('')}</div>`;
+}
+
+function tabRoster(c){
+  const members=Store.members(c.id);
+  if(!members.length) return `<div class="empty">
+    <h3>No one has joined yet</h3>
+    <p class="lede" style="margin:0 auto">Read out the code <b class="code" style="font-size:1rem">${c.code}</b>
+      and students join in seconds.</p></div>`;
+  return `<div class="card"><table style="width:100%;border-collapse:collapse;font-size:.88rem">
+    <thead><tr style="text-align:left;border-bottom:1px solid var(--rule)">
+      <th style="padding:9px 0;font:500 .7rem/1 'DM Sans';letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Display name</th>
+      <th style="padding:9px 0;font:500 .7rem/1 'DM Sans';letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Works</th>
+      <th style="padding:9px 0;font:500 .7rem/1 'DM Sans';letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Joined</th>
+      <th></th></tr></thead>
+    <tbody>${members.map(m=>{
+      const ws=Store.works(c.id).filter(w=>w.memberId===m.id);
+      const done=ws.filter(w=>w.status==='submitted').length;
+      return `<tr style="border-bottom:1px solid var(--rule-soft)">
+        <td style="padding:11px 0"><b style="font-weight:500">${esc(m.name)}</b></td>
+        <td style="padding:11px 0">${done} of ${ws.length||0}</td>
+        <td style="padding:11px 0" class="tiny dim">${fmtWhen(m.joinedAt)}</td>
+        <td style="padding:11px 0;text-align:right">
+          <button class="btn btn-ghost btn-sm" onclick="resetMember('${m.id}')">Reset session</button></td>
+      </tr>`; }).join('')}</tbody></table>
+    <p class="tiny dim" style="margin:16px 0 0">Display names only. Resetting lets a student
+      rejoin on a new device with the same name.</p></div>`;
+}
+
+function resetMember(id){
+  const d=Store.all(); const m=d.members.find(x=>x.id===id); if(!m) return;
+  m.device=null; Store._save();
+  toast('Session reset — they can rejoin on any device');
+}
+
+function afterTeacher(){
+  document.querySelectorAll('.pats[data-style]').forEach(async el=>{
+    const rows=await patternsForStyle(el.dataset.style, 8);
+    el.innerHTML = rows.length ? rows.map(p=>`
+      <div class="pat" title="${esc(p.name)}">
+        <img src="${esc(thumbUrl(p))}" alt="${esc(p.name)}" loading="lazy"
+             onerror="this.closest('.pat').style.display='none'">
+        <div class="pat-cap">${esc(creditFor(p))}</div>
+      </div>`).join('') : '<p class="tiny dim">Archive unavailable.</p>';
+  });
+}
+
+/* ══════════════════════════════════════════════════════════════
+   WORK DETAIL — statement + process receipts
+   ══════════════════════════════════════════════════════════════ */
+function openWork(id){
+  const w=Store.work(id); if(!w) return;
+  const m=Store.members(w.classId).find(x=>x.id===w.memberId);
+  const b=briefById(w.briefId);
+  const evs=Store.events(w.classId,w.memberId);
+  const scrim=document.createElement('div');
+  scrim.className='scrim';
+  scrim.onclick=e=>{ if(e.target===scrim) scrim.remove(); };
+  scrim.innerHTML=`<div class="modal">
+    <div class="modal-h">
+      <div><p class="eyebrow">${esc(b?b.title:'')}</p>
+        <h2 style="font-size:1.55rem;margin-top:6px">${esc(m?m.name:'—')}</h2></div>
+      <button class="x" onclick="this.closest('.scrim').remove()" aria-label="Close">×</button>
+    </div>
+    <div class="modal-b">
+      ${w.image?`<img src="${w.image}" alt="" style="width:100%;border-radius:var(--r);border:1px solid var(--rule)">`:''}
+      ${w.credits&&w.credits.length?`<p class="tiny dim" style="margin:10px 0 0">
+        <b>Works cited —</b> ${w.credits.map(esc).join(' · ')}</p>`:''}
+      <h3 style="font-size:1.15rem;margin:22px 0 8px">Artist statement</h3>
+      <p style="font-size:.9rem;line-height:1.72;color:var(--body);white-space:pre-wrap">${esc(w.statement||'—')}</p>
+      <p class="tiny dim" style="margin-top:6px">${words(w.statement)} words${b?` · ${b.words} required`:''}</p>
+
+      <h3 style="font-size:1.15rem;margin:26px 0 8px">How it was made</h3>
+      <p class="tiny dim" style="margin:0 0 12px">Process receipts are class-scoped and visible only to you.
+        They exist so a finished print can be read alongside the work that produced it.</p>
+      <ul class="recs">${ evs.length ? evs.map(e=>`<li class="rec">
+        <time>${fmtWhen(e.at)}</time><span><b>${esc(RECS[e.kind]||e.kind)}</b>${e.detail?' — '+esc(e.detail):''}</span>
+      </li>`).join('') : '<li class="tiny dim">No activity recorded.</li>' }</ul>
+
+      <div style="display:flex;gap:8px;margin-top:24px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm" onclick="toggleFeature('${w.id}')">
+          ${w.featured?'★ Unfeature':'☆ Feature'}</button>
+        <button class="btn btn-ghost btn-sm" onclick="window.print()">Print this work</button>
+      </div>
+    </div></div>`;
+  document.body.appendChild(scrim);
+}
+const RECS={ join:'Joined the class', open_brief:'Opened the brief',
+  view_tradition:'Studied a tradition card', open_studio:'Opened Print Studio',
+  attach:'Attached a print', save_draft:'Saved a draft statement',
+  submit:'Submitted the work', resubmit:'Revised and resubmitted' };
+
+function toggleFeature(id){ const w=Store.work(id); if(!w) return;
+  Store.updWork(id,{featured:!w.featured});
+  document.querySelector('.scrim')?.remove(); render(); }
+
+/* ══════════════════════════════════════════════════════════════
+   STUDENT — join
+   ══════════════════════════════════════════════════════════════ */
+function viewJoin(){
+  return `<div class="join">
+    <p class="eyebrow" style="text-align:center">Student</p>
+    <h1 style="font-size:2rem;text-align:center;margin:10px 0 26px">Join your class</h1>
+    <div class="card">
+      <label class="field"><span>Class code</span>
+        <input class="code-in" id="jCode" maxlength="6" autocomplete="off"
+               autocapitalize="characters" spellcheck="false" placeholder="ABC123"
+               oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')"
+               onkeydown="if(event.key==='Enter')document.getElementById('jName').focus()"></label>
+      <label class="field"><span>Your name</span>
+        <input class="inp" id="jName" placeholder="e.g. Maya R." autocomplete="off"
+               onkeydown="if(event.key==='Enter')doJoin()"></label>
+      <button class="btn btn-gold" style="width:100%" onclick="doJoin()">Join →</button>
+      <p class="tiny dim" style="margin:16px 0 0;text-align:center;line-height:1.6">
+        Use the name format your teacher asked for — usually your first name and last initial.
+        <b>Never your full name, email, or anything else about you.</b></p>
+    </div>
+  </div>`;
+}
+
+function doJoin(){
+  const code=$('#jCode').value.trim().toUpperCase();
+  const name=$('#jName').value.trim();
+  if(code.length!==6) return toast('A class code is six characters');
+  const c=Store.classByCode(code);
+  if(!c) return toast('No class with that code — check with your teacher');
+  if(!name) return toast('Add the name your class will see');
+  if(name.length>28) return toast('That name is too long');
+  if(/@/.test(name)) return toast('Please use a display name, not an email address');
+
+  let m=Store.member(c.id,name);
+  if(m){ if(m.device && m.device!==deviceToken()) m.device=deviceToken(); Store._save(); }
+  else { m=Store.addMember({ id:uid(), classId:c.id, name, device:deviceToken(), joinedAt:Date.now() });
+         Store.log(c.id,m.id,'join'); }
+  State.session={ classId:c.id, memberId:m.id, name:m.name };
+  try{ sessionStorage.setItem('cs_school_sess', JSON.stringify(State.session)); }catch(_){}
+  go('student');
+}
+function leaveClass(){ State.session=null;
+  try{ sessionStorage.removeItem('cs_school_sess'); }catch(_){} go('gate'); }
+
+/* ══════════════════════════════════════════════════════════════
+   STUDENT — assignments
+   ══════════════════════════════════════════════════════════════ */
+function viewStudent(){
+  const s=State.session; if(!s) return viewJoin();
+  const c=Store.classById(s.classId); if(!c) return viewJoin();
+  const assigned=c.assigned.map(briefById).filter(Boolean);
+
+  if(State.briefOpen){
+    const b=briefById(State.briefOpen);
+    if(b) return studentBrief(c,b);
+  }
+  return `<div class="wrap"><div class="stu">
+    <p class="eyebrow">${esc(c.name)}</p>
+    <h1 style="font-size:2rem;margin:10px 0 6px">Your assignments</h1>
+    <p class="tiny dim" style="margin-bottom:28px">Signed in as ${esc(s.name)} · nothing else about you is stored.</p>
+    ${ assigned.length ? assigned.map(b=>{
+      const w=Store.workFor(c.id,s.memberId,b.id);
+      const st = !w ? 'Not started' : w.status==='submitted' ? 'Submitted' : 'Draft';
+      const cls = !w ? '' : w.status==='submitted' ? 'badge-live' : 'badge-draft';
+      return `<div class="brief">
+        <div class="brief-top">
+          <div><p class="eyebrow">Brief ${b.n}</p>
+            <h3>${esc(b.title)}</h3>
+            <p class="brief-meta">${esc(b.tradition)}</p></div>
+          <span class="badge ${cls}">${st}</span>
+        </div>
+        <p style="font-size:.88rem;line-height:1.62;color:var(--body);margin:0 0 16px">${esc(b.interpret)}</p>
+        <button class="btn btn-primary btn-sm" onclick="openBrief('${b.id}')">
+          ${w?'Continue →':'Start →'}</button>
+      </div>`; }).join('')
+    : `<div class="empty"><h3>Nothing assigned yet</h3>
+        <p class="lede" style="margin:0 auto">Your teacher hasn't assigned a brief. Check back soon.</p></div>` }
+  </div></div>`;
+}
+
+function openBrief(id){
+  State.briefOpen=id;
+  const s=State.session;
+  Store.log(s.classId,s.memberId,'open_brief',briefById(id)?.title||id);
+  render();
+}
+function closeBrief(){ State.briefOpen=null; render(); }
+
+function studentBrief(c,b){
+  const s=State.session;
+  let w=Store.workFor(c.id,s.memberId,b.id);
+  const has=!!(w&&w.image), stmt=w?w.statement||'':'';
+  const n=words(stmt), ok=n>=b.words;
+  const done=w&&w.status==='submitted';
+  return `<div class="wrap"><div class="stu">
+    <button class="btn btn-ghost btn-sm" onclick="closeBrief()">← All assignments</button>
+    <p class="eyebrow" style="margin-top:22px">Brief ${b.n} · ${esc(b.tradition)}</p>
+    <h1 style="font-size:2.1rem;margin:10px 0 6px">${esc(b.title)}</h1>
+    <p class="brief-meta">${esc(b.meta)}</p>
+    ${done?'<div class="note"><b>Submitted.</b> Your teacher can see this. You can still revise it.</div>':''}
+
+    <div class="card" style="margin:22px 0">
+      <div class="step">
+        <div class="step-n">1</div>
+        <div class="step-b"><h4>Find</h4><p>${esc(b.find)}</p>
+          ${b.style?`<p class="eyebrow" style="margin:14px 0 4px">Study these — tap for the credit</p>
+            <div class="pats" data-style="${b.style}"><p class="tiny dim">Loading the archive…</p></div>
+            <p class="tiny dim" style="margin-top:10px">Every pattern here is CultureSchool's own work,
+              made in answer to the tradition named on it. The credit is your works-cited line.</p>`
+           :`<p class="tiny dim">This brief has no reference set — your composition is your own from the start.</p>`}
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-n ${has?'done':''}">2</div>
+        <div class="step-b"><h4>Interpret</h4><p>${esc(b.interpret)}</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+            <a class="btn btn-gold btn-sm" href="${PRINT_STUDIO}" target="_blank" rel="noopener"
+               onclick="logStudio()">Open Print Studio ↗</a>
+            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('upl').click()">
+              ${has?'Replace print':'Attach my print'}</button>
+          </div>
+          <input type="file" id="upl" accept="image/*" style="display:none" onchange="attachWork(event,'${b.id}')">
+          <div class="drop" onclick="document.getElementById('upl').click()">
+            ${has?`<img src="${w.image}" alt="Your print">`
+                 :`<p class="tiny dim" style="margin:0">Make your print in the studio, export it,<br>then attach the file here.</p>`}
+          </div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-n ${ok?'done':''}">3</div>
+        <div class="step-b"><h4>Own it</h4><p>${esc(b.own)}</p>
+          <textarea class="inp" id="stmt" placeholder="What did you borrow? What did you change? Why?"
+            oninput="countWords('${b.id}')">${esc(stmt)}</textarea>
+          <p class="tiny" id="wc" style="margin:8px 0 0;color:${ok?'var(--live)':'var(--muted)'}">
+            ${n} of ${b.words} words${ok?' ✓':''}</p>
+          <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+            <button class="btn btn-ghost btn-sm" onclick="saveDraft('${b.id}')">Save draft</button>
+            <button class="btn btn-primary btn-sm" id="subBtn" onclick="submitWork('${b.id}')"
+              ${has&&ok?'':'disabled'}>${done?'Resubmit':'Turn in'} →</button>
+          </div>
+          ${!has||!ok?`<p class="tiny dim" style="margin:10px 0 0">
+            Turn-in unlocks once your print is attached and the statement reaches ${b.words} words.</p>`:''}
+        </div>
+      </div>
+    </div>
+    <div class="turnin"><b>Turn in —</b> ${esc(b.turnin)}</div>
+  </div></div>`;
+}
+
+function afterStudent(){ afterTeacher(); /* same pattern-strip hydration */ }
+
+function logStudio(){ const s=State.session;
+  Store.log(s.classId,s.memberId,'open_studio'); }
+
+function countWords(briefId){
+  const b=briefById(briefId), n=words($('#stmt').value), ok=n>=b.words;
+  const el=$('#wc'); el.textContent=`${n} of ${b.words} words${ok?' ✓':''}`;
+  el.style.color = ok?'var(--live)':'var(--muted)';
+  const s=State.session, w=Store.workFor(s.classId,s.memberId,briefId);
+  const btn=$('#subBtn'); if(btn) btn.disabled = !(w&&w.image&&ok);
+}
+
+function ensureWork(briefId){
+  const s=State.session;
+  let w=Store.workFor(s.classId,s.memberId,briefId);
+  if(!w) w=Store.addWork({ id:uid(), classId:s.classId, memberId:s.memberId, briefId,
+    image:null, statement:'', credits:[], status:'draft', featured:false, createdAt:Date.now() });
+  return w;
+}
+
+async function attachWork(ev,briefId){
+  const f=ev.target.files&&ev.target.files[0]; if(!f) return;
+  if(!/^image\//.test(f.type)) return toast('That needs to be an image file');
+  toast('Adding your print…');
+  try{
+    const img=await fileToThumb(f);
+    const w=ensureWork(briefId);
+    const b=briefById(briefId);
+    const credits = b.style ? [(await patternsForStyle(b.style,1)).map(creditFor)[0]].filter(Boolean) : [];
+    Store.updWork(w.id,{ image:img, credits });
+    Store.log(State.session.classId,State.session.memberId,'attach',f.name);
+    render();
+    toast('Print attached');
+  }catch(e){ toast('Could not read that image — try a PNG or JPEG'); }
+  ev.target.value='';
+}
+
+function saveDraft(briefId){
+  const w=ensureWork(briefId);
+  Store.updWork(w.id,{ statement:$('#stmt').value });
+  Store.log(State.session.classId,State.session.memberId,'save_draft', words($('#stmt').value)+' words');
+  toast('Draft saved');
+}
+
+function submitWork(briefId){
+  const b=briefById(briefId), w=ensureWork(briefId);
+  const stmt=$('#stmt').value;
+  if(!w.image) return toast('Attach your print first');
+  if(words(stmt)<b.words) return toast(`The statement needs at least ${b.words} words`);
+  const again=w.status==='submitted';
+  Store.updWork(w.id,{ statement:stmt, status:'submitted', submittedAt:Date.now() });
+  Store.log(State.session.classId,State.session.memberId, again?'resubmit':'submit', b.title);
+  render();
+  toast(again?'Resubmitted':'Turned in — your teacher can see it now');
+}
+
+/* ══════════════════════════════════════════════════════════════
+   DEMO SEED
+   A showroom gallery must never be empty. Builds a class with
+   three students at different stages, with plausible receipts.
+   ══════════════════════════════════════════════════════════════ */
+function seedDemo(){
+  if(!confirm('Load a demo class? This replaces anything currently saved on this device.')) return;
+  Store.reset();
+  const teacher='demo@school.edu';
+  const c=Store.addClass({ id:uid(), code:'ADINKR', name:'Period 3 · Visual Arts',
+    teacher, namePolicy:'first_initial', assigned:['adinkra','shibori'], createdAt:Date.now()-864e5*9 });
+  const H=36e5, D=864e5, now=Date.now();
+  const people=[
+    { name:'Maya R.',   brief:'adinkra', st:'submitted', at:now-D*2,
+      s:"I chose Sankofa, the bird that looks backward while walking forward. It means you can go back and get what you forgot — my grandmother says something close to that in Creole, so it already felt like ours. Adinkra symbols were stamped with carved calabash and dye made from tree bark, and the cloth was worn at funerals, which surprised me because I assumed pattern always meant celebration.\n\nMy own symbol is a key inside an open hand. It stands for my mother giving me the house key the first week she trusted me alone. I borrowed the grid — Adinkra repeats in bands with a stamped edge, so mine does too, and I kept the block spacing loose the way a hand-stamp never lands perfectly. What I changed is the colour: traditional Adinkra is often dark brown-black on russet, and I used the indigo family because the key was cold when she handed it to me. I also let my symbol break the grid once, in the bottom corner, so the eye finds it." },
+    { name:'Devon A.',  brief:'adinkra', st:'submitted', at:now-D-H*4,
+      s:"Gye Nyame is everywhere in Ghana — on buildings, on cloth, on the back of taxis. It means except for God, and it is probably the most used Adinkra symbol there is. What surprised me is that the symbols were a whole writing system before they were decoration, and that a chief could wear a cloth that argued with you without saying anything.\n\nI made a symbol for stubbornness, which my coach calls my best and worst quality. It is two arrows pushing into each other and neither one bending. I borrowed the way Adinkra fills a square completely so the stamp reads at a distance, and the way the same block repeats until the repetition becomes the message. I changed the scale — I made mine much larger than a real stamp so it reads as a poster instead of cloth, and I used only two colours because I wanted it to feel like a warning sign more than a fabric." },
+    { name:'Priya S.',  brief:'shibori', st:'draft', at:now-H*6, s:"I picked itajime, the one where you fold the cloth and clamp it between two shapes so the dye can't reach the middle. " }
+  ];
+  people.forEach((p,i)=>{
+    const m=Store.addMember({ id:uid(), classId:c.id, name:p.name, device:'demo'+i,
+      joinedAt:now-D*8+i*H });
+    Store.log(c.id,m.id,'join');
+    Store.log(c.id,m.id,'open_brief',briefById(p.brief).title);
+    Store.log(c.id,m.id,'view_tradition',briefById(p.brief).tradition);
+    if(p.st==='submitted'){
+      Store.log(c.id,m.id,'open_studio');
+      Store.log(c.id,m.id,'attach','print_final.png');
+      Store.log(c.id,m.id,'save_draft','82 words');
+      Store.log(c.id,m.id,'submit',briefById(p.brief).title);
+    } else {
+      Store.log(c.id,m.id,'open_studio');
+      Store.log(c.id,m.id,'save_draft','24 words');
+    }
+    /* Backdate the receipts so the timeline reads like three weeks of work
+       rather than three seconds of seeding. */
+    const evs=Store.events(c.id,m.id);
+    evs.forEach((e,k)=>{ e.at = p.at - (evs.length-k)*H*(1.5+i); });
+    Store._save();
+    Store.addWork({ id:uid(), classId:c.id, memberId:m.id, briefId:p.brief,
+      image:demoPrint(p.brief,i), statement:p.s, credits:[demoCredit(p.brief)],
+      status:p.st, featured:i===0,
+      createdAt:p.at-D, submittedAt:p.st==='submitted'?p.at:null });
+  });
+  State.teacher=teacher; State.classId=c.id; State.tab='gallery';
+  try{ localStorage.setItem('cs_school_teacher',teacher); }catch(_){}
+  go('teacher');
+  toast('Demo class loaded — code ADINKR');
+}
+const demoCredit = b => b==='adinkra'
+  ? 'Akan people, Ghana & Côte d’Ivoire · Africa' : 'Japan · Asia';
+
+/* Placeholder student prints, drawn rather than fetched so the demo
+   works with no network and adds no weight to the file. */
+function demoPrint(brief,i){
+  const c=document.createElement('canvas'); c.width=c.height=520;
+  const x=c.getContext('2d');
+  const sets=[['#1b2f4b','#e8dcc4','#c9a96e','#7c2f2f'],
+              ['#2d3f2a','#f0e6d2','#a9803c','#5c4033'],
+              ['#12324d','#eef2f4','#5b8ca8','#0d1f2d']];
+  const P=sets[i%3];
+  x.fillStyle=P[1]; x.fillRect(0,0,520,520);
+  if(brief==='adinkra'){
+    for(let r=0;r<4;r++) for(let k=0;k<4;k++){
+      const px=18+k*126, py=18+r*126;
+      x.fillStyle=(r+k)%2?P[0]:P[3]; x.fillRect(px,py,110,110);
+      x.strokeStyle=P[2]; x.lineWidth=5; x.beginPath();
+      x.arc(px+55,py+55,30,0,Math.PI*2); x.stroke();
+      x.beginPath(); x.moveTo(px+55,py+18); x.lineTo(px+55,py+92);
+      x.moveTo(px+18,py+55); x.lineTo(px+92,py+55); x.stroke();
+    }
+  } else {
+    x.fillStyle=P[0]; x.fillRect(0,0,520,520);
+    for(let b=0;b<9;b++){
+      x.fillStyle=b%2?P[1]:P[2]; x.globalAlpha=.85;
+      for(let q=0;q<7;q++){
+        const w=30+((b*7+q*13)%46);
+        x.beginPath();
+        x.ellipse(26+q*76, 30+b*58, w/2, 15, 0, 0, Math.PI*2); x.fill();
+      }
+    }
+    x.globalAlpha=1;
+  }
+  x.fillStyle='rgba(0,0,0,.42)'; x.fillRect(0,486,520,34);
+  x.fillStyle='#fff'; x.font='500 14px DM Sans, sans-serif'; x.textAlign='center';
+  x.fillText(demoCredit(brief)+'  ·  CoCo by CultureSchool', 260, 508);
+  return c.toDataURL('image/jpeg',0.8);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   BOOT
+   ══════════════════════════════════════════════════════════════ */
+(function boot(){
+  try{
+    const t=localStorage.getItem('cs_school_teacher'); if(t) State.teacher=t;
+    const s=JSON.parse(sessionStorage.getItem('cs_school_sess')||'null');
+    if(s && Store.classById(s.classId)){ State.session=s; State.view='student'; }
+  }catch(_){}
+  render();
+})();
+</script>
+</body>
+</html>
