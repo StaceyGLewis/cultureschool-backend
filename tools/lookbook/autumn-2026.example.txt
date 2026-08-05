@@ -1,0 +1,11 @@
+# CoCo lookbook — Autumn 2026
+# One palette name (or id) per line. Blank lines and # comments ignored.
+# Run:  node tools/lookbook/build.js --list      to see exact names
+#       node tools/lookbook/build.js --picks tools/lookbook/autumn-2026.example.txt --edition "Autumn 2026"
+
+Winfred’s Hohoe Rust and Russet
+Accra Kente Weaver's Gold
+Vineyard Wampanoag Clay
+Big Sky Amber Hour
+Dusk on the Sunset Strip
+Vineyard Rosé Dusk
