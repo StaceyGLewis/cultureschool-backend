@@ -1,0 +1,44 @@
+Claude Code Brief — Print Studio: School Mode (Middle & High School)
+Context
+CultureSchool is preparing Print Studio for a middle/high-school pilot via a principal contact in Florida, targeting a spring-semester unit. Demo-able school mode is needed by early November (teachers lock spring plans Nov–Dec). Business model: per-school annual site license; pilot school free year one.
+
+This build depends on / extends the asset-library audit+spec (docs/asset-library-audit.md, docs/asset-library-spec.md). Read those first. The school_safe rights gate specced there becomes load-bearing here.
+
+Regulatory frame (drives every decision below): FERPA applies to student records; COPPA applies to under-13s — 6th graders are often 12, so middle school means COPPA-grade caution. The safest architecture is collect no student PII at all. Florida F.S. 1003.42 and the CPALMS Visual Arts standards shape the content side (see docs/florida-alignment-brief if imported; benchmarks VA.68.* verified, VA.912.* to be added).
+Phase 1 — CAPABILITY REVIEW (read-only, do this first)
+Your first instruction: before reading the spec direction below, review what Print Studio can currently do and report it. You know this codebase better than anyone in this conversation. Everything in Phase 2 is direction to be validated against actual capability — where the code already does something close, say so and spec the smaller delta; where a direction fights the architecture, propose the version that doesn't.
+
+Produce docs/school-mode-audit.md:
+
+Feature capability inventory. What can a user actually DO in Print Studio today: creation tools, moodboards, pattern/palette application, text, layers, templates; save/versioning (is any version history kept?); export formats and flows; anything resembling assignments, collections, or galleries. This section drives what "school mode" and "Interpretation Briefs" can realistically be by November.
+Auth & identity today. How Print Studio identifies users (email in localStorage? Supabase auth?). Every place a user identifier is written or read. This determines how invasive the class-code layer is.
+PII inventory. Every field collected anywhere in the Print Studio flow (signup, save, export, share). Flag everything that would be student PII in a classroom.
+Community/social surface. Any path from Print Studio into public or social features (walls, boards, profiles, sharing, external links). School mode must be able to sever all of them.
+Asset pipeline. Confirm from the asset audit which sources can be filtered to school_safe (owned patterns + CC0 museum) and where the filter would apply.
+Save/export model. Where creations are stored, whether they're publicly readable, how the watermark applies.
+Phase 2 — SPEC + BUILD PLAN
+Produce docs/school-mode-spec.md with effort estimates (S/M/L) and a build order that yields a demo by early November. Target architecture — validate against Phase 1 findings:
+
+Class-code access, zero student PII.
+Teacher creates a class → gets a 6-char class code.
+Students enter class code + display name (first name + last initial or alias — teacher's choice per class). No email, no password, no account.
+Session = class_id + display_name + device token. Rejoining uses the same code + name.
+Tables: school_orgs, classes (teacher_email, code, name, display_name_policy), class_members (class_id, display_name, device_token), class_works (class_id, member_id, artifact ref, created_at).
+Teacher dashboard. Create/rename classes, see the class gallery of student work, feature/hide pieces, export a work or the whole gallery to PDF (for printing/display), reset a student's session. Teacher auth can use the existing email pattern — teachers aren't PII-restricted the way students are.
+School content gate. In school mode the asset picker shows ONLY school_safe content (owned patterns + CC0 museum assets). No uploads from student sessions in v1 (removes moderation burden). Attribution/ watermark behavior unchanged — the provenance credit line on exports is a feature here, not a constraint.
+Social severance. School sessions have no wall posting, no public boards, no external share links, no profile creation. Work is visible only within the class and to the teacher.
+Atlas-lite panels. Each pattern in the school picker shows its tradition card (name, origin paragraph, credit) inline — this is the curriculum surface. Content comes only from verified Atlas entries; spec the flag/join that enforces this.
+Licensing/entitlement. Simplest viable: school_orgs.license_status (pilot | active | expired) checked at class creation. No payment integration in v1 — invoicing is manual at this scale.
+Mode isolation. School mode should be a separate entry point (subdomain or /school route) sharing the engine, not a toggle inside the consumer app — reduces the risk of a consumer feature leaking into a classroom.
+Interpretation Briefs — the assignment layer (core to the sale). Teachers assign structured "find and interpret" quests rather than blank canvases. A brief = title, prompt text, referenced tradition(s)/Atlas entries, standards tags, and what-to-turn-in checklist (documented sources → original print → written artist statement). Tables: briefs (class_id, title, prompt, atlas_refs, standards_tags, created_by), and class_works.brief_id. Students see the brief with an inline Atlas source panel (verified entries only — these ARE the citable sources); the artist statement is a text field attached to the work; the provenance credit on export doubles as the works-cited line. Ship 3 template briefs pre-loaded (content will be provided) plus teacher-editable copies. Validate against the capability inventory: if anything like collections/templates exists, briefs may be a thin layer over it.
+Process receipts — AI-resistance evidence. Log key making events per class work: tradition/Atlas entries viewed, patterns tried, saves/ versions, session count and rough duration. Teacher gets a simple "process view" timeline per student work. First check what events/ versioning the code already captures (capability inventory) and spec the smallest instrumentation delta. Privacy: process data is class-scoped, visible only to the class teacher, never public, and tied to display name + device token only (no PII, consistent with the rest of school mode).
+Guardrails
+Phase 1 strictly read-only; cite file paths/lines for claims.
+Do not modify watermark, palette-assignment, or consumer auth flows.
+Anything ambiguous about PII: choose the option that collects less.
+If the existing architecture makes any item L-effort, propose the smallest demo-able cut of it rather than silently descoping.
+Deliverables
+docs/school-mode-audit.md
+docs/school-mode-spec.md with build order to a November demo
+Chat summary: top risks, the November-demo cut, and what the demo will and won't show a teacher.
+

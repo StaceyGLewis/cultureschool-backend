@@ -1,0 +1,94 @@
+# Claude Code Brief — Print Studio Asset Libraries: Audit, then Spec
+
+## Context (read first)
+
+CultureSchool is a color & cultural intelligence platform. Print Studio is its
+design tool. It currently draws on external open-access libraries (Smithsonian,
+The Met) and we are promoting our **proprietary Pattern library** (~4,200
+provenance-documented works, now with real thumb URLs) to a first-class library
+inside Print Studio.
+
+Strategic frame: the museum feeds are commodity breadth; the Pattern library is
+the moat — every asset carries provenance (tradition, origin, meaning, credit).
+Downstream products that will consume the same asset layer: Print Studio
+(consumer), **Print Studio for Schools** (K-12 supplemental resource — must be
+able to filter to rights-clean content only), and the pattern **licensing
+business** (usage counts per asset are sales evidence).
+
+Known existing behavior (verify, don't assume): patterns already assign their
+palette correctly and exports already carry a baked-in watermark.
+
+## Phase 1 — AUDIT (read-only; do not modify code in this phase)
+
+Map what actually exists. Produce `docs/asset-library-audit.md` covering:
+
+1. **Library inventory.** Every asset source Print Studio can pull from today
+   (Smithsonian, Met, patterns, palettes, uploads, anything else). For each:
+   where it's fetched (API, table, bucket), the fields available, and where in
+   the UI it surfaces.
+2. **Pattern library integration.** Where pattern records live (table/bucket
+   names, schema), how thumb URLs are generated/stored, how the
+   palette-assignment works (trace the actual code path), and how the watermark
+   is baked in (client canvas? server? at export or at render?). Note
+   resolution tiers if any (thumb vs full-res access control).
+3. **Rights & attribution handling.** For museum assets: are per-item rights
+   flags (CC0/public domain) checked at ingest or fetch? Is attribution stored
+   and rendered anywhere? For patterns: where does provenance metadata
+   (tradition, origin, credit, Atlas link) live, and does any of it travel with
+   an export?
+4. **Usage tracking.** Is any per-asset usage/placement logging happening today?
+   Where?
+5. **Search/filter capabilities.** What can users filter by per library today
+   (keyword? color? tradition?). Note that a color-extraction engine exists
+   elsewhere in the ecosystem (vault/board viewer) — check whether Print Studio
+   shares it.
+6. **Gaps & risks list.** Anything rights-encumbered that could currently reach
+   an export; anywhere provenance is dropped; schema inconsistencies between
+   libraries.
+
+## Phase 2 — SPEC (design doc only; no implementation yet)
+
+Produce `docs/asset-library-spec.md` proposing the unified layer. Validate or
+amend these hypotheses against what you found — they are direction, not law:
+
+1. **Unified asset schema** (likely a view or thin table over existing sources
+   rather than a migration): `id, library, title, thumb_url, full_url,
+   tradition, origin_note, atlas_entry_id, palette (text[] hexes),
+   source, license_type, attribution_text, watermark_policy, school_safe
+   (derivable), created_at`. Spec how each existing source maps in, and what's
+   missing per source.
+2. **Unified picker component** for Print Studio: library tabs (Patterns /
+   Met / Smithsonian / My Uploads), shared search, tradition filter, and
+   color-family filter (reusing the existing extraction engine; patterns
+   already have palettes — museum items may need extraction+cache).
+3. **Rights gates.** `license_type` drives behavior: school mode shows only
+   owned + CC0; commercial export blocked for anything unclear; ingest-time
+   rights check for museum feeds with the flag stored on our side.
+4. **Attribution on export.** Every export carries a credit line built from
+   `attribution_text` (e.g., "Pattern: Adinkra tradition · CultureSchool
+   Atlas"). Spec how this composes with the existing watermark rather than
+   duplicating it.
+5. **Usage logging.** One row per placement: `asset_id, library, context
+   (studio|school|board), user ref, created_at`. Spec table + the single
+   insert point(s) in the render/export path. This feeds licensing analytics.
+6. **Resolution tiers.** Confirm/extend current behavior: free thumbs,
+   in-tool full-res, watermark+credit on export; note any gaps for the
+   licensing tier (clean files delivered only through a licensing flow).
+
+For each spec item: what exists already (from Phase 1), what changes, effort
+estimate (S/M/L), and migration risk. End with a recommended build order.
+
+## Guardrails
+
+- Phase 1 is strictly read-only. No refactors, no "while I'm here" fixes.
+- Do not touch the watermark or palette-assignment code paths — they work.
+- Flag anything you're uncertain about rather than guessing; cite file paths
+  and line numbers for every claim in the audit.
+- If the repo doesn't contain a piece (e.g., ingest scripts live elsewhere),
+  say so explicitly rather than speccing blind.
+
+## Deliverables
+
+1. `docs/asset-library-audit.md`
+2. `docs/asset-library-spec.md`
+3. A short summary in chat: top 3 findings, top 3 risks, recommended build order.
