@@ -16,6 +16,12 @@
 // POST { session_token, brief_id, mode:"read" }   re-sign a student's own print
 // POST { session_token, note_id,  mode:"read" }   re-sign a note photograph
 //
+// POST { handoff, image }   Print Studio sending a finished print straight
+//   back to the assignment. The handoff token replaces the session token
+//   entirely: it can attach one image to one brief, once, within four
+//   hours, and can read nothing. That is what makes it safe to put in a
+//   URL when the session token never could be.
+//
 // GET-style read is handled by the "class-works teacher read" policy in
 // docs/school-mode-storage.sql; students get the signed URL returned here.
 
@@ -37,13 +43,69 @@ const json = (body: unknown, status = 200) =>
 const MAX_BYTES = 8 * 1024 * 1024;
 const ALLOWED = new Set(["image/jpeg", "image/png", "image/webp"]);
 
+/* One decoder for every path, so a size or type rule can never be
+   enforced on one route and forgotten on another. */
+function decodeImage(image: string):
+  { bytes: Uint8Array; type: string } | { error: string; status: number } {
+  let contentType = "image/jpeg";
+  let b64 = image;
+  const m = /^data:([^;,]+);base64,(.*)$/s.exec(image);
+  if (m) { contentType = m[1].toLowerCase(); b64 = m[2]; }
+  if (!ALLOWED.has(contentType)) {
+    return { error: `unsupported type ${contentType}`, status: 415 };
+  }
+  if (b64.length * 0.75 > MAX_BYTES) return { error: "image too large", status: 413 };
+  let bytes: Uint8Array;
+  try {
+    const bin = atob(b64);
+    bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  } catch { return { error: "image is not valid base64", status: 400 }; }
+  if (bytes.byteLength === 0) return { error: "image is empty", status: 400 };
+  if (bytes.byteLength > MAX_BYTES) return { error: "image too large", status: 413 };
+  return { bytes, type: contentType };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   try {
-    const { session_token, brief_id, note_id, image, credits, mode } =
+    const { session_token, brief_id, note_id, image, credits, mode, handoff } =
       await req.json();
+
+    const url_ = Deno.env.get("SUPABASE_URL")!;
+    const anon_ = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const service_ = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    // ── handoff from Print Studio ─────────────────────────────────────
+    // Deliberately before the session_token check: a handoff carries its
+    // own authorisation and there is no session in this request at all.
+    if (typeof handoff === "string" && handoff.length > 0) {
+      if (!image || typeof image !== "string") {
+        return json({ error: "image required" }, 400);
+      }
+      const bytes0 = decodeImage(image);
+      if ("error" in bytes0) return json({ error: bytes0.error }, bytes0.status);
+
+      const asAnon = createClient(url_, anon_);
+      const { data: t, error: te } = await asAnon.rpc("school_handoff_target",
+        { p_token: handoff });
+      if (te || !t?.path) return json({ error: "handoff not valid" }, 403);
+
+      const admin1 = createClient(url_, service_);
+      const { error: ue } = await admin1.storage
+        .from(t.bucket ?? "class-works")
+        .upload(t.path, bytes0.bytes, { contentType: bytes0.type, upsert: true });
+      if (ue) return json({ error: ue.message }, 500);
+
+      // Spending the token is the last step, so a failed upload can be retried.
+      const { error: ce } = await asAnon.rpc("school_handoff_complete",
+        { p_token: handoff, p_path: t.path });
+      if (ce) return json({ error: ce.message }, 500);
+
+      return json({ ok: true, brief_id: t.brief_id });
+    }
 
     if (!session_token || typeof session_token !== "string") {
       return json({ error: "session_token required" }, 400);
@@ -53,10 +115,6 @@ Deno.serve(async (req) => {
     if (!isNote && (!brief_id || typeof brief_id !== "string")) {
       return json({ error: "brief_id or note_id required" }, 400);
     }
-
-    const url_ = Deno.env.get("SUPABASE_URL")!;
-    const anon_ = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const service_ = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
     // Ask the database where this student is allowed to write. Either
     // path is DERIVED from their own membership, never supplied, so a
@@ -87,31 +145,9 @@ Deno.serve(async (req) => {
     }
 
     // ── decode ────────────────────────────────────────────────────────
-    let contentType = "image/jpeg";
-    let b64 = image;
-    const m = /^data:([^;,]+);base64,(.*)$/s.exec(image);
-    if (m) {
-      contentType = m[1].toLowerCase();
-      b64 = m[2];
-    }
-    if (!ALLOWED.has(contentType)) {
-      return json({ error: `unsupported type ${contentType}` }, 415);
-    }
-    // base64 is ~4/3 of the bytes it encodes; reject before decoding.
-    if (b64.length * 0.75 > MAX_BYTES) {
-      return json({ error: "image too large" }, 413);
-    }
-
-    let bytes: Uint8Array;
-    try {
-      const bin = atob(b64);
-      bytes = new Uint8Array(bin.length);
-      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-    } catch {
-      return json({ error: "image is not valid base64" }, 400);
-    }
-    if (bytes.byteLength === 0) return json({ error: "image is empty" }, 400);
-    if (bytes.byteLength > MAX_BYTES) return json({ error: "image too large" }, 413);
+    const dec = decodeImage(image);
+    if ("error" in dec) return json({ error: dec.error }, dec.status);
+    const bytes = dec.bytes, contentType = dec.type;
 
     const url = url_, anon = anon_, service = service_;
 

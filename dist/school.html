@@ -505,6 +505,7 @@ const API = {
                                p_found:n.found,p_kind:n.kind||null,p_source:n.source||null,
                                p_link:n.link||null,p_surprised:n.surprised||null}),
   deleteNote: (tok,id)    => rpc('school_delete_note',{p_session:tok,p_note:id}),
+  handoff: (tok,brief)    => rpc('school_handoff_create',{p_session:tok,p_brief:brief}),
   /* teacher */
   classes: ()            => rpc('school_teacher_classes'),
   createClass: (name)    => rpc('school_create_class',{p_name:name,p_org:null}),
@@ -1604,11 +1605,17 @@ function studentBrief(b, idx){
           ${b.technique?`<p class="eyebrow" style="margin:14px 0 0">Watch — how it is actually made</p>
             ${embedVideo(b.technique,'Technique')}`:''}
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
-            <a class="btn btn-gold btn-sm" href="${PRINT_STUDIO}" target="_blank" rel="noopener"
-               onclick="logStudio()">Open Print Studio ↗</a>
+            <button class="btn btn-gold btn-sm" onclick="openStudio('${b.id}',this)">
+              Open Print Studio ↗</button>
             <button class="btn btn-ghost btn-sm" onclick="document.getElementById('upl').click()">
               ${has?'Replace print':'Attach my print'}</button>
+            ${has?'':`<button class="btn btn-ghost btn-sm" onclick="loadStudent().then(render)">
+              I sent it — refresh</button>`}
           </div>
+          <p class="tiny dim" style="margin:0 0 12px">
+            The studio opens with ${b.style?"this tradition's palette":'your class palette'} already
+            loaded. When you are done, hit <b>Send to my assignment</b> there and it lands here —
+            no downloading, no hunting for the file.</p>
           <input type="file" id="upl" accept="image/*" style="display:none" onchange="attachWork(event,'${b.id}')">
           <div class="drop" id="dropBox" onclick="document.getElementById('upl').click()">
             ${has?(w._url?`<img src="${esc(w._url)}" alt="Your print">`
@@ -1814,8 +1821,41 @@ async function hydrateStudentImage(){
   if(box) box.innerHTML=`<img src="${esc(url)}" alt="Your print">`;
 }
 
-function logStudio(){ const s=State.session;
-  if(DEMO) Store.log(s._cid,s._mid,'open_studio'); else API.log(s.token,'open_studio'); }
+/* Open Print Studio with the assignment already set up around them.
+   print.html has read ?colors=&name=&palette= since the pattern-library
+   handoff, so the palette arrives applied rather than blank — that is
+   the lesson, not a convenience.
+
+   cs_handoff is a separate single-use token, never the session token: a
+   session token in a URL sits in history and referrers, and is the key to
+   everything that student has. A handoff can attach one image to one
+   brief, once, within four hours, and can read nothing. */
+async function openStudio(briefId, el){
+  const b=findBrief(briefId);
+  const btn=el; if(btn){ btn.textContent='Opening…'; }
+  let url=PRINT_STUDIO;
+  try{
+    const params=new URLSearchParams();
+    if(b.style){
+      const rows=await patternsForStyle(b.style, 6);
+      const cols=[...new Set(rows.flatMap(r=>r.colors||[]))]
+        .filter(c=>/^#[0-9a-f]{6}$/i.test(c)).slice(0,5);
+      if(cols.length) params.set('colors', cols.join(','));
+      if(rows[0]?.name) params.set('name', rows[0].name);
+    }
+    params.set('palette', b.tradition || b.title);
+    if(!DEMO){
+      const h=await API.handoff(State.session.token, briefId);
+      if(h?.token){ params.set('cs_handoff', h.token);
+                    params.set('cs_brief', b.title.slice(0,80)); }
+    } else {
+      Store.log(State.session._cid, State.session._mid, 'open_studio');
+    }
+    url = PRINT_STUDIO + '?' + params.toString();
+  }catch(e){ console.warn('[handoff]', e); /* still open, just without context */ }
+  if(btn) btn.textContent='Open Print Studio ↗';
+  window.open(url, '_blank', 'noopener');
+}
 
 function countWords(briefId){
   const b=findBrief(briefId), n=words($('#stmt').value), ok=n>=b.words;
