@@ -241,9 +241,83 @@ textarea.inp{min-height:132px;resize:vertical;line-height:1.65}
   font-size:.82rem;line-height:1.6;color:var(--body);margin:16px 0}
 .note b{color:var(--gold)}
 
+/* ═══════════════════════════════════════════════════════════════
+   STUDENT SKIN
+   Two audiences, two treatments. A teacher is deciding whether to
+   trust this, so their surface stays calm and credible. A fifteen-
+   year-old is deciding whether it is worth their time, and cream-
+   and-gold reads to them as a worksheet.
+
+   The accent is not a brand colour — it is taken from the palette of
+   the tradition they are studying, lifted until it clears 4.5:1 on
+   the ground. Adinkra goes russet and gold, shibori goes indigo. You
+   learn a palette faster by being inside it.
+   ═══════════════════════════════════════════════════════════════ */
+body.skin{
+  --cream:#17120e; --paper:#241c16; --ink:#fdf9f3; --body:#d8cec1;
+  --muted:#9c8f7e; --faint:#6d6255;
+  --gold:#ffb020; --gold-wash:rgba(255,176,32,.14);
+  --rule:#3a2e24; --rule-soft:#2c2219;
+  --live:#4ade80; --live-wash:rgba(74,222,128,.14);
+  --wait:#fbbf24; --draft-wash:rgba(251,191,36,.16);
+  --r:14px; --r-lg:22px;
+  --shadow:0 2px 4px rgba(0,0,0,.3);
+  --shadow-lg:0 18px 50px rgba(0,0,0,.5);
+  background:var(--cream);
+}
+body.skin .topbar{background:#1d1610;border-bottom-color:var(--rule)}
+body.skin .mark{color:var(--ink)}
+body.skin .btn-primary{background:var(--gold);color:#17120e;font-weight:700}
+body.skin .btn-primary:hover{filter:brightness(1.12)}
+body.skin .btn-gold{background:var(--gold);color:#17120e;font-weight:700}
+body.skin .btn-ghost{border-color:var(--rule);color:var(--body)}
+body.skin .btn-ghost:hover{border-color:var(--gold);color:var(--gold);background:var(--gold-wash)}
+body.skin .inp{background:#1c1510;border-color:var(--rule);color:var(--ink)}
+body.skin .inp::placeholder{color:var(--faint)}
+body.skin .card,body.skin .brief{background:var(--paper);border-color:var(--rule)}
+body.skin .arc,body.skin .turnin,body.skin .drop,body.skin .fnote{background:#1c1510}
+body.skin .pat{background:#1c1510;border-color:var(--rule)}
+body.skin .kind{background:#1c1510;border-color:var(--rule);color:var(--body)}
+body.skin .kind[aria-pressed="true"]{background:var(--gold);color:#17120e;border-color:var(--gold)}
+body.skin .modal{background:var(--paper)}
+body.skin #toast{background:var(--gold);color:#17120e;font-weight:500}
+
+/* Louder type. A brief should read like a poster, not a permission slip. */
+body.skin .stu h1{font-size:clamp(2.1rem,6.4vw,3.1rem);letter-spacing:-.015em}
+body.skin .brief h3{font-size:1.72rem}
+body.skin .eyebrow{letter-spacing:.2em;font-weight:700;font-size:.64rem}
+body.skin .step-b h4{font-size:1.18rem;font-weight:700;letter-spacing:-.01em}
+body.skin .step-b p{font-size:.92rem;color:var(--body)}
+body.skin .lede{font-size:1.06rem;color:var(--body)}
+
+/* The step markers carry the progress, so make them read across a room. */
+body.skin .step{gap:18px;padding:24px 0;border-bottom-color:var(--rule-soft)}
+body.skin .step-n{flex:0 0 40px;height:40px;font-size:1rem;font-weight:700;
+  background:#2c2219;color:var(--muted);border:2px solid var(--rule)}
+body.skin .step-n.done{background:var(--live);color:#0b2416;border-color:var(--live)}
+
+body.skin .badge{font-weight:700;font-size:.7rem}
+body.skin .badge-live{background:var(--live-wash);color:var(--live)}
+body.skin .badge-draft{background:var(--draft-wash);color:var(--wait)}
+body.skin .code-in{background:#1c1510;border-color:var(--rule);color:var(--ink);
+  font-size:2rem;letter-spacing:.4em}
+body.skin .fnote-b .src{font-weight:700}
+body.skin .brief-meta{font-weight:700;letter-spacing:.14em}
+
+/* Progress across the whole brief — the thing that makes a game a game. */
+.prog{display:flex;gap:6px;margin:18px 0 0}
+.prog i{flex:1;height:6px;border-radius:99px;background:var(--rule);transition:.3s}
+.prog i.on{background:var(--gold)}
+body.skin .prog i.on{box-shadow:0 0 14px var(--gold-wash)}
+
+/* The tradition's own colours, shown as a bar the student can see. */
+.tradstrip{display:flex;height:10px;border-radius:99px;overflow:hidden;margin:14px 0 0}
+.tradstrip i{flex:1}
+
 @media (max-width:860px){
   .cols{grid-template-columns:1fr;gap:22px}
   .wrap{padding:0 18px}
+  body.skin .step-n{flex:0 0 34px;height:34px;font-size:.9rem}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 @media print{.topbar,.btn,.tabs,.work-acts{display:none!important}}
@@ -538,6 +612,61 @@ async function patternsForStyle(style, limit=12){
   }catch(e){ console.warn('[patterns]', e); return []; }
 }
 const thumbUrl = p => p.thumb_url || (THUMB_BASE + p.id + '.png');
+
+/* ── skinning the student surface from a real tradition ──────────────
+   The accent must be vivid AND readable. Tradition palettes are fully
+   saturated but often very dark — shibori's #100100 scores 1.1:1 on our
+   ground, which is invisible. So: rank by saturation, then lift each
+   candidate until it clears 4.5:1, and take the first that survives
+   without becoming pastel. Falls back to CoCo gold. */
+const _hex2rgb = h => [1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
+const _rgb2hex = c => '#'+c.map(v=>Math.max(0,Math.min(255,Math.round(v)))
+  .toString(16).padStart(2,'0')).join('');
+function _lum(hex){
+  return _hex2rgb(hex).map(v=>v/255)
+    .map(v=>v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4))
+    .reduce((a,v,i)=>a+[.2126,.7152,.0722][i]*v,0);
+}
+function contrast(a,b){ const x=_lum(a),y=_lum(b);
+  return (Math.max(x,y)+.05)/(Math.min(x,y)+.05); }
+function _sat(hex){ const [r,g,b]=_hex2rgb(hex);
+  const mx=Math.max(r,g,b), mn=Math.min(r,g,b); return mx===0?0:(mx-mn)/mx; }
+function _lift(hex,amt){ return _rgb2hex(_hex2rgb(hex).map(v=>v+(255-v)*amt)); }
+
+const GROUND='#17120e', DEFAULT_ACCENT='#ffb020';
+function accentFrom(colors){
+  const pool=(colors||[]).filter(c=>/^#[0-9a-f]{6}$/i.test(c));
+  if(!pool.length) return DEFAULT_ACCENT;
+  const ranked=[...new Set(pool.map(c=>c.toLowerCase()))]
+    .map(c=>({c, s:_sat(c)}))
+    .sort((a,b)=>b.s-a.s);
+  for(const {c} of ranked){
+    if(contrast(c,GROUND)>=4.5) return c;
+    /* lift toward white in steps; stop before it turns to chalk */
+    for(const amt of [.2,.35,.5,.62]){
+      const lifted=_lift(c,amt);
+      if(contrast(lifted,GROUND)>=4.5 && _sat(lifted)>=.28) return lifted;
+    }
+  }
+  return DEFAULT_ACCENT;
+}
+
+/* Paint the student surface in the tradition being studied. */
+async function skinFor(brief){
+  const root=document.body;
+  if(!brief || !brief.style){
+    root.style.removeProperty('--gold');
+    root.style.removeProperty('--gold-wash');
+    _tradColors=[]; return;
+  }
+  const rows=await patternsForStyle(brief.style, 8);
+  const cols=[...new Set(rows.flatMap(r=>r.colors||[]))];
+  _tradColors=cols.slice(0,6);
+  const a=accentFrom(cols);
+  root.style.setProperty('--gold', a);
+  root.style.setProperty('--gold-wash', 'rgba('+_hex2rgb(a).join(',')+',.16)');
+}
+let _tradColors=[];
 function creditFor(p){
   const bits=[p.heritage_origin, p.continent].filter(Boolean);
   return bits.length ? bits.join(' · ') : 'CultureSchool Pattern Archive';
@@ -569,11 +698,23 @@ function go(view, patch){ Object.assign(State,{view},patch||{}); render(); windo
 
 function render(){
   const R={ gate:viewGate, teacher:viewTeacher, join:viewJoin, student:viewStudent };
+  /* Only students get the loud treatment. A teacher is deciding whether
+     to trust this, and trust is quieter. */
+  const student = State.view==='student' || State.view==='join';
+  document.body.classList.toggle('skin', student);
+  if(!student){ document.body.style.removeProperty('--gold');
+                document.body.style.removeProperty('--gold-wash'); }
   $('#app').innerHTML = (R[State.view]||viewGate)();
   renderTopRight();
   hydratePatterns();
   if(State.view==='teacher') hydrateGalleryImages();
-  if(State.view==='student'){ hydrateStudentImage(); hydrateNoteImages(); }
+  if(State.view==='student'){
+    hydrateStudentImage(); hydrateNoteImages();
+    skinFor(State.briefOpen ? (State.session?.briefs||[]).find(x=>x.id===State.briefOpen) : null)
+      .then(()=>{ const st=document.getElementById('tradStrip');
+        if(st && _tradColors.length)
+          st.innerHTML=_tradColors.map(c=>`<i style="background:${esc(c)}"></i>`).join(''); });
+  }
 }
 
 function renderTopRight(){
@@ -1204,7 +1345,7 @@ async function toggleFeature(workId,on){
 function viewJoin(){
   return `<div class="join">
     <p class="eyebrow" style="text-align:center">Student</p>
-    <h1 style="font-size:2rem;text-align:center;margin:10px 0 26px">Join your class</h1>
+    <h1 style="font-size:clamp(2rem,7vw,2.6rem);text-align:center;margin:10px 0 26px;letter-spacing:-.015em">Join your class</h1>
     <div class="card">
       <label class="field"><span>Class code</span>
         <input class="code-in" id="jCode" maxlength="6" autocomplete="off"
@@ -1301,7 +1442,7 @@ function viewStudent(){
   }
   return `<div class="wrap"><div class="stu">
     <p class="eyebrow">${esc(s.class_name||'')}</p>
-    <h1 style="font-size:2rem;margin:10px 0 6px">Your assignments</h1>
+    <h1>Your assignments</h1>
     <p class="tiny dim" style="margin-bottom:28px">Signed in as ${esc(s.name)} · nothing else about you is stored.</p>
     ${ assigned.length ? assigned.map((b,i)=>{
       const w=myWork(b.id);
@@ -1314,7 +1455,12 @@ function viewStudent(){
             <p class="brief-meta">${esc(b.tradition||b.meta||'')}</p></div>
           <span class="badge ${cls}">${st}</span>
         </div>
-        <p style="font-size:.88rem;line-height:1.62;color:var(--body);margin:0 0 16px">${esc(b.interpret||'')}</p>
+        <p style="font-size:.88rem;line-height:1.62;color:var(--body);margin:0 0 4px">${esc(b.interpret||'')}</p>
+        ${(()=>{ const nt=myNotes(b.id).length>=(b.min_notes||0),
+                       im=!!(w&&(w.image_path||w._url)),
+                       wd=words(w?w.statement:'')>=b.words;
+          return `<div class="prog" style="margin:12px 0 16px">
+            <i class="${nt?'on':''}"></i><i class="${im?'on':''}"></i><i class="${wd?'on':''}"></i></div>`; })()}
         <button class="btn btn-primary btn-sm" onclick="openBrief('${b.id}')">
           ${w?'Continue →':'Start →'}</button>
       </div>`; }).join('')
@@ -1344,8 +1490,13 @@ function studentBrief(b, idx){
   return `<div class="wrap"><div class="stu">
     <button class="btn btn-ghost btn-sm" onclick="closeBrief()">← All assignments</button>
     <p class="eyebrow" style="margin-top:22px">Brief ${String((idx||0)+1).padStart(2,'0')}${b.tradition?' · '+esc(b.tradition):''}</p>
-    <h1 style="font-size:2.1rem;margin:10px 0 6px">${esc(b.title)}</h1>
+    <h1>${esc(b.title)}</h1>
     ${b.meta?`<p class="brief-meta">${esc(b.meta)}</p>`:''}
+    ${b.style?`<div class="tradstrip" id="tradStrip"></div>
+      <p class="tiny dim" style="margin:8px 0 0">The colours this tradition actually uses.</p>`:''}
+    <div class="prog" title="${[gotNotes,has,ok].filter(Boolean).length} of 3 done">
+      <i class="${need?(gotNotes?'on':''):'on'}"></i><i class="${has?'on':''}"></i><i class="${ok?'on':''}"></i>
+    </div>
     ${done?'<div class="note"><b>Turned in.</b> Your teacher can see this. You can still revise it.</div>':''}
 
     <div class="card" style="margin:22px 0">
